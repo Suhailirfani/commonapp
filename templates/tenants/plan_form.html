@@ -1,0 +1,121 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }} - GO FEST Admin Control Center{% endblock %}
+
+{% block content %}
+<div style="max-width: 700px; margin: 20px auto;">
+    <div style="margin-bottom: 16px;">
+        <a href="{% url 'tenants:developer_dashboard' %}" class="btn-secondary" style="font-size: 0.85rem; padding: 6px 14px; text-decoration: none;">
+            <i class="fa-solid fa-arrow-left"></i> Back to Developer Dashboard
+        </a>
+    </div>
+
+    <div class="glass-card">
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
+            <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(79, 70, 229, 0.2); display: flex; align-items: center; justify-content: center; color: var(--accent-indigo); font-size: 1.3rem;">
+                <i class="fa-solid fa-layer-group"></i>
+            </div>
+            <div>
+                <h2 style="font-size: 1.6rem; font-weight: 800; margin: 0;">{{ title }}</h2>
+                <p style="color: var(--text-muted); font-size: 0.85rem; margin: 2px 0 0 0;">Configure subscription plan pricing, limits, and public visibility.</p>
+            </div>
+        </div>
+
+        <form method="POST">
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+            <div style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; padding: 12px; margin-bottom: 16px; color: #fca5a5;">
+                {{ form.non_field_errors }}
+            </div>
+            {% endif %}
+
+            <div class="form-grid-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                <div class="form-group">
+                    <label class="form-label">Plan Name <span style="color: var(--accent-rose);">*</span></label>
+                    {{ form.name }}
+                    {% if form.name.errors %}
+                    <small style="color: #fca5a5;">{{ form.name.errors.0 }}</small>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Plan Slug / Code <small style="color: var(--text-muted);">(Unique identifier)</small></label>
+                    {{ form.code }}
+                    {% if form.code.errors %}
+                    <small style="color: #fca5a5;">{{ form.code.errors.0 }}</small>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="form-grid-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                <div class="form-group">
+                    <label class="form-label">Regular Price (₹)</label>
+                    {{ form.original_price }}
+                    {% if form.original_price.errors %}
+                    <small style="color: #fca5a5;">{{ form.original_price.errors.0 }}</small>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Offer Price (₹) <span style="color: var(--accent-rose);">*</span></label>
+                    {{ form.price }}
+                    {% if form.price.errors %}
+                    <small style="color: #fca5a5;">{{ form.price.errors.0 }}</small>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="form-grid-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                <div class="form-group">
+                    <label class="form-label">Max Competitions Allowed</label>
+                    {{ form.max_competitions }}
+                    {% if form.max_competitions.errors %}
+                    <small style="color: #fca5a5;">{{ form.max_competitions.errors.0 }}</small>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Max Total Contestants Limit</label>
+                    {{ form.max_contestants }}
+                    {% if form.max_contestants.errors %}
+                    <small style="color: #fca5a5;">{{ form.max_contestants.errors.0 }}</small>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">English Description / Key Features</label>
+                {{ form.description }}
+                {% if form.description.errors %}
+                <small style="color: #fca5a5;">{{ form.description.errors.0 }}</small>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Malayalam Description / Features (Optional)</label>
+                {{ form.description_ml }}
+                {% if form.description_ml.errors %}
+                <small style="color: #fca5a5;">{{ form.description_ml.errors.0 }}</small>
+                {% endif %}
+            </div>
+
+            <div class="form-group" style="display: flex; align-items: center; gap: 10px; background: rgba(255, 255, 255, 0.04); padding: 12px; border-radius: 8px;">
+                {{ form.is_active }}
+                <label for="{{ form.is_active.id_for_label }}" style="font-weight: 600; cursor: pointer; margin: 0;">
+                    Active Plan (Visible on Landing Page & Registration Forms)
+                </label>
+            </div>
+
+            <div style="display: flex; gap: 12px; margin-top: 24px;">
+                <button type="submit" class="btn-primary" style="flex: 1; justify-content: center; padding: 12px; font-size: 1rem;">
+                    <i class="fa-solid fa-floppy-disk"></i> Save Subscription Plan
+                </button>
+                <a href="{% url 'tenants:developer_dashboard' %}" class="btn-secondary" style="padding: 12px 20px; font-size: 1rem; text-decoration: none;">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

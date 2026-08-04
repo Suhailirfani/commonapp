@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from .models import SubscriptionPlan, SubscriptionApplication, Institution, InstitutionSubscription
+from .forms import SubscriptionPlanForm
 from apps.users.models import User
 
 def landing_page_view(request):
@@ -94,9 +95,11 @@ def developer_dashboard_view(request):
 
     pending_apps = SubscriptionApplication.objects.filter(status__in=['PENDING', 'DRAFT']).order_by('-submitted_at')
     institutions = Institution.objects.all().order_by('-created_at')
+    plans = SubscriptionPlan.objects.all().order_by('-id')
     return render(request, 'tenants/developer_dashboard.html', {
         'pending_apps': pending_apps,
-        'institutions': institutions
+        'institutions': institutions,
+        'plans': plans
     })
 
 
@@ -166,4 +169,73 @@ def reject_application_view(request, app_id):
     app_req.save()
 
     messages.info(request, f"Application for '{app_req.institution_name}' has been rejected.")
+    return redirect('tenants:developer_dashboard')
+
+
+# Subscription Plan Developer Actions
+
+@login_required
+def plan_create_view(request):
+    if not request.user.is_developer:
+        messages.error(request, "Access Denied: Developer clearance required.")
+        return redirect('landing_page')
+
+    if request.method == 'POST':
+        form = SubscriptionPlanForm(request.POST)
+        if form.is_valid():
+            plan = form.save()
+            messages.success(request, f"Subscription plan '{plan.name}' created successfully!")
+            return redirect('tenants:developer_dashboard')
+    else:
+        form = SubscriptionPlanForm()
+
+    return render(request, 'tenants/plan_form.html', {'form': form, 'title': 'Create New Subscription Plan'})
+
+
+@login_required
+def plan_edit_view(request, plan_id):
+    if not request.user.is_developer:
+        messages.error(request, "Access Denied: Developer clearance required.")
+        return redirect('landing_page')
+
+    plan = get_object_or_404(SubscriptionPlan, id=plan_id)
+    if request.method == 'POST':
+        form = SubscriptionPlanForm(request.POST, instance=plan)
+        if form.is_valid():
+            plan = form.save()
+            messages.success(request, f"Subscription plan '{plan.name}' updated successfully!")
+            return redirect('tenants:developer_dashboard')
+    else:
+        form = SubscriptionPlanForm(instance=plan)
+
+    return render(request, 'tenants/plan_form.html', {'form': form, 'title': f'Edit Plan - {plan.name}', 'plan': plan})
+
+
+@login_required
+def plan_toggle_status_view(request, plan_id):
+    if not request.user.is_developer:
+        messages.error(request, "Access Denied.")
+        return redirect('landing_page')
+
+    plan = get_object_or_404(SubscriptionPlan, id=plan_id)
+    plan.is_active = not plan.is_active
+    plan.save()
+    status_str = "activated" if plan.is_active else "deactivated"
+    messages.success(request, f"Subscription plan '{plan.name}' has been {status_str}.")
+    return redirect('tenants:developer_dashboard')
+
+
+@login_required
+def plan_delete_view(request, plan_id):
+    if not request.user.is_developer:
+        messages.error(request, "Access Denied.")
+        return redirect('landing_page')
+
+    plan = get_object_or_404(SubscriptionPlan, id=plan_id)
+    if plan.subscriptions.exists():
+        messages.error(request, f"Cannot delete plan '{plan.name}' because active institutions are currently subscribed to it. Deactivate it instead.")
+    else:
+        plan_name = plan.name
+        plan.delete()
+        messages.success(request, f"Subscription plan '{plan_name}' deleted successfully.")
     return redirect('tenants:developer_dashboard')
