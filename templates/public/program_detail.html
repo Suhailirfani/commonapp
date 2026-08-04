@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ program.name }} Results - {{ institution.name }}{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 24px;">
+    <a href="{% url 'public:home' institution.slug %}" style="color: var(--text-muted); text-decoration: none;"><i class="fa-solid fa-arrow-left"></i> Back to Public Portal</a>
+    <div style="display: flex; align-items: center; gap: 12px; margin-top: 12px;">
+        <span class="badge badge-approved" style="font-size: 0.85rem;">{{ program.category.name }}</span>
+        <span class="badge badge-pending">{% if program.is_group %}Group Event{% else %}Single Event{% endif %}</span>
+    </div>
+    <h1 style="font-size: 2.4rem; font-weight: 800; margin-top: 8px;">🏆 {{ program.name }} - Official Results</h1>
+    <p style="color: var(--text-muted); font-size: 0.95rem;">Published: {{ program.announced_at|date:"d M Y, h:i A" }}</p>
+</div>
+
+<div class="glass-card">
+    <div class="table-responsive">
+        <table class="custom-table">
+        <thead>
+            <tr>
+                <th>Rank</th>
+                {% if program.is_group %}
+                <th>Group / Team Name</th>
+                {% else %}
+                <th>Chest No</th>
+                <th>Contestant Name</th>
+                <th>Team</th>
+                {% endif %}
+                <th>Code Letter</th>
+                <th>Grade</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for p in participations %}
+            <tr {% if p.rank == 1 %}style="background: rgba(245, 158, 11, 0.08);"{% elif p.rank == 2 %}style="background: rgba(148, 163, 184, 0.08);"{% elif p.rank == 3 %}style="background: rgba(180, 83, 9, 0.08);"{% endif %}>
+                <td>
+                    {% if p.rank == 1 %}
+                    <span class="badge badge-pending" style="background: #f59e0b; color: #000; font-size: 0.9rem;"><i class="fa-solid fa-trophy"></i> 1st Rank</span>
+                    {% elif p.rank == 2 %}
+                    <span class="badge badge-approved" style="background: #94a3b8; color: #000; font-size: 0.9rem;"><i class="fa-solid fa-medal"></i> 2nd Rank</span>
+                    {% elif p.rank == 3 %}
+                    <span class="badge badge-approved" style="background: #d97706; color: #fff; font-size: 0.9rem;"><i class="fa-solid fa-award"></i> 3rd Rank</span>
+                    {% elif p.rank %}
+                    <span class="badge badge-approved">Rank {{ p.rank }}</span>
+                    {% else %}
+                    <span style="color: var(--text-muted);">-</span>
+                    {% endif %}
+                </td>
+                {% if program.is_group %}
+                <td><strong>{{ p.group_name|default:p.team.name }}</strong></td>
+                {% else %}
+                <td>
+                    <a href="{% url 'public:contestant_detail' institution.slug p.contestant.chest_no %}" style="color: var(--accent-cyan); text-decoration: none; font-weight: 700;">
+                        #{{ p.contestant.chest_no }}
+                    </a>
+                </td>
+                <td><strong>{{ p.contestant.name }}</strong></td>
+                <td><span class="badge badge-approved">{{ p.contestant.team.name }}</span></td>
+                {% endif %}
+                <td><code>{{ p.code_letter|default:"-" }}</code></td>
+                <td>
+                    {% if p.grade %}
+                    <span class="badge badge-approved" style="font-weight: 800;">{{ p.grade }} Grade</span>
+                    {% else %}
+                    <span style="color: var(--text-muted);">-</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 30px;">
+                    No participation records found.
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</div>
+{% endblock %}

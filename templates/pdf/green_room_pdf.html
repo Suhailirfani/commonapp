@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Green Room Sign Sheet - {{ program.name }}</title>
+    <style>
+        @page {
+            size: A4 portrait;
+            margin: 0.8cm;
+        }
+        body {
+            font-family: Helvetica, Arial, sans-serif;
+            font-size: 9pt;
+            line-height: 1.2;
+            color: #1e293b;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+        }
+        .header h1 {
+            margin: 0;
+            color: #15803d;
+            font-size: 16pt;
+            font-weight: bold;
+        }
+        .header .program-name {
+            color: #0f172a;
+            font-size: 12pt;
+            margin: 3px 0;
+            font-weight: bold;
+        }
+        .header .subtitle {
+            color: #475569;
+            font-size: 9pt;
+        }
+        .info-section {
+            background-color: #f8fafc;
+            padding: 8px 10px;
+            margin-bottom: 12px;
+            border-left: 4px solid #15803d;
+            font-size: 8.5pt;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 8px;
+        }
+        th {
+            background-color: #f1f5f9;
+            color: #0f172a;
+            font-size: 8.5pt;
+            font-weight: bold;
+            padding: 5px;
+            text-align: center;
+            border: 1px solid #334155;
+        }
+        td {
+            border: 1px solid #334155;
+            padding: 4px 5px;
+            font-size: 8.5pt;
+        }
+        .row-number {
+            width: 8%;
+            text-align: center;
+            background-color: #f8fafc;
+            font-weight: bold;
+        }
+        .chest-no {
+            width: 15%;
+            font-weight: bold;
+            text-align: center;
+        }
+        .participant-name {
+            width: 37%;
+            font-weight: bold;
+        }
+        .code-letter {
+            width: 15%;
+            text-align: center;
+            background-color: #f8fafc;
+        }
+        .signature {
+            width: 25%;
+            text-align: center;
+            height: 25px;
+        }
+        .footer {
+            margin-top: 15px;
+            text-align: center;
+            font-size: 8pt;
+            color: #64748b;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>GREEN ROOM SIGN SHEET</h1>
+        <div class="program-name">{{ program.name|upper }}</div>
+        <div class="subtitle">
+            Category: {{ program.category.name }} | Institution: {{ institution.name }}
+        </div>
+    </div>
+    
+    <div class="info-section">
+        Program: <strong>{{ program.name|upper }}</strong> | 
+        Category: <strong>{{ program.category.name }}</strong> | 
+        Total Participants: <strong>{{ participants.count }}</strong> | 
+        Date: <strong>{% now "F d, Y" %}</strong>
+    </div>
+
+    {% if participants %}
+        <table>
+            <thead>
+                <tr>
+                    <th class="row-number">S.No</th>
+                    <th class="chest-no">Chest No</th>
+                    <th class="participant-name">Participant Name</th>
+                    <th class="code-letter">Code Letter</th>
+                    <th class="signature">Signature</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for participant in participants %}
+                    <tr>
+                        <td class="row-number">{{ forloop.counter }}</td>
+                        <td class="chest-no">{% if program.is_group %}-{% else %}{{ participant.chest_no }}{% endif %}</td>
+                        <td class="participant-name">{% if program.is_group %}{{ participant.team.name }}{% else %}{{ participant.name|upper }}{% endif %}</td>
+                        <td class="code-letter"></td>
+                        <td class="signature"></td>
+                    </tr>
+                {% endfor %}
+                
+                <!-- Blank rows for extra entries -->
+                {% for i in "12345" %}
+                    <tr>
+                        <td class="row-number">{{ participants.count|add:forloop.counter }}</td>
+                        <td class="chest-no"></td>
+                        <td class="participant-name"></td>
+                        <td class="code-letter"></td>
+                        <td class="signature"></td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div style="margin-top: 15px; font-size: 8.5pt;">
+            Time Started: __________ AM/PM &nbsp;&nbsp;&nbsp;&nbsp; Time Completed: __________ AM/PM
+        </div>
+    {% else %}
+        <div class="info-section">
+            <strong>No participants registered for this program yet.</strong>
+        </div>
+    {% endif %}
+    
+    <div class="footer">
+        <p>Generated on {% now 'F d, Y H:i A' %} &nbsp; | &nbsp; {{ program.name }} Green Room Sign Sheet</p>
+    </div>
+</body>
+</html>

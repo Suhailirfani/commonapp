@@ -1,0 +1,175 @@
+{% extends 'base.html' %}
+
+{% block title %}Mark Entry - {{ institution.name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <a href="{% url 'core:dashboard' institution.slug %}" style="color: var(--text-muted); text-decoration: none;"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</a>
+        <h2 style="font-size: 1.8rem; font-weight: 800; margin-top: 4px;"><i class="fa-solid fa-pen-to-square" style="color: var(--accent-cyan);"></i> Mark Entry</h2>
+    </div>
+</div>
+
+<!-- Search & Filter Controls -->
+<div class="glass-card" style="margin-bottom: 20px; padding: 14px 18px;">
+    <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center; justify-content: space-between;">
+        <div style="flex: 1; min-width: 220px;">
+            <input type="text" id="markEntrySearch" placeholder="🔍 Search program name..." class="form-control" onkeyup="filterMarkEntryPrograms()">
+        </div>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap; width: 100%; max-width: 420px;">
+            <select id="categoryFilter" class="form-control" style="flex: 1;" onchange="filterMarkEntryPrograms()">
+                <option value="">All Categories</option>
+                {% for cat in categories %}
+                <option value="{{ cat.name|lower }}">{{ cat.name }}</option>
+                {% endfor %}
+            </select>
+
+            <select id="statusFilter" class="form-control" style="flex: 1;" onchange="filterMarkEntryPrograms()">
+                <option value="">All Statuses</option>
+                <option value="published">Published</option>
+                <option value="draft">Draft / Not Published</option>
+            </select>
+        </div>
+    </div>
+</div>
+
+<!-- DESKTOP TABLE VIEW -->
+<div class="glass-card desktop-table-view">
+    <div class="table-responsive">
+        <table class="custom-table" id="desktopMarkTable">
+            <thead>
+                <tr>
+                    <th>Program / Event</th>
+                    <th>Category</th>
+                    <th>Event Format</th>
+                    <th>Public Result Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in programs %}
+                <tr data-category="{{ p.category.name|lower }}" data-status="{% if p.is_announced %}published{% else %}draft{% endif %}">
+                    <td><strong>{{ p.name }}</strong></td>
+                    <td><span class="badge badge-approved">{{ p.category.name }}</span></td>
+                    <td>{% if p.is_group %}<span class="badge badge-pending">Group Event</span>{% else %}<span class="badge badge-approved">Single Event</span>{% endif %}</td>
+                    <td>
+                        {% if p.is_announced %}
+                        <span class="badge badge-approved"><i class="fa-solid fa-bullhorn"></i> Published Live</span>
+                        {% else %}
+                        <span class="badge badge-pending">Not Published</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                            <a href="{% url 'core:mark_entry_matrix' institution.slug p.id %}" class="btn-primary" style="padding: 8px 16px;">
+                                <i class="fa-solid fa-keyboard"></i> Open Matrix
+                            </a>
+                            {% if not p.is_announced %}
+                            <a href="{% url 'core:announce_results' institution.slug p.id %}" class="btn-success" onclick="return confirm('Publish results for {{ p.name }} live?');" style="padding: 8px 14px;">
+                                <i class="fa-solid fa-share"></i> Publish
+                            </a>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 30px;">
+                        No programs created yet.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- MOBILE CARD LIST VIEW -->
+<div class="mobile-card-list-view" id="mobileMarkCards">
+    {% for p in programs %}
+    <div class="glass-card mark-program-card" data-category="{{ p.category.name|lower }}" data-status="{% if p.is_announced %}published{% else %}draft{% endif %}" style="margin-bottom: 12px; padding: 14px; border-radius: 14px; border: 1px solid var(--border-color);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 8px;">
+            <div>
+                <strong style="font-size: 1.05rem; display: block; color: var(--text-main);">{{ p.name }}</strong>
+                <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px;">
+                    <span class="badge badge-approved" style="font-size: 0.75rem;">{{ p.category.name }}</span>
+                    {% if p.is_group %}
+                    <span class="badge badge-pending" style="font-size: 0.75rem;">Group</span>
+                    {% else %}
+                    <span class="badge badge-approved" style="font-size: 0.75rem;">Single</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div>
+                {% if p.is_announced %}
+                <span class="badge badge-approved" style="font-size: 0.75rem;"><i class="fa-solid fa-check"></i> Published</span>
+                {% else %}
+                <span class="badge badge-pending" style="font-size: 0.75rem;">Draft</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; border-top: 1px solid var(--border-color); padding-top: 10px;">
+            <a href="{% url 'core:mark_entry_matrix' institution.slug p.id %}" class="btn-primary" style="flex: 1; justify-content: center; padding: 8px 12px; font-size: 0.85rem;">
+                <i class="fa-solid fa-keyboard"></i> Open Matrix
+            </a>
+            {% if not p.is_announced %}
+            <a href="{% url 'core:announce_results' institution.slug p.id %}" class="btn-success" onclick="return confirm('Publish results for {{ p.name }} live?');" style="padding: 8px 12px; font-size: 0.85rem;">
+                <i class="fa-solid fa-share"></i> Publish
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    {% empty %}
+    <div class="glass-card" style="text-align: center; color: var(--text-muted); padding: 30px;">
+        No programs created yet.
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function filterMarkEntryPrograms() {
+    var search = document.getElementById('markEntrySearch').value.toLowerCase();
+    var cat = document.getElementById('categoryFilter').value.toLowerCase();
+    var status = document.getElementById('statusFilter').value.toLowerCase();
+
+    // Filter Desktop Rows
+    var desktopRows = document.querySelectorAll('#desktopMarkTable tbody tr');
+    desktopRows.forEach(function(row) {
+        var text = row.innerText.toLowerCase();
+        var rowCat = row.dataset.category || '';
+        var rowStatus = row.dataset.status || '';
+
+        var matchesSearch = text.indexOf(search) > -1;
+        var matchesCat = !cat || rowCat === cat;
+        var matchesStatus = !status || rowStatus === status;
+
+        if (matchesSearch && matchesCat && matchesStatus) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+
+    // Filter Mobile Cards
+    var mobileCards = document.querySelectorAll('#mobileMarkCards .mark-program-card');
+    mobileCards.forEach(function(card) {
+        var text = card.innerText.toLowerCase();
+        var cardCat = card.dataset.category || '';
+        var cardStatus = card.dataset.status || '';
+
+        var matchesSearch = text.indexOf(search) > -1;
+        var matchesCat = !cat || cardCat === cat;
+        var matchesStatus = !status || cardStatus === status;
+
+        if (matchesSearch && matchesCat && matchesStatus) {
+            card.style.display = '';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+}
+</script>
+{% endblock %}

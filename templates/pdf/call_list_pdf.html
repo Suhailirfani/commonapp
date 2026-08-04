@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Call List - {{ program.name }}</title>
+    <style>
+        @page {
+            size: A4 portrait;
+            margin: 0.8cm;
+        }
+        body {
+            font-family: Helvetica, Arial, sans-serif;
+            font-size: 9pt;
+            line-height: 1.2;
+            color: #1e293b;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+        }
+        .header h1 {
+            margin: 0;
+            color: #0369a1;
+            font-size: 16pt;
+            font-weight: bold;
+        }
+        .header .program-name {
+            color: #0f172a;
+            font-size: 12pt;
+            margin: 3px 0;
+            font-weight: bold;
+        }
+        .header .subtitle {
+            color: #475569;
+            font-size: 9pt;
+        }
+        .info-section {
+            background-color: #f8fafc;
+            padding: 8px 10px;
+            margin-bottom: 12px;
+            border-left: 4px solid #0369a1;
+            font-size: 8.5pt;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 8px;
+        }
+        th {
+            background-color: #0369a1;
+            color: white;
+            font-size: 8.5pt;
+            font-weight: bold;
+            padding: 5px;
+            text-align: center;
+            border: 1px solid #0369a1;
+        }
+        td {
+            border: 1px solid #cbd5e1;
+            padding: 4px 5px;
+            font-size: 8.5pt;
+        }
+        .call-number {
+            background-color: #f8fafc;
+            text-align: center;
+            font-weight: bold;
+            width: 8%;
+        }
+        .chest-no {
+            font-weight: bold;
+            text-align: center;
+            width: 15%;
+        }
+        .participant-name {
+            font-weight: bold;
+            width: 40%;
+        }
+        .team-name {
+            color: #0369a1;
+            font-weight: bold;
+            width: 22%;
+        }
+        .status {
+            width: 15%;
+            text-align: center;
+        }
+        .footer {
+            margin-top: 15px;
+            text-align: center;
+            font-size: 8pt;
+            color: #64748b;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>PROGRAM CALL LIST</h1>
+        <div class="program-name">{{ program.name|upper }}</div>
+        <div class="subtitle">
+            Category: {{ program.category.name }} | Institution: {{ institution.name }}
+        </div>
+    </div>
+    
+    <div class="info-section">
+        Program: <strong>{{ program.name|upper }}</strong> | 
+        Category: <strong>{{ program.category.name }}</strong> | 
+        Total Participants: <strong>{{ participants.count }}</strong> | 
+        Venue: __________________
+    </div>
+
+    {% if participants %}
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 8%;">Call #</th>
+                    <th style="width: 15%;">Chest No</th>
+                    <th style="width: 40%;">Participant Name</th>
+                    <th style="width: 22%;">Team</th>
+                    <th style="width: 15%;">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for participant in participants %}
+                <tr>
+                    <td class="call-number">{{ forloop.counter }}</td>
+                    <td class="chest-no">{% if program.is_group %}-{% else %}{{ participant.chest_no }}{% endif %}</td>
+                    <td class="participant-name">{% if program.is_group %}{{ participant.team.name }}{% else %}{{ participant.name }}{% endif %}</td>
+                    <td class="team-name">{% if program.is_group %}{{ participant.team.name }}{% else %}{{ participant.team.name }}{% endif %}</td>
+                    <td class="status"></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="info-section">
+            <strong>No participants registered for this program.</strong>
+        </div>
+    {% endif %}
+
+    <div class="footer">
+        Generated on {% now "F d, Y h:i A" %} | Official Call List — {{ program.name }}
+    </div>
+</body>
+</html>

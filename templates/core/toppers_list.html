@@ -1,0 +1,159 @@
+{% extends 'base.html' %}
+
+{% block title %}Toppers & Kala Prathibha Leaderboard - {{ institution.name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <a href="{% url 'core:dashboard' institution.slug %}" style="color: var(--text-muted); text-decoration: none;"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</a>
+        <h2 style="font-size: 1.8rem; font-weight: 800; margin-top: 4px;"><i class="fa-solid fa-crown" style="color: var(--accent-amber);"></i> Toppers & Kala Prathibha</h2>
+    </div>
+    <div>
+        <a href="?view=announced{% if selected_category_id %}&category={{ selected_category_id }}{% endif %}" class="btn-primary" style="{% if view_mode == 'announced' %}background: linear-gradient(135deg, var(--accent-emerald), #059669);{% else %}background: rgba(255,255,255,0.08); box-shadow: none;{% endif %}">
+            <i class="fa-solid fa-bullhorn"></i> Announced Only
+        </a>
+        <a href="?view=all{% if selected_category_id %}&category={{ selected_category_id }}{% endif %}" class="btn-primary" style="{% if view_mode == 'all' %}background: linear-gradient(135deg, #0284c7, #0369a1);{% else %}background: rgba(255,255,255,0.08); box-shadow: none;{% endif %}">
+            <i class="fa-solid fa-eye"></i> Overall Scores
+        </a>
+    </div>
+</div>
+
+<!-- Overall Kala Prathibha Champion Banner -->
+{% if overall_champion %}
+<div class="glass-card" style="margin-bottom: 24px; padding: 20px; background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(15, 23, 42, 0.9)); border: 2px solid #f59e0b;">
+    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+        <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
+            <div style="font-size: 3rem;">👑</div>
+            <div>
+                <span class="badge badge-approved" style="background: #f59e0b; color: #000; font-weight: 800; font-size: 0.78rem;">KALA PRATHIBHA / OVERALL FEST CHAMPION</span>
+                <h2 style="font-size: 1.8rem; font-weight: 900; margin: 4px 0; color: #fff;">#{{ overall_champion.contestant.chest_no }} {{ overall_champion.contestant.name }}</h2>
+                <div style="color: var(--text-muted); font-size: 0.88rem;">
+                    Team: <strong style="color: #fff;">{{ overall_champion.contestant.team.name }}</strong> | Category: <strong style="color: #fff;">{{ overall_champion.contestant.category.name }}</strong>
+                </div>
+            </div>
+        </div>
+        <div>
+            <div style="font-size: 2.5rem; font-weight: 900; color: #fbbf24;">{{ overall_champion.points }} <span style="font-size: 1rem; color: var(--text-muted);">pts</span></div>
+            <div style="font-size: 0.82rem; color: var(--text-muted);">🥇 {{ overall_champion.r1 }} Ranks | 🥈 {{ overall_champion.r2 }} Ranks | 🥉 {{ overall_champion.r3 }} Ranks</div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Category-Wise Champions Section -->
+{% if cat_champions %}
+<div style="margin-bottom: 24px;">
+    <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 14px;"><i class="fa-solid fa-award" style="color: var(--accent-cyan);"></i> Category-Wise Champions</h3>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px;">
+        {% for cat_data in cat_champions %}
+        <div class="glass-card" style="padding: 14px; border: 1px solid var(--border-color);">
+            <span class="badge badge-approved" style="font-size: 0.72rem;">{{ cat_data.category.name }} Champion</span>
+            <h4 style="font-size: 1.1rem; font-weight: 800; margin: 6px 0 2px 0;">#{{ cat_data.champion.contestant.chest_no }} {{ cat_data.champion.contestant.name }}</h4>
+            <div style="font-size: 0.82rem; color: var(--text-muted);">Team: {{ cat_data.champion.contestant.team.name }}</div>
+            <div style="font-size: 1.2rem; font-weight: 800; color: var(--accent-cyan); margin-top: 6px;">{{ cat_data.champion.points }} pts</div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Filter Bar (Stage Type & Category) -->
+<div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px;">
+    <!-- Stage Type Filter Pills -->
+    <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+        <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted); margin-right: 4px;">Event Type:</span>
+        <a href="?view={{ view_mode }}{% if selected_category_id %}&category={{ selected_category_id }}{% endif %}" class="btn-primary" style="padding: 5px 12px; font-size: 0.82rem; {% if not selected_stage_type %}background: var(--accent-amber); color: #000; font-weight: 800;{% else %}background: rgba(255,255,255,0.06); box-shadow: none;{% endif %}">
+            All Events
+        </a>
+        <a href="?view={{ view_mode }}&stage_type=STAGE{% if selected_category_id %}&category={{ selected_category_id }}{% endif %}" class="btn-primary" style="padding: 5px 12px; font-size: 0.82rem; {% if selected_stage_type == 'STAGE' %}background: var(--accent-amber); color: #000; font-weight: 800;{% else %}background: rgba(255,255,255,0.06); box-shadow: none;{% endif %}">
+            🎭 Stage Items
+        </a>
+        <a href="?view={{ view_mode }}&stage_type=OFF_STAGE{% if selected_category_id %}&category={{ selected_category_id }}{% endif %}" class="btn-primary" style="padding: 5px 12px; font-size: 0.82rem; {% if selected_stage_type == 'OFF_STAGE' %}background: var(--accent-amber); color: #000; font-weight: 800;{% else %}background: rgba(255,255,255,0.06); box-shadow: none;{% endif %}">
+            📝 Off-Stage Items
+        </a>
+    </div>
+
+    <!-- Category Filter Pills -->
+    <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+        <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted); margin-right: 4px;">Category:</span>
+        <a href="?view={{ view_mode }}{% if selected_stage_type %}&stage_type={{ selected_stage_type }}{% endif %}" class="btn-primary" style="padding: 5px 12px; font-size: 0.82rem; {% if not selected_category_id %}background: var(--accent-cyan); color: #0f172a; font-weight: 800;{% else %}background: rgba(255,255,255,0.05); box-shadow: none;{% endif %}">
+            All Categories
+        </a>
+        {% for cat in categories %}
+        <a href="?view={{ view_mode }}&category={{ cat.id }}{% if selected_stage_type %}&stage_type={{ selected_stage_type }}{% endif %}" class="btn-primary" style="padding: 5px 12px; font-size: 0.82rem; {% if selected_category_id == cat.id|stringformat:'s' %}background: var(--accent-cyan); color: #0f172a; font-weight: 800;{% else %}background: rgba(255,255,255,0.05); box-shadow: none;{% endif %}">
+            {{ cat.name }}
+        </a>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- DESKTOP TABLE VIEW -->
+<div class="glass-card desktop-table-view">
+    <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 16px;"><i class="fa-solid fa-list-ol"></i> Individual Contestants Leaderboard</h3>
+    <div class="table-responsive">
+        <table class="custom-table">
+            <thead>
+                <tr>
+                    <th style="width: 8%;">Rank</th>
+                    <th style="width: 12%;">Chest No</th>
+                    <th style="width: 30%;">Contestant Name</th>
+                    <th style="width: 20%;">Team</th>
+                    <th style="width: 15%;">Category</th>
+                    <th style="width: 15%;">Total Points</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for tdata in toppers %}
+                <tr style="{% if forloop.first %}background: rgba(245, 158, 11, 0.1);{% endif %}">
+                    <td>
+                        <strong style="font-size: 1rem; color: {% if forloop.first %}#f59e0b{% else %}var(--text-muted){% endif %};">
+                            #{{ forloop.counter }}
+                        </strong>
+                    </td>
+                    <td><strong style="color: var(--accent-cyan);">#{{ tdata.contestant.chest_no }}</strong></td>
+                    <td><strong>{{ tdata.contestant.name }}</strong></td>
+                    <td><span class="badge badge-approved">{{ tdata.contestant.team.name }}</span></td>
+                    <td>{{ tdata.contestant.category.name }}</td>
+                    <td><strong style="font-size: 1.15rem; color: var(--accent-amber);">{{ tdata.points }} pts</strong></td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 30px;">
+                        No individual contestant scores available.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- MOBILE CARD LIST VIEW -->
+<div class="mobile-card-list-view">
+    {% for tdata in toppers %}
+    <div class="glass-card" style="margin-bottom: 10px; padding: 12px; border-radius: 12px; border: 1px solid var(--border-color); {% if forloop.first %}border-color: #f59e0b; background: rgba(245, 158, 11, 0.1);{% endif %}">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span class="badge" style="font-size: 0.9rem; font-weight: 900; padding: 6px 10px; {% if forloop.first %}background: #f59e0b; color: #000;{% else %}background: rgba(255,255,255,0.08); color: var(--text-main);{% endif %}">
+                    #{{ forloop.counter }}
+                </span>
+                <div>
+                    <strong style="font-size: 1.05rem; display: block; color: var(--text-main);">#{{ tdata.contestant.chest_no }} {{ tdata.contestant.name }}</strong>
+                    <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px;">
+                        <span class="badge badge-approved" style="font-size: 0.72rem;">{{ tdata.contestant.team.name }}</span>
+                        <span class="badge badge-approved" style="font-size: 0.72rem;">{{ tdata.contestant.category.name }}</span>
+                    </div>
+                </div>
+            </div>
+            <div style="text-align: right;">
+                <strong style="font-size: 1.2rem; color: var(--accent-amber); display: block;">{{ tdata.points }} pts</strong>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="glass-card" style="text-align: center; color: var(--text-muted); padding: 30px;">
+        No individual contestant scores available.
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Team-Wise Assigned Programs - {{ institution.name }}</title>
+    <style>
+        @page {
+            size: a4 portrait;
+            margin: 0.8cm;
+        }
+        body {
+            font-family: Helvetica, Arial, sans-serif;
+            font-size: 8.5pt;
+            color: #1e293b;
+            line-height: 1.15;
+        }
+        .header {
+            padding-bottom: 4px;
+            margin-bottom: 8px;
+        }
+        .header h1 {
+            font-size: 15pt;
+            margin: 0;
+            color: #0f172a;
+        }
+        .header h3 {
+            font-size: 10pt;
+            margin: 2px 0 0 0;
+            color: #4f46e5;
+        }
+        .meta {
+            font-size: 7.5pt;
+            color: #64748b;
+            margin-top: 2px;
+        }
+        .team-box {
+            margin-top: 10px;
+            margin-bottom: 10px;
+        }
+        .team-header {
+            background-color: #0f172a;
+            color: #ffffff;
+            font-size: 10pt;
+            font-weight: bold;
+            padding: 5px 8px;
+            margin-bottom: 4px;
+        }
+        .category-header {
+            background-color: #e0e7ff;
+            color: #3730a3;
+            font-size: 8.5pt;
+            font-weight: bold;
+            padding: 4px 8px;
+            margin-top: 6px;
+            margin-bottom: 4px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 6px;
+        }
+        th {
+            background-color: #f1f5f9;
+            color: #0f172a;
+            font-size: 8pt;
+            font-weight: bold;
+            padding: 4px 6px;
+            text-align: left;
+            border: 1px solid #cbd5e1;
+        }
+        td {
+            padding: 3px 5px;
+            border: 1px solid #cbd5e1;
+            font-size: 8pt;
+            vertical-align: top;
+        }
+        tr:nth-child(even) {
+            background-color: #f8fafc;
+        }
+        .prog-item {
+            display: inline-block;
+            background-color: #f1f5f9;
+            color: #1e293b;
+            border: 1px solid #cbd5e1;
+            padding: 1px 4px;
+            margin-right: 3px;
+            margin-bottom: 2px;
+            font-size: 7.5pt;
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>GO FEST</h1>
+    <h3>{{ institution.name }} — Assigned Programs (Team-Wise & Category-Wise)</h3>
+    <div class="meta">Generated: {{ generated_at|date:"d M Y, h:i A" }}</div>
+</div>
+
+{% for t_data in team_data %}
+<div class="team-box">
+    <div class="team-header">
+        TEAM: {{ t_data.team.name }}
+    </div>
+
+    {% for cat_name, contestants in t_data.categories.items %}
+    <div class="category-header">
+        Category: {{ cat_name }} ({{ contestants|length }} Contestants)
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 12%;">Chest No</th>
+                <th style="width: 33%;">Contestant Full Name</th>
+                <th style="width: 55%;">Assigned Programs List</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for contestant in contestants %}
+            <tr>
+                <td><strong>#{{ contestant.chest_no }}</strong></td>
+                <td><strong>{{ contestant.name }}</strong></td>
+                <td>
+                    {% for part in contestant.participations.all %}
+                    <span class="prog-item">• {{ part.program.name }} ({{ part.program.get_program_type_display }})</span>
+                    {% empty %}
+                    <span style="color: #94a3b8; font-style: italic;">No programs assigned</span>
+                    {% endfor %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% empty %}
+    <p style="color: #64748b; font-style: italic; padding: 4px 8px;">No contestants registered for this team.</p>
+    {% endfor %}
+</div>
+{% empty %}
+<p style="color: #64748b; text-align: center;">No teams created yet.</p>
+{% endfor %}
+
+</body>
+</html>

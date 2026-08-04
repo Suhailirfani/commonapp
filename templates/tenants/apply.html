@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+
+{% block title %}Subscribe Your Institution - GO FEST | BYTOLA WEBSOLUTIONS{% endblock %}
+
+{% block content %}
+<div style="max-width: 650px; margin: 20px auto;">
+    <div class="glass-card">
+        <!-- Step Progress Indicator -->
+        <div style="display: flex; gap: 8px; margin-bottom: 20px; justify-content: center; font-size: 0.85rem;">
+            <span class="badge badge-approved" style="padding: 6px 16px; font-size: 0.85rem;"><i class="fa-solid fa-circle-1"></i> Step 1: Details & Plan</span>
+            <span class="badge badge-pending" style="padding: 6px 16px; font-size: 0.85rem; opacity: 0.5;"><i class="fa-solid fa-circle-2"></i> Step 2: UPI Payment</span>
+        </div>
+
+        <h2 style="font-size: 1.8rem; font-weight: 700; margin-bottom: 8px;"><i class="fa-solid fa-file-signature"></i> GO FEST Workspace Registration</h2>
+        <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 24px;">Fill out your institution details and admin login credentials. Your details will be saved immediately before proceeding to payment.</p>
+
+        <form method="POST">
+            {% csrf_token %}
+            
+            <h4 style="color: var(--accent-cyan); margin-bottom: 12px; font-size: 1.05rem;"><i class="fa-solid fa-building"></i> 1. Institution Details</h4>
+            <div class="form-group">
+                <label class="form-label">Institution / College Name</label>
+                <input type="text" name="institution_name" class="form-control" placeholder="e.g. Mueeniyya Campus" required id="inst_name" onkeyup="autoSlug()">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Unique Institution Code / Slug (Used in your public portal URL)</label>
+                <input type="text" name="institution_slug" class="form-control" placeholder="e.g. mueeniyya" required id="inst_slug">
+                <small style="color: var(--text-muted);">Your shareable public result link will be: <code>domain.com/public/<span id="slug_preview">mueeniyya</span>/</code></small>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Select Subscription Plan</label>
+                <select name="plan_id" class="form-control" required>
+                    {% for plan in plans %}
+                    <option value="{{ plan.id }}">{{ plan.name }} — Special Offer: ₹{{ plan.price }} (Regular: ₹{{ plan.original_price }}) - Max {{ plan.max_contestants }} Contestants</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-grid-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                <div class="form-group">
+                    <label class="form-label">Contact Person Name</label>
+                    <input type="text" name="contact_name" class="form-control" placeholder="John Doe" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Phone Number</label>
+                    <input type="text" name="phone" class="form-control" placeholder="+91 9876543210" required>
+                </div>
+            </div>
+
+            <h4 style="color: var(--accent-cyan); margin: 20px 0 12px 0; font-size: 1.05rem;"><i class="fa-solid fa-sliders"></i> 2. Additional Requirements & Custom Feature Needs</h4>
+            <div class="form-group">
+                <label class="form-label">Describe any custom features, extra capacity, or special fest workflows required (Optional)</label>
+                <textarea name="additional_requirements" class="form-control" rows="3" placeholder="e.g. Need custom college logo on certificates, SMS result notifications, or extra stage ticker screens..."></textarea>
+                <small style="color: var(--text-muted); display: block; margin-top: 6px;">
+                    <i class="fa-solid fa-circle-info" style="color: var(--accent-cyan);"></i> Note: Additional custom feature requests are evaluated and <strong>charged as per work required</strong> during developer review.
+                </small>
+            </div>
+
+            <h4 style="color: var(--accent-cyan); margin: 25px 0 12px 0; font-size: 1.05rem;"><i class="fa-solid fa-user-shield"></i> 3. Administrator Login Credentials</h4>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 12px;">You will use these credentials to log into your workspace dashboard after approval.</p>
+
+            <div class="form-group">
+                <label class="form-label">Admin Username</label>
+                <input type="text" name="username" class="form-control" placeholder="admin_mueeniyya" required>
+            </div>
+
+            <div class="form-grid-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                <div class="form-group">
+                    <label class="form-label">Admin Email</label>
+                    <input type="email" name="email" class="form-control" placeholder="admin@mueeniyya.edu" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Admin Password</label>
+                    <input type="password" name="password" class="form-control" placeholder="••••••••" required>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; font-size: 1.1rem; padding: 14px; margin-top: 16px; background: linear-gradient(135deg, var(--accent-indigo), var(--accent-cyan));">
+                Save Details & Continue to Payment <i class="fa-solid fa-arrow-right" style="margin-left: 8px;"></i>
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function autoSlug() {
+    let name = document.getElementById('inst_name').value;
+    let slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+    document.getElementById('inst_slug').value = slug;
+    document.getElementById('slug_preview').innerText = slug || 'mueeniyya';
+}
+
+function copyUpiId() {
+    const upiId = document.getElementById('upi_id_text').innerText;
+    navigator.clipboard.writeText(upiId).then(() => {
+        const btnText = document.getElementById('copy_btn_text');
+        btnText.innerText = 'Copied!';
+        setTimeout(() => { btnText.innerText = 'Copy UPI ID'; }, 2000);
+    }).catch(err => {
+        alert('UPI ID copied: ' + upiId);
+    });
+}
+</script>
+{% endblock %}

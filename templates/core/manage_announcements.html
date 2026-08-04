@@ -1,0 +1,187 @@
+{% extends 'base.html' %}
+
+{% block title %}Manage Results Announcements - {{ institution.name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <a href="{% url 'core:dashboard' institution.slug %}" style="color: var(--text-muted); text-decoration: none;"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</a>
+        <h2 style="font-size: 1.8rem; font-weight: 800; margin-top: 4px;"><i class="fa-solid fa-bullhorn" style="color: var(--accent-emerald);"></i> Public Announce Control Hub</h2>
+    </div>
+    <div>
+        <a href="{% url 'core:announcement_balancer' institution.slug %}" class="btn-primary" style="background: linear-gradient(135deg, #7c3aed, #4c1d95);">
+            <i class="fa-solid fa-wand-magic-sparkles"></i> Score Balancer AI
+        </a>
+        <a href="{% url 'core:program_results' institution.slug %}" class="btn-primary">
+            <i class="fa-solid fa-trophy"></i> View Live Results
+        </a>
+    </div>
+</div>
+
+<!-- Progress Summary Card -->
+<div class="glass-card" style="margin-bottom: 24px; padding: 20px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+        <div>
+            <h3 style="font-size: 1.2rem; font-weight: 700; margin: 0;">Public Announcement Status</h3>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin: 4px 0 0 0;">
+                Control which completed program results are visible on the public website & live leaderboards.
+            </p>
+        </div>
+        <div>
+            <span class="badge badge-approved" style="font-size: 1.1rem; padding: 10px 18px; background: linear-gradient(135deg, var(--accent-emerald), #059669);">
+                📢 {{ announced_count }} / {{ total_programs }} Announced
+            </span>
+        </div>
+    </div>
+</div>
+
+<!-- Score Balancer AI Recommendation Banner -->
+{% if suggested_announcements %}
+<div class="glass-card" style="margin-bottom: 24px; padding: 20px; border: 1px solid #7c3aed; background: linear-gradient(135deg, rgba(124, 58, 237, 0.15), rgba(15, 23, 42, 0.8));">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <i class="fa-solid fa-wand-magic-sparkles" style="font-size: 1.5rem; color: #a78bfa;"></i>
+            <div>
+                <strong style="font-size: 1.05rem; color: #fff;">Score Balancer AI Recommended Next Announcements</strong>
+                <p style="color: #c4b5fd; font-size: 0.82rem; margin: 2px 0 0 0;">Announcing these completed programs will maximize leaderboard suspense and balance team scores!</p>
+            </div>
+        </div>
+        <a href="{% url 'core:announcement_balancer' institution.slug %}" class="btn-primary" style="padding: 6px 14px; font-size: 0.82rem; background: #7c3aed;">
+            View Full AI Analysis
+        </a>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px;">
+        {% for item in suggested_announcements %}
+        <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(167, 139, 250, 0.3); border-radius: 8px; padding: 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <div>
+                <span class="badge badge-approved" style="font-size: 0.7rem; background: rgba(167, 139, 250, 0.2); color: #c4b5fd;">{{ item.program.category.name }}</span>
+                <h4 style="font-size: 0.95rem; font-weight: 700; margin: 4px 0 2px 0;">{{ item.program.name }}</h4>
+                <div style="font-size: 0.78rem; color: #a78bfa;">Impact: {{ item.impact_summary }}</div>
+            </div>
+            <a href="{% url 'core:toggle_program_announcement' institution.slug item.program.id %}" class="btn-primary" style="padding: 6px 12px; font-size: 0.8rem; background: linear-gradient(135deg, var(--accent-emerald), #059669);">
+                <i class="fa-solid fa-bullhorn"></i> Announce
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- DESKTOP TABLE VIEW -->
+<div class="glass-card desktop-table-view">
+    <div class="table-responsive">
+        <table class="custom-table">
+            <thead>
+                <tr>
+                    <th>Program Name</th>
+                    <th>Category</th>
+                    <th>Format</th>
+                    <th>Marked Entries</th>
+                    <th>Public Status</th>
+                    <th style="width: 160px;">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for prog in programs %}
+                <tr>
+                    <td><strong>{{ prog.name }}</strong></td>
+                    <td><span class="badge badge-approved">{{ prog.category.name }}</span></td>
+                    <td>
+                        {% if prog.is_group %}
+                        <span class="badge badge-pending">Group Event</span>
+                        {% else %}
+                        <span class="badge badge-approved">Single Event</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if prog.marked_count > 0 %}
+                        <span class="badge badge-approved" style="background: rgba(16, 185, 129, 0.2); color: var(--accent-emerald);"><i class="fa-solid fa-check"></i> {{ prog.marked_count }} Entries</span>
+                        {% else %}
+                        <span style="color: var(--text-muted); font-size: 0.85rem;">No Marks Yet</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if prog.is_announced %}
+                        <span class="badge badge-approved" style="background: rgba(16, 185, 129, 0.2); color: var(--accent-emerald);"><i class="fa-solid fa-bullhorn"></i> 📢 ANNOUNCED</span>
+                        {% else %}
+                        <span class="badge badge-pending" style="background: rgba(245, 158, 11, 0.2); color: var(--accent-amber);"><i class="fa-solid fa-lock"></i> 🔒 HIDDEN DRAFT</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if prog.is_announced %}
+                        <a href="{% url 'core:toggle_program_announcement' institution.slug prog.id %}" class="btn-primary" style="padding: 6px 12px; font-size: 0.8rem; background: rgba(225, 29, 72, 0.2); border: 1px solid #e11d48; color: #f43f5e;">
+                            <i class="fa-solid fa-eye-slash"></i> Hide Results
+                        </a>
+                        {% else %}
+                        <a href="{% url 'core:toggle_program_announcement' institution.slug prog.id %}" class="btn-primary" style="padding: 6px 12px; font-size: 0.8rem; background: linear-gradient(135deg, var(--accent-emerald), #059669);">
+                            <i class="fa-solid fa-bullhorn"></i> Announce
+                        </a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 30px;">
+                        No programs created.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- MOBILE CARD LIST VIEW -->
+<div class="mobile-card-list-view">
+    {% for prog in programs %}
+    <div class="glass-card" style="margin-bottom: 12px; padding: 14px; border-radius: 14px; border: 1px solid var(--border-color);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 8px;">
+            <div>
+                <strong style="font-size: 1.05rem; display: block; color: var(--text-main);">{{ prog.name }}</strong>
+                <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px;">
+                    <span class="badge badge-approved" style="font-size: 0.75rem;">{{ prog.category.name }}</span>
+                    {% if prog.is_group %}
+                    <span class="badge badge-pending" style="font-size: 0.75rem;">Group</span>
+                    {% else %}
+                    <span class="badge badge-approved" style="font-size: 0.75rem;">Single</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div>
+                {% if prog.is_announced %}
+                <span class="badge badge-approved" style="font-size: 0.75rem; background: rgba(16, 185, 129, 0.2); color: var(--accent-emerald);"><i class="fa-solid fa-bullhorn"></i> ANNOUNCED</span>
+                {% else %}
+                <span class="badge badge-pending" style="font-size: 0.75rem; background: rgba(245, 158, 11, 0.2); color: var(--accent-amber);"><i class="fa-solid fa-lock"></i> DRAFT</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px; border-top: 1px solid var(--border-color); padding-top: 10px; flex-wrap: wrap; gap: 8px;">
+            <div>
+                {% if prog.marked_count > 0 %}
+                <span class="badge badge-approved" style="font-size: 0.75rem; background: rgba(16, 185, 129, 0.2); color: var(--accent-emerald);"><i class="fa-solid fa-check"></i> {{ prog.marked_count }} Entries</span>
+                {% else %}
+                <span style="color: var(--text-muted); font-size: 0.8rem;">No Marks Yet</span>
+                {% endif %}
+            </div>
+            <div>
+                {% if prog.is_announced %}
+                <a href="{% url 'core:toggle_program_announcement' institution.slug prog.id %}" class="btn-primary" style="padding: 6px 12px; font-size: 0.8rem; background: rgba(225, 29, 72, 0.2); border: 1px solid #e11d48; color: #f43f5e;">
+                    <i class="fa-solid fa-eye-slash"></i> Hide Results
+                </a>
+                {% else %}
+                <a href="{% url 'core:toggle_program_announcement' institution.slug prog.id %}" class="btn-primary" style="padding: 6px 12px; font-size: 0.8rem; background: linear-gradient(135deg, var(--accent-emerald), #059669);">
+                    <i class="fa-solid fa-bullhorn"></i> Announce
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="glass-card" style="text-align: center; color: var(--text-muted); padding: 30px;">
+        No programs created.
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

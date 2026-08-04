@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Team Detailed Point Breakdown - {{ team.name }}</title>
+    <style>
+        @page {
+            size: a4 portrait;
+            margin: 0.8cm;
+        }
+        body {
+            font-family: Helvetica, Arial, sans-serif;
+            font-size: 8.5pt;
+            color: #1e293b;
+            line-height: 1.15;
+        }
+        .header {
+            border-bottom: 2px solid #06b6d4;
+            padding-bottom: 6px;
+            margin-bottom: 12px;
+        }
+        .header h1 {
+            font-size: 16pt;
+            margin: 0;
+            color: #0f172a;
+        }
+        .header h3 {
+            font-size: 11pt;
+            margin: 2px 0 0 0;
+            color: #0284c7;
+        }
+        .meta {
+            font-size: 7.5pt;
+            color: #64748b;
+            margin-top: 3px;
+        }
+        .summary-box {
+            background-color: #0f172a;
+            color: #ffffff;
+            padding: 8px 12px;
+            margin-bottom: 12px;
+            border-radius: 4px;
+        }
+        .summary-title {
+            font-size: 12pt;
+            font-weight: bold;
+            color: #38bdf8;
+        }
+        .summary-pts {
+            font-size: 14pt;
+            font-weight: bold;
+            color: #fbbf24;
+            float: right;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 6px;
+        }
+        th {
+            background-color: #f1f5f9;
+            color: #0f172a;
+            font-size: 8pt;
+            font-weight: bold;
+            padding: 5px 6px;
+            text-align: left;
+            border: 1px solid #cbd5e1;
+        }
+        td {
+            padding: 4px 6px;
+            border: 1px solid #cbd5e1;
+            font-size: 8pt;
+        }
+        tr:nth-child(even) {
+            background-color: #f8fafc;
+        }
+        .rank-badge {
+            font-weight: bold;
+            color: #b45309;
+        }
+        .pts-text {
+            font-weight: bold;
+            color: #0369a1;
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>GO FEST</h1>
+    <h3>{{ institution.name }} — Team Detailed Point Breakdown</h3>
+    <div class="meta">Generated: {{ generated_at|date:"d M Y, h:i A" }}</div>
+</div>
+
+<div class="summary-box">
+    <span class="summary-pts">{{ total_announced_points }} Pts</span>
+    <span class="summary-title">{{ team.name }}</span> (Rank #{{ team_position|default:"-" }})
+    <div style="font-size: 8pt; color: #94a3b8; margin-top: 2px;">
+        Leader: {{ team.user.username|default:"Assigned Manager" }} | Code: {{ team.code_letter|default:"-" }}
+    </div>
+</div>
+
+<table>
+    <thead>
+        <tr>
+            <th style="width: 12%;">Chest No</th>
+            <th style="width: 24%;">Contestant</th>
+            <th style="width: 15%;">Category</th>
+            <th style="width: 15%;">Team</th>
+            <th style="width: 20%;">Item / Program</th>
+            <th style="width: 8%;">Rank</th>
+            <th style="width: 8%;">Grade</th>
+            <th style="width: 8%;">Point</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for row in detailed_rows %}
+        <tr>
+            <td><strong>{{ row.chest_no }}</strong></td>
+            <td><strong>{{ row.contestant_name }}</strong></td>
+            <td>{{ row.category_name }}</td>
+            <td>{{ row.team_name }}</td>
+            <td>{{ row.item_name }}{% if row.is_group %} (Group){% endif %}</td>
+            <td class="rank-badge">
+                {% if row.rank == 1 %}1st Rank{% elif row.rank == 2 %}2nd Rank{% elif row.rank == 3 %}3rd Rank{% else %}-{% endif %}
+            </td>
+            <td>{{ row.grade|default:"-" }}</td>
+            <td class="pts-text">+{{ row.points }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="8" style="text-align: center; color: #64748b; padding: 12px;">No announced points recorded for {{ team.name }} yet.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+</body>
+</html>

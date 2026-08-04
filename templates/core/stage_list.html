@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Stages & Venues - {{ institution.name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <a href="{% url 'core:settings' institution.slug %}" style="color: var(--text-muted); text-decoration: none;"><i class="fa-solid fa-arrow-left"></i> Back to Settings</a>
+        <h2 style="font-size: 1.8rem; font-weight: 800; margin-top: 4px;"><i class="fa-solid fa-location-dot" style="color: var(--accent-indigo);"></i> Stages & Venues Setup</h2>
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;" class="form-grid-2">
+
+    <!-- Add New Stage Form -->
+    <div class="glass-card">
+        <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 16px;"><i class="fa-solid fa-plus"></i> Add New Stage / Venue</h3>
+        <form method="POST">
+            {% csrf_token %}
+            <div class="form-group">
+                <label class="form-label">Stage / Venue Name</label>
+                <input type="text" name="name" class="form-control" placeholder="e.g. Main Auditorium (Stage 1)" required>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Venue Type</label>
+                <select name="stage_type" class="form-control" required>
+                    <option value="STAGE">Stage Venue</option>
+                    <option value="OFF_STAGE">Off-Stage Venue / Hall</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Location / Details</label>
+                <input type="text" name="location_details" class="form-control" placeholder="e.g. Ground Floor, Block A">
+            </div>
+
+            <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; margin-top: 10px;">
+                <i class="fa-solid fa-floppy-disk"></i> Save Stage
+            </button>
+        </form>
+    </div>
+
+    <!-- Existing Stages List -->
+    <div class="glass-card">
+        <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 16px;"><i class="fa-solid fa-layer-group"></i> Configured Venues</h3>
+        <div class="table-responsive">
+            <table class="custom-table">
+                <thead>
+                    <tr>
+                        <th>Stage Name</th>
+                        <th>Type</th>
+                        <th>Location</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for stage in stages %}
+                    <tr>
+                        <td><strong>{{ stage.name }}</strong></td>
+                        <td>
+                            {% if stage.stage_type == 'STAGE' %}
+                            <span class="badge badge-approved">Stage Venue</span>
+                            {% else %}
+                            <span class="badge badge-pending">Off-Stage</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ stage.location_details|default:"-" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="3" style="text-align: center; color: var(--text-muted); padding: 24px;">
+                            No stages created yet.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,78 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}GO FEST - Competition Management Platform{% endblock %}</title>
+    <link rel="icon" type="image/png" href="{% static 'img/favicon.png' %}">
+    <link rel="stylesheet" href="{% static 'css/main.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <a href="{% url 'landing_page' %}" class="navbar-brand">
+            <img src="{% static 'img/gf_emblem.png' %}" alt="GO FEST Logo" style="height: 36px; width: auto; vertical-align: middle;">
+            <span>GO FEST</span>
+        </a>
+        <button class="nav-toggle" onclick="toggleNav()" aria-label="Toggle navigation menu">
+            <i class="fa-solid fa-bars"></i>
+        </button>
+        <div class="nav-links" id="navLinks">
+            {% if request.user.is_authenticated %}
+                {% if request.user.is_developer %}
+                    <a href="{% url 'tenants:developer_dashboard' %}" class="nav-link"><i class="fa-solid fa-code-commit"></i> Dev Portal</a>
+                {% elif request.user.institution %}
+                    {% if request.user.is_judge %}
+                        <a href="{% url 'core:judge_dashboard' request.user.institution.slug %}" class="nav-link" style="color: var(--accent-amber); font-weight: 700;"><i class="fa-solid fa-gavel"></i> Judge Dashboard</a>
+                        <a href="{% url 'core:scoring_program_list' request.user.institution.slug %}" class="nav-link"><i class="fa-solid fa-list-check"></i> Mark Entry</a>
+                        <a href="{% url 'core:help_guide' request.user.institution.slug %}" class="nav-link" style="color: var(--accent-cyan);"><i class="fa-solid fa-book-open"></i> User Guide</a>
+                    {% else %}
+                        <a href="{% url 'core:dashboard' request.user.institution.slug %}" class="nav-link"><i class="fa-solid fa-gauge"></i> Dashboard</a>
+                        <a href="{% url 'core:help_guide' request.user.institution.slug %}" class="nav-link" style="color: var(--accent-cyan); font-weight: 700;"><i class="fa-solid fa-book-open"></i> User Guide</a>
+                        <a href="{% url 'public:home' request.user.institution.slug %}" target="_blank" class="nav-link"><i class="fa-solid fa-globe"></i> Public Live Result</a>
+                        <a href="{% url 'core:settings' request.user.institution.slug %}" class="nav-link"><i class="fa-solid fa-gear"></i> Settings</a>
+                    {% endif %}
+                {% endif %}
+                <span class="badge badge-approved"><i class="fa-solid fa-user"></i> {{ request.user.username }}</span>
+                <a href="{% url 'users:logout' %}" class="btn-danger"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+            {% else %}
+                <a href="{% url 'landing_page' %}" class="nav-link">Plans & Features</a>
+                <a href="{% url 'tenants:apply' %}" class="btn-primary"><i class="fa-solid fa-paper-plane"></i> Apply / Subscribe</a>
+                <a href="{% url 'users:login' %}" class="nav-link"><i class="fa-solid fa-lock"></i> Login</a>
+            {% endif %}
+        </div>
+    </nav>
+
+    <!-- Flash Alerts -->
+    {% if messages %}
+    <div class="alert-container">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">
+            <i class="fa-solid fa-circle-info"></i> {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Main Content -->
+    <main style="flex: 1; max-width: 1280px; margin: 20px auto; width: 100%; padding: 0 16px;">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2026 <strong>GO FEST</strong> | Developed by <strong>BYTOLA WEBSOLUTIONS</strong> | Support Contact: <a href="tel:9947924613" style="color: var(--accent-cyan); text-decoration: none;">+91 9947924613</a></p>
+    </footer>
+
+    <script>
+    function toggleNav() {
+        var links = document.getElementById('navLinks');
+        links.classList.toggle('active');
+    }
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

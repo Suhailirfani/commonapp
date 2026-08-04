@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+
+{% block title %}Add New Program - {{ institution.name }}{% endblock %}
+
+{% block content %}
+<div style="max-width: 600px; margin: 20px auto;">
+    <div class="glass-card">
+        <a href="{% url 'core:program_list' institution.slug %}" style="color: var(--text-muted); text-decoration: none;"><i class="fa-solid fa-arrow-left"></i> Back to Programs</a>
+        <h2 style="font-size: 1.6rem; font-weight: 700; margin: 12px 0 20px 0;"><i class="fa-solid fa-plus"></i> Add New Program / Event</h2>
+
+        <form method="POST">
+            {% csrf_token %}
+            <div class="form-group">
+                <label class="form-label">Competition</label>
+                <select name="competition_id" class="form-control" required>
+                    {% for comp in competitions %}
+                    <option value="{{ comp.id }}">{{ comp.name }} ({{ comp.get_type_display }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Category</label>
+                <select name="category_id" class="form-control" required>
+                    {% for cat in categories %}
+                    <option value="{{ cat.id }}">{{ cat.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Program Name</label>
+                <input type="text" name="name" class="form-control" placeholder="e.g. Light Music (Male)" required>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                <div class="form-group">
+                    <label class="form-label">Program Type</label>
+                    <select name="program_type" class="form-control">
+                        <option value="STAGE">Stage Program</option>
+                        <option value="OFF_STAGE">Off-Stage Program</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Presentation Mode</label>
+                    <select name="presentation_mode" class="form-control">
+                        <option value="SEQUENTIAL">Sequential (Per Participant)</option>
+                        <option value="SIMULTANEOUS">Simultaneous (All-at-once)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Duration per Participant (minutes)</label>
+                <input type="number" name="duration_per_participant" class="form-control" value="5" required>
+            </div>
+
+            <div class="form-group" style="display: flex; align-items: center; gap: 10px; margin-top: 10px;">
+                <input type="checkbox" name="is_group" id="is_group" style="width: 18px; height: 18px;">
+                <label for="is_group" style="font-weight: 600; cursor: pointer;">This is a Group Program / Group Event</label>
+            </div>
+
+            <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; font-size: 1rem; padding: 12px; margin-top: 16px;">
+                <i class="fa-solid fa-floppy-disk"></i> Save Program
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}

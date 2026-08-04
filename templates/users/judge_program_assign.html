@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+
+{% block title %}Assign Programs to Judge {{ judge_user.username }} - {{ institution.name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <a href="{% url 'users:user_list' institution.slug %}" style="color: var(--text-muted); text-decoration: none;"><i class="fa-solid fa-arrow-left"></i> Back to User List</a>
+        <h2 style="font-size: 1.8rem; font-weight: 800; margin-top: 4px;">
+            <i class="fa-solid fa-gavel" style="color: var(--accent-amber);"></i> Manage Programs for Judge: <span style="color: var(--accent-cyan);">{{ judge_user.username }}</span>
+        </h2>
+    </div>
+    <div>
+        <span class="badge badge-approved" style="font-size: 0.95rem; padding: 6px 14px;">
+            Judge Account
+        </span>
+    </div>
+</div>
+
+<form method="POST">
+    {% csrf_token %}
+    <div class="glass-card" style="margin-bottom: 20px; padding: 16px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+            <div>
+                <strong style="font-size: 1.1rem; color: var(--text-main);">Assign Specific Programs to Judge</strong>
+                <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 2px;">Check all programs that Judge <strong>{{ judge_user.username }}</strong> will be evaluating & entering marks for.</p>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <a href="{% url 'users:user_list' institution.slug %}" class="btn-primary" style="background: rgba(255,255,255,0.08); box-shadow: none;">Cancel</a>
+                <button type="submit" class="btn-primary" style="background: linear-gradient(135deg, var(--accent-emerald), #059669);">
+                    <i class="fa-solid fa-floppy-disk"></i> Save Assigned Programs
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Category Program Selection Cards -->
+    <div style="display: flex; flex-direction: column; gap: 20px;">
+        {% for cat in categories %}
+        <div class="glass-card" style="padding: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 14px; flex-wrap: wrap; gap: 8px;">
+                <div>
+                    <h3 style="font-size: 1.2rem; font-weight: 700; color: var(--accent-cyan); display: inline-block;">{{ cat.name }}</h3>
+                    <span class="badge badge-approved" style="margin-left: 8px;">{{ cat.programs.count }} Programs</span>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <button type="button" class="btn-primary" style="padding: 4px 10px; font-size: 0.75rem; background: rgba(255,255,255,0.06); box-shadow: none;" onclick="selectAllCategory('cat-{{ cat.id }}', true)">Select All</button>
+                    <button type="button" class="btn-primary" style="padding: 4px 10px; font-size: 0.75rem; background: rgba(255,255,255,0.06); box-shadow: none;" onclick="selectAllCategory('cat-{{ cat.id }}', false)">Deselect All</button>
+                </div>
+            </div>
+
+            <div id="cat-{{ cat.id }}" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px;">
+                {% for prog in cat.programs.all %}
+                <label class="glass-card" style="padding: 12px; border: 1px solid var(--border-color); display: flex; align-items: flex-start; gap: 10px; cursor: pointer; margin: 0; background: rgba(255,255,255,0.02);">
+                    <input type="checkbox" name="assigned_program_ids[]" value="{{ prog.id }}" class="cat-checkbox" {% if prog.id in existing_assigned_prog_ids %}checked{% endif %} style="margin-top: 3px; width: 18px; height: 18px; accent-color: var(--accent-cyan);">
+                    <div style="flex: 1;">
+                        <strong style="font-size: 0.95rem; display: block; color: var(--text-main);">{{ prog.name }}</strong>
+                        <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px;">
+                            <span class="badge badge-approved" style="font-size: 0.7rem;">{{ prog.competition.name }}</span>
+                            {% if prog.is_group %}
+                            <span class="badge badge-pending" style="font-size: 0.7rem;">Group</span>
+                            {% else %}
+                            <span class="badge badge-approved" style="font-size: 0.7rem;">Single</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </label>
+                {% empty %}
+                <div style="color: var(--text-muted); font-size: 0.85rem; padding: 10px;">No programs under this category.</div>
+                {% endfor %}
+            </div>
+        </div>
+        {% empty %}
+        <div class="glass-card" style="text-align: center; padding: 40px;">
+            <p style="color: var(--text-muted);">No categories or programs available in workspace.</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div style="margin-top: 20px; text-align: right;">
+        <button type="submit" class="btn-primary" style="padding: 12px 24px; font-size: 1rem; background: linear-gradient(135deg, var(--accent-emerald), #059669);">
+            <i class="fa-solid fa-floppy-disk"></i> Save Assigned Programs
+        </button>
+    </div>
+</form>
+
+<script>
+function selectAllCategory(containerId, isChecked) {
+    document.querySelectorAll('#' + containerId + ' .cat-checkbox').forEach(cb => cb.checked = isChecked);
+}
+</script>
+{% endblock %}

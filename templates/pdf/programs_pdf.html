@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Programs Directory - {{ institution.name }}</title>
+    <style>
+        @page {
+            size: a4 portrait;
+            margin: 0.8cm;
+        }
+        body {
+            font-family: Helvetica, Arial, sans-serif;
+            font-size: 8.5pt;
+            color: #1e293b;
+            line-height: 1.15;
+        }
+        .header {
+            padding-bottom: 4px;
+            margin-bottom: 10px;
+        }
+        .header h1 {
+            font-size: 15pt;
+            margin: 0;
+            color: #0f172a;
+        }
+        .header h3 {
+            font-size: 10pt;
+            margin: 2px 0 0 0;
+            color: #0284c7;
+        }
+        .meta {
+            font-size: 7.5pt;
+            color: #64748b;
+            margin-top: 2px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 6px;
+        }
+        th {
+            background-color: #0f172a;
+            color: #ffffff;
+            font-size: 8.5pt;
+            font-weight: bold;
+            padding: 4px 6px;
+            text-align: left;
+            border: 1px solid #0f172a;
+        }
+        td {
+            padding: 3px 5px;
+            border: 1px solid #cbd5e1;
+            font-size: 8pt;
+        }
+        tr:nth-child(even) {
+            background-color: #f8fafc;
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>GO FEST</h1>
+    <h3>{{ institution.name }} — Programs Directory</h3>
+    <div class="meta">Generated: {{ generated_at|date:"d M Y, h:i A" }} | Total Programs: {{ programs.count }}</div>
+</div>
+
+<table>
+    <thead>
+        <tr>
+            <th style="width: 4%;">#</th>
+            <th style="width: 36%;">Program Name</th>
+            <th style="width: 25%;">Category</th>
+            <th style="width: 15%;">Format</th>
+            <th style="width: 10%;">Venue</th>
+            <th style="width: 10%;">Duration</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for prog in programs %}
+        <tr>
+            <td>{{ forloop.counter }}</td>
+            <td><strong>{{ prog.name }}</strong></td>
+            <td>{{ prog.category.name }}</td>
+            <td>{% if prog.is_group %}Group Event{% else %}Single Event{% endif %}</td>
+            <td>{{ prog.get_program_type_display }}</td>
+            <td>{{ prog.duration_per_participant }}m</td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="6" style="text-align: center; color: #64748b; padding: 10px;">No programs created.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+</body>
+</html>

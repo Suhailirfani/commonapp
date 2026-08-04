@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+
+{% block title %}Register Contestant - {{ institution.name }}{% endblock %}
+
+{% block content %}
+<div style="max-width: 550px; margin: 20px auto;">
+    <div class="glass-card">
+        <a href="{% url 'core:contestant_list' institution.slug %}" style="color: var(--text-muted); text-decoration: none;"><i class="fa-solid fa-arrow-left"></i> Back to Contestants</a>
+        <h2 style="font-size: 1.6rem; font-weight: 700; margin: 12px 0 20px 0;"><i class="fa-solid fa-user-plus"></i> Register Contestant</h2>
+
+        <form method="POST">
+            {% csrf_token %}
+            <div class="form-group">
+                <label class="form-label">Competition</label>
+                <select name="competition_id" class="form-control" required>
+                    {% for comp in competitions %}
+                    <option value="{{ comp.id }}">{{ comp.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Assign Team</label>
+                <select name="team_id" class="form-control" required>
+                    {% for team in teams %}
+                    <option value="{{ team.id }}">{{ team.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Category</label>
+                <select name="category_id" id="categorySelect" class="form-control" required onchange="fetchNextChestNo()">
+                    {% for cat in categories %}
+                    <option value="{{ cat.id }}">{{ cat.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Chest Number (Auto-Suggested)</label>
+                <input type="number" name="chest_no" id="chest_no_input" class="form-control" style="font-weight: 800; font-size: 1.1rem; color: var(--accent-cyan);" placeholder="Auto-suggested chest number">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Full Name of Contestant</label>
+                <input type="text" name="name" class="form-control" placeholder="e.g. Muhammed Ali" required autofocus>
+            </div>
+
+            <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; font-size: 1rem; padding: 12px; margin-top: 10px; background: linear-gradient(135deg, var(--accent-emerald), #059669);">
+                <i class="fa-solid fa-floppy-disk"></i> Register Contestant
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+function fetchNextChestNo() {
+    var catId = document.getElementById('categorySelect').value;
+    if (catId) {
+        fetch("{% url 'core:api_get_next_chest_no' institution.slug %}?category_id=" + catId)
+            .then(res => res.json())
+            .then(data => {
+                if (data.next_chest_no) {
+                    document.getElementById('chest_no_input').value = data.next_chest_no;
+                }
+            });
+    }
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+    fetchNextChestNo();
+});
+</script>
+{% endblock %}

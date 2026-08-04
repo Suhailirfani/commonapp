@@ -1,0 +1,185 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Settings - {{ institution.name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <a href="{% url 'core:dashboard' institution.slug %}" style="color: var(--text-muted); text-decoration: none;"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</a>
+        <h2 style="font-size: 2rem; font-weight: 800; margin-top: 4px;"><i class="fa-solid fa-gear" style="color: var(--accent-indigo);"></i> Portal Settings & Configuration</h2>
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px;">
+
+    <!-- Section 1: Competitions Setup (Rare setup) -->
+    <div class="glass-card" style="grid-column: 1 / -1;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
+            <div>
+                <h3 style="font-size: 1.3rem; font-weight: 700;"><i class="fa-solid fa-trophy" style="color: var(--accent-amber);"></i> Competitions & Fests Setup</h3>
+                <p style="color: var(--text-muted); font-size: 0.85rem;">Setup your yearly fests or active competitions (Initial setup task).</p>
+            </div>
+            <a href="{% url 'core:competition_create' institution.slug %}" class="btn-primary" style="font-size: 0.9rem;">
+                <i class="fa-solid fa-plus"></i> Create New Competition
+            </a>
+        </div>
+
+        <div class="table-responsive">
+            <table class="custom-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Competition Name</th>
+                        <th>Type</th>
+                        <th>Year</th>
+                        <th>Status</th>
+                        <th>Created At</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for comp in competitions %}
+                    <tr>
+                        <td>#{{ comp.id }}</td>
+                        <td><strong>{{ comp.name }}</strong></td>
+                        <td><span class="badge badge-approved">{{ comp.get_type_display }}</span></td>
+                        <td>{{ comp.year }}</td>
+                        <td>
+                            {% if comp.is_active %}
+                            <span class="badge badge-approved"><i class="fa-solid fa-circle-check"></i> Active</span>
+                            {% else %}
+                            <span class="badge badge-rejected">Archived</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ comp.created_at|date:"d M Y" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 24px;">
+                            No competitions configured yet. Click "Create New Competition" above to start.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Section 2: Points Rules -->
+    <div class="glass-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h3 style="font-size: 1.2rem; font-weight: 700;"><i class="fa-solid fa-sliders" style="color: var(--accent-cyan);"></i> Points & Grade Distribution</h3>
+            <a href="{% url 'core:points_config' institution.slug %}" class="btn-primary" style="font-size: 0.8rem; padding: 6px 12px;">
+                <i class="fa-solid fa-gear"></i> Full Rule Settings
+            </a>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+            <div style="background: rgba(255,255,255,0.03); border-radius: 8px; padding: 12px;">
+                <h5 style="color: var(--accent-emerald); font-size: 0.9rem; margin-bottom: 6px;"><i class="fa-solid fa-user"></i> Single Items (Individual)</h5>
+                <p style="font-size: 0.8rem; color: var(--text-muted); margin: 0;">
+                    Ranks: 1st={{ config.single_rank_1_points }}pts, 2nd={{ config.single_rank_2_points }}pts, 3rd={{ config.single_rank_3_points }}pts<br>
+                    Grades: A+={{ config.single_grade_aplus_points }}, A={{ config.single_grade_a_points }}, B={{ config.single_grade_b_points }}, C={{ config.single_grade_c_points }}
+                </p>
+            </div>
+            <div style="background: rgba(255,255,255,0.03); border-radius: 8px; padding: 12px;">
+                <h5 style="color: var(--accent-amber); font-size: 0.9rem; margin-bottom: 6px;"><i class="fa-solid fa-people-group"></i> Group Items (Teams)</h5>
+                <p style="font-size: 0.8rem; color: var(--text-muted); margin: 0;">
+                    Ranks: 1st={{ config.group_rank_1_points }}pts, 2nd={{ config.group_rank_2_points }}pts, 3rd={{ config.group_rank_3_points }}pts<br>
+                    Grades: A+={{ config.group_grade_aplus_points }}, A={{ config.group_grade_a_points }}, B={{ config.group_grade_b_points }}, C={{ config.group_grade_c_points }}
+                </p>
+            </div>
+        </div>
+
+        <a href="{% url 'core:points_config' institution.slug %}" class="btn-primary" style="width: 100%; justify-content: center; background: rgba(255,255,255,0.08); box-shadow: none;">
+            <i class="fa-solid fa-sliders"></i> Customize Single & Group Item Rules
+        </a>
+    </div>
+
+    <!-- Section 3: Institution Profile & Venues -->
+    <div class="glass-card" style="display: flex; flex-direction: column; justify-content: space-between;">
+        <div>
+            <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 16px;"><i class="fa-solid fa-building" style="color: var(--accent-emerald);"></i> Institution Workspace Details</h3>
+            <ul style="list-style: none; line-height: 2.2; font-size: 0.95rem;">
+                <li><strong>Institution Name:</strong> {{ institution.name }}</li>
+                <li><strong>Institution Slug:</strong> <code>{{ institution.slug }}</code></li>
+                <li><strong>Status:</strong> <span class="badge badge-approved"><i class="fa-solid fa-check"></i> {{ institution.get_status_display }}</span></li>
+                <li><strong>Contact Email:</strong> {{ institution.email }}</li>
+                <li><strong>Public Results URL:</strong> <a href="{% url 'public:home' institution.slug %}" target="_blank" style="color: var(--accent-cyan); text-decoration: none;">domain.com/public/{{ institution.slug }}/</a></li>
+            </ul>
+        </div>
+        <div style="margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 16px; display: flex; flex-direction: column; gap: 10px;">
+            <a href="{% url 'core:manage_schedule' institution.slug %}" class="btn-primary" style="width: 100%; justify-content: center; background: linear-gradient(135deg, var(--accent-cyan), #0284c7);">
+                <i class="fa-solid fa-calendar-days"></i> Fest Schedule & Auto-Scheduler Engine
+            </a>
+            <a href="{% url 'core:stage_list' institution.slug %}" class="btn-primary" style="width: 100%; justify-content: center; background: rgba(255,255,255,0.08); box-shadow: none;">
+                <i class="fa-solid fa-location-dot"></i> Manage Stages & Venues
+            </a>
+        </div>
+    </div>
+
+    <!-- Section: Chest Number Generation & Category Ranges -->
+    <div class="glass-card" style="grid-column: 1 / -1;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
+            <div>
+                <h3 style="font-size: 1.3rem; font-weight: 700;"><i class="fa-solid fa-hashtag" style="color: var(--accent-amber);"></i> Category Chest Number Starting Ranges & Re-Generation</h3>
+                <p style="color: var(--text-muted); font-size: 0.85rem;">Set starting chest numbers for first-time contestant additions (e.g. Primary=1001, Junior=2001, Senior=3001).</p>
+            </div>
+            <form method="POST" style="margin: 0;">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="auto_generate_chest_nos">
+                <button type="submit" class="btn-primary" style="background: linear-gradient(135deg, var(--accent-emerald), #059669); font-size: 0.88rem;" onclick="return confirm('Re-generate & renumber sequential chest numbers for ALL existing contestants category by category?');">
+                    <i class="fa-solid fa-arrows-rotate"></i> 🔄 Re-Generate All Chest Numbers
+                </button>
+            </form>
+        </div>
+
+        <form method="POST">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="update_chest_ranges">
+
+            <div class="table-responsive">
+                <table class="custom-table">
+                    <thead>
+                        <tr>
+                            <th>Category Name</th>
+                            <th>Category Type</th>
+                            <th>Starting Chest Number</th>
+                            <th>Actions / Info</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for cat in base_categories %}
+                        <tr>
+                            <td><strong>{{ cat.name }}</strong></td>
+                            <td><span class="badge badge-approved">Base Category</span></td>
+                            <td>
+                                <input type="number" name="start_chest_no_{{ cat.id }}" value="{% if cat.start_chest_no and cat.start_chest_no != 1001 %}{{ cat.start_chest_no }}{% else %}{{ cat.suggested_start_chest_no }}{% endif %}" class="form-control" style="width: 140px; font-weight: 700; color: var(--accent-cyan);" min="1" required>
+                            </td>
+                            <td style="color: var(--text-muted); font-size: 0.85rem;">
+                                Contestants auto-sequence starting from #{% if cat.start_chest_no and cat.start_chest_no != 1001 %}{{ cat.start_chest_no }}{% else %}{{ cat.suggested_start_chest_no }}{% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" style="text-align: center; color: var(--text-muted); padding: 20px;">
+                                No base categories found. Create base categories first.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {% if base_categories %}
+            <div style="margin-top: 16px; text-align: right;">
+                <button type="submit" class="btn-primary">
+                    <i class="fa-solid fa-floppy-disk"></i> Save Chest Number Starting Ranges
+                </button>
+            </div>
+            {% endif %}
+        </form>
+    </div>
+
+</div>
+{% endblock %}

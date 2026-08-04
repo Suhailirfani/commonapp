@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Bulk Valuation Forms - {{ institution.name }}</title>
+    <style>
+        @page {
+            size: A4 portrait;
+            margin: 0.8cm;
+        }
+        body {
+            font-family: Helvetica, Arial, sans-serif;
+            font-size: 8.5pt;
+            line-height: 1.15;
+            color: #1e293b;
+        }
+        .program-page {
+            page-break-after: always;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 8px;
+            padding-bottom: 4px;
+        }
+        .header h1 {
+            margin: 0;
+            color: #d97706;
+            font-size: 15pt;
+            font-weight: bold;
+        }
+        .header .program-name {
+            color: #0f172a;
+            font-size: 11pt;
+            margin: 2px 0;
+            font-weight: bold;
+        }
+        .info-section {
+            background-color: #f8fafc;
+            padding: 6px 8px;
+            margin-bottom: 8px;
+            border-left: 4px solid #d97706;
+            font-size: 8pt;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 6px;
+        }
+        table th {
+            border: 1px solid #334155;
+            padding: 4px 2px;
+            text-align: center;
+            background-color: #f59e0b;
+            color: #ffffff;
+            font-weight: bold;
+            font-size: 8pt;
+        }
+        table td {
+            border: 1px solid #cbd5e1;
+            padding: 3px 3px;
+            text-align: center;
+            font-size: 8pt;
+        }
+        .chest-no {
+            font-weight: bold;
+            background-color: #f8fafc;
+            width: 12%;
+        }
+        .participant-name {
+            text-align: left;
+            padding-left: 6px;
+            font-weight: bold;
+            width: 38%;
+        }
+        .code-letter {
+            width: 10%;
+            background-color: #f8fafc;
+            font-weight: bold;
+        }
+        .marks-col {
+            width: 8%;
+            height: 20px;
+        }
+        .total-col {
+            width: 8%;
+            font-weight: bold;
+            background-color: #fef3c7;
+        }
+        .footer {
+            margin-top: 10px;
+            text-align: center;
+            font-size: 7.5pt;
+            color: #64748b;
+        }
+        .signature-section {
+            margin-top: 12px;
+            border: 1px solid #cbd5e1;
+            padding: 6px;
+            background-color: #f8fafc;
+            font-size: 8pt;
+        }
+    </style>
+</head>
+<body>
+    {% for pdata in programs_data %}
+    <div class="{% if not forloop.last %}program-page{% endif %}">
+        <div class="header">
+            <h1>VALUATION FORM</h1>
+            <div class="program-name">{{ pdata.program.name|upper }}</div>
+        </div>
+
+        <div class="info-section">
+            Program: <strong>{{ pdata.program.name|upper }}</strong> | 
+            Category: <strong>{{ pdata.program.category.name }}</strong> | 
+            Total Participants: <strong>{{ pdata.participants.count }}</strong> | 
+            Date: <strong>{% now "F d, Y" %}</strong>
+        </div>
+
+        {% if pdata.participants %}
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 5%;">S.No</th>
+                    <th style="width: 12%;">Chest No</th>
+                    <th style="width: 35%;">Participant / Team Name</th>
+                    <th style="width: 10%;">Code Letter</th>
+                    <th class="marks-col">Mark 1</th>
+                    <th class="marks-col">Mark 2</th>
+                    <th class="marks-col">Mark 3</th>
+                    <th class="marks-col">Mark 4</th>
+                    <th class="total-col">Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for participant in pdata.participants %}
+                <tr>
+                    <td><strong>{{ forloop.counter }}</strong></td>
+                    <td class="chest-no">{% if pdata.program.is_group %}-{% else %}{{ participant.chest_no }}{% endif %}</td>
+                    <td class="participant-name">{% if pdata.program.is_group %}{{ participant.team.name }}{% else %}{{ participant.name|upper }}{% endif %}</td>
+                    <td class="code-letter"></td>
+                    <td class="marks-col"></td>
+                    <td class="marks-col"></td>
+                    <td class="marks-col"></td>
+                    <td class="marks-col"></td>
+                    <td class="total-col"></td>
+                </tr>
+                {% endfor %}
+                
+                <!-- Extra blank rows for additional entries -->
+                {% for i in "12345" %}
+                <tr>
+                    <td><strong>{{ pdata.participants.count|add:forloop.counter }}</strong></td>
+                    <td class="chest-no"></td>
+                    <td class="participant-name"></td>
+                    <td class="code-letter"></td>
+                    <td class="marks-col"></td>
+                    <td class="marks-col"></td>
+                    <td class="marks-col"></td>
+                    <td class="marks-col"></td>
+                    <td class="total-col"></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="signature-section">
+            <table style="border: none; margin-top: 0;">
+                <tr style="background: none;">
+                    <td style="border: none; text-align: left; width: 33%;">Judge 1 Signature: ________________</td>
+                    <td style="border: none; text-align: center; width: 33%;">Judge 2 Signature: ________________</td>
+                    <td style="border: none; text-align: right; width: 33%;">Judge 3 Signature: ________________</td>
+                </tr>
+            </table>
+        </div>
+
+        {% else %}
+        <div class="info-section">
+            <strong>No participants registered for this program yet.</strong>
+        </div>
+        {% endif %}
+
+        <div class="footer">
+            Generated on {% now 'F d, Y' %} &nbsp; | &nbsp; {{ pdata.program.name }} Official Valuation Form
+        </div>
+    </div>
+    {% endfor %}
+</body>
+</html>

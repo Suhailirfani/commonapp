@@ -1,0 +1,281 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Assigned Programs Directory - {{ institution.name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <a href="{% url 'core:dashboard' institution.slug %}" style="color: var(--text-muted); text-decoration: none;"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</a>
+        <h2 style="font-size: 1.8rem; font-weight: 800; margin-top: 4px;"><i class="fa-solid fa-book-bookmark" style="color: var(--accent-cyan);"></i> Assigned Programs Directory</h2>
+    </div>
+    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <a href="{% url 'core:download_assigned_programs_teamwise_pdf' institution.slug %}" target="_blank" class="btn-primary" style="background: linear-gradient(135deg, #4f46e5, #3730a3);">
+            <i class="fa-solid fa-file-pdf"></i> Download PDF (Team & Category)
+        </a>
+        <a href="{% url 'core:assignment_hub' institution.slug %}" class="btn-primary">
+            <i class="fa-solid fa-plus"></i> Assign New Programs
+        </a>
+    </div>
+</div>
+
+<!-- View Mode Selector Tabs -->
+<div style="display: flex; gap: 10px; margin-bottom: 24px; flex-wrap: wrap;">
+    <a href="?view=category" class="btn-primary" style="{% if view_mode == 'category' %}background: linear-gradient(135deg, var(--accent-cyan), #0284c7);{% else %}background: rgba(255,255,255,0.08); box-shadow: none;{% endif %}">
+        <i class="fa-solid fa-tags"></i> 1. Category-Wise
+    </a>
+    <a href="?view=team" class="btn-primary" style="{% if view_mode == 'team' %}background: linear-gradient(135deg, var(--accent-emerald), #059669);{% else %}background: rgba(255,255,255,0.08); box-shadow: none;{% endif %}">
+        <i class="fa-solid fa-shield-halved"></i> 2. Team-Wise
+    </a>
+    <a href="?view=program" class="btn-primary" style="{% if view_mode == 'program' %}background: linear-gradient(135deg, var(--accent-indigo), #4f46e5);{% else %}background: rgba(255,255,255,0.08); box-shadow: none;{% endif %}">
+        <i class="fa-solid fa-list-check"></i> 3. Program-Wise
+    </a>
+    <a href="?view=contestant" class="btn-primary" style="{% if view_mode == 'contestant' %}background: linear-gradient(135deg, #a855f7, #7e22ce);{% else %}background: rgba(255,255,255,0.08); box-shadow: none;{% endif %}">
+        <i class="fa-solid fa-user-graduate"></i> 4. Contestant List
+    </a>
+</div>
+
+<!-- TAB 1: Category-Wise -->
+{% if view_mode == 'category' %}
+<div style="display: flex; flex-direction: column; gap: 24px;">
+    {% for cat in categories %}
+    <div class="glass-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 8px;">
+            <h3 style="font-size: 1.3rem; font-weight: 800; color: var(--accent-cyan);">
+                <i class="fa-solid fa-tag"></i> {{ cat.name }} Category
+            </h3>
+            <span class="badge badge-approved">{{ cat.programs.count }} Programs</span>
+        </div>
+
+        {% for prog in cat.programs.all %}
+        <div style="background: rgba(15, 23, 42, 0.5); border-radius: 10px; border: 1px solid var(--border-color); padding: 14px; margin-bottom: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <strong style="font-size: 1.05rem; color: #fff;">{{ prog.name }}</strong>
+                <div>
+                    {% if prog.is_group %}
+                    <span class="badge badge-pending">Group Event</span>
+                    {% else %}
+                    <span class="badge badge-approved">Single Event</span>
+                    {% endif %}
+                    <a href="{% url 'core:program_assign_contestants' institution.slug prog.id %}" style="color: var(--accent-cyan); font-size: 0.85rem; margin-left: 10px; text-decoration: none;">
+                        <i class="fa-solid fa-pen-to-square"></i> Edit Assignment
+                    </a>
+                </div>
+            </div>
+
+            {% if prog.is_group %}
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    {% for gpart in prog.group_participations.all %}
+                    <span class="badge badge-approved"><i class="fa-solid fa-users"></i> {{ gpart.display_name }}</span>
+                    {% empty %}
+                    <span style="color: var(--text-muted); font-size: 0.85rem;">No teams assigned yet.</span>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    {% for part in prog.single_participations.all %}
+                    <span class="badge badge-approved" style="background: rgba(2, 132, 199, 0.2); color: var(--accent-cyan); border: 1px solid var(--accent-cyan);">
+                        #{{ part.contestant.chest_no }} {{ part.contestant.name }} ({{ part.contestant.team.name }})
+                    </span>
+                    {% empty %}
+                    <span style="color: var(--text-muted); font-size: 0.85rem;">No contestants assigned yet.</span>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+        {% empty %}
+        <p style="color: var(--text-muted); padding: 10px;">No programs created under {{ cat.name }} yet.</p>
+        {% endfor %}
+    </div>
+    {% endfor %}
+</div>
+
+<!-- TAB 2: Team-Wise -->
+{% elif view_mode == 'team' %}
+<div style="display: flex; flex-direction: column; gap: 24px;">
+    {% for team in teams %}
+    <div class="glass-card">
+        <h3 style="font-size: 1.3rem; font-weight: 800; color: var(--accent-emerald); margin-bottom: 16px;">
+            <i class="fa-solid fa-shield-halved"></i> {{ team.name }} ({{ team.contestants.count }} Contestants)
+        </h3>
+
+        <div class="table-responsive">
+            <table class="custom-table">
+                <thead>
+                    <tr>
+                        <th>Chest No</th>
+                        <th>Contestant Name</th>
+                        <th>Category</th>
+                        <th>Assigned Programs</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for contestant in team.contestants.all %}
+                    <tr>
+                        <td><strong style="color: var(--accent-cyan);">#{{ contestant.chest_no }}</strong></td>
+                        <td><strong>{{ contestant.name }}</strong></td>
+                        <td><span class="badge badge-approved">{{ contestant.category.name }}</span></td>
+                        <td>
+                            {% for part in contestant.participations.all %}
+                            <span class="badge badge-approved" style="margin-right: 4px;">{{ part.program.name }}</span>
+                            {% empty %}
+                            <span style="color: var(--text-muted); font-size: 0.85rem;">No programs assigned</span>
+                            {% endfor %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" style="text-align: center; color: var(--text-muted); padding: 20px;">
+                            No contestants registered under {{ team.name }}.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- TAB 3: Program-Wise -->
+{% elif view_mode == 'program' %}
+<div class="glass-card">
+    <h3 style="font-size: 1.3rem; font-weight: 800; margin-bottom: 16px; color: var(--accent-indigo);">
+        <i class="fa-solid fa-list-check"></i> Master Program Assignments Summary
+    </h3>
+    <div class="table-responsive">
+        <table class="custom-table">
+            <thead>
+                <tr>
+                    <th>Program Name</th>
+                    <th>Category</th>
+                    <th>Format</th>
+                    <th>Enrolled Participants</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for prog in programs %}
+                <tr>
+                    <td><strong>{{ prog.name }}</strong></td>
+                    <td><span class="badge badge-approved">{{ prog.category.name }}</span></td>
+                    <td>{% if prog.is_group %}<span class="badge badge-pending">Group</span>{% else %}Single{% endif %}</td>
+                    <td>
+                        {% if prog.is_group %}
+                            {% for gpart in prog.group_participations.all %}
+                            <span class="badge badge-approved" style="margin-right: 4px;">{{ gpart.team.name }}</span>
+                            {% empty %}
+                            <span style="color: var(--text-muted); font-size: 0.85rem;">None</span>
+                            {% endfor %}
+                        {% else %}
+                            {% for part in prog.single_participations.all %}
+                            <span class="badge badge-approved" style="font-size: 0.75rem; margin-right: 2px;">#{{ part.contestant.chest_no }} {{ part.contestant.name }}</span>
+                            {% empty %}
+                            <span style="color: var(--text-muted); font-size: 0.85rem;">None</span>
+                            {% endfor %}
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{% url 'core:program_assign_contestants' institution.slug prog.id %}" class="btn-primary" style="padding: 6px 12px; font-size: 0.8rem;">
+                            <i class="fa-solid fa-user-plus"></i> Assign
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 30px;">
+                        No programs created yet.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- TAB 4: Contestant Programs List (Card Grid) -->
+{% elif view_mode == 'contestant' %}
+<div>
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 20px;">
+        <h3 style="font-size: 1.4rem; font-weight: 800; color: #a855f7;">
+            <i class="fa-solid fa-user-graduate"></i> Contestant Cards & Enrolled Programs ({{ contestants.count }})
+        </h3>
+        <input type="text" id="contestantCardSearch" placeholder="Search contestant name, chest no, team, or category..." class="form-control" style="max-width: 340px;" onkeyup="filterContestantCards()">
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;" id="contestantCardsContainer">
+        {% for contestant in contestants %}
+        <div class="glass-card contestant-card-item" style="display: flex; flex-direction: column; justify-content: space-between; padding: 20px; transition: transform 0.2s ease;">
+            <div>
+                <!-- Card Header -->
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                    <div>
+                        <span class="badge badge-approved" style="background: rgba(56, 189, 248, 0.15); color: var(--accent-cyan); border: 1px solid var(--accent-cyan); font-size: 0.9rem; font-weight: 800; padding: 4px 10px;">
+                            #{{ contestant.chest_no }}
+                        </span>
+                        <h4 style="font-size: 1.25rem; font-weight: 800; margin-top: 8px; color: #fff;">{{ contestant.name }}</h4>
+                    </div>
+                    <span class="badge {% if contestant.participations.count > 0 %}badge-approved{% else %}badge-pending{% endif %}" style="font-size: 0.8rem;">
+                        {{ contestant.participations.count }} Programs
+                    </span>
+                </div>
+
+                <!-- Team & Category Meta -->
+                <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px;">
+                    <span class="badge badge-approved" style="font-size: 0.78rem;">
+                        <i class="fa-solid fa-shield-halved"></i> {{ contestant.team.name }}
+                    </span>
+                    <span class="badge badge-pending" style="font-size: 0.78rem;">
+                        <i class="fa-solid fa-tag"></i> {{ contestant.category.name }}
+                    </span>
+                </div>
+
+                <!-- Assigned Programs List -->
+                <div style="background: rgba(15, 23, 42, 0.5); padding: 12px; border-radius: 10px; border: 1px solid var(--border-color); margin-bottom: 16px;">
+                    <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">
+                        Assigned Programs List
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 6px;">
+                        {% for part in contestant.participations.all %}
+                        <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.05); padding: 6px 10px; border-radius: 6px; font-size: 0.88rem;">
+                            <span><i class="fa-solid fa-circle-check" style="color: var(--accent-emerald); margin-right: 6px;"></i> <strong>{{ part.program.name }}</strong></span>
+                            <span class="badge badge-approved" style="font-size: 0.7rem; padding: 2px 6px;">{{ part.program.get_program_type_display }}</span>
+                        </div>
+                        {% empty %}
+                        <div style="color: var(--text-muted); font-size: 0.85rem; font-style: italic; padding: 4px 0;">
+                            No programs assigned to this contestant yet.
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card Footer Action -->
+            <div style="border-top: 1px solid var(--border-color); padding-top: 14px; text-align: right;">
+                <a href="{% url 'core:contestant_assign_programs' institution.slug contestant.id %}" class="btn-primary" style="width: 100%; justify-content: center; font-size: 0.9rem; background: linear-gradient(135deg, #a855f7, #7e22ce);">
+                    <i class="fa-solid fa-list-check"></i> Edit Assigned Programs
+                </a>
+            </div>
+        </div>
+        {% empty %}
+        <div class="glass-card" style="grid-column: 1 / -1; text-align: center; color: var(--text-muted); padding: 40px;">
+            No contestants registered yet.
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function filterContestantCards() {
+    var query = document.getElementById('contestantCardSearch').value.toLowerCase();
+    var cards = document.querySelectorAll('#contestantCardsContainer .contestant-card-item');
+    cards.forEach(function(card) {
+        var text = card.innerText.toLowerCase();
+        card.style.display = text.indexOf(query) > -1 ? '' : 'none';
+    });
+}
+</script>
+{% endblock %}

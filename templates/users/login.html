@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Sign In - GO FEST | BYTOLA WEBSOLUTIONS{% endblock %}
+
+{% block content %}
+<div style="max-width: 440px; margin: 40px auto;">
+    <div class="glass-card">
+        <div style="text-align: center; margin-bottom: 24px;">
+            <img src="{% static 'img/app_icon_clean.png' %}" alt="GO FEST App Icon" style="width: 80px; height: 80px; border-radius: 18px; margin-bottom: 12px; box-shadow: 0 6px 20px rgba(99, 102, 241, 0.3);">
+            <h2 style="font-size: 1.7rem; font-weight: 800;">GO FEST Sign In</h2>
+            <p style="color: var(--text-muted); font-size: 0.9rem;">Developers, Institution Admins, Team Leaders & Tabulators</p>
+        </div>
+
+        <form method="POST">
+            {% csrf_token %}
+            <div class="form-group">
+                <label class="form-label">Username</label>
+                <input type="text" name="username" class="form-control" placeholder="Enter your username" required autofocus>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Password</label>
+                <input type="password" name="password" class="form-control" placeholder="Enter your password" required>
+            </div>
+
+            <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; font-size: 1.05rem; padding: 12px; margin-top: 8px;">
+                <i class="fa-solid fa-right-to-bracket"></i> Sign In to Portal
+            </button>
+        </form>
+
+        <div style="margin-top: 20px; text-align: center; font-size: 0.85rem; color: var(--text-muted);">
+            Don't have an institution portal yet? <a href="{% url 'tenants:apply' %}" style="color: var(--accent-cyan);">Apply for subscription</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

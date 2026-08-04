@@ -1,0 +1,2355 @@
+from datetime import datetime, timedelta, time
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.utils import timezone
+from django.db.models import Q
+from apps.tenants.models import Institution
+from .models import (
+    Competition, Category, Program, Team, Stage, 
+    FestDay, Contestant, Participation, GroupParticipation, 
+    PointsConfig, ProgramSchedule
+)
+
+@login_required
+def dashboard_view(request, institution_slug):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    if request.user.is_judge:
+        return redirect('core:judge_dashboard', institution_slug=institution.slug)
+
+    competitions = Competition.objects.filter(institution=institution)
+    teams = Team.objects.filter(institution=institution)
+    programs = Program.objects.filter(institution=institution)
+
+    if request.user.is_team_leader:
+        team = getattr(request.user, 'managed_team', None)
+        if not team:
+            team = teams.first()
+
+        team_contestants = Contestant.objects.filter(institution=institution, team=team) if team else Contestant.objects.none()
+
+        # Category wise members count for this team
+        category_wise_members = []
+        base_cats = Category.objects.filter(institution=institution, is_common=False)
+        for cat in base_cats:
+            cnt = team_contestants.filter(category=cat).count() if team else 0
+            category_wise_members.append({'category': cat, 'count': cnt})
+
+        # Announced points & rank from services
+        from .services import get_team_standings
+        standings = get_team_standings(institution, announced_only=True)
+        team_points = 0
+        team_rank = "-"
+        for s in standings:
+            if team and s['team'].id == team.id:
+                team_points = s['points']
+                team_rank = s['position']
+                break
+
+        # Assigned programs count for this team's contestants
+        assigned_single_count = Participation.objects.filter(contestant__team=team).values('program').distinct().count() if team else 0
+        assigned_group_count = GroupParticipation.objects.filter(team=team).values('program').distinct().count() if team else 0
+        total_assignments = assigned_single_count + assigned_group_count
+
+        context = {
+            'institution': institution,
+            'is_team_leader_dashboard': True,
+            'team': team,
+            'total_members_count': team_contestants.count(),
+            'category_wise_members': category_wise_members,
+            'team_points': team_points,
+            'team_rank': team_rank,
+            'total_assignments': total_assignments,
+            'programs_count': programs.count(),
+        }
+        return render(request, 'core/dashboard.html', context)
+
+    contestants = Contestant.objects.filter(institution=institution)
+
+    context = {
+        'institution': institution,
+        'competitions_count': competitions.count(),
+        'teams_count': teams.count(),
+        'programs_count': programs.count(),
+        'contestants_count': contestants.count(),
+        'recent_competitions': competitions[:5],
+    }
+    return render(request, 'core/dashboard.html', context)
+
+
+@login_required
+def competition_list_view(request, institution_slug):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    competitions = Competition.objects.filter(institution=institution)
+    return render(request, 'core/competition_list.html', {'institution': institution, 'competitions': competitions})
+
+
+@login_required
+def competition_create_view(request, institution_slug):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        comp_type = request.POST.get('type')
+        year = request.POST.get('year', 2026)
+        Competition.objects.create(
+            institution=institution,
+            name=name,
+            type=comp_type,
+            year=year
+        )
+        messages.success(request, f"Competition '{name}' created successfully!")
+        return redirect('core:competition_list', institution_slug=institution.slug)
+    return render(request, 'core/competition_create.html', {'institution': institution})
+
+
+@login_required
+def category_list_view(request, institution_slug):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    competitions = Competition.objects.filter(institution=institution)
+    
+    if request.method == 'POST':
+        comp_id = request.POST.get('competition_id')
+        name = request.POST.get('name')
+        description = request.POST.get('description', '')
+        is_common = request.POST.get('is_common') == '1'
+        inc_cat_ids = request.POST.getlist('included_categories[]')
+
+        comp = Competition.objects.filter(id=comp_id, institution=institution).first()
+        if not comp:
+            comp = competitions.first()
+
+        if comp and name:
+            cat = Category.objects.create(
+                institution=institution,
+                competition=comp,
+                name=name,
+                description=description,
+                is_common=is_common
+            )
+            if is_common and inc_cat_ids:
+                inc_cats = Category.objects.filter(id__in=inc_cat_ids, institution=institution)
+                cat.included_categories.set(inc_cats)
+
+            cat_type = "Common Category" if is_common else "Base Category"
+            messages.success(request, f"{cat_type} '{name}' created successfully!")
+            return redirect('core:category_list', institution_slug=institution.slug)
+
+    categories = Category.objects.filter(institution=institution).prefetch_related('included_categories')
+    base_categories = categories.filter(is_common=False)
+
+    return render(request, 'core/category_list.html', {
+        'institution': institution,
+        'categories': categories,
+        'base_categories': base_categories,
+        'competitions': competitions
+    })
+
+
+@login_required
+def program_list_view(request, institution_slug):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    programs = Program.objects.filter(institution=institution).select_related('category', 'competition')
+    return render(request, 'core/program_list.html', {'institution': institution, 'programs': programs})
+
+
+@login_required
+def program_create_view(request, institution_slug):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    competitions = Competition.objects.filter(institution=institution)
+    categories = Category.objects.filter(institution=institution)
+    
+    if request.method == 'POST':
+        comp_id = request.POST.get('competition_id')
+        cat_id = request.POST.get('category_id')
+        name = request.POST.get('name')
+        is_group = request.POST.get('is_group') == 'on'
+        p_type = request.POST.get('program_type', 'STAGE')
+        p_mode = request.POST.get('presentation_mode', 'SEQUENTIAL')
+        duration = request.POST.get('duration_per_participant', 5)
+
+        comp = get_object_or_404(Competition, id=comp_id, institution=institution)
+        cat = get_object_or_404(Category, id=cat_id, institution=institution)
+
+        Program.objects.create(
+            institution=institution,
+            competition=comp,
+            category=cat,
+            name=name,
+            is_group=is_group,
+            program_type=p_type,
+            presentation_mode=p_mode,
+            duration_per_participant=duration
+        )
+        messages.success(request, f"Program '{name}' created successfully!")
+        return redirect('core:program_list', institution_slug=institution.slug)
+
+    return render(request, 'core/program_create.html', {
+        'institution': institution, 
+        'competitions': competitions, 
+        'categories': categories
+    })
+
+
+@login_required
+def program_batch_create_view(request, institution_slug):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    competitions = Competition.objects.filter(institution=institution)
+    categories = Category.objects.filter(institution=institution)
+
+    if request.method == 'POST':
+        comp_ids = request.POST.getlist('competition_id[]')
+        cat_ids = request.POST.getlist('category_id[]')
+        names = request.POST.getlist('name[]')
+        p_types = request.POST.getlist('program_type[]')
+        is_groups = request.POST.getlist('is_group[]')
+        p_modes = request.POST.getlist('presentation_mode[]')
+        durations = request.POST.getlist('duration[]')
+
+        created_count = 0
+        for i in range(len(names)):
+            prog_name = names[i].strip() if i < len(names) else ''
+            if not prog_name:
+                continue
+
+            comp_id = comp_ids[i] if i < len(comp_ids) else None
+            cat_id = cat_ids[i] if i < len(cat_ids) else None
+            p_type = p_types[i] if i < len(p_types) else 'STAGE'
+            is_group_val = (is_groups[i] == '1' or is_groups[i] == 'true' or is_groups[i] == 'on') if i < len(is_groups) else False
+            p_mode = p_modes[i] if i < len(p_modes) else 'SEQUENTIAL'
+            duration_val = int(durations[i]) if i < len(durations) and str(durations[i]).isdigit() else 5
+
+            comp = Competition.objects.filter(id=comp_id, institution=institution).first()
+            cat = Category.objects.filter(id=cat_id, institution=institution).first()
+
+            if comp and cat:
+                Program.objects.create(
+                    institution=institution,
+                    competition=comp,
+                    category=cat,
+                    name=prog_name,
+                    is_group=is_group_val,
+                    program_type=p_type,
+                    presentation_mode=p_mode,
+                    duration_per_participant=duration_val
+                )
+                created_count += 1
+
+        messages.success(request, f"Successfully created {created_count} programs in batch!")
+        return redirect('core:program_list', institution_slug=institution.slug)
+
+    return render(request, 'core/program_batch_create.html', {
+        'institution': institution,
+        'competitions': competitions,
+        'categories': categories,
+    })
+
+
+@login_required
+def program_download_template_view(request, institution_slug):
+    import io, openpyxl
+    from django.http import HttpResponse
+
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Programs Template"
+
+    headers = ["Competition Name", "Category Name", "Program Name", "Program Type (STAGE/OFF_STAGE)", "Format (SINGLE/GROUP)", "Presentation Mode (SEQ/SIM)", "Duration Mins"]
+    ws.append(headers)
+
+    sample_comp = Competition.objects.filter(institution=institution).first()
+    comp_name = sample_comp.name if sample_comp else "Mueeniyya Grand Fest 2026"
+
+    sample_rows = [
+        [comp_name, "Junior Category", "Quran Recitation", "STAGE", "SINGLE", "SEQ", 5],
+        [comp_name, "Junior Category", "Group Song", "STAGE", "GROUP", "SEQ", 10],
+        [comp_name, "Senior Category", "Pencil Drawing", "OFF_STAGE", "SINGLE", "SIM", 30],
+        [comp_name, "Senior Category", "Elocution English", "STAGE", "SINGLE", "SEQ", 7],
+    ]
+    for row in sample_rows:
+        ws.append(row)
+
+    output = io.BytesIO()
+    wb.save(output)
+    output.seek(0)
+
+    filename = f"{institution.slug}_programs_template.xlsx"
+    response = HttpResponse(
+        output.getvalue(),
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    return response
+
+
+@login_required
+def program_bulk_upload_view(request, institution_slug):
+    import openpyxl
+    institution = get_object_or_404(Institution, slug=institution_slug)
+
+    if request.method == 'POST' and request.FILES.get('excel_file'):
+        excel_file = request.FILES['excel_file']
+        try:
+            wb = openpyxl.load_workbook(excel_file)
+            ws = wb.active
+            rows = list(ws.iter_rows(values_only=True))
+
+            if len(rows) <= 1:
+                messages.error(request, "Uploaded Excel file contains no data rows.")
+                return redirect('core:program_list', institution_slug=institution.slug)
+
+            imported_count = 0
+            for row in rows[1:]:
+                if not row or not any(row):
+                    continue
+
+                comp_name = str(row[0]).strip() if len(row) > 0 and row[0] else "Main Fest"
+                cat_name = str(row[1]).strip() if len(row) > 1 and row[1] else "General"
+                prog_name = str(row[2]).strip() if len(row) > 2 and row[2] else None
+
+                if not prog_name:
+                    continue
+
+                p_type_str = str(row[3]).strip().upper() if len(row) > 3 and row[3] else "STAGE"
+                format_str = str(row[4]).strip().upper() if len(row) > 4 and row[4] else "SINGLE"
+                
+                # Check column 5 for Presentation Mode vs Duration
+                p_mode_str = str(row[5]).strip().upper() if len(row) > 5 and row[5] else "SEQ"
+                if p_mode_str.isdigit():
+                    duration_val = int(p_mode_str)
+                    presentation_mode = 'SEQUENTIAL'
+                else:
+                    duration_val = int(row[6]) if len(row) > 6 and str(row[6]).isdigit() else 5
+                    presentation_mode = 'SIMULTANEOUS' if any(k in p_mode_str for k in ['SIMULTANEOUS', 'SIM', 'ALL', 'WRITTEN']) else 'SEQUENTIAL'
+
+                comp, _ = Competition.objects.get_or_create(
+                    institution=institution,
+                    name=comp_name,
+                    defaults={'type': 'ON', 'year': 2026}
+                )
+
+                cat, _ = Category.objects.get_or_create(
+                    institution=institution,
+                    competition=comp,
+                    name=cat_name
+                )
+
+                program_type = 'OFF_STAGE' if 'OFF' in p_type_str else 'STAGE'
+                is_group = True if (format_str in ['GROUP', 'G', 'YES', 'TRUE', '1'] or 'GROUP' in format_str or format_str == 'G') else False
+
+                Program.objects.create(
+                    institution=institution,
+                    competition=comp,
+                    category=cat,
+                    name=prog_name,
+                    program_type=program_type,
+                    is_group=is_group,
+                    presentation_mode=presentation_mode,
+                    duration_per_participant=duration_val
+                )
+                imported_count += 1
+
+            messages.success(request, f"Excel import successful! Imported {imported_count} programs.")
+        except Exception as e:
+            messages.error(request, f"Failed to parse Excel file: {str(e)}")
+
+    return redirect('core:program_list', institution_slug=institution.slug)
+
+
+@login_required
+def team_list_view(request, institution_slug):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    teams = Team.objects.filter(institution=institution)
+    return render(request, 'core/team_list.html', {'institution': institution, 'teams': teams})
+
+
+@login_required
+def contestant_list_view(request, institution_slug):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    contestants = Contestant.objects.filter(institution=institution).select_related('team', 'category')
+    managed_team = None
+
+    if request.user.is_team_leader:
+        managed_team = getattr(request.user, 'managed_team', None)
+        if managed_team:
+            contestants = contestants.filter(team=managed_team)
+        else:
+            contestants = Contestant.objects.none()
+
+    return render(request, 'core/contestant_list.html', {
+        'institution': institution, 
+        'contestants': contestants,
+        'managed_team': managed_team
+    })
+
+
+@login_required
+def contestant_create_view(request, institution_slug):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    competitions = Competition.objects.filter(institution=institution)
+    categories = Category.objects.filter(institution=institution, is_common=False)
+    teams = Team.objects.filter(institution=institution)
+
+    if request.method == 'POST':
+        comp_id = request.POST.get('competition_id')
+        team_id = request.POST.get('team_id')
+        cat_id = request.POST.get('category_id')
+        name = request.POST.get('name')
+
+        comp = get_object_or_404(Competition, id=comp_id, institution=institution)
+        team = get_object_or_404(Team, id=team_id, institution=institution)
+        cat = get_object_or_404(Category, id=cat_id, institution=institution)
+
+        if cat.is_common:
+            messages.error(request, f"Direct contestant registration to Combined Category '{cat.name}' is not allowed. Please select a Base Category.")
+            return redirect('core:contestant_create', institution_slug=institution.slug)
+
+        c = Contestant.objects.create(
+            institution=institution,
+            competition=comp,
+            team=team,
+            category=cat,
+            name=name
+        )
+        messages.success(request, f"Contestant #{c.chest_no} '{c.name}' registered successfully!")
+        return redirect('core:contestant_list', institution_slug=institution.slug)
+
+    return render(request, 'core/contestant_create.html', {
+        'institution': institution,
+        'competitions': competitions,
+        'categories': categories,
+        'teams': teams
+    })
+
+
+@login_required
+def contestant_batch_create_view(request, institution_slug):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    competitions = Competition.objects.filter(institution=institution)
+    categories = Category.objects.filter(institution=institution, is_common=False)
+    teams = Team.objects.filter(institution=institution)
+
+    if request.method == 'POST':
+        comp_ids = request.POST.getlist('competition_id[]')
+        team_ids = request.POST.getlist('team_id[]')
+        cat_ids = request.POST.getlist('category_id[]')
+        names = request.POST.getlist('name[]')
+
+        registered_count = 0
+        for i in range(len(names)):
+            c_name = names[i].strip() if i < len(names) else ''
+            if not c_name:
+                continue
+
+            comp_id = comp_ids[i] if i < len(comp_ids) else None
+            team_id = team_ids[i] if i < len(team_ids) else None
+            cat_id = cat_ids[i] if i < len(cat_ids) else None
+
+            comp = Competition.objects.filter(id=comp_id, institution=institution).first()
+            team = Team.objects.filter(id=team_id, institution=institution).first()
+            cat = Category.objects.filter(id=cat_id, institution=institution, is_common=False).first()
+
+            if comp and team and cat:
+                Contestant.objects.create(
+                    institution=institution,
+                    competition=comp,
+                    team=team,
+                    category=cat,
+                    name=c_name
+                )
+                registered_count += 1
+
+        messages.success(request, f"Successfully registered {registered_count} contestants in batch!")
+        return redirect('core:contestant_list', institution_slug=institution.slug)
+
+    return render(request, 'core/contestant_batch_create.html', {
+        'institution': institution,
+        'competitions': competitions,
+        'categories': categories,
+        'teams': teams,
+    })
+
+
+@login_required
+def contestant_download_template_view(request, institution_slug):
+    import io, openpyxl
+    from django.http import HttpResponse
+
+    institution = get_object_or_404(Institution, slug=institution_slug)
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Contestants Template"
+
+    headers = ["Competition Name", "Team Name", "Category Name", "Contestant Name", "Chest No (Optional)"]
+    ws.append(headers)
+
+    sample_comp = Competition.objects.filter(institution=institution).first()
+    comp_name = sample_comp.name if sample_comp else "Mueeniyya Grand Fest 2026"
+
+    sample_rows = [
+        [comp_name, "Red House Alpha", "Junior Category", "Ahmad Bilal", 1001],
+        [comp_name, "Blue House Titans", "Junior Category", "Zayd Haris", 1002],
+        [comp_name, "Green Gladiators", "Senior Category", "Hamza Ali", 1003],
+        [comp_name, "Red House Alpha", "Senior Category", "Umar Farooq", ""],
+    ]
+    for row in sample_rows:
+        ws.append(row)
+
+    output = io.BytesIO()
+    wb.save(output)
+    output.seek(0)
+
+    filename = f"{institution.slug}_contestants_template.xlsx"
+    response = HttpResponse(
+        output.getvalue(),
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    return response
+
+
+@login_required
+def contestant_bulk_upload_view(request, institution_slug):
+    import openpyxl
+    institution = get_object_or_404(Institution, slug=institution_slug)
+
+    if request.method == 'POST' and request.FILES.get('excel_file'):
+        excel_file = request.FILES['excel_file']
+        try:
+            wb = openpyxl.load_workbook(excel_file)
+            ws = wb.active
+            rows = list(ws.iter_rows(values_only=True))
+
+            if len(rows) <= 1:
+                messages.error(request, "Uploaded Excel file contains no data rows.")
+                return redirect('core:contestant_list', institution_slug=institution.slug)
+
+            imported_count = 0
+            for row in rows[1:]:
+                if not row or not any(row):
+                    continue
+
+                comp_name = str(row[0]).strip() if len(row) > 0 and row[0] else "Main Fest"
+                team_name = str(row[1]).strip() if len(row) > 1 and row[1] else "General Team"
+                cat_name = str(row[2]).strip() if len(row) > 2 and row[2] else "General"
+                c_name = str(row[3]).strip() if len(row) > 3 and row[3] else None
+
+                if not c_name:
+                    continue
+
+                chest_no_raw = row[4] if len(row) > 4 and row[4] else None
+                chest_no = int(chest_no_raw) if chest_no_raw and str(chest_no_raw).isdigit() else None
+
+                comp, _ = Competition.objects.get_or_create(
+                    institution=institution,
+                    name=comp_name,
+                    defaults={'type': 'ON', 'year': 2026}
+                )
+
+                team, _ = Team.objects.get_or_create(
+                    institution=institution,
+                    competition=comp,
+                    name=team_name
+                )
+
+                cat, _ = Category.objects.get_or_create(
+                    institution=institution,
+                    competition=comp,
+                    name=cat_name
+                )
+
+                Contestant.objects.create(
+                    institution=institution,
+                    competition=comp,
+                    team=team,
+                    category=cat,
+                    name=c_name,
+                    chest_no=chest_no
+                )
+                imported_count += 1
+
+            messages.success(request, f"Excel import successful! Registered {imported_count} contestants.")
+        except Exception as e:
+            messages.error(request, f"Failed to parse Excel file: {str(e)}")
+
+    return redirect('core:contestant_list', institution_slug=institution.slug)
+
+
+@login_required
+def judge_dashboard_view(request, institution_slug):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    if not request.user.is_judge and not (request.user.is_developer or request.user.is_institution_admin):
+        return redirect('core:dashboard', institution_slug=institution.slug)
+
+    programs = Program.objects.filter(institution=institution).select_related('category', 'competition')
+
+    if request.user.is_judge:
+        judge_comps = request.user.assigned_competitions.all()
+        judge_progs = request.user.assigned_programs.all()
+        if judge_comps.exists() and judge_progs.exists():
+            programs = programs.filter(Q(competition__in=judge_comps) | Q(id__in=judge_progs))
+        elif judge_comps.exists():
+            programs = programs.filter(competition__in=judge_comps)
+        elif judge_progs.exists():
+            programs = programs.filter(id__in=judge_progs)
+        else:
+            programs = Program.objects.none()
+
+    program_list = []
+    completed_count = 0
+    pending_count = 0
+
+    for p in programs:
+        if p.is_group:
+            marked = GroupParticipation.objects.filter(program=p, marks__isnull=False).exists()
+            total_parts = GroupParticipation.objects.filter(program=p).count()
+        else:
+            marked = Participation.objects.filter(program=p, marks__isnull=False).exists()
+            total_parts = Participation.objects.filter(program=p).count()
+
+        if marked:
+            completed_count += 1
+        else:
+            pending_count += 1
+
+        program_list.append({
+            'program': p,
+            'is_completed': marked,
+            'total_participants': total_parts
+        })
+
+    return render(request, 'core/judge_dashboard.html', {
+        'institution': institution,
+        'program_list': program_list,
+        'total_assigned': len(program_list),
+        'completed_count': completed_count,
+        'pending_count': pending_count,
+    })
+
+
+@login_required
+def scoring_program_list_view(request, institution_slug):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    programs = Program.objects.filter(institution=institution).select_related('category', 'competition')
+    categories = Category.objects.filter(institution=institution)
+
+    if request.user.is_judge:
+        judge_comps = request.user.assigned_competitions.all()
+        judge_progs = request.user.assigned_programs.all()
+        if judge_comps.exists() and judge_progs.exists():
+            programs = programs.filter(Q(competition__in=judge_comps) | Q(id__in=judge_progs))
+        elif judge_comps.exists():
+            programs = programs.filter(competition__in=judge_comps)
+        elif judge_progs.exists():
+            programs = programs.filter(id__in=judge_progs)
+        else:
+            programs = Program.objects.none()
+
+    return render(request, 'core/scoring_program_list.html', {
+        'institution': institution,
+        'programs': programs,
+        'categories': categories,
+    })
+
+
+@login_required
+def mark_entry_matrix_view(request, institution_slug, program_id):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    program = get_object_or_404(Program, id=program_id, institution=institution)
+
+    if request.user.is_judge:
+        judge_comps = request.user.assigned_competitions.all()
+        judge_progs = request.user.assigned_programs.all()
+        is_assigned_comp = judge_comps.filter(id=program.competition_id).exists()
+        is_assigned_prog = judge_progs.filter(id=program.id).exists()
+        if not (is_assigned_comp or is_assigned_prog):
+            messages.error(request, "Permission Denied: You are not assigned to score this program/competition.")
+            return redirect('core:scoring_program_list', institution_slug=institution.slug)
+
+    if program.is_group:
+        participations = GroupParticipation.objects.filter(program=program).select_related('team')
+    else:
+        participations = Participation.objects.filter(program=program).select_related('contestant', 'contestant__team')
+
+    if request.method == 'POST':
+        for key, val in request.POST.items():
+            if key.startswith('code_letter_'):
+                part_id = key.replace('code_letter_', '')
+                code = val.strip()
+                marks_val = request.POST.get(f'marks_{part_id}')
+                marks = int(marks_val) if marks_val and marks_val.isdigit() else None
+
+                if program.is_group:
+                    p = GroupParticipation.objects.filter(id=part_id, program=program).first()
+                else:
+                    p = Participation.objects.filter(id=part_id, program=program).first()
+
+                if p:
+                    p.code_letter = code
+                    p.marks = marks
+                    p.save()
+
+        from .services import calculate_program_results
+        calculate_program_results(program)
+
+        messages.success(request, f"Marks saved and calculated for '{program.name}'!")
+        return redirect('core:mark_entry_matrix', institution_slug=institution.slug, program_id=program.id)
+
+    return render(request, 'core/mark_entry_matrix.html', {
+        'institution': institution,
+        'program': program,
+        'participations': participations
+    })
+
+
+@login_required
+def announce_results_view(request, institution_slug, program_id):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    program = get_object_or_404(Program, id=program_id, institution=institution)
+    
+    if request.user.is_judge:
+        messages.error(request, "Permission Denied: Judges cannot publish public results.")
+        return redirect('core:scoring_program_list', institution_slug=institution.slug)
+    
+    # Toggle announcement status
+    program.is_announced = True
+    program.announced_at = timezone.now()
+    program.save()
+
+    # Recalculate team points upon publishing
+    from .services import recalculate_team_points
+    recalculate_team_points(institution)
+
+    messages.success(request, f"Results for '{program.name}' published publicly and live team leaderboard updated!")
+    return redirect('core:scoring_program_list', institution_slug=institution.slug)
+
+
+@login_required
+def stage_list_view(request, institution_slug):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        stype = request.POST.get('stage_type', 'STAGE')
+        details = request.POST.get('location_details', '')
+        Stage.objects.create(
+            institution=institution,
+            name=name,
+            stage_type=stype,
+            location_details=details
+        )
+        messages.success(request, f"Stage / Venue '{name}' created successfully!")
+        return redirect('core:stage_list', institution_slug=institution.slug)
+
+    stages = Stage.objects.filter(institution=institution)
+    return render(request, 'core/stage_list.html', {'institution': institution, 'stages': stages})
+
+
+@login_required
+def schedule_view(request, institution_slug):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    schedules = ProgramSchedule.objects.filter(institution=institution).select_related('program', 'fest_day', 'stage')
+    return render(request, 'core/schedule.html', {'institution': institution, 'schedules': schedules})
+
+
+@login_required
+def points_config_view(request, institution_slug):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    if request.user.is_judge:
+        messages.error(request, "Permission Denied: Judges cannot modify points configuration.")
+        return redirect('core:scoring_program_list', institution_slug=institution.slug)
+
+    config, created = PointsConfig.objects.get_or_create(institution=institution)
+
+    if request.method == 'POST':
+        # Single Item Rules
+        config.single_rank_1_points = int(request.POST.get('single_rank_1_points', 5))
+        config.single_rank_2_points = int(request.POST.get('single_rank_2_points', 3))
+        config.single_rank_3_points = int(request.POST.get('single_rank_3_points', 1))
+        config.single_grade_aplus_points = int(request.POST.get('single_grade_aplus_points', 6))
+        config.single_grade_a_points = int(request.POST.get('single_grade_a_points', 5))
+        config.single_grade_b_points = int(request.POST.get('single_grade_b_points', 3))
+        config.single_grade_c_points = int(request.POST.get('single_grade_c_points', 1))
+
+        # Group Item Rules
+        config.group_rank_1_points = int(request.POST.get('group_rank_1_points', 10))
+        config.group_rank_2_points = int(request.POST.get('group_rank_2_points', 6))
+        config.group_rank_3_points = int(request.POST.get('group_rank_3_points', 3))
+        config.group_grade_aplus_points = int(request.POST.get('group_grade_aplus_points', 6))
+        config.group_grade_a_points = int(request.POST.get('group_grade_a_points', 5))
+        config.group_grade_b_points = int(request.POST.get('group_grade_b_points', 3))
+        config.group_grade_c_points = int(request.POST.get('group_grade_c_points', 1))
+
+        # Thresholds
+        config.grade_aplus_threshold = int(request.POST.get('grade_aplus_threshold', 90))
+        config.grade_a_threshold = int(request.POST.get('grade_a_threshold', 80))
+        config.grade_b_threshold = int(request.POST.get('grade_b_threshold', 70))
+        config.grade_c_threshold = int(request.POST.get('grade_c_threshold', 60))
+
+        config.save()
+        messages.success(request, "Points & grade rules for Single and Group items updated successfully!")
+
+    return render(request, 'core/points_config.html', {'institution': institution, 'config': config})
+
+
+@login_required
+def settings_view(request, institution_slug):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    if request.user.is_judge:
+        messages.error(request, "Permission Denied: Judges cannot access portal settings.")
+        return redirect('core:scoring_program_list', institution_slug=institution.slug)
+
+    competitions = Competition.objects.filter(institution=institution)
+    stages = Stage.objects.filter(institution=institution)
+    config, _ = PointsConfig.objects.get_or_create(institution=institution)
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        if action == 'update_points':
+            config.single_rank_1_points = int(request.POST.get('single_rank_1_points', 5))
+            config.single_rank_2_points = int(request.POST.get('single_rank_2_points', 3))
+            config.single_rank_3_points = int(request.POST.get('single_rank_3_points', 1))
+            config.single_grade_aplus_points = int(request.POST.get('single_grade_aplus_points', 6))
+            config.single_grade_a_points = int(request.POST.get('single_grade_a_points', 5))
+            config.single_grade_b_points = int(request.POST.get('single_grade_b_points', 3))
+            config.single_grade_c_points = int(request.POST.get('single_grade_c_points', 1))
+
+            config.group_rank_1_points = int(request.POST.get('group_rank_1_points', 10))
+            config.group_rank_2_points = int(request.POST.get('group_rank_2_points', 6))
+            config.group_rank_3_points = int(request.POST.get('group_rank_3_points', 3))
+            config.group_grade_aplus_points = int(request.POST.get('group_grade_aplus_points', 6))
+            config.group_grade_a_points = int(request.POST.get('group_grade_a_points', 5))
+            config.group_grade_b_points = int(request.POST.get('group_grade_b_points', 3))
+            config.group_grade_c_points = int(request.POST.get('group_grade_c_points', 1))
+
+            config.grade_aplus_threshold = int(request.POST.get('grade_aplus_threshold', 90))
+            config.grade_a_threshold = int(request.POST.get('grade_a_threshold', 80))
+            config.grade_b_threshold = int(request.POST.get('grade_b_threshold', 70))
+            config.grade_c_threshold = int(request.POST.get('grade_c_threshold', 60))
+
+            config.save()
+            messages.success(request, "Points & grade rules for Single and Group items updated successfully!")
+        elif action == 'update_chest_ranges':
+            base_cats = Category.objects.filter(institution=institution, is_common=False)
+            for cat in base_cats:
+                val = request.POST.get(f'start_chest_no_{cat.id}')
+                if val and str(val).isdigit():
+                    cat.start_chest_no = int(val)
+                    cat.save()
+            messages.success(request, "Chest number starting ranges updated successfully!")
+        elif action == 'auto_generate_chest_nos':
+            from .services import auto_generate_all_chest_numbers
+            count = auto_generate_all_chest_numbers(institution, overwrite=True)
+            messages.success(request, f"🔄 Successfully re-generated sequential chest numbers for {count} contestants across categories!")
+        elif action == 'create_competition':
+            name = request.POST.get('name')
+            comp_type = request.POST.get('type')
+            year = request.POST.get('year', 2026)
+            Competition.objects.create(
+                institution=institution,
+                name=name,
+                type=comp_type,
+                year=year
+            )
+            messages.success(request, f"Competition '{name}' created successfully!")
+        return redirect('core:settings', institution_slug=institution.slug)
+
+    base_categories = Category.objects.filter(institution=institution, is_common=False).order_by('id')
+    from .services import get_default_start_chest_no_for_category
+    for cat in base_categories:
+        cat.suggested_start_chest_no = get_default_start_chest_no_for_category(cat)
+
+    context = {
+        'institution': institution,
+        'competitions': competitions,
+        'stages': stages,
+        'config': config,
+        'base_categories': base_categories,
+    }
+    return render(request, 'core/settings.html', context)
+
+
+@login_required
+def program_assign_contestants_view(request, institution_slug, program_id):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    program = get_object_or_404(Program, id=program_id, institution=institution)
+
+    eligible_cats = program.category.get_eligible_categories()
+
+    eligible_contestants = Contestant.objects.filter(
+        institution=institution,
+        category__in=eligible_cats
+    ).select_related('team', 'category')
+
+    if program.is_group:
+        existing_part_ids = set(GroupParticipation.objects.filter(program=program).values_list('team_id', flat=True))
+    else:
+        existing_part_ids = set(Participation.objects.filter(program=program).values_list('contestant_id', flat=True))
+
+    if request.method == 'POST':
+        selected_ids = request.POST.getlist('selected_ids[]')
+        selected_ids_set = set(int(x) for x in selected_ids if str(x).isdigit())
+
+        if program.is_group:
+            for team_id in selected_ids_set:
+                GroupParticipation.objects.get_or_create(
+                    institution=institution,
+                    program=program,
+                    team_id=team_id
+                )
+            GroupParticipation.objects.filter(program=program).exclude(team_id__in=selected_ids_set).delete()
+        else:
+            for contestant_id in selected_ids_set:
+                Participation.objects.get_or_create(
+                    institution=institution,
+                    program=program,
+                    contestant_id=contestant_id
+                )
+            Participation.objects.filter(program=program).exclude(contestant_id__in=selected_ids_set).delete()
+
+        messages.success(request, f"Assigned participants updated for program '{program.name}'!")
+        return redirect('core:program_list', institution_slug=institution.slug)
+
+    teams = Team.objects.filter(institution=institution) if program.is_group else None
+
+    return render(request, 'core/program_assign.html', {
+        'institution': institution,
+        'program': program,
+        'eligible_contestants': eligible_contestants,
+        'existing_part_ids': existing_part_ids,
+        'teams': teams,
+    })
+
+
+@login_required
+def contestant_assign_programs_view(request, institution_slug, contestant_id):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    contestant = get_object_or_404(Contestant, id=contestant_id, institution=institution)
+
+    if request.user.is_team_leader:
+        managed_team = getattr(request.user, 'managed_team', None)
+        if not managed_team or contestant.team_id != managed_team.id:
+            messages.error(request, "Permission Denied: You can only assign programs to your own team members.")
+            return redirect('core:contestant_list', institution_slug=institution.slug)
+
+    all_programs = Program.objects.filter(institution=institution, is_group=False).select_related('category')
+    
+    eligible_programs = []
+    for prog in all_programs:
+        eligible_cats = prog.category.get_eligible_categories()
+        if contestant.category in eligible_cats:
+            eligible_programs.append(prog)
+
+    existing_prog_ids = set(Participation.objects.filter(contestant=contestant).values_list('program_id', flat=True))
+
+    if request.method == 'POST':
+        selected_prog_ids = request.POST.getlist('selected_program_ids[]')
+        selected_prog_ids_set = set(int(x) for x in selected_prog_ids if str(x).isdigit())
+
+        for prog_id in selected_prog_ids_set:
+            Participation.objects.get_or_create(
+                institution=institution,
+                program_id=prog_id,
+                contestant=contestant
+            )
+
+        Participation.objects.filter(contestant=contestant).exclude(program_id__in=selected_prog_ids_set).delete()
+
+        messages.success(request, f"Assigned programs updated for contestant #{contestant.chest_no} '{contestant.name}'!")
+        return redirect('core:contestant_list', institution_slug=institution.slug)
+
+    return render(request, 'core/contestant_assign.html', {
+        'institution': institution,
+        'contestant': contestant,
+        'eligible_programs': eligible_programs,
+        'existing_prog_ids': existing_prog_ids,
+    })
+
+
+@login_required
+def assignment_hub_view(request, institution_slug):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    programs = Program.objects.filter(institution=institution).select_related('category', 'competition')
+    contestants = Contestant.objects.filter(institution=institution).select_related('team', 'category')
+    
+    managed_team = getattr(request.user, 'managed_team', None) if request.user.is_team_leader else None
+
+    if managed_team:
+        contestants = contestants.filter(team=managed_team)
+
+    selected_program_id = request.GET.get('program_id')
+    selected_program = None
+    eligible_contestants = []
+    existing_part_ids = set()
+    teams = None
+
+    if selected_program_id:
+        selected_program = Program.objects.filter(id=selected_program_id, institution=institution).first()
+        if selected_program:
+            eligible_cats = selected_program.category.get_eligible_categories()
+            eligible_contestants = Contestant.objects.filter(
+                institution=institution,
+                category__in=eligible_cats
+            ).select_related('team', 'category')
+
+            if managed_team:
+                eligible_contestants = eligible_contestants.filter(team=managed_team)
+
+            if selected_program.is_group:
+                existing_part_ids = set(GroupParticipation.objects.filter(program=selected_program).values_list('team_id', flat=True))
+                teams = Team.objects.filter(id=managed_team.id) if managed_team else Team.objects.filter(institution=institution)
+            else:
+                existing_part_ids = set(Participation.objects.filter(program=selected_program).values_list('contestant_id', flat=True))
+
+    return render(request, 'core/assignment_hub.html', {
+        'institution': institution,
+        'programs': programs,
+        'contestants': contestants,
+        'selected_program': selected_program,
+        'eligible_contestants': eligible_contestants,
+        'existing_part_ids': existing_part_ids,
+        'teams': teams,
+    })
+
+
+@login_required
+def assigned_programs_list_view(request, institution_slug):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    view_mode = request.GET.get('view', 'category')
+
+    categories = Category.objects.filter(institution=institution).prefetch_related(
+        'programs', 
+        'programs__single_participations__contestant',
+        'programs__single_participations__contestant__team'
+    )
+    teams = Team.objects.filter(institution=institution).prefetch_related(
+        'contestants', 
+        'contestants__participations__program'
+    )
+    programs = Program.objects.filter(institution=institution).select_related(
+        'category', 'competition'
+    ).prefetch_related(
+        'single_participations__contestant',
+        'single_participations__contestant__team',
+        'group_participations__team'
+    )
+    contestants = Contestant.objects.filter(institution=institution).select_related(
+        'team', 'category'
+    ).prefetch_related(
+        'participations__program'
+    )
+
+    return render(request, 'core/assigned_programs_list.html', {
+        'institution': institution,
+        'view_mode': view_mode,
+        'categories': categories,
+        'teams': teams,
+        'programs': programs,
+        'contestants': contestants,
+    })
+
+
+def render_to_pdf(template_src, context_dict={}, filename="document.pdf"):
+    import io
+    from xhtml2pdf import pisa
+    from django.template.loader import get_template
+    from django.http import HttpResponse
+
+    template = get_template(template_src)
+    html = template.render(context_dict)
+    result = io.BytesIO()
+    pdf = pisa.pisaDocument(io.BytesIO(html.encode("UTF-8")), result)
+    if not pdf.err:
+        response = HttpResponse(result.getvalue(), content_type='application/pdf')
+        response['Content-Disposition'] = f'inline; filename="{filename}"'
+        return response
+    return HttpResponse("Error generating PDF", status=500)
+
+
+@login_required
+def download_programs_pdf_view(request, institution_slug):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    programs = Program.objects.filter(institution=institution).select_related('category', 'competition').order_by('category__name', 'name')
+    
+    context = {
+        'institution': institution,
+        'programs': programs,
+        'generated_at': timezone.now()
+    }
+    filename = f"{institution.slug}_programs_list.pdf"
+    return render_to_pdf('pdf/programs_pdf.html', context, filename)
+
+
+@login_required
+def download_contestants_teamwise_pdf_view(request, institution_slug):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    
+    if request.user.is_team_leader:
+        managed_team = getattr(request.user, 'managed_team', None)
+        if managed_team:
+            teams = Team.objects.filter(id=managed_team.id).prefetch_related(
+                'contestants', 'contestants__category'
+            )
+            filename = f"{managed_team.name}_contestants.pdf"
+        else:
+            teams = Team.objects.none()
+            filename = f"{institution.slug}_contestants.pdf"
+    else:
+        teams = Team.objects.filter(institution=institution).prefetch_related(
+            'contestants', 'contestants__category'
+        ).order_by('name')
+        filename = f"{institution.slug}_contestants_teamwise.pdf"
+
+    context = {
+        'institution': institution,
+        'teams': teams,
+        'generated_at': timezone.now()
+    }
+    return render_to_pdf('pdf/contestants_teamwise_pdf.html', context, filename)
+
+
+@login_required
+def download_team_results_pdf_view(request, institution_slug, team_id=None):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    all_teams = Team.objects.filter(institution=institution)
+    
+    is_team_leader = request.user.is_team_leader and hasattr(request.user, 'managed_team') and request.user.managed_team
+    if is_team_leader:
+        team = request.user.managed_team
+    elif team_id:
+        team = get_object_or_404(Team, id=team_id, institution=institution)
+    else:
+        team = all_teams.first()
+
+    if not team:
+        messages.error(request, "No team found.")
+        return redirect('core:dashboard', institution_slug=institution.slug)
+
+    single_parts = Participation.objects.filter(
+        institution=institution,
+        contestant__team=team,
+        program__is_announced=True,
+        marks__isnull=False
+    ).select_related('program', 'program__category', 'contestant', 'contestant__team').order_by('program__category__name', 'program__name')
+
+    group_parts = GroupParticipation.objects.filter(
+        institution=institution,
+        team=team,
+        program__is_announced=True,
+        marks__isnull=False
+    ).select_related('program', 'program__category', 'captain', 'team').prefetch_related('contestants').order_by('program__category__name', 'program__name')
+
+    detailed_rows = []
+    total_announced_points = 0
+
+    for p in single_parts:
+        if p.rank or p.grade:
+            pts = p.total_points
+            total_announced_points += pts
+            detailed_rows.append({
+                'chest_no': f"#{p.contestant.chest_no}",
+                'contestant_name': p.contestant.name,
+                'category_name': p.program.category.name,
+                'team_name': team.name,
+                'item_name': p.program.name,
+                'is_group': False,
+                'rank': p.rank,
+                'grade': p.grade,
+                'points': pts
+            })
+
+    for gp in group_parts:
+        if gp.rank or gp.grade:
+            pts = gp.total_points
+            total_announced_points += pts
+            c_no = f"#{gp.captain.chest_no}" if gp.captain else "-"
+            detailed_rows.append({
+                'chest_no': c_no,
+                'contestant_name': gp.display_name,
+                'category_name': gp.program.category.name,
+                'team_name': team.name,
+                'item_name': gp.program.name,
+                'is_group': True,
+                'rank': gp.rank,
+                'grade': gp.grade,
+                'points': pts
+            })
+
+    from .services import get_team_standings
+    standings = get_team_standings(institution, announced_only=True)
+    team_position = None
+    for s in standings:
+        if s['team'].id == team.id:
+            team_position = s['position']
+            break
+
+    context = {
+        'institution': institution,
+        'team': team,
+        'detailed_rows': detailed_rows,
+        'total_announced_points': total_announced_points,
+        'team_position': team_position,
+        'generated_at': timezone.now()
+    }
+    filename = f"{team.name}_detailed_points.pdf"
+    return render_to_pdf('pdf/team_detailed_results_pdf.html', context, filename)
+
+
+@login_required
+def download_assigned_programs_teamwise_pdf_view(request, institution_slug):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    
+    if request.user.is_team_leader:
+        managed_team = getattr(request.user, 'managed_team', None)
+        if managed_team:
+            teams = Team.objects.filter(id=managed_team.id).order_by('name')
+            filename = f"{managed_team.name}_assigned_programs.pdf"
+        else:
+            teams = Team.objects.none()
+            filename = f"{institution.slug}_assigned_programs.pdf"
+    else:
+        teams = Team.objects.filter(institution=institution).order_by('name')
+        filename = f"{institution.slug}_assigned_programs_teamwise.pdf"
+
+    team_data = []
+    for team in teams:
+        categories_dict = {}
+        contestants = Contestant.objects.filter(institution=institution, team=team).select_related('category').prefetch_related('participations__program').order_by('category__name', 'chest_no')
+        
+        for contestant in contestants:
+            cat_name = contestant.category.name
+            if cat_name not in categories_dict:
+                categories_dict[cat_name] = []
+            categories_dict[cat_name].append(contestant)
+
+        team_data.append({
+            'team': team,
+            'categories': categories_dict
+        })
+
+    context = {
+        'institution': institution,
+        'team_data': team_data,
+        'generated_at': timezone.now()
+    }
+    return render_to_pdf('pdf/assigned_programs_teamwise_pdf.html', context, filename)
+
+
+@login_required
+def download_green_room_pdf_view(request, institution_slug, program_id):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    program = get_object_or_404(Program, id=program_id, institution=institution)
+    
+    if program.is_group:
+        participants = GroupParticipation.objects.filter(program=program).select_related('team')
+    else:
+        participants = Contestant.objects.filter(
+            participations__program=program
+        ).select_related('team', 'category').order_by('chest_no')
+
+    context = {
+        'institution': institution,
+        'program': program,
+        'participants': participants,
+        'generated_at': timezone.now()
+    }
+    filename = f"{program.name}_green_room.pdf"
+    return render_to_pdf('pdf/green_room_pdf.html', context, filename)
+
+
+@login_required
+def download_call_list_pdf_view(request, institution_slug, program_id):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    program = get_object_or_404(Program, id=program_id, institution=institution)
+
+    if program.is_group:
+        participants = GroupParticipation.objects.filter(program=program).select_related('team')
+    else:
+        participants = Contestant.objects.filter(
+            participations__program=program
+        ).select_related('team', 'category').order_by('chest_no')
+
+    context = {
+        'institution': institution,
+        'program': program,
+        'participants': participants,
+        'generated_at': timezone.now()
+    }
+    filename = f"{program.name}_call_list.pdf"
+    return render_to_pdf('pdf/call_list_pdf.html', context, filename)
+
+
+@login_required
+def download_valuation_form_pdf_view(request, institution_slug, program_id):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    program = get_object_or_404(Program, id=program_id, institution=institution)
+
+    if program.is_group:
+        participants = GroupParticipation.objects.filter(program=program).select_related('team')
+    else:
+        participants = Contestant.objects.filter(
+            participations__program=program
+        ).select_related('team', 'category').order_by('chest_no')
+
+    context = {
+        'institution': institution,
+        'program': program,
+        'participants': participants,
+        'generated_at': timezone.now()
+    }
+    filename = f"{program.name}_valuation_form.pdf"
+    return render_to_pdf('pdf/valuation_form_pdf.html', context, filename)
+
+
+@login_required
+def download_bulk_green_room_pdf_view(request, institution_slug):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    programs = Program.objects.filter(institution=institution).select_related('category').order_by('category__name', 'name')
+
+    programs_data = []
+    for prog in programs:
+        if prog.is_group:
+            participants = GroupParticipation.objects.filter(program=prog).select_related('team')
+        else:
+            participants = Contestant.objects.filter(participations__program=prog).select_related('team', 'category').order_by('chest_no')
+        
+        programs_data.append({
+            'program': prog,
+            'participants': participants
+        })
+
+    context = {
+        'institution': institution,
+        'programs_data': programs_data,
+        'generated_at': timezone.now()
+    }
+    filename = f"{institution.slug}_all_green_room_sheets.pdf"
+    return render_to_pdf('pdf/bulk_green_room_pdf.html', context, filename)
+
+
+@login_required
+def download_bulk_call_list_pdf_view(request, institution_slug):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    programs = Program.objects.filter(institution=institution).select_related('category').order_by('category__name', 'name')
+
+    programs_data = []
+    for prog in programs:
+        if prog.is_group:
+            participants = GroupParticipation.objects.filter(program=prog).select_related('team')
+        else:
+            participants = Contestant.objects.filter(participations__program=prog).select_related('team', 'category').order_by('chest_no')
+        
+        programs_data.append({
+            'program': prog,
+            'participants': participants
+        })
+
+    context = {
+        'institution': institution,
+        'programs_data': programs_data,
+        'generated_at': timezone.now()
+    }
+    filename = f"{institution.slug}_all_call_lists.pdf"
+    return render_to_pdf('pdf/bulk_call_list_pdf.html', context, filename)
+
+
+@login_required
+def download_bulk_valuation_form_pdf_view(request, institution_slug):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    programs = Program.objects.filter(institution=institution).select_related('category').order_by('category__name', 'name')
+
+    programs_data = []
+    for prog in programs:
+        if prog.is_group:
+            participants = GroupParticipation.objects.filter(program=prog).select_related('team')
+        else:
+            participants = Contestant.objects.filter(participations__program=prog).select_related('team', 'category').order_by('chest_no')
+        
+        programs_data.append({
+            'program': prog,
+            'participants': participants
+        })
+
+    context = {
+        'institution': institution,
+        'programs_data': programs_data,
+        'generated_at': timezone.now()
+    }
+    filename = f"{institution.slug}_all_valuation_forms.pdf"
+    return render_to_pdf('pdf/bulk_valuation_form_pdf.html', context, filename)
+
+
+# ---------------- Category Edit & Delete ----------------
+@login_required
+def category_edit_view(request, institution_slug, category_id):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    category = get_object_or_404(Category, id=category_id, institution=institution)
+    competitions = Competition.objects.filter(institution=institution)
+    base_categories = Category.objects.filter(institution=institution, is_common=False).exclude(id=category.id)
+
+    if request.method == 'POST':
+        comp_id = request.POST.get('competition_id')
+        name = request.POST.get('name')
+        description = request.POST.get('description', '')
+        is_common = request.POST.get('is_common') == '1'
+        inc_cat_ids = request.POST.getlist('included_categories[]')
+
+        comp = Competition.objects.filter(id=comp_id, institution=institution).first()
+        if comp:
+            category.competition = comp
+        category.name = name
+        category.description = description
+        category.is_common = is_common
+        category.save()
+
+        if is_common:
+            inc_cats = Category.objects.filter(id__in=inc_cat_ids, institution=institution)
+            category.included_categories.set(inc_cats)
+        else:
+            category.included_categories.clear()
+
+        messages.success(request, f"Category '{name}' updated successfully!")
+        return redirect('core:category_list', institution_slug=institution.slug)
+
+    return render(request, 'core/category_edit.html', {
+        'institution': institution,
+        'category': category,
+        'competitions': competitions,
+        'base_categories': base_categories
+    })
+
+
+@login_required
+def category_delete_view(request, institution_slug, category_id):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    category = get_object_or_404(Category, id=category_id, institution=institution)
+    name = category.name
+    category.delete()
+    messages.success(request, f"Category '{name}' deleted successfully!")
+    return redirect('core:category_list', institution_slug=institution.slug)
+
+
+# ---------------- Program Edit & Delete ----------------
+@login_required
+def program_edit_view(request, institution_slug, program_id):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    program = get_object_or_404(Program, id=program_id, institution=institution)
+    competitions = Competition.objects.filter(institution=institution)
+    categories = Category.objects.filter(institution=institution)
+
+    if request.method == 'POST':
+        comp_id = request.POST.get('competition_id')
+        cat_id = request.POST.get('category_id')
+        name = request.POST.get('name')
+        is_group = request.POST.get('is_group') == 'on'
+        p_type = request.POST.get('program_type', 'STAGE')
+        duration = request.POST.get('duration_per_participant', 5)
+
+        comp = get_object_or_404(Competition, id=comp_id, institution=institution)
+        cat = get_object_or_404(Category, id=cat_id, institution=institution)
+
+        program.competition = comp
+        program.category = cat
+        program.name = name
+        program.is_group = is_group
+        program.program_type = p_type
+        program.duration_per_participant = duration
+        program.save()
+
+        messages.success(request, f"Program '{name}' updated successfully!")
+        return redirect('core:program_list', institution_slug=institution.slug)
+
+    return render(request, 'core/program_edit.html', {
+        'institution': institution,
+        'program': program,
+        'competitions': competitions,
+        'categories': categories
+    })
+
+
+@login_required
+def program_delete_view(request, institution_slug, program_id):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    program = get_object_or_404(Program, id=program_id, institution=institution)
+    name = program.name
+    program.delete()
+    messages.success(request, f"Program '{name}' deleted successfully!")
+    return redirect('core:program_list', institution_slug=institution.slug)
+
+
+# ---------------- Contestant Edit & Delete ----------------
+@login_required
+def contestant_edit_view(request, institution_slug, contestant_id):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    contestant = get_object_or_404(Contestant, id=contestant_id, institution=institution)
+    competitions = Competition.objects.filter(institution=institution)
+    categories = Category.objects.filter(institution=institution, is_common=False)
+    teams = Team.objects.filter(institution=institution)
+
+    if request.method == 'POST':
+        chest_no = request.POST.get('chest_no')
+        name = request.POST.get('name')
+        comp_id = request.POST.get('competition_id')
+        team_id = request.POST.get('team_id')
+        cat_id = request.POST.get('category_id')
+
+        comp = get_object_or_404(Competition, id=comp_id, institution=institution)
+        team = get_object_or_404(Team, id=team_id, institution=institution)
+        cat = get_object_or_404(Category, id=cat_id, institution=institution)
+
+        if cat.is_common:
+            messages.error(request, f"Contestants cannot be assigned to Combined Category '{cat.name}'. Please choose a Base Category.")
+            return redirect('core:contestant_edit', institution_slug=institution.slug, contestant_id=contestant.id)
+
+        if chest_no:
+            contestant.chest_no = int(chest_no)
+        contestant.name = name
+        contestant.competition = comp
+        contestant.team = team
+        contestant.category = cat
+        contestant.save()
+
+        messages.success(request, f"Contestant #{contestant.chest_no} '{name}' updated successfully!")
+        return redirect('core:contestant_list', institution_slug=institution.slug)
+
+    return render(request, 'core/contestant_edit.html', {
+        'institution': institution,
+        'contestant': contestant,
+        'competitions': competitions,
+        'categories': categories,
+        'teams': teams
+    })
+
+
+@login_required
+def contestant_delete_view(request, institution_slug, contestant_id):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    contestant = get_object_or_404(Contestant, id=contestant_id, institution=institution)
+    c_name = contestant.name
+    chest_no = contestant.chest_no
+    contestant.delete()
+    messages.success(request, f"Contestant #{chest_no} '{c_name}' deleted successfully!")
+    return redirect('core:contestant_list', institution_slug=institution.slug)
+
+
+# ==============================================================================
+# RESULTS, TEAM STANDINGS, TOPPERS & SCORE BALANCER AI
+# ==============================================================================
+
+@login_required
+def program_results_view(request, institution_slug):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    categories = Category.objects.filter(institution=institution)
+    
+    category_id = request.GET.get('category')
+    view_mode = request.GET.get('view', 'announced')
+    
+    programs = Program.objects.filter(institution=institution).select_related('category')
+    if category_id:
+        programs = programs.filter(category_id=category_id)
+    if view_mode == 'announced':
+        programs = programs.filter(is_announced=True)
+
+    program_results = []
+    for prog in programs:
+        if prog.is_group:
+            participations = GroupParticipation.objects.filter(
+                program=prog, marks__isnull=False
+            ).select_related('team').prefetch_related('contestants').order_by('rank', '-marks')
+        else:
+            participations = Participation.objects.filter(
+                program=prog, marks__isnull=False
+            ).select_related('contestant', 'contestant__team').order_by('rank', '-marks')
+
+        if participations.exists():
+            program_results.append({
+                'program': prog,
+                'participations': participations
+            })
+
+    return render(request, 'core/program_results.html', {
+        'institution': institution,
+        'categories': categories,
+        'selected_category_id': category_id,
+        'view_mode': view_mode,
+        'program_results': program_results
+    })
+
+
+@login_required
+def team_standings_view(request, institution_slug):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    view_mode = request.GET.get('view', 'announced')
+    announced_only = (view_mode == 'announced')
+
+    from .services import get_team_standings
+    team_data = get_team_standings(institution, announced_only=announced_only)
+
+    return render(request, 'core/team_standings.html', {
+        'institution': institution,
+        'teams': team_data,
+        'top_three': team_data[:3] if len(team_data) >= 3 else team_data,
+        'view_mode': view_mode
+    })
+
+
+@login_required
+def toppers_list_view(request, institution_slug):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    categories = Category.objects.filter(institution=institution)
+    category_id = request.GET.get('category')
+    stage_type = request.GET.get('stage_type')
+    view_mode = request.GET.get('view', 'announced')
+    announced_only = (view_mode == 'announced')
+
+    contestants_qs = Contestant.objects.filter(institution=institution).select_related('team', 'category')
+    if category_id:
+        contestants_qs = contestants_qs.filter(category_id=category_id)
+
+    toppers_data = []
+    for c in contestants_qs:
+        parts = Participation.objects.filter(contestant=c, marks__isnull=False).select_related('program')
+        if announced_only:
+            parts = parts.filter(program__is_announced=True)
+        if stage_type in ['STAGE', 'OFF_STAGE']:
+            parts = parts.filter(program__program_type=stage_type)
+
+        tot_pts = 0
+        r1 = r2 = r3 = 0
+        for p in parts:
+            if p.rank == 1: r1 += 1
+            elif p.rank == 2: r2 += 1
+            elif p.rank == 3: r3 += 1
+            tot_pts += p.total_points
+
+        if tot_pts > 0 or r1 > 0 or r2 > 0 or r3 > 0:
+            toppers_data.append({
+                'contestant': c,
+                'points': tot_pts,
+                'r1': r1,
+                'r2': r2,
+                'r3': r3
+            })
+
+    toppers_data.sort(key=lambda x: (x['points'], x['r1'], x['r2'], x['r3']), reverse=True)
+
+    overall_champion = toppers_data[0] if toppers_data else None
+
+    cat_champions = []
+    for cat in categories:
+        cat_contestants = [t for t in toppers_data if t['contestant'].category.id == cat.id]
+        if cat_contestants:
+            cat_champions.append({
+                'category': cat,
+                'champion': cat_contestants[0]
+            })
+
+    return render(request, 'core/toppers_list.html', {
+        'institution': institution,
+        'categories': categories,
+        'selected_category_id': category_id,
+        'selected_stage_type': stage_type,
+        'toppers': toppers_data,
+        'overall_champion': overall_champion,
+        'cat_champions': cat_champions,
+        'view_mode': view_mode
+    })
+
+
+@login_required
+def manage_announcements_view(request, institution_slug):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    if request.user.is_judge:
+        messages.error(request, "Permission Denied: Judges cannot access the Public Announcement Hub.")
+        return redirect('core:scoring_program_list', institution_slug=institution.slug)
+
+    programs = Program.objects.filter(institution=institution).select_related('category').order_by('category__name', 'name')
+
+    for p in programs:
+        if p.is_group:
+            p.has_marks = GroupParticipation.objects.filter(program=p, marks__isnull=False).exists()
+            p.marked_count = GroupParticipation.objects.filter(program=p, marks__isnull=False).count()
+        else:
+            p.has_marks = Participation.objects.filter(program=p, marks__isnull=False).exists()
+            p.marked_count = Participation.objects.filter(program=p, marks__isnull=False).count()
+
+    announced_count = programs.filter(is_announced=True).count()
+    total_programs = programs.count()
+
+    suggested_announcements = get_top_5_balancing_announcement_suggestions(institution)
+
+    return render(request, 'core/manage_announcements.html', {
+        'institution': institution,
+        'programs': programs,
+        'announced_count': announced_count,
+        'total_programs': total_programs,
+        'suggested_announcements': suggested_announcements
+    })
+
+
+@login_required
+def toggle_program_announcement_view(request, institution_slug, program_id):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    program = get_object_or_404(Program, id=program_id, institution=institution)
+
+    if request.user.is_judge:
+        messages.error(request, "Permission Denied: Judges cannot publish public results.")
+        return redirect('core:scoring_program_list', institution_slug=institution.slug)
+
+    program.is_announced = not program.is_announced
+    if program.is_announced:
+        program.announced_at = timezone.now()
+        messages.success(request, f"📢 Results for '{program.name}' are now PUBLICLY ANNOUNCED!")
+    else:
+        messages.info(request, f"🔒 Results for '{program.name}' are now hidden from public view.")
+    program.save()
+
+    from .services import recalculate_team_points
+    recalculate_team_points(institution)
+
+    next_url = request.META.get('HTTP_REFERER') or redirect('core:manage_announcements', institution_slug=institution.slug)
+    return redirect(next_url)
+
+
+def get_top_5_balancing_announcement_suggestions(institution):
+    """
+    Calculates top 5 unannounced completed programs that best balance 
+    the current public team scores and create maximum suspense on the public leaderboard.
+    """
+    teams = list(Team.objects.filter(institution=institution))
+    if not teams:
+        return []
+
+    public_team_scores = {}
+    for t in teams:
+        pts = 0
+        for c in Contestant.objects.filter(institution=institution, team=t):
+            parts = Participation.objects.filter(contestant=c, marks__isnull=False, program__is_announced=True)
+            pts += sum(p.total_points for p in parts if p.rank or p.grade)
+        for gp in GroupParticipation.objects.filter(team=t, marks__isnull=False, program__is_announced=True):
+            pts += gp.total_points
+        public_team_scores[t.id] = pts
+
+    unannounced_programs = Program.objects.filter(
+        institution=institution, is_announced=False
+    ).filter(
+        Q(single_participations__marks__isnull=False) | Q(group_participations__marks__isnull=False)
+    ).distinct()
+
+    suggestions = []
+    for prog in unannounced_programs:
+        simulated_gains = {t.id: 0 for t in teams}
+        
+        if prog.is_group:
+            gps = GroupParticipation.objects.filter(program=prog, marks__isnull=False)
+            for gp in gps:
+                if gp.team_id and (gp.rank or gp.grade):
+                    simulated_gains[gp.team_id] = simulated_gains.get(gp.team_id, 0) + gp.total_points
+        else:
+            ps = Participation.objects.filter(program=prog, marks__isnull=False).select_related('contestant')
+            for p in ps:
+                if p.contestant and p.contestant.team_id and (p.rank or p.grade):
+                    simulated_gains[p.contestant.team_id] = simulated_gains.get(p.contestant.team_id, 0) + p.total_points
+
+        simulated_scores = {t.id: public_team_scores[t.id] + simulated_gains[t.id] for t in teams}
+        sorted_scores = sorted(simulated_scores.values(), reverse=True)
+        
+        if len(sorted_scores) >= 2:
+            gap_1st_2nd = sorted_scores[0] - sorted_scores[1]
+            gap_1st_3rd = sorted_scores[0] - sorted_scores[2] if len(sorted_scores) >= 3 else gap_1st_2nd
+            balance_score = -(gap_1st_2nd * 1.5 + gap_1st_3rd * 0.5)
+        else:
+            balance_score = 0
+
+        total_prog_pts = sum(simulated_gains.values())
+        final_priority = balance_score + (total_prog_pts * 0.1)
+
+        impact_items = []
+        for t in teams:
+            gain = simulated_gains.get(t.id, 0)
+            if gain > 0:
+                impact_items.append(f"{t.name}: +{gain} pts")
+
+        suggestions.append({
+            'program': prog,
+            'total_pts': total_prog_pts,
+            'priority': round(final_priority, 2),
+            'impact_summary': ", ".join(impact_items) if impact_items else "No team points awarded",
+            'top_gap_after': sorted_scores[0] - sorted_scores[1] if len(sorted_scores) >= 2 else 0
+        })
+
+    suggestions.sort(key=lambda x: x['priority'], reverse=True)
+    return suggestions[:5]
+
+
+@login_required
+def announcement_balancer_view(request, institution_slug):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    if request.user.is_judge:
+        messages.error(request, "Permission Denied: Judges cannot access the Score Balancer AI.")
+        return redirect('core:scoring_program_list', institution_slug=institution.slug)
+
+    suggested_announcements = get_top_5_balancing_announcement_suggestions(institution)
+
+    teams = list(Team.objects.filter(institution=institution))
+    public_team_scores = []
+    for t in teams:
+        pts = 0
+        for c in Contestant.objects.filter(institution=institution, team=t):
+            parts = Participation.objects.filter(contestant=c, marks__isnull=False, program__is_announced=True)
+            pts += sum(p.total_points for p in parts if p.rank or p.grade)
+        for gp in GroupParticipation.objects.filter(team=t, marks__isnull=False, program__is_announced=True):
+            pts += gp.total_points
+        public_team_scores.append({'team': t, 'points': pts})
+
+    public_team_scores.sort(key=lambda x: x['points'], reverse=True)
+
+    return render(request, 'core/announcement_balancer.html', {
+        'institution': institution,
+        'suggested_announcements': suggested_announcements,
+        'public_team_scores': public_team_scores
+    })
+
+
+@login_required
+def shareable_results_view(request, institution_slug):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    programs = Program.objects.filter(institution=institution, is_announced=True).select_related('category').distinct()
+
+    cards_data = []
+    for prog in programs:
+        if prog.is_group:
+            winners = GroupParticipation.objects.filter(
+                program=prog,
+                rank__in=[1, 2, 3]
+            ).select_related('team').prefetch_related('contestants').order_by('rank')
+            
+            winners_list = []
+            for gp in winners:
+                members = ", ".join([c.name for c in gp.contestants.all()])
+                winners_list.append({
+                    'rank': gp.rank,
+                    'name': gp.display_name,
+                    'team': gp.team.name if gp.team else '',
+                    'members': members,
+                    'marks': gp.marks,
+                    'grade': gp.grade
+                })
+        else:
+            winners = Participation.objects.filter(
+                program=prog,
+                rank__in=[1, 2, 3]
+            ).select_related('contestant', 'contestant__team').order_by('rank')
+            
+            winners_list = []
+            for p in winners:
+                winners_list.append({
+                    'rank': p.rank,
+                    'name': p.contestant.name if p.contestant else '',
+                    'team': p.contestant.team.name if p.contestant and p.contestant.team else '',
+                    'chest_no': p.contestant.chest_no if p.contestant else '',
+                    'members': '',
+                    'marks': p.marks,
+                    'grade': p.grade
+                })
+
+        if winners_list:
+            cards_data.append({
+                'program': prog,
+                'winners': winners_list
+            })
+
+    return render(request, 'core/shareable_results.html', {
+        'institution': institution,
+        'cards_data': cards_data
+    })
+
+
+# ==============================================================================
+# FEST SCHEDULE & AUTO-SCHEDULER ENGINE
+# ==============================================================================
+
+from .schedule_utils import (
+    get_program_assigned_count,
+    calculate_program_duration,
+    detect_all_clashes,
+    generate_smart_auto_schedule
+)
+
+@login_required
+def manage_schedule_view(request, institution_slug):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+
+    fest_days = FestDay.objects.filter(institution=institution).order_by('day_number')
+    stages = Stage.objects.filter(institution=institution).order_by('stage_type', 'name')
+    programs = Program.objects.filter(institution=institution).select_related('category', 'schedule', 'schedule__fest_day', 'schedule__stage').all()
+
+    program_list = []
+    scheduled_count = 0
+    for p in programs:
+        assigned_count = get_program_assigned_count(p)
+        calc_dur = calculate_program_duration(p)
+        has_sched = hasattr(p, 'schedule') and p.schedule is not None
+        if has_sched:
+            scheduled_count += 1
+
+        program_list.append({
+            'program': p,
+            'assigned_count': assigned_count,
+            'calculated_duration': calc_dur,
+            'has_schedule': has_sched,
+            'schedule': p.schedule if has_sched else None
+        })
+
+    clash_data = detect_all_clashes(institution)
+
+    timetable_by_day = []
+    for day in fest_days:
+        day_stages = []
+        for stage in stages:
+            schedules = ProgramSchedule.objects.filter(institution=institution, fest_day=day, stage=stage).select_related('program', 'program__category').order_by('start_time')
+            day_stages.append({
+                'stage': stage,
+                'schedules': schedules
+            })
+        timetable_by_day.append({
+            'day': day,
+            'stages': day_stages
+        })
+
+    return render(request, 'core/manage_schedule.html', {
+        'institution': institution,
+        'fest_days': fest_days,
+        'stages': stages,
+        'program_list': program_list,
+        'total_programs': len(programs),
+        'scheduled_count': scheduled_count,
+        'clash_data': clash_data,
+        'timetable_by_day': timetable_by_day
+    })
+
+
+@login_required
+def add_fest_day_view(request, institution_slug):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    if request.method == 'POST':
+        day_number = request.POST.get('day_number')
+        date_str = request.POST.get('date')
+        name = request.POST.get('name', '').strip()
+        start_time_str = request.POST.get('start_time', '09:00')
+        end_time_str = request.POST.get('end_time', '21:00')
+
+        if day_number:
+            parsed_date = None
+            if date_str:
+                try:
+                    parsed_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+                except ValueError:
+                    pass
+
+            try:
+                st_time = datetime.strptime(start_time_str, '%H:%M').time()
+            except ValueError:
+                st_time = time(9, 0)
+
+            try:
+                en_time = datetime.strptime(end_time_str, '%H:%M').time()
+            except ValueError:
+                en_time = time(21, 0)
+
+            comp = Competition.objects.filter(institution=institution, is_active=True).first() or Competition.objects.filter(institution=institution).first()
+            if not comp:
+                comp = Competition.objects.create(institution=institution, name="Main Fest", type="ON", year=2026)
+
+            FestDay.objects.get_or_create(
+                institution=institution,
+                competition=comp,
+                day_number=int(day_number),
+                defaults={'date': parsed_date, 'name': name, 'start_time': st_time, 'end_time': en_time}
+            )
+            messages.success(request, f"Fest Day #{day_number} added successfully!")
+
+    return redirect('core:manage_schedule', institution_slug=institution.slug)
+
+
+@login_required
+def delete_fest_day_view(request, institution_slug, day_id):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    day = get_object_or_404(FestDay, id=day_id, institution=institution)
+    day_num = day.day_number
+    day.delete()
+    messages.success(request, f"Fest Day #{day_num} deleted successfully.")
+    return redirect('core:manage_schedule', institution_slug=institution.slug)
+
+
+@login_required
+def add_stage_view(request, institution_slug):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        stage_type = request.POST.get('stage_type', 'STAGE')
+        location_details = request.POST.get('location_details', '').strip()
+
+        if name:
+            Stage.objects.create(
+                institution=institution,
+                name=name,
+                stage_type=stage_type,
+                location_details=location_details
+            )
+            messages.success(request, f"Venue / Stage '{name}' ({stage_type}) added successfully!")
+
+    return redirect('core:manage_schedule', institution_slug=institution.slug)
+
+
+@login_required
+def delete_stage_view(request, institution_slug, stage_id):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    stage = get_object_or_404(Stage, id=stage_id, institution=institution)
+    st_name = stage.name
+    stage.delete()
+    messages.success(request, f"Venue '{st_name}' deleted successfully.")
+    return redirect('core:manage_schedule', institution_slug=institution.slug)
+
+
+@login_required
+def save_program_schedule_view(request, institution_slug):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    if request.method == 'POST':
+        program_id = request.POST.get('program_id')
+        fest_day_id = request.POST.get('fest_day_id')
+        stage_id = request.POST.get('stage_id')
+        start_time_str = request.POST.get('start_time')
+
+        if program_id and fest_day_id and stage_id and start_time_str:
+            program = get_object_or_404(Program, id=program_id, institution=institution)
+            fest_day = get_object_or_404(FestDay, id=fest_day_id, institution=institution)
+            stage = get_object_or_404(Stage, id=stage_id, institution=institution)
+
+            try:
+                start_t = datetime.strptime(start_time_str, '%H:%M').time()
+            except ValueError:
+                messages.error(request, "Invalid start time format.")
+                return redirect('core:manage_schedule', institution_slug=institution.slug)
+
+            calc_mins = calculate_program_duration(program)
+            end_t = (datetime.combine(datetime.today(), start_t) + timedelta(minutes=calc_mins)).time()
+
+            ProgramSchedule.objects.update_or_create(
+                institution=institution,
+                program=program,
+                defaults={
+                    'fest_day': fest_day,
+                    'stage': stage,
+                    'start_time': start_t,
+                    'end_time': end_t,
+                    'total_duration_minutes': calc_mins
+                }
+            )
+            messages.success(request, f"Schedule saved for '{program.name}'!")
+
+    return redirect('core:manage_schedule', institution_slug=institution.slug)
+
+
+@login_required
+def delete_program_schedule_view(request, institution_slug, schedule_id):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    sched = get_object_or_404(ProgramSchedule, id=schedule_id, institution=institution)
+    prog_name = sched.program.name
+    sched.delete()
+    messages.success(request, f"Schedule for '{prog_name}' removed.")
+    return redirect('core:manage_schedule', institution_slug=institution.slug)
+
+
+@login_required
+def run_auto_scheduler_view(request, institution_slug):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    if request.method == 'POST':
+        res = generate_smart_auto_schedule(institution)
+        if 'error' in res:
+            messages.error(request, res['error'])
+        else:
+            sched_count = res.get('scheduled_count', 0)
+            skip_count = res.get('skipped_count', 0)
+            messages.success(request, f"🤖 Smart Auto-Scheduler completed! Successfully scheduled {sched_count} programs.")
+            if skip_count > 0:
+                messages.warning(request, f"Could not fit {skip_count} programs into available time slots. Consider adding another fest day or stage.")
+
+    return redirect('core:manage_schedule', institution_slug=institution.slug)
+
+
+@login_required
+def clear_all_schedules_view(request, institution_slug):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    if request.method == 'POST':
+        count = ProgramSchedule.objects.filter(institution=institution).count()
+        ProgramSchedule.objects.filter(institution=institution).delete()
+        messages.success(request, f"Cleared all {count} program schedules.")
+
+    return redirect('core:manage_schedule', institution_slug=institution.slug)
+
+
+@login_required
+def update_program_duration_view(request, institution_slug, program_id):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    program = get_object_or_404(Program, id=program_id, institution=institution)
+
+    if request.method == 'POST':
+        program_type = request.POST.get('program_type', 'STAGE')
+        presentation_mode = request.POST.get('presentation_mode', 'SEQUENTIAL')
+        dur_per_part = request.POST.get('duration_per_participant', '5')
+        buffer_mins = request.POST.get('buffer_margin_minutes', '0')
+        preferred_stage_id = request.POST.get('preferred_stage_id', '')
+
+        program.program_type = program_type
+        program.presentation_mode = presentation_mode
+        program.duration_per_participant = max(int(dur_per_part), 1) if str(dur_per_part).isdigit() else 5
+        program.buffer_margin_minutes = max(int(buffer_mins), 0) if str(buffer_mins).isdigit() else 0
+
+        if preferred_stage_id:
+            program.preferred_stage_id = int(preferred_stage_id)
+        else:
+            program.preferred_stage = None
+
+        program.save()
+
+        calc_dur = calculate_program_duration(program)
+        if hasattr(program, 'schedule') and program.schedule is not None:
+            sched = program.schedule
+            sched.total_duration_minutes = calc_dur
+            s_dt = datetime.combine(datetime.today(), sched.start_time)
+            sched.end_time = (s_dt + timedelta(minutes=calc_dur)).time()
+            sched.save()
+
+        messages.success(request, f"Schedule settings for '{program.name}' updated.")
+
+    return redirect('core:manage_schedule', institution_slug=institution.slug)
+
+
+from django.urls import reverse
+
+@login_required
+def group_assign_view(request, institution_slug, program_id=None):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    group_programs = Program.objects.filter(institution=institution, is_group=True).select_related('category', 'competition')
+    
+    managed_team = getattr(request.user, 'managed_team', None) if request.user.is_team_leader else None
+
+    if managed_team:
+        teams = Team.objects.filter(id=managed_team.id)
+    else:
+        teams = Team.objects.filter(institution=institution)
+    
+    selected_program = None
+    if program_id:
+        selected_program = get_object_or_404(Program, id=program_id, institution=institution, is_group=True)
+    elif group_programs.exists():
+        selected_program = group_programs.first()
+
+    selected_team_id = request.GET.get('team_id')
+    if managed_team:
+        selected_team = managed_team
+    else:
+        selected_team = Team.objects.filter(id=selected_team_id, institution=institution).first() if selected_team_id else teams.first()
+
+    eligible_contestants = []
+    if selected_program:
+        eligible_cats = selected_program.category.get_eligible_categories()
+        eligible_contestants = Contestant.objects.filter(
+            institution=institution,
+            category__in=eligible_cats
+        ).select_related('team', 'category')
+        if selected_team:
+            eligible_contestants = eligible_contestants.filter(team=selected_team)
+
+    existing_group_participations = []
+    if selected_program:
+        existing_group_participations = GroupParticipation.objects.filter(
+            program=selected_program
+        ).select_related('team', 'captain').prefetch_related('contestants')
+        if managed_team:
+            existing_group_participations = existing_group_participations.filter(team=managed_team)
+
+    if request.method == 'POST':
+        action = request.POST.get('action', 'save_group')
+        if action == 'save_group':
+            prog_id = request.POST.get('program_id')
+            team_id = request.POST.get('team_id')
+            group_name = request.POST.get('group_name', '').strip()
+            captain_id = request.POST.get('captain_id')
+            member_ids = request.POST.getlist('member_ids[]')
+            group_part_id = request.POST.get('group_part_id')
+
+            prog = get_object_or_404(Program, id=prog_id, institution=institution)
+            if managed_team:
+                tm = managed_team
+            else:
+                tm = get_object_or_404(Team, id=team_id, institution=institution)
+
+            capt = Contestant.objects.filter(id=captain_id, institution=institution, team=tm).first() if captain_id else None
+
+            if group_part_id:
+                gp = get_object_or_404(GroupParticipation, id=group_part_id, institution=institution)
+                if managed_team and gp.team_id != managed_team.id:
+                    messages.error(request, "Permission Denied: You cannot modify group entries for other teams.")
+                    return redirect('core:group_assign', institution_slug=institution.slug)
+            else:
+                gp = GroupParticipation(institution=institution, program=prog, team=tm)
+
+            gp.group_name = group_name
+            gp.captain = capt
+            gp.save()
+
+            if member_ids:
+                m_contestants = Contestant.objects.filter(id__in=member_ids, institution=institution, team=tm)
+                gp.contestants.set(m_contestants)
+
+            if capt and not gp.contestants.filter(id=capt.id).exists():
+                gp.contestants.add(capt)
+
+            messages.success(request, f"Group entry '{gp.display_name}' saved successfully!")
+            return redirect(f"{reverse('core:group_assign', kwargs={'institution_slug': institution.slug})}?program_id={prog.id}&team_id={tm.id}")
+
+    return render(request, 'core/group_assign.html', {
+        'institution': institution,
+        'group_programs': group_programs,
+        'selected_program': selected_program,
+        'teams': teams,
+        'selected_team': selected_team,
+        'eligible_contestants': eligible_contestants,
+        'existing_group_participations': existing_group_participations,
+    })
+
+
+@login_required
+def delete_group_participation_view(request, institution_slug, group_part_id):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    gp = get_object_or_404(GroupParticipation, id=group_part_id, institution=institution)
+    prog_id = gp.program.id
+    disp_name = gp.display_name
+    gp.delete()
+    messages.success(request, f"Group entry '{disp_name}' deleted.")
+    return redirect(f"{reverse('core:group_assign', kwargs={'institution_slug': institution.slug})}?program_id={prog_id}")
+
+
+from django.http import JsonResponse
+
+@login_required
+def api_get_next_chest_no_view(request, institution_slug):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    category_id = request.GET.get('category_id')
+    if category_id:
+        category = Category.objects.filter(id=category_id, institution=institution, is_common=False).first()
+        if category:
+            from .services import get_next_chest_number
+            next_no = get_next_chest_number(category)
+            return JsonResponse({'next_chest_no': next_no})
+    return JsonResponse({'next_chest_no': ''})
+
+
+@login_required
+def team_results_view(request, institution_slug, team_id=None):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    all_teams = Team.objects.filter(institution=institution)
+    
+    is_team_leader = request.user.is_team_leader and hasattr(request.user, 'managed_team') and request.user.managed_team
+    if is_team_leader:
+        team = request.user.managed_team
+    elif team_id:
+        team = get_object_or_404(Team, id=team_id, institution=institution)
+    else:
+        team = all_teams.first()
+
+    if not team:
+        messages.error(request, "No team found.")
+        return redirect('core:dashboard', institution_slug=institution.slug)
+
+    # 1. Single Participations (Announced Only)
+    single_parts = Participation.objects.filter(
+        institution=institution,
+        contestant__team=team,
+        program__is_announced=True,
+        marks__isnull=False
+    ).select_related('program', 'program__category', 'contestant', 'contestant__team').order_by('program__category__name', 'program__name')
+
+    # 2. Group Participations (Announced Only)
+    group_parts = GroupParticipation.objects.filter(
+        institution=institution,
+        team=team,
+        program__is_announced=True,
+        marks__isnull=False
+    ).select_related('program', 'program__category', 'captain', 'team').prefetch_related('contestants').order_by('program__category__name', 'program__name')
+
+    detailed_rows = []
+    total_announced_points = 0
+
+    for p in single_parts:
+        if p.rank or p.grade:
+            pts = p.total_points
+            total_announced_points += pts
+            detailed_rows.append({
+                'chest_no': f"#{p.contestant.chest_no}",
+                'contestant_name': p.contestant.name,
+                'category_name': p.program.category.name,
+                'team_name': team.name,
+                'item_name': p.program.name,
+                'is_group': False,
+                'rank': p.rank,
+                'grade': p.grade,
+                'points': pts
+            })
+
+    for gp in group_parts:
+        if gp.rank or gp.grade:
+            pts = gp.total_points
+            total_announced_points += pts
+            c_no = f"#{gp.captain.chest_no}" if gp.captain else "-"
+            detailed_rows.append({
+                'chest_no': c_no,
+                'contestant_name': gp.display_name,
+                'category_name': gp.program.category.name,
+                'team_name': team.name,
+                'item_name': gp.program.name,
+                'is_group': True,
+                'rank': gp.rank,
+                'grade': gp.grade,
+                'points': pts
+            })
+
+    from .services import get_team_standings
+    standings = get_team_standings(institution, announced_only=True)
+    team_position = None
+    for s in standings:
+        if s['team'].id == team.id:
+            team_position = s['position']
+            break
+
+    return render(request, 'core/team_results.html', {
+        'institution': institution,
+        'team': team,
+        'all_teams': all_teams,
+        'is_team_leader': is_team_leader,
+        'detailed_rows': detailed_rows,
+        'total_announced_points': total_announced_points,
+        'team_position': team_position,
+        'standings': standings,
+    })
+
+
+@login_required
+def help_guide_view(request, institution_slug):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    return render(request, 'core/help_guide.html', {'institution': institution})
+
+
+
+
+
+
+
+
+
+
+
+

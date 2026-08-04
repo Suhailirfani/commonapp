@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ institution.name }} - Live Public Result Portal{% endblock %}
+
+{% block content %}
+<!-- Institution Header Banner -->
+<div class="glass-card" style="text-align: center; padding: 40px 20px; margin-bottom: 30px; border-color: rgba(6, 182, 212, 0.4);">
+    <div style="display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 12px;">
+        <img src="{% static 'img/gf_emblem.png' %}" alt="GO FEST" style="height: 48px; width: auto;">
+        <span class="badge badge-approved" style="font-size: 0.85rem; padding: 6px 16px;"><i class="fa-solid fa-signal"></i> Official Live Result Portal</span>
+    </div>
+    <h1 style="font-size: 2.8rem; font-weight: 800; margin: 12px 0 6px 0; background: linear-gradient(135deg, #ffffff, var(--accent-cyan)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+        {{ institution.name }}
+    </h1>
+    {% if competition %}
+    <p style="font-size: 1.2rem; color: var(--text-muted);">{{ competition.name }} ({{ competition.year }})</p>
+    {% endif %}
+</div>
+
+<!-- Team Points Ticker / Leaderboard -->
+<h3 style="font-size: 1.4rem; margin-bottom: 16px;"><i class="fa-solid fa-ranking-star" style="color: var(--accent-amber);"></i> Team Standings Leaderboard</h3>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; margin-bottom: 40px;">
+    {% for item in top_teams %}
+    <div class="glass-card" style="display: flex; align-items: center; justify-content: space-between;">
+        <div>
+            <div style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">RANK #{{ item.position }}</div>
+            <div style="font-size: 1.3rem; font-weight: 700; margin-top: 2px;">{{ item.team.name }}</div>
+        </div>
+        <div style="font-size: 2rem; font-weight: 800; color: var(--accent-cyan);">
+            {{ item.points }}<span style="font-size: 0.8rem; color: var(--text-muted);"> pts</span>
+        </div>
+    </div>
+    {% empty %}
+    <div class="glass-card" style="grid-column: 1 / -1; text-align: center; color: var(--text-muted);">
+        Team points will appear here as results are announced live!
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Recently Announced Results -->
+<h3 style="font-size: 1.4rem; margin-bottom: 16px;"><i class="fa-solid fa-bullhorn" style="color: var(--accent-emerald);"></i> Recently Published Event Results</h3>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+    {% for program in announced_programs %}
+    <a href="{% url 'public:program_detail' institution.slug program.id %}" class="glass-card" style="text-decoration: none; color: inherit;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+                <span class="badge badge-approved" style="font-size: 0.7rem;">{{ program.category.name }}</span>
+                <h4 style="font-size: 1.15rem; font-weight: 700; margin-top: 6px;">{{ program.name }}</h4>
+            </div>
+            <i class="fa-solid fa-angle-right" style="color: var(--text-muted);"></i>
+        </div>
+        <div style="margin-top: 16px; font-size: 0.85rem; color: var(--text-muted);">
+            Published: {{ program.announced_at|date:"d M Y, h:i A" }}
+        </div>
+    </a>
+    {% empty %}
+    <div class="glass-card" style="grid-column: 1 / -1; text-align: center; color: var(--text-muted); padding: 40px;">
+        No results published yet. Check back soon for live updates!
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

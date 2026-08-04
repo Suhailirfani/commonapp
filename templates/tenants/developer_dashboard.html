@@ -1,0 +1,153 @@
+{% extends 'base.html' %}
+
+{% block title %}Developer Admin Control Center - GO FEST | BYTOLA WEBSOLUTIONS{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 24px;">
+    <span class="badge badge-approved" style="font-size: 0.85rem;"><i class="fa-solid fa-user-shield"></i> Developer Clearance - BYTOLA WEBSOLUTIONS</span>
+    <h2 style="font-size: 2rem; font-weight: 800; margin-top: 6px;">GO FEST Admin Control Center</h2>
+    <p style="color: var(--text-muted);">Manage institution subscription applications, approve workspaces, and oversee active tenants.</p>
+</div>
+
+<!-- Pending Applications Section -->
+<div class="glass-card" style="margin-bottom: 30px;">
+    <h3 style="font-size: 1.3rem; font-weight: 700; color: var(--accent-amber);"><i class="fa-solid fa-clock-history"></i> Pending Institution Applications ({{ pending_apps.count }})</h3>
+    {% if pending_apps %}
+    <div class="table-responsive">
+        <table class="custom-table">
+        <thead>
+            <tr>
+                <th>Institution & Contact</th>
+                <th>Desired Plan</th>
+                <th>Requested Additional Features / Custom Needs</th>
+                <th>Admin Account</th>
+                <th>Set Work Fee & Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for app in pending_apps %}
+            <tr>
+                <td>
+                    <strong>{{ app.institution_name }}</strong><br>
+                    <code style="font-size: 0.8rem;">{{ app.institution_slug }}</code><br>
+                    <small style="color: var(--text-muted);">{{ app.contact_name }} | {{ app.phone }} | {{ app.email }}</small>
+                </td>
+                <td>
+                    <span class="badge badge-approved">{{ app.desired_plan.name }}</span><br>
+                    <strong style="color: var(--accent-cyan); font-size: 0.95rem;">₹{{ app.desired_plan.price }}</strong>
+                    <br><small style="color: var(--text-muted); text-decoration: line-through;">Regular ₹{{ app.desired_plan.original_price }}</small>
+                </td>
+                <td style="max-width: 250px;">
+                    <div style="margin-bottom: 6px;">
+                        {% if app.status == 'PENDING' %}
+                        <span class="badge badge-approved" style="font-size: 0.75rem; background: rgba(16, 185, 129, 0.2); color: var(--accent-emerald);">
+                            <i class="fa-solid fa-circle-check"></i> Payment Submitted
+                        </span>
+                        {% else %}
+                        <span class="badge badge-pending" style="font-size: 0.75rem;">
+                            <i class="fa-solid fa-clock"></i> Payment Pending (Step 1 Complete)
+                        </span>
+                        {% endif %}
+                    </div>
+
+                    {% if app.additional_requirements %}
+                    <div style="background: rgba(255,255,255,0.05); padding: 8px 12px; border-radius: 8px; border-left: 3px solid var(--accent-amber); font-size: 0.85rem; line-height: 1.4; margin-bottom: 6px;">
+                        {{ app.additional_requirements|linebreaksbr }}
+                    </div>
+                    {% endif %}
+                    
+                    {% if app.payment_utr %}
+                    <div style="font-size: 0.8rem; color: var(--accent-emerald);">
+                        <i class="fa-solid fa-receipt"></i> UPI Ref / Mobile: <strong>{{ app.payment_utr }}</strong>
+                    </div>
+                    {% endif %}
+                </td>
+                <td><code>{{ app.desired_admin_username }}</code></td>
+                <td>
+                    <form method="POST" action="{% url 'tenants:approve_application' app.id %}" style="display: flex; flex-direction: column; gap: 8px;">
+                        {% csrf_token %}
+                        <div>
+                            <label style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-bottom: 2px;">Additional Work Fee (₹):</label>
+                            <input type="number" step="0.01" min="0" name="additional_work_charge" class="form-control" value="0.00" style="width: 140px; font-size: 0.85rem; padding: 4px 8px;">
+                        </div>
+                        <div style="display: flex; gap: 6px;">
+                            <button type="submit" class="btn-success" onclick="return confirm('Approve this application and activate admin credentials?');" style="padding: 6px 12px; font-size: 0.85rem;">
+                                <i class="fa-solid fa-check"></i> Approve
+                            </button>
+                            <a href="{% url 'tenants:reject_application' app.id %}" class="btn-danger" onclick="return confirm('Reject this application?');" style="padding: 6px 12px; font-size: 0.85rem;">
+                                <i class="fa-solid fa-xmark"></i> Reject
+                            </a>
+                        </div>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+    {% else %}
+    <p style="color: var(--text-muted); margin-top: 14px;">No pending applications right now.</p>
+    {% endif %}
+</div>
+
+<!-- All Institutions Section -->
+<div class="glass-card">
+    <h3 style="font-size: 1.3rem; font-weight: 700;"><i class="fa-solid fa-city"></i> All Registered Institutions</h3>
+    <div class="table-responsive">
+        <table class="custom-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Institution Name</th>
+                <th>Slug</th>
+                <th>Subscription Plan & Total Billing</th>
+                <th>Status</th>
+                <th>Created At</th>
+                <th>Public Link</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for inst in institutions %}
+            <tr>
+                <td>#{{ inst.id }}</td>
+                <td><strong>{{ inst.name }}</strong></td>
+                <td><code>{{ inst.slug }}</code></td>
+                <td>
+                    {% if inst.subscription %}
+                    <div>
+                        <strong>{{ inst.subscription.plan.name }}</strong> (Base: ₹{{ inst.subscription.plan.price }})
+                        {% if inst.subscription.additional_work_charge > 0 %}
+                        <br><span style="color: var(--accent-amber); font-size: 0.85rem;">+ Extra Work: ₹{{ inst.subscription.additional_work_charge }}</span>
+                        {% endif %}
+                        <br><strong style="color: var(--accent-emerald);">Total: ₹{{ inst.subscription.total_subscription_cost }}</strong>
+                    </div>
+                    {% else %}
+                    <span style="color: var(--text-muted);">No Active Plan</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if inst.status == 'APPROVED' %}
+                    <span class="badge badge-approved"><i class="fa-solid fa-circle-check"></i> Active</span>
+                    {% elif inst.status == 'PENDING' %}
+                    <span class="badge badge-pending"><i class="fa-solid fa-clock"></i> Pending</span>
+                    {% else %}
+                    <span class="badge badge-rejected">{{ inst.status }}</span>
+                    {% endif %}
+                </td>
+                <td>{{ inst.created_at|date:"d M Y, h:i A" }}</td>
+                <td>
+                    {% if inst.status == 'APPROVED' %}
+                    <a href="{% url 'public:home' inst.slug %}" target="_blank" style="color: var(--accent-cyan); text-decoration: none;">
+                        <i class="fa-solid fa-external-link"></i> Public Portal
+                    </a>
+                    {% else %}
+                    <span style="color: var(--text-muted);">N/A</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,139 @@
+{% extends 'base.html' %}
+
+{% block title %}Points Rules - {{ institution.name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <a href="{% url 'core:settings' institution.slug %}" style="color: var(--text-muted); text-decoration: none;"><i class="fa-solid fa-arrow-left"></i> Back to Settings</a>
+        <h2 style="font-size: 1.8rem; font-weight: 800; margin-top: 4px;"><i class="fa-solid fa-sliders" style="color: var(--accent-cyan);"></i> Points & Grade Distribution Rules</h2>
+    </div>
+</div>
+
+<form method="POST">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="update_points">
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px;">
+
+        <!-- Single Items (Individual Events) -->
+        <div class="glass-card">
+            <h3 style="font-size: 1.2rem; font-weight: 700; color: var(--accent-emerald); margin-bottom: 16px;">
+                <i class="fa-solid fa-user"></i> Single Items (Individual Events)
+            </h3>
+            
+            <h5 style="color: var(--text-muted); margin-bottom: 8px;">Rank Points</h5>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
+                <div class="form-group">
+                    <label class="form-label">1st Rank</label>
+                    <input type="number" name="single_rank_1_points" class="form-control" value="{{ config.single_rank_1_points }}" required min="0">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">2nd Rank</label>
+                    <input type="number" name="single_rank_2_points" class="form-control" value="{{ config.single_rank_2_points }}" required min="0">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">3rd Rank</label>
+                    <input type="number" name="single_rank_3_points" class="form-control" value="{{ config.single_rank_3_points }}" required min="0">
+                </div>
+            </div>
+
+            <h5 style="color: var(--text-muted); margin: 16px 0 8px 0;">Grade Points</h5>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px;">
+                <div class="form-group">
+                    <label class="form-label">A+ Grade</label>
+                    <input type="number" name="single_grade_aplus_points" class="form-control" value="{{ config.single_grade_aplus_points }}" required min="0">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">A Grade</label>
+                    <input type="number" name="single_grade_a_points" class="form-control" value="{{ config.single_grade_a_points }}" required min="0">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">B Grade</label>
+                    <input type="number" name="single_grade_b_points" class="form-control" value="{{ config.single_grade_b_points }}" required min="0">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">C Grade</label>
+                    <input type="number" name="single_grade_c_points" class="form-control" value="{{ config.single_grade_c_points }}" required min="0">
+                </div>
+            </div>
+        </div>
+
+        <!-- Group Items (Team Events) -->
+        <div class="glass-card">
+            <h3 style="font-size: 1.2rem; font-weight: 700; color: var(--accent-amber); margin-bottom: 16px;">
+                <i class="fa-solid fa-people-group"></i> Group Items (Team Events)
+            </h3>
+            
+            <h5 style="color: var(--text-muted); margin-bottom: 8px;">Rank Points</h5>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
+                <div class="form-group">
+                    <label class="form-label">1st Rank</label>
+                    <input type="number" name="group_rank_1_points" class="form-control" value="{{ config.group_rank_1_points }}" required min="0">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">2nd Rank</label>
+                    <input type="number" name="group_rank_2_points" class="form-control" value="{{ config.group_rank_2_points }}" required min="0">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">3rd Rank</label>
+                    <input type="number" name="group_rank_3_points" class="form-control" value="{{ config.group_rank_3_points }}" required min="0">
+                </div>
+            </div>
+
+            <h5 style="color: var(--text-muted); margin: 16px 0 8px 0;">Grade Points</h5>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px;">
+                <div class="form-group">
+                    <label class="form-label">A+ Grade</label>
+                    <input type="number" name="group_grade_aplus_points" class="form-control" value="{{ config.group_grade_aplus_points }}" required min="0">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">A Grade</label>
+                    <input type="number" name="group_grade_a_points" class="form-control" value="{{ config.group_grade_a_points }}" required min="0">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">B Grade</label>
+                    <input type="number" name="group_grade_b_points" class="form-control" value="{{ config.group_grade_b_points }}" required min="0">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">C Grade</label>
+                    <input type="number" name="group_grade_c_points" class="form-control" value="{{ config.group_grade_c_points }}" required min="0">
+                </div>
+            </div>
+        </div>
+
+        <!-- Grade Cutoff Thresholds -->
+        <div class="glass-card" style="grid-column: 1 / -1;">
+            <h3 style="font-size: 1.2rem; font-weight: 700; color: var(--accent-indigo); margin-bottom: 16px;">
+                <i class="fa-solid fa-chart-line"></i> Grade Cutoff Threshold Marks (Out of 100)
+            </h3>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px;">
+                <div class="form-group">
+                    <label class="form-label">A+ Cutoff (e.g. 90+)</label>
+                    <input type="number" name="grade_aplus_threshold" class="form-control" value="{{ config.grade_aplus_threshold }}" required min="0" max="100">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">A Cutoff (e.g. 80+)</label>
+                    <input type="number" name="grade_a_threshold" class="form-control" value="{{ config.grade_a_threshold }}" required min="0" max="100">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">B Cutoff (e.g. 70+)</label>
+                    <input type="number" name="grade_b_threshold" class="form-control" value="{{ config.grade_b_threshold }}" required min="0" max="100">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">C Cutoff (e.g. 60+)</label>
+                    <input type="number" name="grade_c_threshold" class="form-control" value="{{ config.grade_c_threshold }}" required min="0" max="100">
+                </div>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; margin-top: 20px;">
+                <button type="submit" class="btn-primary" style="font-size: 1.05rem; padding: 12px 28px;">
+                    <i class="fa-solid fa-floppy-disk"></i> Save All Points & Grade Rules
+                </button>
+            </div>
+        </div>
+
+    </div>
+</form>
+{% endblock %}

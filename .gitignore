@@ -1,0 +1,31 @@
+# Python bytecode & cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Django database & media uploads
+db.sqlite3
+db.sqlite3-journal
+media/
+media_root/
+staticfiles/
+static_root/
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+
+# IDE / OS junk
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.log
+
+# Temp files
+*.tmp
+temp/

@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+
+{% block title %}Complete UPI Payment - GO FEST | BYTOLA WEBSOLUTIONS{% endblock %}
+
+{% block content %}
+<div style="max-width: 650px; margin: 20px auto;">
+    <div class="glass-card">
+        <!-- Step Progress Indicator -->
+        <div style="display: flex; gap: 8px; margin-bottom: 20px; justify-content: center; font-size: 0.85rem;">
+            <span class="badge badge-approved" style="padding: 6px 16px; font-size: 0.85rem; background: rgba(16, 185, 129, 0.15); color: var(--accent-emerald);">
+                <i class="fa-solid fa-circle-check"></i> Step 1: Saved
+            </span>
+            <span class="badge badge-approved" style="padding: 6px 16px; font-size: 0.85rem;">
+                <i class="fa-solid fa-circle-2"></i> Step 2: UPI Payment
+            </span>
+        </div>
+
+        <h2 style="font-size: 1.8rem; font-weight: 700; margin-bottom: 8px;"><i class="fa-solid fa-qrcode"></i> Complete Workspace Registration</h2>
+        <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 20px;">Your institution details are saved! Please complete the UPI payment and enter your payment transaction reference to activate your workspace.</p>
+
+        <!-- Saved Application Summary Box -->
+        <div style="background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 16px; margin-bottom: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <h4 style="font-size: 1.1rem; font-weight: 700; color: var(--accent-cyan); margin: 0;">
+                    <i class="fa-solid fa-building"></i> {{ app_req.institution_name }}
+                </h4>
+                <span class="badge badge-pending" style="font-size: 0.75rem;">Application #{{ app_req.id }}</span>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.85rem; color: var(--text-muted);">
+                <div><strong>Code / Slug:</strong> <code>{{ app_req.institution_slug }}</code></div>
+                <div><strong>Contact:</strong> {{ app_req.contact_name }} ({{ app_req.phone }})</div>
+                <div><strong>Plan Selected:</strong> {{ app_req.desired_plan.name }}</div>
+                <div><strong>Admin Username:</strong> <code>{{ app_req.desired_admin_username }}</code></div>
+            </div>
+        </div>
+
+        <form method="POST">
+            {% csrf_token %}
+
+            <!-- UPI Gateway Container -->
+            <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 14px; padding: 24px; text-align: center; margin-bottom: 24px;">
+                <span class="badge badge-approved" style="font-size: 0.85rem; padding: 4px 14px; margin-bottom: 12px; display: inline-block;">Official UPI Payment Gateway</span>
+                
+                <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 4px;">Total Amount Payable:</p>
+                <h3 style="font-size: 2.2rem; font-weight: 800; color: var(--accent-emerald); margin: 4px 0 16px 0;">
+                    ₹{{ app_req.desired_plan.price }} <span style="font-size: 0.9rem; color: var(--text-muted); font-weight: 400;">(Offer Price)</span>
+                </h3>
+
+                <!-- Copy UPI ID Box -->
+                <div style="background: rgba(0,0,0,0.35); padding: 12px 18px; border-radius: 10px; display: inline-flex; align-items: center; gap: 14px; margin: 0 0 18px 0; border: 1px dashed rgba(255,255,255,0.25);">
+                    <i class="fa-solid fa-wallet" style="color: var(--accent-cyan); font-size: 1.2rem;"></i>
+                    <span style="font-family: monospace; font-size: 1.2rem; font-weight: 700; color: #ffffff;" id="upi_id_text">{{ upi_id }}</span>
+                    <button type="button" onclick="copyUpiId()" class="btn-primary" style="padding: 6px 12px; font-size: 0.8rem; height: auto;">
+                        <i class="fa-solid fa-copy"></i> <span id="copy_btn_text">Copy UPI ID</span>
+                    </button>
+                </div>
+
+                <!-- UPI Deep Link Button (Opens GPay, PhonePe, Paytm, BHIM, etc.) -->
+                <div style="margin-bottom: 18px;">
+                    <a href="upi://pay?pa={{ upi_id }}&pn=GO%20FEST%20BYTOLA&am={{ app_req.desired_plan.price }}&cu=INR&tn=GO%20FEST%20Subscription%20App%20{{ app_req.id }}" class="btn-primary" style="display: inline-flex; width: 100%; justify-content: center; background: linear-gradient(135deg, #10b981, #059669); font-size: 1.05rem; padding: 14px; text-decoration: none; box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);">
+                        <i class="fa-solid fa-mobile-screen-button" style="margin-right: 8px;"></i> Click to Pay via Any UPI App (GPay / PhonePe / Paytm / BHIM)
+                    </a>
+                </div>
+
+                <!-- Scan QR Code -->
+                <div style="margin-top: 16px;">
+                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 10px;">Or scan QR code using any mobile UPI App:</p>
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi://pay?pa={{ upi_id }}%26pn=GO%20FEST%20BYTOLA%26am={{ app_req.desired_plan.price }}%26cu=INR%26tn=GO%20FEST%20Subscription%20App%20{{ app_req.id }}" alt="UPI Payment QR Code" style="border-radius: 12px; border: 4px solid #ffffff; width: 170px; height: 170px; box-shadow: 0 8px 24px rgba(0,0,0,0.4);">
+                </div>
+            </div>
+
+            <!-- UTR Input Field -->
+            <div class="form-group">
+                <label class="form-label" style="font-size: 1rem; font-weight: 600;">
+                    UPI Payment Transaction Reference / UTR Number or UPI Mobile Number <span style="color: var(--accent-amber);">*</span>
+                </label>
+                <input type="text" name="payment_utr" class="form-control" placeholder="e.g. 423156789012 or 9876543210 (UPI Mobile No)" required style="font-size: 1.05rem; padding: 12px;">
+                <small style="color: var(--text-muted); margin-top: 6px; display: block;">
+                    Enter the 12-digit UTR/Reference number or mobile number from your UPI payment confirmation.
+                </small>
+            </div>
+
+            <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; font-size: 1.1rem; padding: 14px; margin-top: 12px; background: linear-gradient(135deg, #10b981, #059669);">
+                <i class="fa-solid fa-circle-check" style="margin-right: 8px;"></i> Complete Registration & Confirm Payment
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function copyUpiId() {
+    const upiId = document.getElementById('upi_id_text').innerText;
+    navigator.clipboard.writeText(upiId).then(() => {
+        const btnText = document.getElementById('copy_btn_text');
+        btnText.innerText = 'Copied!';
+        setTimeout(() => { btnText.innerText = 'Copy UPI ID'; }, 2000);
+    }).catch(err => {
+        alert('UPI ID copied: ' + upiId);
+    });
+}
+</script>
+{% endblock %}

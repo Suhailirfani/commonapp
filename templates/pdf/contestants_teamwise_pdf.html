@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Team-Wise Contestants - {{ institution.name }}</title>
+    <style>
+        @page {
+            size: a4 portrait;
+            margin: 0.8cm;
+        }
+        body {
+            font-family: Helvetica, Arial, sans-serif;
+            font-size: 8.5pt;
+            color: #1e293b;
+            line-height: 1.15;
+        }
+        .header {
+            padding-bottom: 4px;
+            margin-bottom: 10px;
+        }
+        .header h1 {
+            font-size: 15pt;
+            margin: 0;
+            color: #0f172a;
+        }
+        .header h3 {
+            font-size: 10pt;
+            margin: 2px 0 0 0;
+            color: #059669;
+        }
+        .meta {
+            font-size: 7.5pt;
+            color: #64748b;
+            margin-top: 2px;
+        }
+        .team-title {
+            background-color: #0f172a;
+            color: #ffffff;
+            font-size: 9.5pt;
+            font-weight: bold;
+            padding: 5px 8px;
+            margin-top: 12px;
+            margin-bottom: 4px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 6px;
+        }
+        th {
+            background-color: #f1f5f9;
+            color: #0f172a;
+            font-size: 8pt;
+            font-weight: bold;
+            padding: 4px 6px;
+            text-align: left;
+            border: 1px solid #cbd5e1;
+        }
+        td {
+            padding: 3px 5px;
+            border: 1px solid #cbd5e1;
+            font-size: 8pt;
+        }
+        tr:nth-child(even) {
+            background-color: #f8fafc;
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>GO FEST</h1>
+    <h3>{{ institution.name }} — Team-Wise Contestants Directory</h3>
+    <div class="meta">Generated: {{ generated_at|date:"d M Y, h:i A" }}</div>
+</div>
+
+{% for team in teams %}
+<div class="team-title">
+    TEAM: {{ team.name }} (Total Contestants: {{ team.contestants.count }})
+</div>
+
+<table>
+    <thead>
+        <tr>
+            <th style="width: 15%;">Chest No</th>
+            <th style="width: 55%;">Contestant Full Name</th>
+            <th style="width: 30%;">Category</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for contestant in team.contestants.all %}
+        <tr>
+            <td><strong>#{{ contestant.chest_no }}</strong></td>
+            <td><strong>{{ contestant.name }}</strong></td>
+            <td>{{ contestant.category.name }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="3" style="text-align: center; color: #64748b; padding: 6px;">No contestants registered for this team.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% empty %}
+<p style="color: #64748b; text-align: center;">No teams created yet.</p>
+{% endfor %}
+
+</body>
+</html>

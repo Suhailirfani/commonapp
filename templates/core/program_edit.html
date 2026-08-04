@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit Program - {{ institution.name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <a href="{% url 'core:program_list' institution.slug %}" style="color: var(--text-muted); text-decoration: none;"><i class="fa-solid fa-arrow-left"></i> Back to Programs</a>
+        <h2 style="font-size: 1.8rem; font-weight: 800; margin-top: 4px;">Edit Program: {{ program.name }}</h2>
+    </div>
+</div>
+
+<div class="glass-card" style="max-width: 650px;">
+    <form method="POST">
+        {% csrf_token %}
+        <div class="form-group">
+            <label class="form-label">Competition</label>
+            <select name="competition_id" class="form-control" required>
+                {% for comp in competitions %}
+                <option value="{{ comp.id }}" {% if comp.id == program.competition.id %}selected{% endif %}>{{ comp.name }} ({{ comp.year }})</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Category</label>
+            <select name="category_id" class="form-control" required>
+                {% for cat in categories %}
+                <option value="{{ cat.id }}" {% if cat.id == program.category.id %}selected{% endif %}>{{ cat.name }} {% if cat.is_common %}(Common Category){% endif %}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Program Name</label>
+            <input type="text" name="name" class="form-control" value="{{ program.name }}" required>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Venue / Event Type</label>
+            <select name="program_type" class="form-control">
+                <option value="STAGE" {% if program.program_type == 'STAGE' %}selected{% endif %}>Stage Event</option>
+                <option value="OFF_STAGE" {% if program.program_type == 'OFF_STAGE' %}selected{% endif %}>Off-Stage Event</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Participation Format</label>
+            <div style="display: flex; gap: 20px; align-items: center; margin-top: 6px;">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" name="is_group" {% if program.is_group %}checked{% endif %}>
+                    <span>Group Event (Teams participate as units)</span>
+                </label>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Duration Limit (Minutes)</label>
+            <input type="number" name="duration_per_participant" class="form-control" value="{{ program.duration_per_participant }}" min="1">
+        </div>
+
+        <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 24px;">
+            <a href="{% url 'core:program_list' institution.slug %}" class="btn-primary" style="background: rgba(255,255,255,0.08); box-shadow: none;">Cancel</a>
+            <button type="submit" class="btn-success">
+                <i class="fa-solid fa-save"></i> Save Changes
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

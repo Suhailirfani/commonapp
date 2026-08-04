@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit User - {{ target_user.username }}{% endblock %}
+
+{% block content %}
+<div style="max-width: 600px; margin: 20px auto;">
+    <div class="glass-card" style="padding: 20px;">
+        <a href="{% url 'users:user_list' institution.slug %}" style="color: var(--text-muted); text-decoration: none;"><i class="fa-solid fa-arrow-left"></i> Back to Users</a>
+        <h2 style="font-size: 1.6rem; font-weight: 800; margin: 12px 0 20px 0;"><i class="fa-solid fa-user-pen"></i> Edit User: {{ target_user.username }}</h2>
+
+        <form method="POST">
+            {% csrf_token %}
+            <div class="form-group">
+                <label class="form-label">Role</label>
+                <select name="role" id="roleSelect" class="form-control" required onchange="toggleRoleFields()">
+                    <option value="TEAM_LEADER" {% if target_user.role == 'TEAM_LEADER' %}selected{% endif %}>Team Leader / Manager</option>
+                    <option value="JUDGE" {% if target_user.role == 'JUDGE' %}selected{% endif %}>Judge / Evaluator</option>
+                    <option value="TABULATOR" {% if target_user.role == 'TABULATOR' %}selected{% endif %}>Tabulator / Mark Entry Officer</option>
+                    <option value="SUB_ADMIN" {% if target_user.role == 'SUB_ADMIN' %}selected{% endif %}>Sub-Admin / Coordinator</option>
+                </select>
+            </div>
+
+            <!-- Connected Team (for Team Leaders) -->
+            <div class="form-group" id="teamSelectGroup">
+                <label class="form-label">Connected Team (Required for Team Leaders)</label>
+                <select name="team_id" id="teamSelect" class="form-control">
+                    <option value="">-- Select Team --</option>
+                    {% for team in teams %}
+                    <option value="{{ team.id }}" {% if target_user.managed_team.id == team.id %}selected{% endif %}>{{ team.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Assigned Competitions / Programs (for Judges) -->
+            <div id="judgeAssignGroup" style="display: none; background: rgba(255,255,255,0.03); padding: 14px; border-radius: 10px; border: 1px solid var(--border-color); margin-bottom: 16px;">
+                <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--accent-amber); margin-bottom: 10px;">
+                    <i class="fa-solid fa-gavel"></i> Judge Assignment (Competitions / Programs)
+                </h4>
+                
+                <div class="form-group">
+                    <label class="form-label">Assign Competition(s) to Judge</label>
+                    <div style="display: flex; flex-direction: column; gap: 6px; max-height: 140px; overflow-y: auto; background: rgba(0,0,0,0.3); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border-color);">
+                        {% for comp in competitions %}
+                        <label style="display: flex; align-items: center; gap: 8px; font-size: 0.88rem; cursor: pointer;">
+                            <input type="checkbox" name="assigned_competition_ids[]" value="{{ comp.id }}" {% if comp in target_user.assigned_competitions.all %}checked{% endif %}>
+                            <strong>{{ comp.name }}</strong> ({{ comp.year }})
+                        </label>
+                        {% empty %}
+                        <span style="color: var(--text-muted); font-size: 0.8rem;">No competitions created yet.</span>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label">Or Assign Specific Program(s)</label>
+                    <select name="assigned_program_ids[]" class="form-control" multiple style="height: 120px; font-size: 0.82rem;">
+                        {% for prog in programs %}
+                        <option value="{{ prog.id }}" {% if prog in target_user.assigned_programs.all %}selected{% endif %}>{{ prog.name }} ({{ prog.category.name }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Email</label>
+                <input type="email" name="email" value="{{ target_user.email }}" class="form-control" placeholder="user@institution.com">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">New Password (Leave blank to keep current password)</label>
+                <input type="password" name="password" class="form-control" placeholder="••••••••">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Designation / Role Title</label>
+                <input type="text" name="designation" value="{{ target_user.designation }}" class="form-control" placeholder="e.g. Chief Judge Stage A">
+            </div>
+
+            <div class="form-group" style="display: flex; align-items: center; gap: 10px;">
+                <input type="checkbox" name="is_approved" id="is_approved" {% if target_user.is_approved %}checked{% endif %} style="width: 18px; height: 18px; accent-color: var(--accent-emerald);">
+                <label for="is_approved" style="font-size: 0.95rem; font-weight: 700; cursor: pointer; color: var(--text-main);">Account Activated & Approved</label>
+            </div>
+
+            <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; font-size: 1rem; padding: 12px; margin-top: 10px; background: linear-gradient(135deg, var(--accent-cyan), #0284c7);">
+                <i class="fa-solid fa-floppy-disk"></i> Save User Changes
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+function toggleRoleFields() {
+    var role = document.getElementById('roleSelect').value;
+    var teamGroup = document.getElementById('teamSelectGroup');
+    var judgeGroup = document.getElementById('judgeAssignGroup');
+    var teamSelect = document.getElementById('teamSelect');
+
+    if (role === 'TEAM_LEADER') {
+        teamGroup.style.display = 'block';
+        judgeGroup.style.display = 'none';
+    } else if (role === 'JUDGE') {
+        teamGroup.style.display = 'none';
+        judgeGroup.style.display = 'block';
+    } else {
+        teamGroup.style.display = 'none';
+        judgeGroup.style.display = 'none';
+    }
+}
+document.addEventListener("DOMContentLoaded", function() {
+    toggleRoleFields();
+});
+</script>
+{% endblock %}

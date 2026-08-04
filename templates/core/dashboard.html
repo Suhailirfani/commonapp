@@ -1,0 +1,244 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ institution.name }} - Portal Dashboard{% endblock %}
+
+{% block content %}
+
+{% if is_team_leader_dashboard %}
+
+<!-- TEAM LEADER DASHBOARD -->
+<div class="page-header">
+    <div>
+        <span class="badge badge-approved"><i class="fa-solid fa-people-group"></i> Team {{ team.name }} Dashboard</span>
+        <h2 style="font-size: 2rem; font-weight: 800; margin-top: 4px;">🚩 Team {{ team.name }} Leader Workspace</h2>
+    </div>
+    <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+        <a href="{% url 'core:team_results' institution.slug %}" class="btn-primary" style="background: linear-gradient(135deg, var(--accent-cyan), #0284c7);">
+            <i class="fa-solid fa-trophy"></i> View Team Detailed Results
+        </a>
+        <a href="{% url 'core:contestant_create' institution.slug %}" class="btn-primary" style="background: linear-gradient(135deg, var(--accent-emerald), #059669);">
+            <i class="fa-solid fa-user-plus"></i> Register Contestant
+        </a>
+    </div>
+</div>
+
+<!-- Stats Row -->
+<div class="dashboard-stats-grid">
+    <div class="glass-card">
+        <div style="color: var(--text-muted); font-size: 0.85rem; font-weight: 600;">TOTAL MEMBERS</div>
+        <div style="font-size: 2.2rem; font-weight: 800; color: var(--accent-emerald); margin-top: 4px;">{{ total_members_count }}</div>
+    </div>
+    <div class="glass-card">
+        <div style="color: var(--text-muted); font-size: 0.85rem; font-weight: 600;">TEAM RANK</div>
+        <div style="font-size: 2.2rem; font-weight: 800; color: #f59e0b; margin-top: 4px;">#{{ team_rank }}</div>
+    </div>
+    <div class="glass-card">
+        <div style="color: var(--text-muted); font-size: 0.85rem; font-weight: 600;">TEAM POINTS</div>
+        <div style="font-size: 2.2rem; font-weight: 800; color: var(--accent-cyan); margin-top: 4px;">{{ team_points }} <span style="font-size: 1rem; color: var(--text-muted);">pts</span></div>
+    </div>
+    <div class="glass-card">
+        <div style="color: var(--text-muted); font-size: 0.85rem; font-weight: 600;">ASSIGNMENTS</div>
+        <div style="font-size: 2.2rem; font-weight: 800; color: var(--accent-indigo); margin-top: 4px;">{{ total_assignments }}</div>
+    </div>
+</div>
+
+<!-- Category-Wise Members Breakdown Card -->
+<div class="glass-card" style="margin-bottom: 30px;">
+    <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 16px;">
+        <i class="fa-solid fa-layer-group" style="color: var(--accent-amber);"></i> Category-Wise Team Members Count
+    </h3>
+    <div class="dashboard-stats-grid" style="margin-bottom: 0;">
+        {% for cat_item in category_wise_members %}
+        <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 10px; padding: 14px; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <strong style="font-size: 1.05rem;">{{ cat_item.category.name }}</strong>
+                <div style="color: var(--text-muted); font-size: 0.8rem;">Base Category</div>
+            </div>
+            <div style="font-size: 1.6rem; font-weight: 800; color: var(--accent-cyan);">
+                {{ cat_item.count }}
+            </div>
+        </div>
+        {% empty %}
+        <div style="color: var(--text-muted); padding: 10px;">No categories configured yet.</div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Team Operations Grid -->
+<h3 style="font-size: 1.3rem; margin-bottom: 16px;">Team Leader Operations</h3>
+<div class="dashboard-grid">
+    <a href="{% url 'core:team_results' institution.slug %}" class="glass-card" style="text-decoration: none; color: inherit;">
+        <i class="fa-solid fa-trophy" style="font-size: 1.8rem; color: var(--accent-amber); margin-bottom: 12px;"></i>
+        <h4 style="font-size: 1.1rem; font-weight: 700;">Detailed Team Results</h4>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Individual & group announced results & point breakdowns</p>
+    </a>
+
+    <a href="{% url 'core:contestant_list' institution.slug %}" class="glass-card" style="text-decoration: none; color: inherit;">
+        <i class="fa-solid fa-users" style="font-size: 1.8rem; color: var(--accent-emerald); margin-bottom: 12px;"></i>
+        <h4 style="font-size: 1.1rem; font-weight: 700;">Team Contestants & Chest Nos</h4>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Manage & add contestants for {{ team.name }} only</p>
+    </a>
+
+    <a href="{% url 'core:assignment_hub' institution.slug %}" class="glass-card" style="text-decoration: none; color: inherit;">
+        <i class="fa-solid fa-square-check" style="font-size: 1.8rem; color: var(--accent-rose); margin-bottom: 12px;"></i>
+        <h4 style="font-size: 1.1rem; font-weight: 700;">Program Assignment Hub</h4>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Assign single & group events for {{ team.name }} members</p>
+    </a>
+
+    <a href="{% url 'core:group_assign' institution.slug %}" class="glass-card" style="text-decoration: none; color: inherit;">
+        <i class="fa-solid fa-users-gear" style="font-size: 1.8rem; color: #a855f7; margin-bottom: 12px;"></i>
+        <h4 style="font-size: 1.1rem; font-weight: 700;">Group Events & Captain Hub</h4>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Assign team group entries & designate captains</p>
+    </a>
+
+    <a href="{% url 'core:program_list' institution.slug %}" class="glass-card" style="text-decoration: none; color: inherit;">
+        <i class="fa-solid fa-list-check" style="font-size: 1.8rem; color: var(--accent-indigo); margin-bottom: 12px;"></i>
+        <h4 style="font-size: 1.1rem; font-weight: 700;">Programs & Events (Read-Only)</h4>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">View fest schedule & event rules</p>
+    </a>
+
+    <a href="{% url 'core:assigned_programs_list' institution.slug %}" class="glass-card" style="text-decoration: none; color: inherit;">
+        <i class="fa-solid fa-book-bookmark" style="font-size: 1.8rem; color: #38bdf8; margin-bottom: 12px;"></i>
+        <h4 style="font-size: 1.1rem; font-weight: 700;">Assigned Programs Report</h4>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">View team participations & student event lists</p>
+    </a>
+
+    <a href="{% url 'core:team_results' institution.slug %}" class="glass-card" style="text-decoration: none; color: inherit;">
+        <i class="fa-solid fa-list-ol" style="font-size: 1.8rem; color: var(--accent-cyan); margin-bottom: 12px;"></i>
+        <h4 style="font-size: 1.1rem; font-weight: 700;">Team Detailed Point Table</h4>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Itemized point breakdown by contestant, item, rank, grade & point</p>
+    </a>
+</div>
+
+{% else %}
+
+<!-- INSTITUTION ADMIN / SUB-ADMIN DASHBOARD -->
+<div class="page-header">
+    <div>
+        <span class="badge badge-approved"><i class="fa-solid fa-building"></i> {{ institution.name }} Workspace</span>
+        <h2 style="font-size: 2rem; font-weight: 800; margin-top: 4px;">Institution Dashboard</h2>
+    </div>
+    <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+        <a href="{% url 'public:home' institution.slug %}" target="_blank" class="btn-primary" style="background: linear-gradient(135deg, var(--accent-cyan), #0284c7);">
+            <i class="fa-solid fa-share-nodes"></i> Shareable Public Result Link
+        </a>
+        <a href="{% url 'users:user_create' institution.slug %}" class="btn-primary">
+            <i class="fa-solid fa-user-plus"></i> Add Sub-User / Team Leader
+        </a>
+    </div>
+</div>
+
+<!-- Stats Grid -->
+<div class="dashboard-stats-grid">
+    <div class="glass-card">
+        <div style="color: var(--text-muted); font-size: 0.85rem; font-weight: 600;">ACTIVE COMPETITIONS</div>
+        <div style="font-size: 2.2rem; font-weight: 800; color: var(--accent-indigo); margin-top: 4px;">{{ competitions_count }}</div>
+    </div>
+    <div class="glass-card">
+        <div style="color: var(--text-muted); font-size: 0.85rem; font-weight: 600;">TEAMS PARTICIPATING</div>
+        <div style="font-size: 2.2rem; font-weight: 800; color: var(--accent-cyan); margin-top: 4px;">{{ teams_count }}</div>
+    </div>
+    <div class="glass-card">
+        <div style="color: var(--text-muted); font-size: 0.85rem; font-weight: 600;">EVENTS / PROGRAMS</div>
+        <div style="font-size: 2.2rem; font-weight: 800; color: var(--accent-emerald); margin-top: 4px;">{{ programs_count }}</div>
+    </div>
+    <div class="glass-card">
+        <div style="color: var(--text-muted); font-size: 0.85rem; font-weight: 600;">TOTAL CONTESTANTS</div>
+        <div style="font-size: 2.2rem; font-weight: 800; color: var(--accent-amber); margin-top: 4px;">{{ contestants_count }}</div>
+    </div>
+</div>
+
+<!-- Navigation Grid -->
+<h3 style="font-size: 1.3rem; margin-bottom: 16px;">Daily Operations</h3>
+<div class="dashboard-grid">
+    <a href="{% url 'core:category_list' institution.slug %}" class="glass-card" style="text-decoration: none; color: inherit;">
+        <i class="fa-solid fa-tags" style="font-size: 1.8rem; color: var(--accent-cyan); margin-bottom: 12px;"></i>
+        <h4 style="font-size: 1.1rem; font-weight: 700;">Categories & Combined Groups</h4>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Setup base & common categories (General A, General B)</p>
+    </a>
+
+    <a href="{% url 'core:program_list' institution.slug %}" class="glass-card" style="text-decoration: none; color: inherit;">
+        <i class="fa-solid fa-list-check" style="font-size: 1.8rem; color: var(--accent-indigo); margin-bottom: 12px;"></i>
+        <h4 style="font-size: 1.1rem; font-weight: 700;">Programs & Events</h4>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Single/group stage & off-stage programs</p>
+    </a>
+
+    <a href="{% url 'core:contestant_list' institution.slug %}" class="glass-card" style="text-decoration: none; color: inherit;">
+        <i class="fa-solid fa-users" style="font-size: 1.8rem; color: var(--accent-emerald); margin-bottom: 12px;"></i>
+        <h4 style="font-size: 1.1rem; font-weight: 700;">Contestants & Chest Nos</h4>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Register contestants with auto chest numbers</p>
+    </a>
+
+    <a href="{% url 'core:assignment_hub' institution.slug %}" class="glass-card" style="text-decoration: none; color: inherit;">
+        <i class="fa-solid fa-square-check" style="font-size: 1.8rem; color: var(--accent-rose); margin-bottom: 12px;"></i>
+        <h4 style="font-size: 1.1rem; font-weight: 700;">Program Assignment Hub</h4>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Assign programs by student OR by program with pre-ticked status</p>
+    </a>
+
+    <a href="{% url 'core:assigned_programs_list' institution.slug %}" class="glass-card" style="text-decoration: none; color: inherit;">
+        <i class="fa-solid fa-book-bookmark" style="font-size: 1.8rem; color: #38bdf8; margin-bottom: 12px;"></i>
+        <h4 style="font-size: 1.1rem; font-weight: 700;">Assigned Programs Report</h4>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Category-wise, team-wise, program-wise & student lists</p>
+    </a>
+
+    <a href="{% url 'core:scoring_program_list' institution.slug %}" class="glass-card" style="text-decoration: none; color: inherit;">
+        <i class="fa-solid fa-keyboard" style="font-size: 1.8rem; color: var(--accent-amber); margin-bottom: 12px;"></i>
+        <h4 style="font-size: 1.1rem; font-weight: 700;">Mark Entry</h4>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Rapid code letter & mark entry interface</p>
+    </a>
+
+    <a href="{% url 'users:user_list' institution.slug %}" class="glass-card" style="text-decoration: none; color: inherit;">
+        <i class="fa-solid fa-user-gear" style="font-size: 1.8rem; color: #a855f7; margin-bottom: 12px;"></i>
+        <h4 style="font-size: 1.1rem; font-weight: 700;">User & Role Management</h4>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Manage team leaders & tabulators</p>
+    </a>
+
+    <a href="{% url 'core:settings' institution.slug %}" class="glass-card" style="text-decoration: none; color: inherit;">
+        <i class="fa-solid fa-gear" style="font-size: 1.8rem; color: var(--accent-indigo); margin-bottom: 12px;"></i>
+        <h4 style="font-size: 1.1rem; font-weight: 700;">Portal Settings & Setup</h4>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Competitions, stages & points rules</p>
+    </a>
+</div>
+
+<!-- Results & Announce Center -->
+<h3 style="font-size: 1.3rem; margin: 28px 0 16px 0;"><i class="fa-solid fa-trophy" style="color: var(--accent-amber);"></i> Results, Standings & Announcement AI</h3>
+<div class="dashboard-grid">
+    <a href="{% url 'core:program_results' institution.slug %}" class="glass-card" style="text-decoration: none; color: inherit;">
+        <i class="fa-solid fa-trophy" style="font-size: 1.8rem; color: var(--accent-amber); margin-bottom: 12px;"></i>
+        <h4 style="font-size: 1.1rem; font-weight: 700;">Program-Wise Results</h4>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Winner ranks, grades & official program results</p>
+    </a>
+
+    <a href="{% url 'core:team_standings' institution.slug %}" class="glass-card" style="text-decoration: none; color: inherit;">
+        <i class="fa-solid fa-ranking-star" style="font-size: 1.8rem; color: var(--accent-cyan); margin-bottom: 12px;"></i>
+        <h4 style="font-size: 1.1rem; font-weight: 700;">Team Standings & Leaderboard</h4>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Live team points leaderboard & win breakdowns</p>
+    </a>
+
+    <a href="{% url 'core:team_results' institution.slug %}" class="glass-card" style="text-decoration: none; color: inherit;">
+        <i class="fa-solid fa-list-ol" style="font-size: 1.8rem; color: var(--accent-cyan); margin-bottom: 12px;"></i>
+        <h4 style="font-size: 1.1rem; font-weight: 700;">Team Detailed Point Table</h4>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Itemized team points list by contestant, item, rank, grade & point</p>
+    </a>
+
+    <a href="{% url 'core:toppers_list' institution.slug %}" class="glass-card" style="text-decoration: none; color: inherit;">
+        <i class="fa-solid fa-crown" style="font-size: 1.8rem; color: #f59e0b; margin-bottom: 12px;"></i>
+        <h4 style="font-size: 1.1rem; font-weight: 700;">Toppers & Kala Prathibha</h4>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Overall fest champion & category-wise individual toppers</p>
+    </a>
+
+    <a href="{% url 'core:manage_announcements' institution.slug %}" class="glass-card" style="text-decoration: none; color: inherit;">
+        <i class="fa-solid fa-bullhorn" style="font-size: 1.8rem; color: var(--accent-emerald); margin-bottom: 12px;"></i>
+        <h4 style="font-size: 1.1rem; font-weight: 700;">Public Announce Hub</h4>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Publish/hide completed program results publicly</p>
+    </a>
+
+    <a href="{% url 'core:announcement_balancer' institution.slug %}" class="glass-card" style="text-decoration: none; color: inherit;">
+        <i class="fa-solid fa-wand-magic-sparkles" style="font-size: 1.8rem; color: #a78bfa; margin-bottom: 12px;"></i>
+        <h4 style="font-size: 1.1rem; font-weight: 700;">Score Balancer AI</h4>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Smart announcement recommendation engine for suspense</p>
+    </a>
+</div>
+
+{% endif %}
+{% endblock %}

@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit Category - {{ institution.name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <a href="{% url 'core:category_list' institution.slug %}" style="color: var(--text-muted); text-decoration: none;"><i class="fa-solid fa-arrow-left"></i> Back to Categories</a>
+        <h2 style="font-size: 1.8rem; font-weight: 800; margin-top: 4px;">Edit Category: {{ category.name }}</h2>
+    </div>
+</div>
+
+<div class="glass-card" style="max-width: 650px; margin: 0 auto;">
+    <form method="POST">
+        {% csrf_token %}
+        <div class="form-group">
+            <label class="form-label">Competition</label>
+            <select name="competition_id" class="form-control" required>
+                {% for comp in competitions %}
+                <option value="{{ comp.id }}" {% if comp.id == category.competition.id %}selected{% endif %}>{{ comp.name }} ({{ comp.year }})</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Category Name</label>
+            <input type="text" name="name" class="form-control" value="{{ category.name }}" required>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Category Type</label>
+            <div style="display: flex; gap: 14px; align-items: center; flex-wrap: wrap; margin-top: 6px;">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; background: rgba(255,255,255,0.03); padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border-color);">
+                    <input type="radio" name="is_common" value="0" id="type_base" {% if not category.is_common %}checked{% endif %} onchange="toggleCategoryType()" style="width: 16px; height: 16px;">
+                    <span>Base Category (e.g. Sub-Junior, Junior)</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; background: rgba(255,255,255,0.03); padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border-color);">
+                    <input type="radio" name="is_common" value="1" id="type_common" {% if category.is_common %}checked{% endif %} onchange="toggleCategoryType()" style="width: 16px; height: 16px;">
+                    <span>Common Category (e.g. General A)</span>
+                </label>
+            </div>
+        </div>
+
+        <div class="form-group" id="included_categories_box" style="{% if not category.is_common %}display: none;{% endif %} background: rgba(15, 23, 42, 0.6); padding: 16px; border-radius: 10px; border: 1px solid var(--border-color);">
+            <label class="form-label" style="color: var(--accent-cyan); font-weight: 600;"><i class="fa-solid fa-layer-group"></i> Select Included Base Categories</label>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-top: 8px;">
+                {% for base_cat in base_categories %}
+                <label style="display: flex; align-items: center; gap: 8px; font-size: 0.9rem; cursor: pointer; background: rgba(255,255,255,0.02); padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border-color);">
+                    <input type="checkbox" name="included_categories[]" value="{{ base_cat.id }}" {% if base_cat in category.included_categories.all %}checked{% endif %} style="width: 16px; height: 16px;">
+                    <span>{{ base_cat.name }}</span>
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Description (Optional)</label>
+            <textarea name="description" class="form-control" rows="3">{{ category.description }}</textarea>
+        </div>
+
+        <div style="display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; margin-top: 24px;">
+            <a href="{% url 'core:category_list' institution.slug %}" class="btn-primary" style="background: rgba(255,255,255,0.08); box-shadow: none;">Cancel</a>
+            <button type="submit" class="btn-success">
+                <i class="fa-solid fa-save"></i> Save Changes
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+function toggleCategoryType() {
+    var isCommon = document.getElementById('type_common').checked;
+    var box = document.getElementById('included_categories_box');
+    box.style.display = isCommon ? 'block' : 'none';
+}
+</script>
+{% endblock %}

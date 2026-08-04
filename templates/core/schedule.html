@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Program Schedule - {{ institution.name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <a href="{% url 'core:dashboard' institution.slug %}" style="color: var(--text-muted); text-decoration: none;"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</a>
+        <h2 style="font-size: 1.8rem; font-weight: 800; margin-top: 4px;"><i class="fa-solid fa-calendar-days" style="color: var(--accent-cyan);"></i> Program Schedule</h2>
+    </div>
+</div>
+
+<div class="glass-card">
+    <div class="table-responsive">
+        <table class="custom-table">
+            <thead>
+                <tr>
+                    <th>Program</th>
+                    <th>Fest Day</th>
+                    <th>Stage / Venue</th>
+                    <th>Start Time</th>
+                    <th>End Time</th>
+                    <th>Total Mins</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for sched in schedules %}
+                <tr>
+                    <td><strong>{{ sched.program.name }}</strong></td>
+                    <td><span class="badge badge-approved">{{ sched.fest_day }}</span></td>
+                    <td>{{ sched.stage.name }}</td>
+                    <td>{{ sched.start_time|time:"h:i A" }}</td>
+                    <td>{{ sched.end_time|time:"h:i A" }}</td>
+                    <td>{{ sched.total_duration_minutes }} mins</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 30px;">
+                        No program schedules assigned yet.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

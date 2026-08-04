@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Multi-Contestant Grid Entry - {{ institution.name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <a href="{% url 'core:contestant_list' institution.slug %}" style="color: var(--text-muted); text-decoration: none;"><i class="fa-solid fa-arrow-left"></i> Back to Contestants</a>
+        <h2 style="font-size: 1.8rem; font-weight: 800; margin-top: 4px;"><i class="fa-solid fa-user-group" style="color: var(--accent-emerald);"></i> Multi-Contestant Grid Entry (Add Multiple at Once)</h2>
+    </div>
+</div>
+
+<div class="glass-card">
+    <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 20px;">
+        <i class="fa-solid fa-circle-info"></i> Enter multiple contestants below. Chest numbers will be auto-generated sequentially! Click <strong>"+ Add Another Contestant Row"</strong> for more rows.
+    </p>
+
+    <form method="POST">
+        {% csrf_token %}
+        <div class="table-responsive">
+            <table class="custom-table" id="batchTable">
+                <thead>
+                    <tr>
+                        <th style="width: 25%;">Competition</th>
+                        <th style="width: 25%;">Team</th>
+                        <th style="width: 25%;">Category</th>
+                        <th style="width: 25%;">Contestant Full Name</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="batchTbody">
+                    <!-- Pre-loaded 5 initial rows -->
+                    {% for i in "12345" %}
+                    <tr>
+                        <td>
+                            <select name="competition_id[]" class="form-control" style="min-width: 150px;">
+                                {% for comp in competitions %}
+                                <option value="{{ comp.id }}">{{ comp.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                        <td>
+                            <select name="team_id[]" class="form-control" style="min-width: 150px;">
+                                {% for team in teams %}
+                                <option value="{{ team.id }}">{{ team.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                        <td>
+                            <select name="category_id[]" class="form-control" style="min-width: 150px;">
+                                {% for cat in categories %}
+                                <option value="{{ cat.id }}">{{ cat.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                        <td>
+                            <input type="text" name="name[]" class="form-control" placeholder="e.g. Ahmad Bilal" style="min-width: 180px;">
+                        </td>
+                        <td>
+                            <button type="button" class="btn-danger" style="padding: 6px 10px;" onclick="removeRow(this)"><i class="fa-solid fa-trash"></i></button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px; flex-wrap: wrap; gap: 12px;">
+            <button type="button" class="btn-primary" style="background: rgba(255,255,255,0.08); box-shadow: none;" onclick="addRow()">
+                <i class="fa-solid fa-plus"></i> + Add Another Contestant Row
+            </button>
+            <button type="submit" class="btn-primary" style="font-size: 1.05rem; padding: 12px 28px; background: linear-gradient(135deg, var(--accent-emerald), #059669);">
+                <i class="fa-solid fa-floppy-disk"></i> Register All Contestants
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function addRow() {
+    var tbody = document.getElementById('batchTbody');
+    var firstRow = tbody.children[0];
+    var newRow = firstRow.cloneNode(true);
+    
+    // Clear text inputs in cloned row
+    var inputs = newRow.querySelectorAll('input[type="text"]');
+    inputs.forEach(function(input) { input.value = ''; });
+    
+    tbody.appendChild(newRow);
+}
+
+function removeRow(btn) {
+    var tbody = document.getElementById('batchTbody');
+    if (tbody.children.length > 1) {
+        var tr = btn.closest('tr');
+        tr.remove();
+    } else {
+        alert('At least one contestant row must remain.');
+    }
+}
+</script>
+{% endblock %}

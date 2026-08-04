@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+
+{% block title %}Score Balancer AI - {{ institution.name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <a href="{% url 'core:manage_announcements' institution.slug %}" style="color: var(--text-muted); text-decoration: none;"><i class="fa-solid fa-arrow-left"></i> Back to Announcements Hub</a>
+        <h2 style="font-size: 1.8rem; font-weight: 800; margin-top: 4px;"><i class="fa-solid fa-wand-magic-sparkles" style="color: #a78bfa;"></i> Score Balancer AI Assistant</h2>
+    </div>
+    <div>
+        <a href="{% url 'core:team_standings' institution.slug %}" class="btn-primary">
+            <i class="fa-solid fa-ranking-star"></i> View Live Standings
+        </a>
+    </div>
+</div>
+
+<!-- Header Card -->
+<div class="glass-card" style="margin-bottom: 24px; padding: 20px; border: 1px solid #7c3aed; background: linear-gradient(135deg, rgba(124, 58, 237, 0.15), rgba(15, 23, 42, 0.8));">
+    <div style="display: flex; align-items: center; gap: 16px;">
+        <div style="font-size: 3rem; color: #a78bfa;">🪄</div>
+        <div>
+            <h3 style="font-size: 1.3rem; font-weight: 800; margin: 0; color: #fff;">Smart Result Announcement Balancer</h3>
+            <p style="color: #c4b5fd; font-size: 0.9rem; margin: 4px 0 0 0;">
+                The Score Balancer AI analyzes unannounced completed events to calculate which announcements will generate maximum suspense, balance public team scores, and keep audiences engaged!
+            </p>
+        </div>
+    </div>
+</div>
+
+<!-- Current Public Team Scores -->
+<div style="margin-bottom: 28px;">
+    <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 14px;"><i class="fa-solid fa-chart-bar" style="color: var(--accent-cyan);"></i> Current Public Team Scores</h3>
+    <div class="dashboard-stats-grid">
+        {% for score in public_team_scores %}
+        <div class="glass-card" style="padding: 16px; text-align: center;">
+            <div style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase;">Rank #{{ forloop.counter }}</div>
+            <h4 style="font-size: 1.2rem; font-weight: 800; margin: 4px 0;">{{ score.team.name }}</h4>
+            <div style="font-size: 1.6rem; font-weight: 900; color: var(--accent-cyan);">{{ score.points }} pts</div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Top 5 Recommended Announcements -->
+<div class="glass-card">
+    <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 16px;"><i class="fa-solid fa-lightbulb" style="color: var(--accent-amber);"></i> Top 5 Recommended Programs to Announce Next</h3>
+    
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+        {% for item in suggested_announcements %}
+        <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 10px; padding: 18px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+            <div style="display: flex; align-items: center; gap: 14px;">
+                <div style="width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, #7c3aed, #4c1d95); display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 1.2rem; color: #fff;">
+                    #{{ forloop.counter }}
+                </div>
+                <div>
+                    <span class="badge badge-approved" style="font-size: 0.75rem;">{{ item.program.category.name }}</span>
+                    <h4 style="font-size: 1.15rem; font-weight: 800; margin: 4px 0 2px 0; color: #fff;">{{ item.program.name }}</h4>
+                    <div style="font-size: 0.85rem; color: #a78bfa;">Simulated Team Impact: <strong>{{ item.impact_summary }}</strong></div>
+                </div>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 16px;">
+                <div style="text-align: right;">
+                    <div style="font-size: 0.8rem; color: var(--text-muted);">Suspense Gap After:</div>
+                    <strong style="font-size: 1rem; color: var(--accent-amber);">{{ item.top_gap_after }} pts gap</strong>
+                </div>
+                <a href="{% url 'core:toggle_program_announcement' institution.slug item.program.id %}" class="btn-primary" style="padding: 10px 18px; background: linear-gradient(135deg, var(--accent-emerald), #059669);">
+                    <i class="fa-solid fa-bullhorn"></i> Announce Now
+                </a>
+            </div>
+        </div>
+        {% empty %}
+        <div style="text-align: center; padding: 30px; color: var(--text-muted);">
+            No unannounced completed programs remaining! All scored events have been published.
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,146 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Category Management - {{ institution.name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <a href="{% url 'core:dashboard' institution.slug %}" style="color: var(--text-muted); text-decoration: none;"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</a>
+        <h2 style="font-size: 1.8rem; font-weight: 800; margin-top: 4px;"><i class="fa-solid fa-tags" style="color: var(--accent-cyan);"></i> Category Management</h2>
+    </div>
+</div>
+
+<div class="form-grid-2">
+
+    <!-- Add Category Form -->
+    <div class="glass-card">
+        <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 16px;"><i class="fa-solid fa-plus"></i> Add New Category</h3>
+        
+        <form method="POST">
+            {% csrf_token %}
+            <div class="form-group">
+                <label class="form-label">Competition</label>
+                <select name="competition_id" class="form-control" required>
+                    {% for comp in competitions %}
+                    <option value="{{ comp.id }}">{{ comp.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Category Name</label>
+                <input type="text" name="name" class="form-control" placeholder="e.g. Sub-Junior or General A" required>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Category Type</label>
+                <select name="is_common" id="is_common_select" class="form-control" onchange="toggleCommonSection()" required>
+                    <option value="0">Standard Base Category (e.g. Sub-Junior, Junior, Senior)</option>
+                    <option value="1">Common / Combined Category (e.g. General A, General B)</option>
+                </select>
+            </div>
+
+            <!-- Dynamic Section for Common Categories -->
+            <div id="common_categories_section" style="display: none; background: rgba(15, 23, 42, 0.6); padding: 14px; border-radius: 10px; border: 1px solid var(--border-color); margin-bottom: 18px;">
+                <label class="form-label" style="color: var(--accent-cyan); font-weight: 600;"><i class="fa-solid fa-check-double"></i> Select Included Base Categories</label>
+                <p style="color: var(--text-muted); font-size: 0.8rem; margin-bottom: 10px;">
+                    e.g. <strong>General A</strong> includes <em>Sub-Junior</em> and <em>Kids</em>. Contestants in included categories are automatically eligible!
+                </p>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px;">
+                    {% for b_cat in base_categories %}
+                    <div style="display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.02); padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border-color);">
+                        <input type="checkbox" name="included_categories[]" value="{{ b_cat.id }}" id="cat_inc_{{ b_cat.id }}" style="width: 16px; height: 16px; cursor: pointer;">
+                        <label for="cat_inc_{{ b_cat.id }}" style="cursor: pointer; font-size: 0.88rem;">{{ b_cat.name }}</label>
+                    </div>
+                    {% empty %}
+                    <p style="color: var(--accent-amber); font-size: 0.85rem;">Create base categories first before making a combined common category.</p>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Description / Remarks (Optional)</label>
+                <input type="text" name="description" class="form-control" placeholder="e.g. Age 10-12 years or Combined General Category">
+            </div>
+
+            <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; margin-top: 10px;">
+                <i class="fa-solid fa-floppy-disk"></i> Save Category
+            </button>
+        </form>
+    </div>
+
+    <!-- Category List Table -->
+    <div class="glass-card">
+        <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 16px;"><i class="fa-solid fa-list-check"></i> Configured Categories</h3>
+        <div class="table-responsive">
+            <table class="custom-table">
+                <thead>
+                    <tr>
+                        <th>Category Name</th>
+                        <th>Type</th>
+                        <th>Included Sub-Categories</th>
+                        <th style="min-width: 120px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cat in categories %}
+                    <tr>
+                        <td><strong>{{ cat.name }}</strong></td>
+                        <td>
+                            {% if cat.is_common %}
+                            <span class="badge badge-pending" style="font-size: 0.75rem;"><i class="fa-solid fa-object-group"></i> Common</span>
+                            {% else %}
+                            <span class="badge badge-approved" style="font-size: 0.75rem;">Base</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if cat.is_common %}
+                            {% for inc in cat.included_categories.all %}
+                            <span class="badge badge-approved" style="font-size: 0.7rem; margin-right: 2px; margin-bottom: 2px; display: inline-block;">{{ inc.name }}</span>
+                            {% empty %}
+                            <span style="color: var(--text-muted); font-size: 0.85rem;">All Categories</span>
+                            {% endfor %}
+                            {% else %}
+                            <span style="color: var(--text-muted); font-size: 0.85rem;">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                                <a href="{% url 'core:category_edit' institution.slug cat.id %}" class="btn-primary" style="padding: 6px 10px; font-size: 0.78rem; background: rgba(255,255,255,0.08); box-shadow: none;" title="Edit Category">
+                                    <i class="fa-solid fa-pen-to-square"></i> Edit
+                                </a>
+                                <a href="{% url 'core:category_delete' institution.slug cat.id %}" class="btn-primary" style="padding: 6px 10px; font-size: 0.78rem; background: rgba(225, 29, 72, 0.2); border: 1px solid #e11d48; color: #f43f5e;" onclick="return confirm('Are you sure you want to delete category \'{{ cat.name }}\'?');" title="Delete Category">
+                                    <i class="fa-solid fa-trash"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" style="text-align: center; color: var(--text-muted); padding: 24px;">
+                            No categories created yet.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleCommonSection() {
+    var val = document.getElementById('is_common_select').value;
+    var section = document.getElementById('common_categories_section');
+    if (val === '1') {
+        section.style.display = 'block';
+    } else {
+        section.style.display = 'none';
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Assign Programs - {{ contestant.name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <div style="display: flex; gap: 16px; align-items: center; flex-wrap: wrap; margin-bottom: 4px;">
+            <a href="{% url 'core:contestant_list' institution.slug %}" style="color: var(--text-muted); text-decoration: none;"><i class="fa-solid fa-arrow-left"></i> Back to Contestants</a>
+            <a href="{% url 'core:assignment_hub' institution.slug %}" style="color: var(--accent-cyan); text-decoration: none;"><i class="fa-solid fa-list-check"></i> Back to Program Assignment Hub</a>
+        </div>
+        <h2 style="font-size: 1.8rem; font-weight: 800; margin-top: 4px;">Assign Programs: <span style="color: var(--accent-emerald);">#{{ contestant.chest_no }} {{ contestant.name }}</span></h2>
+        <p style="color: var(--text-muted); font-size: 0.9rem;">Team: <strong>{{ contestant.team.name }}</strong> | Category: <strong>{{ contestant.category.name }}</strong></p>
+    </div>
+</div>
+
+<div class="glass-card">
+    <form method="POST">
+        {% csrf_token %}
+        
+        <!-- DESKTOP TABLE VIEW -->
+        <div class="table-responsive desktop-table-view">
+            <table class="custom-table">
+                <thead>
+                    <tr>
+                        <th style="width: 50px;">Enrolled</th>
+                        <th>Program / Event Name</th>
+                        <th>Category</th>
+                        <th>Type</th>
+                        <th>Format</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for prog in eligible_programs %}
+                    <tr>
+                        <td>
+                            <input type="checkbox" name="selected_program_ids[]" value="{{ prog.id }}" {% if prog.id in existing_prog_ids %}checked{% endif %} style="width: 18px; height: 18px; cursor: pointer;">
+                        </td>
+                        <td><strong>{{ prog.name }}</strong></td>
+                        <td><span class="badge badge-approved">{{ prog.category.name }}</span></td>
+                        <td>{{ prog.get_program_type_display }}</td>
+                        <td>{% if prog.is_group %}<span class="badge badge-pending">Group Event</span>{% else %}<span class="badge badge-approved">Single Event</span>{% endif %}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 24px;">
+                            No eligible programs found for contestant's category ({{ contestant.category.name }}).
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- MOBILE CARD CHECKLIST VIEW -->
+        <div class="mobile-card-list-view">
+            {% for prog in eligible_programs %}
+            <div style="background: rgba(255,255,255,0.02); padding: 12px; border-radius: 10px; border: 1px solid var(--border-color); margin-bottom: 8px; display: flex; align-items: center; gap: 12px;">
+                <input type="checkbox" name="selected_program_ids[]" value="{{ prog.id }}" {% if prog.id in existing_prog_ids %}checked{% endif %} style="width: 20px; height: 20px; cursor: pointer;">
+                <div style="flex: 1;">
+                    <strong style="color: var(--text-main); font-size: 1.05rem;">{{ prog.name }}</strong>
+                    <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px;">
+                        <span class="badge badge-approved" style="font-size: 0.72rem;">{{ prog.category.name }}</span>
+                        {% if prog.is_group %}
+                        <span class="badge badge-pending" style="font-size: 0.72rem;">Group</span>
+                        {% else %}
+                        <span class="badge badge-approved" style="font-size: 0.72rem;">Single</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div style="text-align: center; color: var(--text-muted); padding: 24px;">
+                No eligible programs found for contestant's category ({{ contestant.category.name }}).
+            </div>
+            {% endfor %}
+        </div>
+
+        <div style="margin-top: 20px; text-align: right;">
+            <button type="submit" class="btn-primary" style="font-size: 1.05rem; padding: 12px 28px; width: 100%; justify-content: center; background: linear-gradient(135deg, var(--accent-emerald), #059669);">
+                <i class="fa-solid fa-floppy-disk"></i> Save Program Enrollments
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

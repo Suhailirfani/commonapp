@@ -1,0 +1,170 @@
+{% extends 'base.html' %}
+
+{% block title %}User & Role Management - {{ institution.name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <a href="{% url 'core:dashboard' institution.slug %}" style="color: var(--text-muted); text-decoration: none;"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</a>
+        <h2 style="font-size: 1.8rem; font-weight: 800; margin-top: 4px;">User & Role Management</h2>
+    </div>
+    <div>
+        <a href="{% url 'users:user_create' institution.slug %}" class="btn-primary">
+            <i class="fa-solid fa-user-plus"></i> Add Sub-User / Judge / Team Leader
+        </a>
+    </div>
+</div>
+
+<!-- DESKTOP TABLE VIEW -->
+<div class="glass-card desktop-table-view">
+    <div class="table-responsive">
+        <table class="custom-table">
+            <thead>
+                <tr>
+                    <th>Username & Email</th>
+                    <th>Role & Scope</th>
+                    <th>Designation</th>
+                    <th>Status</th>
+                    <th style="text-align: right;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in users %}
+                <tr>
+                    <td>
+                        <strong>{{ u.username }}</strong>
+                        {% if u.email %}<div style="color: var(--text-muted); font-size: 0.78rem;">{{ u.email }}</div>{% endif %}
+                    </td>
+                    <td>
+                        <span class="badge badge-approved" style="font-size: 0.78rem;">{{ u.get_role_display }}</span>
+                        {% if u.managed_team %}
+                        <div style="color: var(--accent-cyan); font-weight: 700; font-size: 0.78rem; margin-top: 4px;">
+                            <i class="fa-solid fa-people-group"></i> Team: {{ u.managed_team.name }}
+                        </div>
+                        {% endif %}
+                        {% if u.is_judge %}
+                        <div style="margin-top: 4px; font-size: 0.78rem;">
+                            {% if u.assigned_competitions.exists %}
+                            <strong style="color: var(--accent-amber);">Comps:</strong>
+                            {% for c in u.assigned_competitions.all %}{{ c.name }}{% if not forloop.last %}, {% endif %}{% endfor %}
+                            {% endif %}
+                            {% if u.assigned_programs.exists %}
+                            <br><strong style="color: var(--accent-cyan);">Progs:</strong>
+                            {% for p in u.assigned_programs.all %}{{ p.name }}{% if not forloop.last %}, {% endif %}{% endfor %}
+                            {% endif %}
+                            {% if not u.assigned_competitions.exists and not u.assigned_programs.exists %}
+                            <span style="color: var(--accent-rose);">No competition assigned</span>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </td>
+                    <td>{{ u.designation|default:"-" }}</td>
+                    <td>
+                        {% if u.is_approved %}
+                        <span class="badge badge-approved" style="background: rgba(16, 185, 129, 0.2); border: 1px solid var(--accent-emerald); color: var(--accent-emerald);"><i class="fa-solid fa-circle-check"></i> Active</span>
+                        {% else %}
+                        <span class="badge badge-pending" style="background: rgba(225, 29, 72, 0.2); border: 1px solid var(--accent-rose); color: var(--accent-rose);"><i class="fa-solid fa-circle-xmark"></i> Deactivated</span>
+                        {% endif %}
+                    </td>
+                    <td style="text-align: right;">
+                        <div style="display: flex; gap: 6px; justify-content: flex-end; align-items: center;">
+                            {% if u.is_judge %}
+                            <a href="{% url 'users:judge_program_assign' institution.slug u.id %}" class="btn-primary" style="padding: 4px 10px; font-size: 0.78rem; background: linear-gradient(135deg, #f59e0b, #b45309);">
+                                <i class="fa-solid fa-list-check"></i> Assign Programs ({{ u.assigned_programs.count }})
+                            </a>
+                            {% endif %}
+                            <a href="{% url 'users:user_edit' institution.slug u.id %}" class="btn-primary" style="padding: 4px 10px; font-size: 0.78rem; background: rgba(255,255,255,0.08); box-shadow: none;">
+                                <i class="fa-solid fa-pen"></i> Edit
+                            </a>
+                            <form method="POST" action="{% url 'users:toggle_user_status' institution.slug u.id %}" style="display: inline;">
+                                {% csrf_token %}
+                                {% if u.is_approved %}
+                                <button type="submit" class="btn-danger" style="padding: 4px 10px; font-size: 0.78rem;" onclick="return confirm('Deactivate account for {{ u.username }}?');">
+                                    <i class="fa-solid fa-user-xmark"></i> Deactivate
+                                </button>
+                                {% else %}
+                                <button type="submit" class="btn-primary" style="padding: 4px 10px; font-size: 0.78rem; background: linear-gradient(135deg, var(--accent-emerald), #059669);" onclick="return confirm('Activate account for {{ u.username }}?');">
+                                    <i class="fa-solid fa-user-check"></i> Activate
+                                </button>
+                                {% endif %}
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 30px;">
+                        No sub-users created yet.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- MOBILE CARD LIST VIEW -->
+<div class="mobile-card-list-view">
+    {% for u in users %}
+    <div class="glass-card" style="margin-bottom: 10px; padding: 12px; border-radius: 12px; border: 1px solid var(--border-color);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
+            <div>
+                <strong style="font-size: 1.05rem; display: block; color: var(--text-main);">{{ u.username }}</strong>
+                <span class="badge badge-approved" style="font-size: 0.72rem; margin-top: 4px;">{{ u.get_role_display }}</span>
+                {% if u.managed_team %}
+                <div style="color: var(--accent-cyan); font-weight: 700; font-size: 0.75rem; margin-top: 4px;">
+                    <i class="fa-solid fa-people-group"></i> Team: {{ u.managed_team.name }}
+                </div>
+                {% endif %}
+                {% if u.is_judge %}
+                <div style="margin-top: 4px; font-size: 0.75rem;">
+                    {% if u.assigned_competitions.exists %}
+                    <strong style="color: var(--accent-amber);">Comps:</strong>
+                    {% for c in u.assigned_competitions.all %}{{ c.name }}{% if not forloop.last %}, {% endif %}{% endfor %}
+                    {% endif %}
+                    {% if u.assigned_programs.exists %}
+                    <br><strong style="color: var(--accent-cyan);">Progs:</strong>
+                    {% for p in u.assigned_programs.all %}{{ p.name }}{% if not forloop.last %}, {% endif %}{% endfor %}
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+            <div>
+                {% if u.is_approved %}
+                <span class="badge badge-approved" style="font-size: 0.72rem;">Active</span>
+                {% else %}
+                <span class="badge badge-pending" style="font-size: 0.72rem; background: rgba(225, 29, 72, 0.2); color: var(--accent-rose);">Deactivated</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 8px; justify-content: flex-end; margin-top: 12px; flex-wrap: wrap;">
+            {% if u.is_judge %}
+            <a href="{% url 'users:judge_program_assign' institution.slug u.id %}" class="btn-primary" style="padding: 6px 10px; font-size: 0.78rem; background: linear-gradient(135deg, #f59e0b, #b45309);">
+                <i class="fa-solid fa-list-check"></i> Assign Programs ({{ u.assigned_programs.count }})
+            </a>
+            {% endif %}
+            <a href="{% url 'users:user_edit' institution.slug u.id %}" class="btn-primary" style="padding: 6px 10px; font-size: 0.78rem; background: rgba(255,255,255,0.08); box-shadow: none;">
+                <i class="fa-solid fa-pen"></i> Edit
+            </a>
+            <form method="POST" action="{% url 'users:toggle_user_status' institution.slug u.id %}" style="display: inline;">
+                {% csrf_token %}
+                {% if u.is_approved %}
+                <button type="submit" class="btn-danger" style="padding: 6px 12px; font-size: 0.78rem;" onclick="return confirm('Deactivate account for {{ u.username }}?');">
+                    <i class="fa-solid fa-user-xmark"></i> Deactivate
+                </button>
+                {% else %}
+                <button type="submit" class="btn-primary" style="padding: 6px 12px; font-size: 0.78rem; background: linear-gradient(135deg, var(--accent-emerald), #059669);" onclick="return confirm('Activate account for {{ u.username }}?');">
+                    <i class="fa-solid fa-user-check"></i> Activate
+                </button>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+    {% empty %}
+    <div class="glass-card" style="text-align: center; color: var(--text-muted); padding: 30px;">
+        No sub-users created yet.
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

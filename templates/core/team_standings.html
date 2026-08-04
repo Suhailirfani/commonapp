@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+
+{% block title %}Team Standings & Leaderboard - {{ institution.name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <a href="{% url 'core:dashboard' institution.slug %}" style="color: var(--text-muted); text-decoration: none;"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</a>
+        <h2 style="font-size: 1.8rem; font-weight: 800; margin-top: 4px;"><i class="fa-solid fa-ranking-star" style="color: var(--accent-amber);"></i> Team Standings & Leaderboard</h2>
+    </div>
+    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <a href="?view=announced" class="btn-primary" style="{% if view_mode == 'announced' %}background: linear-gradient(135deg, var(--accent-emerald), #059669);{% else %}background: rgba(255,255,255,0.08); box-shadow: none;{% endif %}">
+            <i class="fa-solid fa-bullhorn"></i> Announced Only (Public)
+        </a>
+        <a href="?view=all" class="btn-primary" style="{% if view_mode == 'all' %}background: linear-gradient(135deg, #0284c7, #0369a1);{% else %}background: rgba(255,255,255,0.08); box-shadow: none;{% endif %}">
+            <i class="fa-solid fa-eye"></i> Overall Scores (Admin)
+        </a>
+    </div>
+</div>
+
+<!-- Podium Section (Top 3 Teams) -->
+{% if top_three %}
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; margin-bottom: 28px;">
+    {% for tdata in top_three %}
+    <div class="glass-card" style="text-align: center; padding: 24px; position: relative; overflow: hidden; {% if tdata.position == 1 %}border: 2px solid #f59e0b; background: linear-gradient(180deg, rgba(245, 158, 11, 0.15), rgba(15, 23, 42, 0.8));{% elif tdata.position == 2 %}border: 2px solid #94a3b8; background: linear-gradient(180deg, rgba(148, 163, 184, 0.1), rgba(15, 23, 42, 0.8));{% elif tdata.position == 3 %}border: 2px solid #b45309; background: linear-gradient(180deg, rgba(180, 83, 9, 0.1), rgba(15, 23, 42, 0.8));{% endif %}">
+        <div style="font-size: 2.5rem; margin-bottom: 8px;">
+            {% if tdata.position == 1 %}🥇{% elif tdata.position == 2 %}🥈{% elif tdata.position == 3 %}🥉{% endif %}
+        </div>
+        <div style="font-size: 0.8rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted);">POSITION #{{ tdata.position }}</div>
+        <h3 style="font-size: 1.4rem; font-weight: 800; margin: 4px 0 10px 0; color: #fff;">{{ tdata.team.name }}</h3>
+        <div style="font-size: 2.2rem; font-weight: 900; color: var(--accent-cyan);">{{ tdata.points }} <span style="font-size: 1rem; color: var(--text-muted);">pts</span></div>
+        
+        <div style="display: flex; justify-content: center; gap: 12px; margin-top: 14px; font-size: 0.82rem;">
+            <span>🥇 <strong>{{ tdata.first_count }}</strong></span>
+            <span>🥈 <strong>{{ tdata.second_count }}</strong></span>
+            <span>🥉 <strong>{{ tdata.third_count }}</strong></span>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<!-- Full Team Standings Table -->
+<div class="glass-card">
+    <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 16px;"><i class="fa-solid fa-list-ol"></i> Full Team Rankings</h3>
+    <div class="table-responsive">
+        <table class="custom-table">
+            <thead>
+                <tr>
+                    <th style="width: 10%;">Rank</th>
+                    <th style="width: 35%;">Team / House Name</th>
+                    <th style="width: 15%;">1st Ranks</th>
+                    <th style="width: 15%;">2nd Ranks</th>
+                    <th style="width: 15%;">3rd Ranks</th>
+                    <th style="width: 10%;">Total Points</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for tdata in teams %}
+                <tr style="{% if tdata.position == 1 %}background: rgba(245, 158, 11, 0.08);{% endif %}">
+                    <td>
+                        <strong style="font-size: 1.1rem; color: {% if tdata.position == 1 %}#f59e0b{% elif tdata.position == 2 %}#94a3b8{% elif tdata.position == 3 %}#b45309{% else %}var(--text-muted){% endif %};">
+                            #{{ tdata.position }}
+                        </strong>
+                    </td>
+                    <td><strong style="font-size: 1.05rem;">{{ tdata.team.name }}</strong></td>
+                    <td><span class="badge badge-approved" style="background: rgba(245, 158, 11, 0.2); border: 1px solid #f59e0b; color: #fbbf24;">🥇 {{ tdata.first_count }}</span></td>
+                    <td><span class="badge badge-approved" style="background: rgba(148, 163, 184, 0.2); border: 1px solid #94a3b8; color: #cbd5e1;">🥈 {{ tdata.second_count }}</span></td>
+                    <td><span class="badge badge-approved" style="background: rgba(180, 83, 9, 0.2); border: 1px solid #b45309; color: #f59e0b;">🥉 {{ tdata.third_count }}</span></td>
+                    <td><strong style="font-size: 1.2rem; color: var(--accent-cyan);">{{ tdata.points }} pts</strong></td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 30px;">
+                        No teams found.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,266 @@
+{% extends 'base.html' %}
+
+{% block title %}സഹായ പേജ് & ഉപയോഗക്രമം (Fest Help Guide) - {{ institution.name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <a href="{% url 'core:dashboard' institution.slug %}" style="color: var(--text-muted); text-decoration: none;"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</a>
+        <h2 style="font-size: 2rem; font-weight: 800; margin-top: 4px;">📖 ഫെസ്റ്റ് സോഫ്റ്റ്‌വെയർ സമ്പൂർണ്ണ ഗൈഡ് & ഉപയോഗക്രമം</h2>
+        <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 4px;">{{ institution.name }} ഫെസ്റ്റ് മാനേജ്‌മെന്റ് സിസ്റ്റത്തിന്റെ ഘട്ടം ഘട്ടമായുള്ള പ്രവർത്തന രീതികൾ താഴെ വിവരിക്കുന്നു.</p>
+    </div>
+    <div>
+        <span class="badge badge-approved" style="font-size: 0.95rem; padding: 8px 16px;"><i class="fa-solid fa-book-open"></i> Step-by-Step User Manual</span>
+    </div>
+</div>
+
+<!-- Quick Navigation Bar -->
+<div class="glass-card" style="margin-bottom: 24px; padding: 14px 20px;">
+    <strong style="font-size: 0.95rem; color: var(--accent-cyan); display: block; margin-bottom: 8px;"><i class="fa-solid fa-location-arrow"></i> വേഗത്തിൽ ആവശ്യമുള്ള ഭാഗത്തേക്ക് പോകാൻ ക്ലിക്ക് ചെയ്യുക:</strong>
+    <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+        <a href="#step-1" class="badge badge-approved" style="text-decoration: none;">1. Fest Setup</a>
+        <a href="#step-2" class="badge badge-approved" style="text-decoration: none;">2. User Management</a>
+        <a href="#step-3" class="badge badge-approved" style="text-decoration: none;">3. Points & Grade Rules</a>
+        <a href="#step-4" class="badge badge-approved" style="text-decoration: none;">4. Category Setup</a>
+        <a href="#step-5" class="badge badge-approved" style="text-decoration: none;">5. Chest Number Settings</a>
+        <a href="#step-6" class="badge badge-approved" style="text-decoration: none;">6. Programs & Events</a>
+        <a href="#step-7" class="badge badge-approved" style="text-decoration: none;">7. Contestants</a>
+        <a href="#step-8" class="badge badge-approved" style="text-decoration: none;">8. Program Assignment</a>
+        <a href="#step-9" class="badge badge-approved" style="text-decoration: none;">9. Stage & Time Schedule</a>
+        <a href="#step-10" class="badge badge-approved" style="text-decoration: none;">10. Reports & PDF Downloads</a>
+        <a href="#step-11" class="badge badge-approved" style="text-decoration: none;">11. Mark Entry</a>
+        <a href="#step-12" class="badge badge-approved" style="text-decoration: none;">12. Results & Leaderboard</a>
+        <a href="#step-13" class="badge badge-approved" style="text-decoration: none;">13. Public Announcement</a>
+        <a href="#step-14" class="badge badge-approved" style="text-decoration: none;">14. Score Balancer AI</a>
+        <a href="#team-leader-guide" class="badge badge-pending" style="background: var(--accent-cyan); color: #000; text-decoration: none; font-weight: 700;">🚩 Team Leader Guide</a>
+    </div>
+</div>
+
+<!-- STEP 1: FEST SETUP -->
+<div id="step-1" class="glass-card" style="margin-bottom: 24px;">
+    <h3 style="font-size: 1.3rem; font-weight: 700; color: var(--accent-cyan); margin-bottom: 10px;">
+        <i class="fa-solid fa-flag-checkered"></i> 1. ഫെസ്റ്റ് സെറ്റപ്പും പ്രാഥമിക ക്രമീകരണങ്ങളും (Fest Setup)
+    </h3>
+    <p style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.6;">
+        മത്സരങ്ങൾ ആരംഭിക്കുന്നതിന് മുമ്പ് നിങ്ങളുടെ സ്ഥാപനത്തിന്റെ ഫെസ്റ്റ് വിവരങ്ങൾ സിസ്റ്റത്തിൽ ചേർക്കണം:
+    </p>
+    <ul style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.8; margin-left: 20px;">
+        <li><strong>Competition സജ്ജീകരിക്കൽ:</strong> Settings → Competitions സന്ദർശിച്ച് ഫെസ്റ്റിന്റെ പേര് (ഉദാഹരണം: <em>Mu'eeniyya Arts Fest 2026</em>), തരം (Arts, Sports, Islamic Fest), വർഷം എന്നിവ നൽകി സേവ് ചെയ്യുക.</li>
+        <li><strong>ടീമുകൾ / ഗ്രൂപ്പുകൾ (Teams Setup):</strong> ഫെസ്റ്റിൽ മത്സരിക്കുന്ന ടീമുകളെ ചേർക്കുക (ഉദാഹരണം: <em>Red House, Blue House, Green House</em>) ഒപ്പം ഓരോ ടീമിന്റെയും കോഡ് ലെറ്ററും (Code Letter A, B, C...) നൽകുക.</li>
+        <li><strong>സ്റ്റേജുകൾ (Stages Setup):</strong> വേദികൾ നിർമ്മിക്കുക (ഉദാഹരണം: <em>Main Stage, Stage 2, Auditorium</em>). ഓരോ സ്റ്റേജിന്റെയും വിവരങ്ങൾ ചേർക്കുക.</li>
+    </ul>
+</div>
+
+<!-- STEP 2: USER MANAGEMENT -->
+<div id="step-2" class="glass-card" style="margin-bottom: 24px;">
+    <h3 style="font-size: 1.3rem; font-weight: 700; color: #a855f7; margin-bottom: 10px;">
+        <i class="fa-solid fa-user-gear"></i> 2. യൂസർ മാനേജ്‌മെന്റും റോളുകളും (User Management & Roles)
+    </h3>
+    <p style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.6;">
+        ഫെസ്റ്റ് എളുപ്പത്തിൽ കൈകാര്യം ചെയ്യാൻ വിവിധ യൂസർ അക്കൗണ്ടുകൾ നിർമ്മിക്കാം:
+    </p>
+    <ul style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.8; margin-left: 20px;">
+        <li><strong>Institution Admin:</strong> ഫെസ്റ്റിന്റെ എല്ലാ ആക്സസുമുള്ള പ്രധാന അഡ്മിനിസ്ട്രേറ്റർ.</li>
+        <li><strong>Team Leader (ടീം ലീഡർമാർ):</strong> ഓരോ ടീമിനും പ്രത്യേകം ടീം ലീഡർ അക്കൗണ്ട് നിർമ്മിക്കാം. അക്കൗണ്ട് ഉണ്ടാക്കുമ്പോൾ ലീഡറെ ബന്ധപ്പെട്ട ടീമുമായി (Connected Team) നിർബന്ധമായും കണക്ട് ചെയ്യണം.</li>
+        <li><strong>Tabulator (മാർക്ക് എന്റ്രി ടീം):</strong> സ്റ്റേജിൽ നിന്നും വരുന്ന മാർക്കുകൾ സിസ്റ്റത്തിൽ എന്റർ ചെയ്യാൻ താല്കാലിക ടാബുലേറ്റർ അക്കൗണ്ടുകൾ നൽകാം.</li>
+    </ul>
+</div>
+
+<!-- STEP 3: POINTS & GRADE RULES -->
+<div id="step-3" class="glass-card" style="margin-bottom: 24px;">
+    <h3 style="font-size: 1.3rem; font-weight: 700; color: var(--accent-amber); margin-bottom: 10px;">
+        <i class="fa-solid fa-sliders"></i> 3. പോയിന്റ് - ഗ്രേഡ് നിബന്ധനകൾ (Points & Grade Rules)
+    </h3>
+    <p style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.6;">
+        Portal Settings → Points & Grade Rules വിഭാഗത്തിൽ സിംഗിൾ, ഗ്രൂപ്പ് ഐറ്റങ്ങളുടെ പോയിന്റുകൾ നിശ്ചയിക്കാം:
+    </p>
+    <ul style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.8; margin-left: 20px;">
+        <li><strong>Single Event Rules:</strong> 1st Rank (ഉദാ: 5 pts), 2nd Rank (3 pts), 3rd Rank (1 pt) ഒപ്പം A+ (6 pts), A (5 pts), B (3 pts), C (1 pt) പോയിന്റുകൾ സെറ്റ് ചെയ്യാം.</li>
+        <li><strong>Group Event Rules:</strong> ഗ്രൂപ്പ് ഐറ്റങ്ങൾക്ക് അനുയോജ്യമായ ഉയർന്ന റാങ്ക് പോയിന്റുകളും ഗ്രേഡ് പോയിന്റുകളും വേറെയായി നിർണ്ണയിക്കാം.</li>
+        <li><strong>Grade Thresholds (%):</strong> എത്ര ശതമാനം മാർക്ക് കിട്ടിയാൽ A+ (ഉദാ: 90%), A (80%), B (70%), C (60%) ലഭിക്കണമെന്ന് ക്രമീകരിക്കാം.</li>
+    </ul>
+</div>
+
+<!-- STEP 4: CATEGORY SETUP -->
+<div id="step-4" class="glass-card" style="margin-bottom: 24px;">
+    <h3 style="font-size: 1.3rem; font-weight: 700; color: var(--accent-cyan); margin-bottom: 10px;">
+        <i class="fa-solid fa-tags"></i> 4. കാറ്റഗറികളും കോമ്പിനേഷൻ ഗ്രൂപ്പുകളും (Category Setup)
+    </h3>
+    <p style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.6;">
+        മത്സര വിഭാഗങ്ങൾ നിർമ്മിക്കാനും സംയോജിപ്പിക്കാനും <strong>Categories & Combined Groups</strong> ഉപയോഗിക്കുക:
+    </p>
+    <ul style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.8; margin-left: 20px;">
+        <li><strong>Base Categories:</strong> അടിസ്ഥാന കാറ്റഗറികൾ ചേർക്കുക (ഉദാഹരണം: <em>Sub-Junior, Junior, Senior, Super-Senior</em>).</li>
+        <li><strong>Common / Combined Categories:</strong> പൊതുവായ മത്സരങ്ങൾക്ക് കോമ്പിനേഷൻ കാറ്റഗറികൾ നിർമ്മിക്കാം (ഉദാഹരണം: <em>General A, General B</em>). കോമ്പിനേഷൻ കാറ്റഗറിയിൽ ഏതൊക്കെ ബേസ് കാറ്റഗറികൾ ഉൾപ്പെടുന്നുവെന്ന് തരംതിരിക്കുക.</li>
+        <li><strong>പ്രത്യേക ശ്രദ്ധ:</strong> കോമ്പിനേഷൻ / കോമൺ കാറ്റഗറിയിലേക്ക് നേരിട്ട് മത്സരാർത്ഥികളെ ചേർക്കാൻ സാധിക്കില്ല. ബേസ് കാറ്റഗറിയിലുള്ള മത്സരാർത്ഥികൾക്ക് കോമൺ ഐറ്റങ്ങളിൽ പങ്കെടുക്കാം.</li>
+    </ul>
+</div>
+
+<!-- STEP 5: CHEST NUMBER SETTINGS -->
+<div id="step-5" class="glass-card" style="margin-bottom: 24px;">
+    <h3 style="font-size: 1.3rem; font-weight: 700; color: var(--accent-emerald); margin-bottom: 10px;">
+        <i class="fa-solid fa-arrow-down-1-9"></i> 5. ചെസ്റ്റ് നമ്പർ ക്രമീകരണങ്ങൾ (Chest Number Starting Ranges & Re-Generate)
+    </h3>
+    <p style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.6;">
+        ചെസ്റ്റ് നമ്പറുകൾ കാറ്റഗറി തിരിച്ചും തത്സമയവും നൽകാം:
+    </p>
+    <ul style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.8; margin-left: 20px;">
+        <li><strong>Category Starting Ranges:</strong> ഓരോ കാറ്റഗറിക്കും ആരംഭ ചെസ്റ്റ് നമ്പർ ക്രമീകരിക്കാം (ഉദാഹരണം: Sub-Junior = 1001, Junior = 2001, Senior = 3001...).</li>
+        <li><strong>Auto Pre-Fill:</strong> പുതിയ മത്സരാർത്ഥിയെ ചേർക്കുമ്പോൾ തെരഞ്ഞെടുക്കുന്ന കാറ്റഗറിയുടെ അടുത്ത ചെസ്റ്റ് നമ്പർ സ്വയം പ്രീ-ഫിൽ ആകും.</li>
+        <li><strong>🔄 Re-Generate All Chest Numbers:</strong> മത്സര രജിസ്ട്രേഷൻ പൂർത്തിയായ ശേഷം ഒന്നിച്ച് ചെസ്റ്റ് നമ്പറുകൾ ക്രമത്തിലാക്കാൻ Settings-ലെ Re-Generate ബട്ടൺ ഉപയോഗിക്കാം.</li>
+    </ul>
+</div>
+
+<!-- STEP 6: PROGRAMS & EVENTS -->
+<div id="step-6" class="glass-card" style="margin-bottom: 24px;">
+    <h3 style="font-size: 1.3rem; font-weight: 700; color: var(--accent-indigo); margin-bottom: 10px;">
+        <i class="fa-solid fa-list-check"></i> 6. പ്രോഗ്രാമുകളും ഇനങ്ങളും (Programs & Events Management)
+    </h3>
+    <ul style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.8; margin-left: 20px;">
+        <li><strong>Single & Group Programs:</strong> വ്യക്തിഗത മത്സരങ്ങളും ഗ്രൂപ്പ് മത്സരങ്ങളും ചേർക്കുക. പ്രോഗ്രാം തരം (Stage / Off-Stage / Online) നിശ്ചയിക്കുക.</li>
+        <li><strong>Multi-Program Grid:</strong> ഒന്നിലധികം പ്രോഗ്രാമുകൾ വേഗത്തിൽ ഒരുമിച്ച് ചേർക്കാം.</li>
+        <li><strong>Excel Template & Bulk Import:</strong> എക്സൽ ടെംപ്ലേറ്റ് ഡൗൺലോഡ് ചെയ്ത് പൂരിപ്പിച്ച് അപ്‌ലോഡ് ചെയ്താൽ എല്ലാ മത്സരങ്ങളും മിനിറ്റുകൾക്കുള്ളിൽ സിസ്റ്റത്തിലാക്കാം.</li>
+    </ul>
+</div>
+
+<!-- STEP 7: CONTESTANTS REGISTRATION -->
+<div id="step-7" class="glass-card" style="margin-bottom: 24px;">
+    <h3 style="font-size: 1.3rem; font-weight: 700; color: var(--accent-amber); margin-bottom: 10px;">
+        <i class="fa-solid fa-users"></i> 7. മത്സരാർത്ഥികളുടെ രജിസ്ട്രേഷൻ (Contestants Registration)
+    </h3>
+    <ul style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.8; margin-left: 20px;">
+        <li><strong>Single Contestant Entry:</strong> പേര്, ടീം, അടിസ്ഥാന കാറ്റഗറി എന്നിവ നൽകി മത്സരാർത്ഥിയെ ചേർക്കുക. അടുത്ത ചെസ്റ്റ് നമ്പർ സിസ്റ്റം സ്വയം നൽകും.</li>
+        <li><strong>Excel Bulk Import:</strong> മത്സരാർത്ഥികളുടെ വിവരങ്ങൾ അടങ്ങിയ എക്സൽ ഫയൽ ഇമ്പോർട്ട് ചെയ്ത് ചെസ്റ്റ് നമ്പർ അലോക്കേഷനോടെ ബാച്ച് രജിസ്ട്രേഷൻ നടത്താം.</li>
+    </ul>
+</div>
+
+<!-- STEP 8: PROGRAM ASSIGNMENT -->
+<div id="step-8" class="glass-card" style="margin-bottom: 24px;">
+    <h3 style="font-size: 1.3rem; font-weight: 700; color: var(--accent-rose); margin-bottom: 10px;">
+        <i class="fa-solid fa-square-check"></i> 8. പ്രോഗ്രാം അസൈൻമെന്റ് - സിംഗിൾ & ഗ്രൂപ്പ് (Program Assignment)
+    </h3>
+    <ul style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.8; margin-left: 20px;">
+        <li><strong>Single Items Assignment:</strong> വിദ്യാർത്ഥിയുടെ പേരിന് നേരെയോ പ്രോഗ്രാമിന് നേരെയോ ചെക്ക് മാർക്ക് നൽകി മത്സരങ്ങൾ അസൈൻ ചെയ്യാം.</li>
+        <li><strong>Group Event & Captain Selection:</strong> ഗ്രൂപ്പ് മത്സരങ്ങൾക്ക് (ഉദാഹരണം: <em>Group Song, Drama</em>) ടീം അംഗങ്ങളെ ചേർത്ത് അതിൽ ഒരാളെ ക്യാപ്റ്റനായി (Captain) നിയോഗിക്കുക. മാർക്ക് എന്റ്രി വേളയിൽ ക്യാപ്റ്റന്റെ പേര് + Team പേര് കാണിക്കും.</li>
+    </ul>
+</div>
+
+<!-- STEP 9: STAGE & TIME SCHEDULING -->
+<div id="step-9" class="glass-card" style="margin-bottom: 24px;">
+    <h3 style="font-size: 1.3rem; font-weight: 700; color: #a78bfa; margin-bottom: 10px;">
+        <i class="fa-solid fa-calendar-days"></i> 9. സ്റ്റേജ്, സമയം ഷെഡ്യൂളിംഗ് (Stage & Time Schedules)
+    </h3>
+    <ul style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.8; margin-left: 20px;">
+        <li><strong>Fest Days Setup:</strong> ഫെസ്റ്റ് ദിവസങ്ങളും (Day 1, Day 2...) ഓരോ ദിവസത്തെയും ആരംഭ സമയവും നൽകുക.</li>
+        <li><strong>🤖 Smart Auto-Scheduler AI:</strong> പ്രോഗ്രാമുകളിലെ മത്സരാർത്ഥികളുടെ എണ്ണം കണക്കാക്കി സമയം ക്രമീകരിച്ച് ഓട്ടോമാറ്റിക്കായി വേദികളിലേക്ക് ഷെഡ്യൂൾ ചെയ്യുന്ന സ്മാർട്ട് എഞ്ചിൻ.</li>
+        <li><strong>Manual Drag & Adjust:</strong> ആവശ്യമെങ്കിൽ സമയവും സ്റ്റേജുകളും നേരിട്ട് മാറ്റാം.</li>
+    </ul>
+</div>
+
+<!-- STEP 10: REPORTS AND DOWNLOADS -->
+<div id="step-10" class="glass-card" style="margin-bottom: 24px;">
+    <h3 style="font-size: 1.3rem; font-weight: 700; color: #38bdf8; margin-bottom: 10px;">
+        <i class="fa-solid fa-file-pdf"></i> 10. റിപ്പോർട്ടുകളും PDF ഡൗൺലോഡുകളും (Reports & PDF Downloads)
+    </h3>
+    <p style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.6;">
+        ഫെസ്റ്റ് നടത്തിപ്പിന് ആവശ്യമായ എല്ലാ ഓഫീഷ്യൽ ഫോമുകളും ഒറ്റ ക്ലിക്കിൽ പ്രിന്റ് ചെയ്യാം:
+    </p>
+    <ul style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.8; margin-left: 20px;">
+        <li><strong>Valuation Form (വാല്യുവേഷൻ ഷീറ്റ്):</strong> ജഡ്ജ്മാർക്ക് മാർക്കിടാനുള്ള ഫോം (കോഡ് ലെറ്റർ അടിസ്ഥാനത്തിൽ).</li>
+        <li><strong>Green Room Sign Sheet:</strong> ഗ്രീൻ റൂം ഇൻചാർജിനുള്ള ഒപ്പുശേഖരണ ഫോം.</li>
+        <li><strong>Call List (കോളർ ഷീറ്റ്):</strong> അനൗൺസ്മെന്റ് ടീമിനായി കോഡ് ലെറ്ററും മത്സരാർത്ഥി വിവരങ്ങളും അടങ്ങിയ കാൾ ലിസ്റ്റ്.</li>
+        <li><strong>Assigned Programs Report:</strong> ടീം തിരിച്ചുളളതും കാറ്റഗറി തിരിച്ചുളളതുമായ പാർട്ടിസിപ്പേഷൻ ലിസ്റ്റുകൾ.</li>
+    </ul>
+</div>
+
+<!-- STEP 11: MARK ENTRY -->
+<div id="step-11" class="glass-card" style="margin-bottom: 24px;">
+    <h3 style="font-size: 1.3rem; font-weight: 700; color: var(--accent-amber); margin-bottom: 10px;">
+        <i class="fa-solid fa-keyboard"></i> 11. സ്പീഡ് മാർക്ക് എന്റ്രി മാട്രിക്സ് (Speed Mark Entry Matrix)
+    </h3>
+    <ul style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.8; margin-left: 20px;">
+        <li><strong>Code Letter & Mark Entry:</strong> മത്സരശേഷം വാല്യുവേഷൻ ഫോമിൽ നിന്നുള്ള കോഡ് ലെറ്ററും ഒപ്പം ജഡ്ജ്മാർ നൽകിയ മാർക്കുകളും ടാബുലേഷൻ മാട്രിക്സിൽ എന്റർ ചെയ്യുക.</li>
+        <li><strong>Automatic Rank & Points Calculation:</strong> മാർക്കുകൾ എന്റർ ചെയ്ത് സേവ് ചെയ്യുമ്പോൾ സിസ്റ്റം ഓട്ടോമാറ്റിക്കായി റാങ്കുകളും (1, 2, 3), ഗ്രേഡുകളും (A+, A, B, C), പോയിന്റുകളും കണക്കാക്കും.</li>
+    </ul>
+</div>
+
+<!-- STEP 12: RESULTS & LEADERBOARD -->
+<div id="step-12" class="glass-card" style="margin-bottom: 24px;">
+    <h3 style="font-size: 1.3rem; font-weight: 700; color: #f59e0b; margin-bottom: 10px;">
+        <i class="fa-solid fa-trophy"></i> 12. റിസൾട്ടുകളും ലീഡർബോർഡും (Program Results & Standings)
+    </h3>
+    <ul style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.8; margin-left: 20px;">
+        <li><strong>Program-Wise Results:</strong> മത്സരങ്ങളുടെ ഫലപ്രഖ്യാപന ലിസ്റ്റും പ്രിന്റബിൾ വിന്നർ കാർഡുകളും.</li>
+        <li><strong>Team Standings & Leaderboard:</strong> ടീമുകളുടെ തത്സമയ പോയിന്റുകൾ, ഒന്നാം സ്ഥാനം, രണ്ടാം സ്ഥാനം വിജയങ്ങളുടെ പട്ടിക.</li>
+        <li><strong>Toppers & Kala Prathibha:</strong> ഇൻഡിവിജ്വൽ ചാമ്പ്യന്മാരുടെയും വിഭാഗം തിരിച്ചുള്ള ടോപ്പർമാരുടെയും വിവരങ്ങൾ.</li>
+    </ul>
+</div>
+
+<!-- STEP 13: PUBLIC ANNOUNCEMENT HUB -->
+<div id="step-13" class="glass-card" style="margin-bottom: 24px;">
+    <h3 style="font-size: 1.3rem; font-weight: 700; color: var(--accent-emerald); margin-bottom: 10px;">
+        <i class="fa-solid fa-bullhorn"></i> 13. പബ്ലിക് അനൗൺസ്മെന്റ് ഹബ് (Public Announcement Control)
+    </h3>
+    <ul style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.8; margin-left: 20px;">
+        <li><strong>Announce / Hide Control:</strong> പൂർത്തിയായ മത്സരഫലങ്ങൾ പബ്ലിക് വെബ്‌സൈറ്റിലേക്ക് നൽകാമോ എന്ന് അഡ്മിന് തീരുമാനിക്കാം (Announce Results ബട്ടൺ).</li>
+        <li><strong>Dynamic Parity:</strong> അനൗൺസ് ചെയ്ത ഫലങ്ങൾ മാത്രമേ പബ്ലിക് പോർട്ടലിലും ലൈവ് ലീഡർബോർഡിലും ക്ലബ്ബ് ഔദ്യോഗികമായി കാണിക്കൂ.</li>
+    </ul>
+</div>
+
+<!-- STEP 14: SCORE BALANCER AI -->
+<div id="step-14" class="glass-card" style="margin-bottom: 24px;">
+    <h3 style="font-size: 1.3rem; font-weight: 700; color: #a78bfa; margin-bottom: 10px;">
+        <i class="fa-solid fa-wand-magic-sparkles"></i> 14. സ്കോർ ബാലൻസർ AI (Score Balancer AI)
+    </h3>
+    <p style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.6;">
+        ഫെസ്റ്റ് അവസാനിക്കുമ്പോൾ ആവേശവും സസ്പെൻസും നിലനിർത്താൻ സ്കോർ ബാലൻസർ സഹായിക്കുന്നു:
+    </p>
+    <ul style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.8; margin-left: 20px;">
+        <li>ടീമുകൾ തമ്മിലുള്ള പോയിന്റ് വ്യത്യാസം വിശകലനം ചെയ്ത് ഏത് മത്സരത്തിന്റെ റിസൾട്ട് അടുത്തതായി പ്രഖ്യാപിക്കണമെന്ന് AI നിർദ്ദേശിക്കുന്നു.</li>
+    </ul>
+</div>
+
+<!-- TEAM LEADER USER USAGE GUIDE -->
+<div id="team-leader-guide" class="glass-card" style="border: 2px solid var(--accent-cyan); background: rgba(2, 132, 199, 0.08);">
+    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 14px;">
+        <h3 style="font-size: 1.4rem; font-weight: 800; color: var(--accent-cyan);">
+            🚩 ടീം ലീഡർമാർക്കുള്ള ഉപയോഗ നിർദ്ദേശങ്ങൾ (Team Leader Guide)
+        </h3>
+        <span class="badge badge-approved" style="font-size: 0.9rem; padding: 6px 14px;">Dedicated Team Dashboard</span>
+    </div>
+    
+    <p style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.6;">
+        ടീം ലീഡർ അക്കൗണ്ടിൽ ലോഗിൻ ചെയ്യുമ്പോൾ സ്വന്തം ടീമിന്റെ വിവരങ്ങൾ മാത്രം കാണാനും നിയന്ത്രിക്കാനും സാധിക്കും:
+    </p>
+    
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-top: 16px;">
+        <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 10px; padding: 14px;">
+            <strong style="color: var(--accent-cyan);"><i class="fa-solid fa-chart-line"></i> 1. ടീം ഡാഷ്‌ബോർഡ്</strong>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">
+                സ്വന്തം ടീമിലെ ആകെ അംഗങ്ങളുടെ എണ്ണം, കാറ്റഗറി തിരിച്ചുളള കുട്ടികളുടെ കണക്ക്, ടീമിന്റെ നിലവിലെ പോയിന്റ്, റാങ്ക് എന്നിവ കാണാം.
+            </p>
+        </div>
+
+        <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 10px; padding: 14px;">
+            <strong style="color: var(--accent-emerald);"><i class="fa-solid fa-user-plus"></i> 2. മത്സരാർത്ഥികളെ ചേർക്കൽ</strong>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">
+                സ്വന്തം ടീമിലേക്ക് മാത്രം കുട്ടികളെ ചേർക്കാം. ചെസ്റ്റ് നമ്പർ അടുത്ത നമ്പർ പ്രീ-ഫിൽ ആയി വരും. Contestants table-ൽ സ്വന്തം ടീമിലെ കുട്ടികൾ മാത്രം കാണാം.
+            </p>
+        </div>
+
+        <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 10px; padding: 14px;">
+            <strong style="color: var(--accent-indigo);"><i class="fa-solid fa-square-check"></i> 3. പ്രോഗ്രാം അസൈൻമെന്റ്</strong>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">
+                സ്വന്തം ടീമിലെ വിദ്യാർത്ഥികൾക്ക് മത്സരങ്ങൾ അസൈൻ ചെയ്യുക. ഗ്രൂപ്പ് ഇനങ്ങൾക്ക് ടീം എൻട്രി ചേർക്കാനും ക്യാപ്റ്റനെ തെരഞ്ഞെടുക്കാനും സാധിക്കും.
+            </p>
+        </div>
+
+        <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 10px; padding: 14px;">
+            <strong style="color: #f59e0b;"><i class="fa-solid fa-trophy"></i> 4. റിസൾട്ടുകളും PDF ഡൗൺലോഡും</strong>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">
+                ടീമിന്റെ അനൗൺസ് ചെയ്തDetailed Results കാണാം. സ്വന്തം ടീമിന്റെ മത്സരാർത്ഥികളുടെ PDF (ഉദാ: <code>Red House_contestants.pdf</code>) ഡൗൺലോഡ് ചെയ്യാം.
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,153 @@
+{% extends 'base.html' %}
+
+{% block title %}Team Detailed Point Table - {{ team.name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <a href="{% url 'core:dashboard' institution.slug %}" style="color: var(--text-muted); text-decoration: none;"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</a>
+        <h2 style="font-size: 1.8rem; font-weight: 800; margin-top: 4px;">
+            <i class="fa-solid fa-trophy" style="color: var(--accent-amber);"></i> Team Detailed Point Table: <span style="color: var(--accent-cyan);">{{ team.name }}</span>
+        </h2>
+    </div>
+    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+        <a href="{% url 'core:download_team_results_detail_pdf' institution.slug team.id %}" target="_blank" class="btn-primary" style="background: linear-gradient(135deg, var(--accent-emerald), #047857);">
+            <i class="fa-solid fa-file-pdf"></i> Download {{ team.name }} Points PDF
+        </a>
+        <span class="badge badge-pending" style="background: #f59e0b; color: #000; font-size: 1rem; padding: 8px 16px; font-weight: 800;">
+            👑 Rank #{{ team_position|default:"-" }}
+        </span>
+    </div>
+</div>
+
+<!-- Admin Team Selector Bar -->
+{% if not is_team_leader and all_teams.count > 1 %}
+<div class="glass-card" style="margin-bottom: 20px; padding: 14px 18px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+        <div style="font-size: 0.95rem; font-weight: 700; color: var(--text-main);">
+            <i class="fa-solid fa-users" style="color: var(--accent-cyan); margin-right: 6px;"></i> Select Team to View Detailed Breakdown:
+        </div>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            {% for tm in all_teams %}
+            <a href="{% url 'core:team_results_detail' institution.slug tm.id %}" class="btn-primary" style="padding: 6px 14px; font-size: 0.85rem; {% if tm.id == team.id %}background: var(--accent-cyan); color: #0f172a; font-weight: 800;{% else %}background: rgba(255,255,255,0.06); box-shadow: none;{% endif %}">
+                {{ tm.name }}
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Overview Card -->
+<div class="glass-card" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
+    <div>
+        <h3 style="font-size: 1.4rem; font-weight: 800; color: var(--accent-cyan); margin: 0;">{{ team.name }}</h3>
+        <p style="color: var(--text-muted); font-size: 0.88rem; margin-top: 4px;">
+            Team Code: <code>{{ team.code_letter|default:"-" }}</code> | Leader: <strong>{{ team.user.username|default:"Assigned Manager" }}</strong>
+        </p>
+    </div>
+    <div style="text-align: right;">
+        <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 700; letter-spacing: 0.5px;">TOTAL TEAM ANNOUNCED POINTS</div>
+        <div style="font-size: 2.5rem; font-weight: 900; color: var(--accent-cyan);">{{ total_announced_points }} <span style="font-size: 1rem; color: var(--text-muted); font-weight: 500;">pts</span></div>
+    </div>
+</div>
+
+<!-- DESKTOP TABLE VIEW -->
+<div class="glass-card desktop-table-view">
+    <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 16px;">
+        <i class="fa-solid fa-list-check" style="color: var(--accent-cyan);"></i> Point Breakdown Items ({{ detailed_rows|length }})
+    </h3>
+    <div class="table-responsive">
+        <table class="custom-table">
+            <thead>
+                <tr>
+                    <th style="width: 10%;">Chest No</th>
+                    <th style="width: 25%;">Contestant</th>
+                    <th style="width: 15%;">Category</th>
+                    <th style="width: 15%;">Team</th>
+                    <th style="width: 20%;">Item / Program</th>
+                    <th style="width: 10%;">Rank</th>
+                    <th style="width: 10%;">Grade</th>
+                    <th style="width: 10%;">Point</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in detailed_rows %}
+                <tr>
+                    <td><strong style="color: var(--accent-cyan);">{{ row.chest_no }}</strong></td>
+                    <td><strong>{{ row.contestant_name }}</strong></td>
+                    <td><span class="badge badge-approved">{{ row.category_name }}</span></td>
+                    <td><span class="badge badge-approved" style="background: rgba(255,255,255,0.06); color: var(--text-main);">{{ row.team_name }}</span></td>
+                    <td>
+                        <strong>{{ row.item_name }}</strong>
+                        {% if row.is_group %}<span class="badge badge-pending" style="font-size: 0.7rem; margin-left: 4px;">Group</span>{% endif %}
+                    </td>
+                    <td>
+                        {% if row.rank %}
+                        <span class="badge" style="font-weight: 800; font-size: 0.85rem; padding: 4px 10px; {% if row.rank == 1 %}background: #f59e0b; color: #000;{% elif row.rank == 2 %}background: #94a3b8; color: #000;{% elif row.rank == 3 %}background: #b45309; color: #fff;{% else %}background: rgba(255,255,255,0.08); color: var(--text-main);{% endif %}">
+                            {{ row.rank }}
+                        </span>
+                        {% else %}
+                        <span style="color: var(--text-muted);">-</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if row.grade %}
+                        <span class="badge badge-approved" style="background: rgba(6, 182, 212, 0.2); border: 1px solid var(--accent-cyan); color: var(--accent-cyan); font-weight: 700;">{{ row.grade }} Grade</span>
+                        {% else %}
+                        <span style="color: var(--text-muted);">-</span>
+                        {% endif %}
+                    </td>
+                    <td><strong style="color: var(--accent-cyan); font-size: 1.15rem;">+{{ row.points }} pts</strong></td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 30px;">
+                        No announced points recorded for {{ team.name }} yet.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- MOBILE CARD LIST VIEW -->
+<div class="mobile-card-list-view">
+    <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 12px; color: var(--text-main);">
+        <i class="fa-solid fa-list-check" style="color: var(--accent-cyan);"></i> Detailed Point Breakdown ({{ detailed_rows|length }})
+    </h3>
+    {% for row in detailed_rows %}
+    <div class="glass-card" style="margin-bottom: 10px; padding: 12px; border-radius: 12px; border: 1px solid var(--border-color);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
+            <div>
+                <strong style="font-size: 1.05rem; display: block; color: var(--accent-cyan);">{{ row.chest_no }} {{ row.contestant_name }}</strong>
+                <div style="font-size: 0.88rem; font-weight: 700; color: var(--text-main); margin-top: 2px;">{{ row.item_name }}</div>
+                <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px;">
+                    <span class="badge badge-approved" style="font-size: 0.72rem;">{{ row.category_name }}</span>
+                    <span class="badge badge-approved" style="font-size: 0.72rem;">{{ row.team_name }}</span>
+                    {% if row.is_group %}<span class="badge badge-pending" style="font-size: 0.72rem;">Group</span>{% endif %}
+                </div>
+            </div>
+            <div style="text-align: right;">
+                <strong style="font-size: 1.2rem; color: var(--accent-cyan); display: block;">+{{ row.points }} pts</strong>
+                <div style="margin-top: 4px;">
+                    {% if row.rank %}
+                    <span class="badge" style="font-size: 0.75rem; font-weight: 800; padding: 3px 8px; {% if row.rank == 1 %}background: #f59e0b; color: #000;{% elif row.rank == 2 %}background: #94a3b8; color: #000;{% elif row.rank == 3 %}background: #b45309; color: #fff;{% else %}background: rgba(255,255,255,0.08); color: var(--text-main);{% endif %}">
+                        {{ row.rank }}
+                    </span>
+                    {% endif %}
+                    {% if row.grade %}
+                    <span class="badge" style="background: rgba(6, 182, 212, 0.2); border: 1px solid var(--accent-cyan); color: var(--accent-cyan); font-size: 0.72rem; font-weight: 700;">{{ row.grade }}</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="glass-card" style="text-align: center; color: var(--text-muted); padding: 30px;">
+        No announced points recorded for {{ team.name }} yet.
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

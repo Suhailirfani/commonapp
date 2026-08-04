@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+
+{% block title %}Create Sub-User - {{ institution.name }}{% endblock %}
+
+{% block content %}
+<div style="max-width: 550px; margin: 20px auto;">
+    <div class="glass-card" style="padding: 20px;">
+        <a href="{% url 'users:user_list' institution.slug %}" style="color: var(--text-muted); text-decoration: none;"><i class="fa-solid fa-arrow-left"></i> Back to Users</a>
+        <h2 style="font-size: 1.6rem; font-weight: 800; margin: 12px 0 20px 0;"><i class="fa-solid fa-user-plus"></i> Create Sub-User / Judge Account</h2>
+
+        <form method="POST">
+            {% csrf_token %}
+            <div class="form-group">
+                <label class="form-label">Role</label>
+                <select name="role" id="roleSelect" class="form-control" required onchange="toggleRoleFields()">
+                    <option value="TEAM_LEADER" selected>Team Leader / Manager</option>
+                    <option value="JUDGE">Judge / Evaluator</option>
+                    <option value="TABULATOR">Tabulator / Mark Entry Officer</option>
+                    <option value="SUB_ADMIN">Sub-Admin / Coordinator</option>
+                </select>
+            </div>
+
+            <!-- Connected Team (for Team Leaders) -->
+            <div class="form-group" id="teamSelectGroup">
+                <label class="form-label">Connected Team (Required for Team Leaders)</label>
+                <select name="team_id" id="teamSelect" class="form-control">
+                    <option value="">-- Select Team --</option>
+                    {% for team in teams %}
+                    <option value="{{ team.id }}">{{ team.name }} {% if team.user %}(Assigned: {{ team.user.username }}){% endif %}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Username</label>
+                <input type="text" name="username" class="form-control" placeholder="e.g. judge_stage1" required>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Email</label>
+                <input type="email" name="email" class="form-control" placeholder="user@institution.com">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Password</label>
+                <input type="password" name="password" class="form-control" placeholder="••••••••" required>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Designation / Role Title</label>
+                <input type="text" name="designation" class="form-control" placeholder="e.g. Stage Judge / Tabulator">
+            </div>
+
+            <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; font-size: 1rem; padding: 12px; margin-top: 10px; background: linear-gradient(135deg, var(--accent-emerald), #059669);">
+                <i class="fa-solid fa-floppy-disk"></i> Create Active User Account
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+function toggleRoleFields() {
+    var role = document.getElementById('roleSelect').value;
+    var teamGroup = document.getElementById('teamSelectGroup');
+    var teamSelect = document.getElementById('teamSelect');
+
+    if (role === 'TEAM_LEADER') {
+        teamGroup.style.display = 'block';
+        teamSelect.required = true;
+    } else {
+        teamGroup.style.display = 'none';
+        teamSelect.required = false;
+    }
+}
+document.addEventListener("DOMContentLoaded", function() {
+    toggleRoleFields();
+});
+</script>
+{% endblock %}

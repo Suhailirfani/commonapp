@@ -1,0 +1,147 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}GO FEST - Competition Management Platform | BYTOLA WEBSOLUTIONS{% endblock %}
+
+{% block content %}
+<!-- Top Language Bar & Hero Section -->
+<div style="display: flex; justify-content: flex-end; padding-top: 10px;">
+    <div style="background: rgba(255,255,255,0.06); padding: 4px 8px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); display: flex; gap: 4px;">
+        <button id="lang-en-btn" onclick="setLang('en')" class="btn-primary" style="padding: 4px 12px; font-size: 0.8rem; height: auto; background: transparent; box-shadow: none;">English</button>
+        <button id="lang-ml-btn" onclick="setLang('ml')" class="btn-primary" style="padding: 4px 12px; font-size: 0.8rem; height: auto; background: var(--accent-cyan); color: #0f172a;">മലയാളം</button>
+    </div>
+</div>
+
+<div class="landing-hero" style="text-align: center; padding: 30px 20px 30px 20px;">
+    <img src="{% static 'img/app_icon_clean.png' %}" alt="GO FEST App Icon" class="landing-app-icon" style="width: 110px; height: 110px; border-radius: 24px; box-shadow: 0 10px 30px rgba(99, 102, 241, 0.4); margin-bottom: 20px;">
+    <br>
+    
+    <!-- Main Brand Heading -->
+    <h1 class="landing-title" style="font-family: 'Outfit', sans-serif; font-size: 4.2rem; font-weight: 900; letter-spacing: 4px; text-transform: uppercase; margin: 16px 0 4px 0; background: linear-gradient(135deg, #ffffff 10%, var(--accent-cyan) 50%, #38bdf8 90%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+        GO FEST
+    </h1>
+    <h2 style="font-family: 'Outfit', sans-serif; font-size: 1.5rem; font-weight: 700; color: var(--text-muted); margin-bottom: 24px; letter-spacing: 1px;">
+        Competition Management Platform
+    </h2>
+
+    <!-- Descriptions (Dynamic Language Switch) -->
+    <p class="lang-text lang-en landing-desc" style="display: none; font-size: 1.2rem; color: var(--text-muted); max-width: 760px; margin: 0 auto 30px auto; line-height: 1.6;">
+        Subscribe your institution to unlock complete competition management: stage scheduling, rapid mark entry, automatic rank/grade/point calculation, team leader access, and real-time public live result links.
+    </p>
+    <p class="lang-text lang-ml landing-desc" style="font-size: 1.2rem; color: var(--text-muted); max-width: 780px; margin: 0 auto 30px auto; line-height: 1.8;">
+        നിങ്ങളുടെ സ്ഥാപനത്തിലെ മത്സരങ്ങൾ അനായാസമായി മാനേജ് ചെയ്യൂ: സ്റ്റേജ് ഷെഡ്യൂളിംഗ്, തത്സമയ മാർക്ക് എൻട്രി, ഓട്ടോമാറ്റിക് റാങ്ക്/ഗ്രേഡ്/പോയിന്റ് കണക്കുകൂട്ടൽ, ടീം ലീഡർ ആക്സസ്, തത്സമയ പബ്ലിക് റിസൾട്ട് ലിങ്ക് എന്നിവ ലഭ്യമാക്കാൻ ഇപ്പോൾ തന്നെ സബ്സ്ക്രൈബ് ചെയ്യൂ.
+    </p>
+
+    <div class="landing-btn-group" style="display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;">
+        <a href="{% url 'tenants:apply' %}" class="btn-primary" style="font-size: 1.1rem; padding: 14px 28px;">
+            <i class="fa-solid fa-rocket"></i> Subscribe Your Institution Now
+        </a>
+        <a href="{% url 'users:login' %}" class="btn-primary" style="font-size: 1.1rem; padding: 14px 28px; background: rgba(255,255,255,0.08); box-shadow: none;">
+            <i class="fa-solid fa-arrow-right-to-bracket"></i> Login to Workspace
+        </a>
+    </div>
+</div>
+
+<!-- Subscription Plans Section -->
+<h2 style="font-size: 1.8rem; margin: 40px 0 10px 0; text-align: center;">Subscription Plans</h2>
+
+<p class="lang-text lang-en" style="display: none; text-align: center; color: var(--text-muted); margin-bottom: 24px;">Special limited-time launch offer on all competition management plans!</p>
+<p class="lang-text lang-ml" style="text-align: center; color: var(--text-muted); margin-bottom: 24px; font-size: 1.05rem;">എല്ലാ കോമ്പറ്റിഷൻ മാനേജ്മെന്റ് പ്ലാനുകൾക്കും പരിമിതകാല ഓഫർ!</p>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+    {% for plan in plans %}
+    <div class="glass-card plan-card" style="display: flex; flex-direction: column; justify-content: space-between;">
+        <div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h3 style="font-size: 1.4rem; font-weight: 700;">{{ plan.name }}</h3>
+                <span class="badge badge-approved">Offer Plan</span>
+            </div>
+            <div style="font-size: 2.2rem; font-weight: 800; color: var(--accent-cyan); margin: 16px 0;">
+                <span style="text-decoration: line-through; color: #ef4444; font-size: 1.2rem; margin-right: 8px; font-weight: 500;">₹{{ plan.original_price }}</span>
+                ₹{{ plan.price }}<span style="font-size: 0.9rem; color: var(--text-muted); font-weight: 400;">/fest</span>
+            </div>
+
+            <!-- Malayalam Plan Description (Default) -->
+            <p class="lang-text lang-ml" style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 20px; line-height: 1.6;">
+                {% if plan.description_ml %}{{ plan.description_ml }}{% else %}{{ plan.description }}{% endif %}
+            </p>
+            <!-- English Plan Description -->
+            <p class="lang-text lang-en" style="display: none; color: var(--text-muted); font-size: 0.95rem; margin-bottom: 20px; line-height: 1.6;">
+                {{ plan.description }}
+            </p>
+
+            <!-- Malayalam Feature Bullets -->
+            <ul class="lang-text lang-ml" style="list-style: none; line-height: 2; font-size: 0.95rem; color: var(--text-main);">
+                <li><i class="fa-solid fa-check" style="color: var(--accent-emerald); margin-right: 8px;"></i> പരമാവധി മത്സരങ്ങൾ: <strong>{{ plan.max_competitions }} (ഇവന്റുകൾ)</strong></li>
+                <li><i class="fa-solid fa-check" style="color: var(--accent-emerald); margin-right: 8px;"></i> പരമാവധി മത്സരാർത്ഥികൾ: <strong>{{ plan.max_contestants }}</strong></li>
+                <li><i class="fa-solid fa-check" style="color: var(--accent-emerald); margin-right: 8px;"></i> സ്വന്തമായി പ്രത്യേക ഡാഷ്‌ബോർഡ്</li>
+                <li><i class="fa-solid fa-check" style="color: var(--accent-emerald); margin-right: 8px;"></i> പബ്ലിക് ലൈവ് റിസൾട്ട് പോർട്ടൽ ലിങ്ക്</li>
+                <li><i class="fa-solid fa-toolbox" style="color: var(--accent-cyan); margin-right: 8px;"></i> അധിക ഫീച്ചറുകൾ: <strong>ജോലിക്കനുസരിച്ച് ചാർജ് ചെയ്യും</strong></li>
+            </ul>
+
+            <!-- English Feature Bullets -->
+            <ul class="lang-text lang-en" style="display: none; list-style: none; line-height: 2; font-size: 0.95rem; color: var(--text-main);">
+                <li><i class="fa-solid fa-check" style="color: var(--accent-emerald); margin-right: 8px;"></i> Max Competitions: <strong>{{ plan.max_competitions }} (Maximum Events)</strong></li>
+                <li><i class="fa-solid fa-check" style="color: var(--accent-emerald); margin-right: 8px;"></i> Max Contestants: <strong>{{ plan.max_contestants }}</strong></li>
+                <li><i class="fa-solid fa-check" style="color: var(--accent-emerald); margin-right: 8px;"></i> Own Isolated Dashboard</li>
+                <li><i class="fa-solid fa-check" style="color: var(--accent-emerald); margin-right: 8px;"></i> Shareable Live Public Result Portal</li>
+                <li><i class="fa-solid fa-toolbox" style="color: var(--accent-cyan); margin-right: 8px;"></i> Custom Features: <strong>Charged As Per Work</strong></li>
+            </ul>
+        </div>
+        <div style="margin-top: 24px;">
+            <a href="{% url 'tenants:apply' %}?plan={{ plan.id }}" class="btn-primary" style="width: 100%; justify-content: center;">
+                Choose {{ plan.name }} @ ₹{{ plan.price }}
+            </a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Custom Feature Notice Banner -->
+<div class="glass-card" style="margin-top: 30px; border-left: 4px solid var(--accent-cyan); background: rgba(6, 182, 212, 0.05);">
+    <div style="display: flex; gap: 16px; align-items: flex-start;">
+        <div style="font-size: 2rem; color: var(--accent-cyan);"><i class="fa-solid fa-sliders"></i></div>
+        <div>
+            <!-- English Heading -->
+            <h4 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 6px;">Need Additional Custom Features or Customizations?</h4>
+            
+            <!-- Malayalam Description (Default) -->
+            <p class="lang-text lang-ml" style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.8; margin: 0;">
+                ഓരോ സ്ഥാപനത്തിന്റെയും ഫെസ്റ്റ് ആവശ്യങ്ങൾ വ്യത്യസ്തമാണ്! നിങ്ങൾക്ക് പ്രത്യേക ബ്രാൻഡിംഗ്, റിപ്പോർട്ടുകൾ, വാട്ട്സ്ആപ്പ്/എസ്എംഎസ് അലേർട്ടുകൾ, അല്ലെങ്കിൽ പ്രത്യേക ഇവന്റ് വർക്ക്ഫ്ലോകൾ എന്നിവ ആവശ്യമുണ്ടെങ്കിൽ, അപ്ലിക്കേഷൻ സബ്മിറ്റ് ചെയ്യുമ്പോൾ വിവരങ്ങൾ രേഖപ്പെടുത്തുക. <strong>എല്ലാ അധിക ഫീച്ചറുകളും ആവശ്യപ്പെടുന്ന ജോലിക്കനുസരിച്ച് സുതാര്യമായി ചാർജ് ചെയ്യുന്നതാണ്.</strong>
+            </p>
+            
+            <!-- English Description -->
+            <p class="lang-text lang-en" style="display: none; color: var(--text-muted); font-size: 0.95rem; line-height: 1.6; margin: 0;">
+                Every institution fest is unique! If you require custom branding, specialized reporting, WhatsApp/SMS gateways, or tailored event workflows, simply specify your additional requirements when submitting your application. <strong>All additional feature requests are charged transparently based on work required.</strong>
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function setLang(lang) {
+    const enEls = document.querySelectorAll('.lang-en');
+    const mlEls = document.querySelectorAll('.lang-ml');
+    const enBtn = document.getElementById('lang-en-btn');
+    const mlBtn = document.getElementById('lang-ml-btn');
+
+    if (lang === 'en') {
+        enEls.forEach(el => el.style.display = el.tagName === 'P' || el.tagName === 'UL' ? 'block' : 'inline');
+        mlEls.forEach(el => el.style.display = 'none');
+        enBtn.style.background = 'var(--accent-cyan)';
+        enBtn.style.color = '#0f172a';
+        mlBtn.style.background = 'transparent';
+        mlBtn.style.color = 'var(--text-main)';
+    } else {
+        mlEls.forEach(el => el.style.display = el.tagName === 'P' || el.tagName === 'UL' ? 'block' : 'inline');
+        enEls.forEach(el => el.style.display = 'none');
+        mlBtn.style.background = 'var(--accent-cyan)';
+        mlBtn.style.color = '#0f172a';
+        enBtn.style.background = 'transparent';
+        enBtn.style.color = 'var(--text-main)';
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Contestant Card #{{ contestant.chest_no }} - {{ institution.name }}{% endblock %}
+
+{% block content %}
+<div style="max-width: 650px; margin: 20px auto;">
+    <div style="margin-bottom: 16px;">
+        <a href="{% url 'public:home' institution.slug %}" style="color: var(--text-muted); text-decoration: none;"><i class="fa-solid fa-arrow-left"></i> Back to Live Home</a>
+    </div>
+
+    <!-- Contestant Profile Card -->
+    <div class="glass-card" style="text-align: center; padding: 36px 20px; border-color: rgba(99, 102, 241, 0.4); margin-bottom: 24px;">
+        <div style="width: 84px; height: 84px; border-radius: 50%; background: linear-gradient(135deg, var(--accent-indigo), var(--accent-cyan)); display: flex; align-items: center; justify-content: center; margin: 0 auto 16px auto; font-size: 2.2rem; font-weight: 800;">
+            #{{ contestant.chest_no }}
+        </div>
+        <h2 style="font-size: 2rem; font-weight: 800; margin-bottom: 4px;">{{ contestant.name }}</h2>
+        <div style="display: flex; gap: 10px; justify-content: center; margin-top: 8px;">
+            <span class="badge badge-approved"><i class="fa-solid fa-flag"></i> Team: {{ contestant.team.name }}</span>
+            <span class="badge badge-pending">{{ contestant.category.name }}</span>
+        </div>
+        <div style="font-size: 2.2rem; font-weight: 800; color: var(--accent-cyan); margin-top: 20px;">
+            {{ contestant.total_points }}<span style="font-size: 0.9rem; color: var(--text-muted);"> total points</span>
+        </div>
+    </div>
+
+    <!-- Performance Breakdown -->
+    <div class="glass-card">
+        <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 16px;"><i class="fa-solid fa-list"></i> Announced Program Performances</h3>
+        <div class="table-responsive">
+            <table class="custom-table">
+            <thead>
+                <tr>
+                    <th>Program</th>
+                    <th>Rank</th>
+                    <th>Grade</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in participations %}
+                <tr>
+                    <td><strong>{{ p.program.name }}</strong></td>
+                    <td>
+                        {% if p.rank %}
+                        <span class="badge badge-approved">Rank {{ p.rank }}</span>
+                        {% else %}
+                        <span style="color: var(--text-muted);">-</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if p.grade %}
+                        <span class="badge badge-pending">{{ p.grade }} Grade</span>
+                        {% else %}
+                        <span style="color: var(--text-muted);">-</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="3" style="text-align: center; color: var(--text-muted); padding: 24px;">
+                        No published results for this contestant yet.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    </div>
+</div>
+{% endblock %}

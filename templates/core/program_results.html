@@ -1,0 +1,163 @@
+{% extends 'base.html' %}
+
+{% block title %}Program-Wise Results - {{ institution.name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <a href="{% url 'core:dashboard' institution.slug %}" style="color: var(--text-muted); text-decoration: none;"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</a>
+        <h2 style="font-size: 1.8rem; font-weight: 800; margin-top: 4px;"><i class="fa-solid fa-trophy" style="color: var(--accent-amber);"></i> Program-Wise Results</h2>
+    </div>
+    <div>
+        <a href="{% url 'core:shareable_results' institution.slug %}" class="btn-primary" style="background: linear-gradient(135deg, #f59e0b, #b45309);">
+            <i class="fa-solid fa-wand-magic-sparkles"></i> Winner Cards Studio
+        </a>
+        <a href="?view=announced{% if selected_category_id %}&category={{ selected_category_id }}{% endif %}" class="btn-primary" style="{% if view_mode == 'announced' %}background: linear-gradient(135deg, var(--accent-emerald), #059669);{% else %}background: rgba(255,255,255,0.08); box-shadow: none;{% endif %}">
+            <i class="fa-solid fa-bullhorn"></i> Announced (Public)
+        </a>
+        <a href="?view=all{% if selected_category_id %}&category={{ selected_category_id }}{% endif %}" class="btn-primary" style="{% if view_mode == 'all' %}background: linear-gradient(135deg, #0284c7, #0369a1);{% else %}background: rgba(255,255,255,0.08); box-shadow: none;{% endif %}">
+            <i class="fa-solid fa-eye"></i> All Results (Admin)
+        </a>
+    </div>
+</div>
+
+<!-- Category Filter -->
+<div style="display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap;">
+    <a href="?view={{ view_mode }}" class="btn-primary" style="padding: 6px 14px; font-size: 0.85rem; {% if not selected_category_id %}background: var(--accent-cyan); color: #0f172a;{% else %}background: rgba(255,255,255,0.05); box-shadow: none;{% endif %}">
+        All Categories
+    </a>
+    {% for cat in categories %}
+    <a href="?view={{ view_mode }}&category={{ cat.id }}" class="btn-primary" style="padding: 6px 14px; font-size: 0.85rem; {% if selected_category_id == cat.id|stringformat:'s' %}background: var(--accent-cyan); color: #0f172a;{% else %}background: rgba(255,255,255,0.05); box-shadow: none;{% endif %}">
+        {{ cat.name }}
+    </a>
+    {% endfor %}
+</div>
+
+<!-- Program Results Cards -->
+<div style="display: flex; flex-direction: column; gap: 20px;">
+    {% for item in program_results %}
+    <div class="glass-card" style="padding: 16px;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 14px; flex-wrap: wrap; gap: 8px;">
+            <div>
+                <strong style="font-size: 1.15rem; color: var(--text-main); display: block;">{{ item.program.name }}</strong>
+                <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px;">
+                    <span class="badge badge-approved" style="font-size: 0.75rem;">{{ item.program.category.name }}</span>
+                    {% if item.program.is_group %}
+                    <span class="badge badge-pending" style="font-size: 0.75rem;">Group</span>
+                    {% else %}
+                    <span class="badge badge-approved" style="font-size: 0.75rem;">Single</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div>
+                {% if item.program.is_announced %}
+                <span class="badge badge-approved" style="font-size: 0.75rem;"><i class="fa-solid fa-bullhorn"></i> Announced</span>
+                {% else %}
+                <span class="badge badge-pending" style="font-size: 0.75rem;"><i class="fa-solid fa-lock"></i> Hidden Draft</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- DESKTOP TABLE VIEW -->
+        <div class="table-responsive desktop-table-view">
+            <table class="custom-table" style="font-size: 0.9rem;">
+                <thead>
+                    <tr>
+                        <th style="width: 15%;">Rank</th>
+                        <th style="width: 15%;">Chest No</th>
+                        <th style="width: 35%;">Participant / Team Name</th>
+                        <th style="width: 20%;">Team / House</th>
+                        <th style="width: 15%;">Grade</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in item.participations %}
+                    <tr style="{% if p.rank == 1 %}background: rgba(245, 158, 11, 0.1);{% elif p.rank == 2 %}background: rgba(226, 232, 240, 0.05);{% elif p.rank == 3 %}background: rgba(180, 83, 9, 0.08);{% endif %}">
+                        <td>
+                            {% if p.rank == 1 %}
+                            <span class="badge badge-approved" style="background: linear-gradient(135deg, #f59e0b, #d97706); color: #fff; font-size: 0.85rem;"><i class="fa-solid fa-crown"></i> 1st Rank</span>
+                            {% elif p.rank == 2 %}
+                            <span class="badge badge-approved" style="background: linear-gradient(135deg, #94a3b8, #64748b); color: #fff; font-size: 0.85rem;"><i class="fa-solid fa-medal"></i> 2nd Rank</span>
+                            {% elif p.rank == 3 %}
+                            <span class="badge badge-approved" style="background: linear-gradient(135deg, #b45309, #78350f); color: #fff; font-size: 0.85rem;"><i class="fa-solid fa-award"></i> 3rd Rank</span>
+                            {% else %}
+                            <span style="color: var(--text-muted);">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if not item.program.is_group %}
+                            <strong style="color: var(--accent-cyan);">#{{ p.contestant.chest_no }}</strong>
+                            {% else %}
+                            <span style="color: var(--text-muted);">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <strong>{% if item.program.is_group %}{{ p.display_name }}{% else %}{{ p.contestant.name }}{% endif %}</strong>
+                            {% if item.program.is_group and p.contestants.exists %}
+                            <div style="color: var(--text-muted); font-size: 0.75rem;">
+                                {% for m in p.contestants.all %}{{ m.name }}{% if not forloop.last %}, {% endif %}{% endfor %}
+                            </div>
+                            {% endif %}
+                        </td>
+                        <td><span class="badge badge-approved">{% if item.program.is_group %}{{ p.team.name }}{% else %}{{ p.contestant.team.name }}{% endif %}</span></td>
+                        <td>
+                            {% if p.grade %}
+                            <span class="badge badge-approved" style="background: rgba(6, 182, 212, 0.2); border: 1px solid var(--accent-cyan); color: var(--accent-cyan); font-weight: 700;">Grade {{ p.grade }}</span>
+                            {% else %}
+                            <span style="color: var(--text-muted);">-</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 20px;">
+                            No scores recorded for this event.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- MOBILE CARD LIST VIEW -->
+        <div class="mobile-card-list-view">
+            {% for p in item.participations %}
+            <div style="background: rgba(255,255,255,0.02); padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border-color); margin-bottom: 8px; {% if p.rank == 1 %}border-color: #f59e0b; background: rgba(245, 158, 11, 0.1);{% endif %}">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
+                    <div>
+                        {% if p.rank == 1 %}
+                        <span class="badge" style="background: #f59e0b; color: #000; font-weight: 800; font-size: 0.75rem; margin-bottom: 4px; display: inline-block;">👑 1st Rank</span>
+                        {% elif p.rank == 2 %}
+                        <span class="badge" style="background: #94a3b8; color: #000; font-weight: 800; font-size: 0.75rem; margin-bottom: 4px; display: inline-block;">🥈 2nd Rank</span>
+                        {% elif p.rank == 3 %}
+                        <span class="badge" style="background: #b45309; color: #fff; font-weight: 800; font-size: 0.75rem; margin-bottom: 4px; display: inline-block;">🥉 3rd Rank</span>
+                        {% endif %}
+
+                        <strong style="display: block; font-size: 1rem; color: var(--text-main);">
+                            {% if not item.program.is_group %}<span style="color: var(--accent-cyan);">#{{ p.contestant.chest_no }}</span> {{ p.contestant.name }}{% else %}{{ p.display_name }}{% endif %}
+                        </strong>
+                        <span class="badge badge-approved" style="font-size: 0.72rem; margin-top: 4px;">{% if item.program.is_group %}{{ p.team.name }}{% else %}{{ p.contestant.team.name }}{% endif %}</span>
+                    </div>
+                    <div>
+                        {% if p.grade %}
+                        <span class="badge badge-approved" style="font-size: 0.78rem; background: rgba(6, 182, 212, 0.2); border: 1px solid var(--accent-cyan); color: var(--accent-cyan);">Grade {{ p.grade }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div style="text-align: center; color: var(--text-muted); padding: 16px;">
+                No scores recorded for this event.
+            </div>
+            {% endfor %}
+        </div>
+
+    </div>
+    {% empty %}
+    <div class="glass-card" style="text-align: center; padding: 40px;">
+        <i class="fa-solid fa-trophy" style="font-size: 3rem; color: var(--text-muted); margin-bottom: 12px;"></i>
+        <h3 style="font-size: 1.2rem; color: var(--text-muted);">No program results available to display yet.</h3>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

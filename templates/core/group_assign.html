@@ -1,0 +1,163 @@
+{% extends 'base.html' %}
+
+{% block title %}Group Program Assignment & Captain Selection - {{ institution.name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <a href="{% url 'core:assignment_hub' institution.slug %}" style="color: var(--text-muted); text-decoration: none;"><i class="fa-solid fa-arrow-left"></i> Back to Assignment Center</a>
+        <h2 style="font-size: 1.8rem; font-weight: 800; margin-top: 4px;">
+            <i class="fa-solid fa-users-gear" style="color: var(--accent-amber);"></i> Group Program Assignment & Captain Selection
+        </h2>
+    </div>
+</div>
+
+<div class="form-grid-2">
+
+    <!-- Left Column: Add / Edit Group Entry -->
+    <div class="glass-card">
+        <h3 style="font-size: 1.2rem; font-weight: 700; color: var(--accent-cyan); margin-bottom: 16px;">
+            <i class="fa-solid fa-plus-circle"></i> Create & Assign Group Entry
+        </h3>
+
+        <form method="GET" action="{% url 'core:group_assign' institution.slug %}" style="margin-bottom: 16px;">
+            <div class="form-group">
+                <label class="form-label">Select Group Program</label>
+                <select name="program_id" class="form-control" onchange="this.form.submit()">
+                    {% for p in group_programs %}
+                    <option value="{{ p.id }}" {% if selected_program and selected_program.id == p.id %}selected{% endif %}>
+                        {{ p.name }} ({{ p.category.name }})
+                    </option>
+                    {% empty %}
+                    <option value="">No Group Programs Found</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            {% if selected_program %}
+            <div class="form-group">
+                <label class="form-label">Select Team</label>
+                <select name="team_id" class="form-control" onchange="this.form.submit()">
+                    {% for tm in teams %}
+                    <option value="{{ tm.id }}" {% if selected_team and selected_team.id == tm.id %}selected{% endif %}>
+                        {{ tm.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+        </form>
+
+        {% if selected_program and selected_team %}
+        <form method="POST" action="{% url 'core:group_assign' institution.slug %}" id="groupForm">
+            {% csrf_token %}
+            <input type="hidden" name="program_id" value="{{ selected_program.id }}">
+            <input type="hidden" name="team_id" value="{{ selected_team.id }}">
+            <input type="hidden" name="action" value="save_group">
+
+            <div class="form-group">
+                <label class="form-label">Group Name (Optional)</label>
+                <input type="text" name="group_name" class="form-control" placeholder="e.g. Group A or Moulid Team 1">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">
+                    Select Group Members & Designation of Captain
+                    <span style="color: var(--accent-amber); font-size: 0.8rem; display: block;">⭐ Pick 1 Captain radio button next to selected members (Captain's name shows at Mark Entry & Results)</span>
+                </label>
+
+                <div style="max-height: 300px; overflow-y: auto; background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); border-radius: 8px; padding: 12px;">
+                    {% for c in eligible_contestants %}
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.9rem;">
+                            <input type="checkbox" name="member_ids[]" value="{{ c.id }}" class="member-check" onchange="toggleCaptainRadio(this, '{{ c.id }}')">
+                            <strong>#{{ c.chest_no }} {{ c.name }}</strong>
+                        </label>
+                        <div id="cap_wrap_{{ c.id }}" style="display: none;">
+                            <label style="color: var(--accent-amber); font-size: 0.82rem; font-weight: 700; cursor: pointer;">
+                                <input type="radio" name="captain_id" value="{{ c.id }}" class="captain-radio"> ⭐ Captain
+                            </label>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div style="text-align: center; color: var(--text-muted); padding: 16px;">
+                        No contestants found in category <strong>{{ selected_program.category.name }}</strong> for <strong>{{ selected_team.name }}</strong>.
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; margin-top: 16px; background: linear-gradient(135deg, var(--accent-emerald), #059669);">
+                <i class="fa-solid fa-floppy-disk"></i> Save Group Entry & Captain
+            </button>
+        </form>
+        {% endif %}
+    </div>
+
+    <!-- Right Column: Existing Group Entries -->
+    <div class="glass-card">
+        <h3 style="font-size: 1.2rem; font-weight: 700; color: var(--accent-amber); margin-bottom: 16px;">
+            <i class="fa-solid fa-users"></i> Existing Group Entries: {% if selected_program %}{{ selected_program.name }}{% endif %}
+        </h3>
+
+        {% for gp in existing_group_participations %}
+        <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 14px; margin-bottom: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h4 style="font-size: 1.05rem; font-weight: 800; color: var(--accent-cyan);">
+                    <i class="fa-solid fa-user-shield" style="color: var(--accent-amber);"></i> {{ gp.display_name }}
+                </h4>
+                <span class="badge badge-approved">{{ gp.team.name }}</span>
+            </div>
+
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 6px;">
+                <strong>Captain:</strong> {% if gp.captain %}#{{ gp.captain.chest_no }} {{ gp.captain.name }}{% else %}<span style="color: var(--accent-rose);">No Captain Set</span>{% endif %}<br>
+                <strong>Members:</strong> 
+                {% for m in gp.contestants.all %}
+                    #{{ m.chest_no }} {{ m.name }}{% if not forloop.last %}, {% endif %}
+                {% empty %}
+                    <span style="color: var(--text-muted);">No member list saved</span>
+                {% endfor %}
+            </p>
+
+            <div style="display: flex; justify-content: flex-end; margin-top: 10px;">
+                <form method="POST" action="{% url 'core:delete_group_participation' institution.slug gp.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-danger" style="padding: 6px 12px; font-size: 0.8rem;" onclick="return confirm('Delete group entry {{ gp.display_name }}?');">
+                        <i class="fa-solid fa-trash"></i> Delete Entry
+                    </button>
+                </form>
+            </div>
+        </div>
+        {% empty %}
+        <div style="text-align: center; color: var(--text-muted); padding: 30px;">
+            No group entries created for this program yet. Fill the form on the left to assign team members and set a captain.
+        </div>
+        {% endfor %}
+    </div>
+
+</div>
+
+<script>
+function toggleCaptainRadio(chk, contId) {
+    var wrap = document.getElementById('cap_wrap_' + contId);
+    if (chk.checked) {
+        wrap.style.display = 'block';
+        // Auto select first checked member as captain if none selected
+        var checkedRadios = document.querySelectorAll('.captain-radio:checked');
+        if (checkedRadios.length === 0) {
+            wrap.querySelector('input[type="radio"]').checked = true;
+        }
+    } else {
+        wrap.style.display = 'none';
+        wrap.querySelector('input[type="radio"]').checked = false;
+        // Pick next checked as captain if unchecking current captain
+        var remainingChecks = document.querySelectorAll('.member-check:checked');
+        var remainingRadios = document.querySelectorAll('.captain-radio:checked');
+        if (remainingChecks.length > 0 && remainingRadios.length === 0) {
+            var firstCheckedId = remainingChecks[0].value;
+            document.getElementById('cap_wrap_' + firstCheckedId).querySelector('input[type="radio"]').checked = true;
+        }
+    }
+}
+</script>
+{% endblock %}

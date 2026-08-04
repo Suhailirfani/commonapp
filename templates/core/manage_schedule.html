@@ -1,0 +1,461 @@
+{% extends 'base.html' %}
+
+{% block title %}Smart Auto-Scheduler & Timetable - {{ institution.name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <a href="{% url 'core:dashboard' institution.slug %}" style="color: var(--text-muted); text-decoration: none;"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</a>
+        <h2 style="font-size: 1.8rem; font-weight: 800; margin-top: 4px;"><i class="fa-solid fa-calendar-days" style="color: var(--accent-cyan);"></i> Schedule & Timetable Engine</h2>
+    </div>
+    <div>
+        <form method="POST" action="{% url 'core:run_auto_scheduler' institution.slug %}" style="display: inline;">
+            {% csrf_token %}
+            <button type="submit" class="btn-primary" style="background: linear-gradient(135deg, var(--accent-emerald), #059669);">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> Run AI Auto-Scheduler
+            </button>
+        </form>
+
+        <form method="POST" action="{% url 'core:clear_all_schedules' institution.slug %}" style="display: inline;">
+            {% csrf_token %}
+            <button type="submit" class="btn-danger" onclick="return confirm('Are you sure you want to CLEAR ALL scheduled program slots?');">
+                <i class="fa-solid fa-trash-can"></i> Clear All
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Clash Detection Alert Banner -->
+{% if clash_data.total_clash_count > 0 %}
+<div class="glass-card" style="border-left: 4px solid var(--accent-rose); background: rgba(225, 29, 72, 0.1); margin-bottom: 20px; padding: 14px;">
+    <div>
+        <h4 style="color: var(--accent-rose); font-size: 1.05rem; font-weight: 700;">
+            <i class="fa-solid fa-triangle-exclamation"></i> {{ clash_data.total_clash_count }} Schedule Conflict(s) Detected!
+        </h4>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">
+            Stage Overlaps: {{ clash_data.stage_clashes|length }} | Student Clashes: {{ clash_data.participant_clashes|length }} | Venue Mismatches: {{ clash_data.venue_mismatches|length }}
+        </p>
+    </div>
+</div>
+{% endif %}
+
+<!-- Stats Cards Grid -->
+<div class="dashboard-stats-grid">
+    <div class="glass-card">
+        <div style="color: var(--text-muted); font-size: 0.8rem; font-weight: 700;">TOTAL PROGRAMS</div>
+        <div style="font-size: 2rem; font-weight: 800; color: var(--accent-indigo); margin-top: 4px;">{{ total_programs }}</div>
+    </div>
+
+    <div class="glass-card">
+        <div style="color: var(--text-muted); font-size: 0.8rem; font-weight: 700;">SCHEDULED SLOTS</div>
+        <div style="font-size: 2rem; font-weight: 800; color: var(--accent-emerald); margin-top: 4px;">{{ scheduled_count }} / {{ total_programs }}</div>
+    </div>
+
+    <div class="glass-card">
+        <div style="color: var(--text-muted); font-size: 0.8rem; font-weight: 700;">FEST DAYS</div>
+        <div style="font-size: 2rem; font-weight: 800; color: var(--accent-cyan); margin-top: 4px;">{{ fest_days|length }}</div>
+    </div>
+
+    <div class="glass-card">
+        <div style="color: var(--text-muted); font-size: 0.8rem; font-weight: 700;">STAGES & VENUES</div>
+        <div style="font-size: 2rem; font-weight: 800; color: var(--accent-amber); margin-top: 4px;">{{ stages|length }}</div>
+    </div>
+</div>
+
+<!-- Mode Switcher Tabs (3 in one row) -->
+<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px;">
+    <button class="btn-primary tab-btn active" onclick="showTab('timetable-tab', this)" style="background: linear-gradient(135deg, var(--accent-cyan), #0284c7); padding: 8px 4px; font-size: 0.78rem; text-align: center; justify-content: center;">
+        <i class="fa-solid fa-border-all"></i> 1. Timetable
+    </button>
+    <button class="btn-primary tab-btn" onclick="showTab('manual-tab', this)" style="background: rgba(255,255,255,0.08); box-shadow: none; padding: 8px 4px; font-size: 0.78rem; text-align: center; justify-content: center;">
+        <i class="fa-solid fa-clock"></i> 2. Manual Slots
+    </button>
+    <button class="btn-primary tab-btn" onclick="showTab('setup-tab', this)" style="background: rgba(255,255,255,0.08); box-shadow: none; padding: 8px 4px; font-size: 0.78rem; text-align: center; justify-content: center;">
+        <i class="fa-solid fa-sliders"></i> 3. Days & Venues
+    </button>
+</div>
+
+<!-- TAB 1: MASTER TIMETABLE -->
+<div id="timetable-tab" class="tab-pane">
+    <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 16px;"><i class="fa-solid fa-border-all" style="color: var(--accent-cyan);"></i> Master Fest Timetable</h3>
+
+    {% if timetable_by_day %}
+    {% for day_matrix in timetable_by_day %}
+    <div class="glass-card" style="margin-bottom: 20px; padding: 16px;">
+        <h4 style="font-size: 1.05rem; font-weight: 700; color: var(--accent-amber); margin-bottom: 14px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px;">
+            <i class="fa-solid fa-calendar-day"></i> Day #{{ day_matrix.day.day_number }} {% if day_matrix.day.name %}({{ day_matrix.day.name }}){% endif %}
+            <span style="color: var(--text-muted); font-size: 0.85rem; font-weight: 400; margin-left: 8px;">
+                {{ day_matrix.day.start_time|time:"h:i A" }} – {{ day_matrix.day.end_time|time:"h:i A" }}
+            </span>
+        </h4>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px;">
+            {% for st_col in day_matrix.stages %}
+            <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 12px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <strong style="font-size: 0.92rem; color: #fff;">{{ st_col.stage.name }}</strong>
+                    {% if st_col.stage.stage_type == 'STAGE' %}
+                    <span class="badge badge-approved" style="font-size: 0.7rem;">Stage</span>
+                    {% else %}
+                    <span class="badge" style="background: rgba(148, 163, 184, 0.2); color: #cbd5e1; font-size: 0.7rem;">Off-Stage</span>
+                    {% endif %}
+                </div>
+
+                {% for s in st_col.schedules %}
+                <div style="background: rgba(0,0,0,0.3); border-radius: 8px; padding: 8px 10px; margin-bottom: 8px; position: relative;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding-right: 18px;">
+                        <strong style="font-size: 0.85rem; color: #f4f4f5;">{{ s.program.name }}</strong>
+                        <span class="badge badge-approved" style="font-size: 0.65rem;">{{ s.program.category.name }}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; font-size: 0.75rem; color: var(--text-muted);">
+                        <span><i class="fa-regular fa-clock" style="color: var(--accent-amber);"></i> {{ s.start_time|time:"h:i A" }} – {{ s.end_time|time:"h:i A" }}</span>
+                        <span>{{ s.total_duration_minutes }}m</span>
+                    </div>
+                    <form method="POST" action="{% url 'core:delete_program_schedule' institution.slug s.id %}" style="position: absolute; top: 6px; right: 6px;">
+                        {% csrf_token %}
+                        <button type="submit" style="background: none; border: none; color: var(--accent-rose); cursor: pointer; font-size: 0.75rem;" title="Remove Slot"><i class="fa-solid fa-xmark"></i></button>
+                    </form>
+                </div>
+                {% empty %}
+                <div style="color: var(--text-muted); font-size: 0.8rem; text-align: center; padding: 10px;">No scheduled events</div>
+                {% endfor %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
+    {% else %}
+    <div class="glass-card" style="text-align: center; padding: 40px;">
+        <p style="color: var(--text-muted);">No Fest Days or Stages configured yet. Add Fest Days & Venues in Tab 3 to generate the master timetable!</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- TAB 2: MANUAL SLOT ALLOCATOR & PROGRAM SETTINGS TABLE -->
+<div id="manual-tab" class="tab-pane" style="display: none;">
+    <div class="glass-card" style="padding: 16px;">
+        <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 12px;"><i class="fa-solid fa-clock" style="color: var(--accent-cyan);"></i> Manual Slot Allocator & Duration Settings</h3>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 16px;">
+            Set manual time slots for specific programs or adjust per-participant duration, buffer time, and stage priorities.
+        </p>
+
+        <!-- DESKTOP TABLE VIEW -->
+        <div class="table-responsive desktop-table-view">
+            <table class="custom-table">
+                <thead>
+                    <tr>
+                        <th>Program Name</th>
+                        <th>Venue Type</th>
+                        <th>Mode</th>
+                        <th>Stage Priority</th>
+                        <th>Part.</th>
+                        <th>Mins / Part</th>
+                        <th>Buffer</th>
+                        <th>Total</th>
+                        <th>Current Slot</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in program_list %}
+                    <tr>
+                        <td>
+                            <strong>{{ item.program.name }}</strong>
+                            <div style="color: var(--text-muted); font-size: 0.75rem;">{{ item.program.category.name }}</div>
+                        </td>
+                        <form method="POST" action="{% url 'core:update_program_duration' institution.slug item.program.id %}">
+                            {% csrf_token %}
+                            <td>
+                                <select name="program_type" class="form-control" style="font-size: 0.8rem; padding: 4px 8px;" onchange="this.form.submit()">
+                                    <option value="STAGE" {% if item.program.program_type == 'STAGE' %}selected{% endif %}>Stage</option>
+                                    <option value="OFF_STAGE" {% if item.program.program_type == 'OFF_STAGE' %}selected{% endif %}>Off-Stage</option>
+                                </select>
+                            </td>
+                            <td>
+                                <select name="presentation_mode" class="form-control" style="font-size: 0.8rem; padding: 4px 8px;" onchange="this.form.submit()">
+                                    <option value="SEQUENTIAL" {% if item.program.presentation_mode == 'SEQUENTIAL' %}selected{% endif %}>SEQ (Per Part)</option>
+                                    <option value="SIMULTANEOUS" {% if item.program.presentation_mode == 'SIMULTANEOUS' %}selected{% endif %}>SIM (All-at-once)</option>
+                                </select>
+                            </td>
+                            <td>
+                                <select name="preferred_stage_id" class="form-control" style="font-size: 0.8rem; padding: 4px 8px;" onchange="this.form.submit()">
+                                    <option value="">Auto Preference</option>
+                                    {% for st in stages %}
+                                    <option value="{{ st.id }}" {% if item.program.preferred_stage_id == st.id %}selected{% endif %}>⭐ {{ st.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </td>
+                            <td><span class="badge badge-approved">{{ item.assigned_count }}</span></td>
+                            <td>
+                                <input type="number" name="duration_per_participant" value="{{ item.program.duration_per_participant }}" class="form-control" style="width: 60px; font-size: 0.8rem; padding: 4px 6px;" min="1" onchange="this.form.submit()">
+                            </td>
+                            <td>
+                                <input type="number" name="buffer_margin_minutes" value="{{ item.program.buffer_margin_minutes }}" class="form-control" style="width: 50px; font-size: 0.8rem; padding: 4px 6px;" min="0" onchange="this.form.submit()">
+                            </td>
+                        </form>
+
+                        <td style="font-weight: 800; color: var(--accent-cyan);">{{ item.calculated_duration }}m</td>
+
+                        <td>
+                            {% if item.has_schedule %}
+                            <span class="badge badge-approved" style="font-size: 0.75rem;">
+                                Day {{ item.schedule.fest_day.day_number }} @ {{ item.schedule.stage.name }}
+                                ({{ item.schedule.start_time|time:"h:i A" }} - {{ item.schedule.end_time|time:"h:i A" }})
+                            </span>
+                            {% else %}
+                            <span class="badge badge-pending" style="font-size: 0.75rem;">Unscheduled</span>
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            <div style="display: flex; gap: 6px; align-items: center;">
+                                <button type="button" class="btn-primary" style="padding: 6px 10px; font-size: 0.78rem;" onclick="openManualSlotModal('{{ item.program.id }}', '{{ item.program.name|escapejs }}')">
+                                    <i class="fa-solid fa-clock"></i> Manual Slot
+                                </button>
+                                {% if item.has_schedule %}
+                                <form method="POST" action="{% url 'core:delete_program_schedule' institution.slug item.schedule.id %}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn-danger" style="padding: 6px 8px; font-size: 0.78rem;" title="Remove Slot"><i class="fa-solid fa-trash"></i></button>
+                                </form>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- MOBILE CARD LIST VIEW -->
+        <div class="mobile-card-list-view">
+            {% for item in program_list %}
+            <div style="background: rgba(255,255,255,0.02); padding: 12px; border-radius: 12px; border: 1px solid var(--border-color); margin-bottom: 10px;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
+                    <div>
+                        <strong style="font-size: 1rem; color: var(--text-main); display: block;">{{ item.program.name }}</strong>
+                        <span class="badge badge-approved" style="font-size: 0.72rem; margin-top: 4px;">{{ item.program.category.name }}</span>
+                    </div>
+                    <div>
+                        {% if item.has_schedule %}
+                        <span class="badge badge-approved" style="font-size: 0.72rem;">Scheduled</span>
+                        {% else %}
+                        <span class="badge badge-pending" style="font-size: 0.72rem;">Unscheduled</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <form method="POST" action="{% url 'core:update_program_duration' institution.slug item.program.id %}" style="margin-top: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                    {% csrf_token %}
+                    <div>
+                        <label style="font-size: 0.72rem; color: var(--text-muted); display: block; margin-bottom: 2px;">Venue Type</label>
+                        <select name="program_type" class="form-control" style="font-size: 0.78rem; padding: 4px 6px;" onchange="this.form.submit()">
+                            <option value="STAGE" {% if item.program.program_type == 'STAGE' %}selected{% endif %}>Stage</option>
+                            <option value="OFF_STAGE" {% if item.program.program_type == 'OFF_STAGE' %}selected{% endif %}>Off-Stage</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="font-size: 0.72rem; color: var(--text-muted); display: block; margin-bottom: 2px;">Presentation Mode</label>
+                        <select name="presentation_mode" class="form-control" style="font-size: 0.78rem; padding: 4px 6px;" onchange="this.form.submit()">
+                            <option value="SEQUENTIAL" {% if item.program.presentation_mode == 'SEQUENTIAL' %}selected{% endif %}>SEQ (Per Part)</option>
+                            <option value="SIMULTANEOUS" {% if item.program.presentation_mode == 'SIMULTANEOUS' %}selected{% endif %}>SIM (All-at-once)</option>
+                        </select>
+                    </div>
+                    <div style="grid-column: span 2;">
+                        <label style="font-size: 0.72rem; color: var(--text-muted); display: block; margin-bottom: 2px;">Preferred Stage Priority</label>
+                        <select name="preferred_stage_id" class="form-control" style="font-size: 0.78rem; padding: 4px 6px;" onchange="this.form.submit()">
+                            <option value="">Auto Preference</option>
+                            {% for st in stages %}
+                            <option value="{{ st.id }}" {% if item.program.preferred_stage_id == st.id %}selected{% endif %}>⭐ {{ st.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label style="font-size: 0.72rem; color: var(--text-muted); display: block; margin-bottom: 2px;">Mins / Participant</label>
+                        <input type="number" name="duration_per_participant" value="{{ item.program.duration_per_participant }}" class="form-control" style="font-size: 0.78rem; padding: 4px 6px;" min="1" onchange="this.form.submit()">
+                    </div>
+                    <div>
+                        <label style="font-size: 0.72rem; color: var(--text-muted); display: block; margin-bottom: 2px;">Buffer Margin (Mins)</label>
+                        <input type="number" name="buffer_margin_minutes" value="{{ item.program.buffer_margin_minutes }}" class="form-control" style="font-size: 0.78rem; padding: 4px 6px;" min="0" onchange="this.form.submit()">
+                    </div>
+                </form>
+
+                {% if item.has_schedule %}
+                <div style="margin-top: 8px;">
+                    <span class="badge badge-approved" style="font-size: 0.72rem; display: block; text-align: center; white-space: normal; line-height: 1.2;">
+                        📍 Day {{ item.schedule.fest_day.day_number }} @ {{ item.schedule.stage.name }} ({{ item.schedule.start_time|time:"h:i A" }} - {{ item.schedule.end_time|time:"h:i A" }})
+                    </span>
+                </div>
+                {% endif %}
+
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px; gap: 8px; flex-wrap: wrap;">
+                    <div style="font-size: 0.8rem; color: var(--text-muted);">
+                        Parts: <strong style="color: #fff;">{{ item.assigned_count }}</strong> | Total: <strong style="color: var(--accent-cyan);">{{ item.calculated_duration }}m</strong>
+                    </div>
+                    <div style="display: flex; gap: 6px; align-items: center;">
+                        <button type="button" class="btn-primary" style="padding: 6px 10px; font-size: 0.78rem;" onclick="openManualSlotModal('{{ item.program.id }}', '{{ item.program.name|escapejs }}')">
+                            <i class="fa-solid fa-clock"></i> Manual Slot
+                        </button>
+                        {% if item.has_schedule %}
+                        <form method="POST" action="{% url 'core:delete_program_schedule' institution.slug item.schedule.id %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn-danger" style="padding: 6px 8px; font-size: 0.78rem;" title="Remove Slot"><i class="fa-solid fa-trash"></i></button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+    </div>
+</div>
+
+<!-- TAB 3: SETUP GRID (Fest Days & Stages) -->
+<div id="setup-tab" class="tab-pane" style="display: none;">
+    <div class="form-grid-2">
+        <!-- Add Fest Day -->
+        <div class="glass-card" style="padding: 16px;">
+            <h4 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 16px;"><i class="fa-solid fa-calendar-plus" style="color: var(--accent-emerald);"></i> Fest Days Setup</h4>
+            <form method="POST" action="{% url 'core:add_fest_day' institution.slug %}">
+                {% csrf_token %}
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div class="form-group">
+                        <label class="form-label">Day Number</label>
+                        <input type="number" name="day_number" class="form-control" placeholder="1" required min="1">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Title / Label</label>
+                        <input type="text" name="name" class="form-control" placeholder="Day 1">
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div class="form-group">
+                        <label class="form-label">Start Time</label>
+                        <input type="time" name="start_time" class="form-control" value="09:00">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">End Time</label>
+                        <input type="time" name="end_time" class="form-control" value="21:00">
+                    </div>
+                </div>
+                <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; margin-top: 10px;">
+                    <i class="fa-solid fa-plus"></i> Add Fest Day
+                </button>
+            </form>
+
+            <div style="margin-top: 16px;">
+                {% for day in fest_days %}
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(255,255,255,0.03); border-radius: 8px; margin-bottom: 6px;">
+                    <span><strong>Day {{ day.day_number }}</strong> - {{ day.start_time|time:"h:i A" }} to {{ day.end_time|time:"h:i A" }}</span>
+                    <form method="POST" action="{% url 'core:delete_fest_day' institution.slug day.id %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn-danger" style="padding: 4px 8px; font-size: 0.75rem;" onclick="return confirm('Delete this fest day?');"><i class="fa-solid fa-trash"></i></button>
+                    </form>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Add Stage / Venue -->
+        <div class="glass-card" style="padding: 16px;">
+            <h4 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 16px;"><i class="fa-solid fa-monument" style="color: var(--accent-indigo);"></i> Stages & Venues Setup</h4>
+            <form method="POST" action="{% url 'core:add_stage' institution.slug %}">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label class="form-label">Stage / Venue Name</label>
+                    <input type="text" name="name" class="form-control" placeholder="e.g. Main Auditorium (Stage A)" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Venue Type</label>
+                    <select name="stage_type" class="form-control">
+                        <option value="STAGE">Stage Event Venue</option>
+                        <option value="OFF_STAGE">Off-Stage Class / Hall</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; margin-top: 10px;">
+                    <i class="fa-solid fa-plus"></i> Add Stage / Venue
+                </button>
+            </form>
+
+            <div style="margin-top: 16px;">
+                {% for st in stages %}
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(255,255,255,0.03); border-radius: 8px; margin-bottom: 6px;">
+                    <span><strong>{{ st.name }}</strong> ({{ st.get_stage_type_display }})</span>
+                    <form method="POST" action="{% url 'core:delete_stage' institution.slug st.id %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn-danger" style="padding: 4px 8px; font-size: 0.75rem;" onclick="return confirm('Delete this venue?');"><i class="fa-solid fa-trash"></i></button>
+                    </form>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Manual Slot Assignment Modal Dialog -->
+<div id="manualSlotModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; align-items: center; justify-content: center;">
+    <div class="glass-card" style="width: 90%; max-width: 500px; padding: 20px; position: relative;">
+        <h4 id="modalProgramTitle" style="font-size: 1.15rem; font-weight: 800; color: var(--accent-cyan); margin-bottom: 16px;">
+            Set Manual Time Slot
+        </h4>
+
+        <form method="POST" action="{% url 'core:save_program_schedule' institution.slug %}">
+            {% csrf_token %}
+            <input type="hidden" name="program_id" id="modalProgramId">
+
+            <div class="form-group">
+                <label class="form-label">Select Fest Day</label>
+                <select name="fest_day_id" class="form-control" required>
+                    {% for d in fest_days %}
+                    <option value="{{ d.id }}">Day {{ d.day_number }} {% if d.name %}({{ d.name }}){% endif %} [{{ d.start_time|time:"h:i A" }} - {{ d.end_time|time:"h:i A" }}]</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Select Venue / Stage</label>
+                <select name="stage_id" class="form-control" required>
+                    {% for st in stages %}
+                    <option value="{{ st.id }}">{{ st.name }} ({{ st.get_stage_type_display }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Start Time</label>
+                <input type="time" name="start_time" class="form-control" value="09:00" required>
+            </div>
+
+            <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+                <button type="button" class="btn-primary" style="background: rgba(255,255,255,0.08); box-shadow: none;" onclick="closeManualSlotModal()">Cancel</button>
+                <button type="submit" class="btn-success">
+                    <i class="fa-solid fa-floppy-disk"></i> Save Slot
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function showTab(tabId, btnEl) {
+    document.querySelectorAll('.tab-pane').forEach(p => p.style.display = 'none');
+    document.querySelectorAll('.tab-btn').forEach(b => {
+        b.style.background = 'rgba(255,255,255,0.08)';
+        b.style.boxShadow = 'none';
+    });
+
+    document.getElementById(tabId).style.display = 'block';
+    btnEl.style.background = 'linear-gradient(135deg, var(--accent-cyan), #0284c7)';
+}
+
+function openManualSlotModal(programId, programName) {
+    document.getElementById('modalProgramId').value = programId;
+    document.getElementById('modalProgramTitle').innerText = 'Manual Slot: ' + programName;
+    document.getElementById('manualSlotModal').style.display = 'flex';
+}
+
+function closeManualSlotModal() {
+    document.getElementById('manualSlotModal').style.display = 'none';
+}
+</script>
+{% endblock %}

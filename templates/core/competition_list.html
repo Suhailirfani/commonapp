@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+
+{% block title %}Competitions - {{ institution.name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <a href="{% url 'core:dashboard' institution.slug %}" style="color: var(--text-muted); text-decoration: none;"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</a>
+        <h2 style="font-size: 1.8rem; font-weight: 800; margin-top: 4px;">Competitions & Fests</h2>
+    </div>
+    <a href="{% url 'core:competition_create' institution.slug %}" class="btn-primary">
+        <i class="fa-solid fa-plus"></i> Create New Competition
+    </a>
+</div>
+
+<div class="glass-card">
+    <div class="table-responsive">
+        <table class="custom-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Competition Name</th>
+                <th>Type</th>
+                <th>Year</th>
+                <th>Status</th>
+                <th>Created At</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for comp in competitions %}
+            <tr>
+                <td>#{{ comp.id }}</td>
+                <td><strong>{{ comp.name }}</strong></td>
+                <td><span class="badge badge-approved">{{ comp.get_type_display }}</span></td>
+                <td>{{ comp.year }}</td>
+                <td>
+                    {% if comp.is_active %}
+                    <span class="badge badge-approved"><i class="fa-solid fa-circle-check"></i> Active</span>
+                    {% else %}
+                    <span class="badge badge-rejected">Archived</span>
+                    {% endif %}
+                </td>
+                <td>{{ comp.created_at|date:"d M Y" }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 30px;">
+                    No competitions created yet. Click "Create New Competition" above to start!
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</div>
+{% endblock %}

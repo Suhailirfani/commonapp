@@ -1,0 +1,152 @@
+{% extends 'base.html' %}
+
+{% block title %}Mark Entry Matrix - {{ program.name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <a href="{% url 'core:scoring_program_list' institution.slug %}" style="color: var(--text-muted); text-decoration: none;"><i class="fa-solid fa-arrow-left"></i> Back to Mark Entry</a>
+        <h2 style="font-size: 1.8rem; font-weight: 800; margin-top: 4px;">Mark Entry: <span style="color: var(--accent-cyan);">{{ program.name }}</span></h2>
+        <div style="margin-top: 4px;">
+            <span class="badge badge-approved">{{ program.category.name }}</span>
+            <span class="badge badge-pending">{% if program.is_group %}Group Program{% else %}Single Program{% endif %}</span>
+        </div>
+    </div>
+    <div>
+        {% if not request.user.is_judge %}
+        <a href="{% url 'core:announce_results' institution.slug program.id %}" class="btn-success" onclick="return confirm('Publish results for {{ program.name }} to the public live result portal?');">
+            <i class="fa-solid fa-bullhorn"></i> Publish Results Publicly
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="glass-card">
+    <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 16px;">
+        <i class="fa-solid fa-keyboard" style="color: var(--accent-cyan);"></i> <strong>Keyboard Tip:</strong> Press <kbd>Tab</kbd> or <kbd>Enter</kbd> to jump quickly between inputs.
+    </p>
+
+    <form method="POST">
+        {% csrf_token %}
+
+        <!-- DESKTOP TABLE VIEW -->
+        <div class="table-responsive desktop-table-view">
+            <table class="custom-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        {% if program.is_group %}
+                        <th>Group / Team</th>
+                        {% else %}
+                        <th>Chest No</th>
+                        <th>Contestant Name</th>
+                        <th>Team</th>
+                        {% endif %}
+                        <th>Code Letter</th>
+                        <th>Marks</th>
+                        <th>Current Rank</th>
+                        <th>Grade</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in participations %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        {% if program.is_group %}
+                        <td>
+                            <strong>{{ p.display_name }}</strong>
+                            <div style="color: var(--text-muted); font-size: 0.75rem;">
+                                {% for m in p.contestants.all %}{{ m.name }}{% if not forloop.last %}, {% endif %}{% endfor %}
+                            </div>
+                        </td>
+                        {% else %}
+                        <td><strong style="color: var(--accent-cyan);">#{{ p.contestant.chest_no }}</strong></td>
+                        <td><strong>{{ p.contestant.name }}</strong></td>
+                        <td><span class="badge badge-approved">{{ p.contestant.team.name }}</span></td>
+                        {% endif %}
+                        <td>
+                            <input type="text" name="code_letter_{{ p.id }}" value="{{ p.code_letter|default:'' }}" class="form-control matrix-input" style="width: 100px; text-transform: uppercase;" placeholder="Code">
+                        </td>
+                        <td>
+                            <input type="number" name="marks_{{ p.id }}" value="{{ p.marks|default:'' }}" class="form-control matrix-input" style="width: 120px;" placeholder="Marks">
+                        </td>
+                        <td>
+                            {% if p.rank %}
+                            <span class="badge badge-approved">Rank {{ p.rank }}</span>
+                            {% else %}
+                            <span style="color: var(--text-muted);">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if p.grade %}
+                            <span class="badge badge-pending">{{ p.grade }} Grade</span>
+                            {% else %}
+                            <span style="color: var(--text-muted);">-</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 30px;">
+                            No participants registered for this program yet.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- MOBILE CARD LIST VIEW -->
+        <div class="mobile-card-list-view">
+            {% for p in participations %}
+            <div style="background: rgba(255,255,255,0.02); padding: 14px; border-radius: 12px; border: 1px solid var(--border-color); margin-bottom: 12px;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+                    <div>
+                        {% if program.is_group %}
+                        <strong style="font-size: 1.05rem; display: block; color: var(--accent-cyan);">{{ p.display_name }}</strong>
+                        <div style="color: var(--text-muted); font-size: 0.78rem; margin-top: 2px;">
+                            {% for m in p.contestants.all %}{{ m.name }}{% if not forloop.last %}, {% endif %}{% endfor %}
+                        </div>
+                        {% else %}
+                        <strong style="color: var(--accent-cyan); font-size: 1.1rem; display: block; font-weight: 800;">#{{ p.contestant.chest_no }} {{ p.contestant.name }}</strong>
+                        <span class="badge badge-approved" style="font-size: 0.75rem; margin-top: 4px;">{{ p.contestant.team.name }}</span>
+                        {% endif %}
+                    </div>
+                    <div style="text-align: right;">
+                        {% if p.rank %}
+                        <span class="badge badge-approved" style="font-size: 0.8rem; margin-bottom: 2px; display: block;">Rank {{ p.rank }}</span>
+                        {% endif %}
+                        {% if p.grade %}
+                        <span class="badge badge-pending" style="font-size: 0.8rem; display: block;">{{ p.grade }} Grade</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; border-top: 1px solid var(--border-color); padding-top: 10px;">
+                    <div>
+                        <label class="form-label" style="font-size: 0.75rem; color: var(--text-muted);">Code Letter</label>
+                        <input type="text" name="code_letter_{{ p.id }}" value="{{ p.code_letter|default:'' }}" class="form-control" style="text-transform: uppercase;" placeholder="CODE">
+                    </div>
+                    <div>
+                        <label class="form-label" style="font-size: 0.75rem; color: var(--text-muted);">Marks</label>
+                        <input type="number" name="marks_{{ p.id }}" value="{{ p.marks|default:'' }}" class="form-control" placeholder="MARKS">
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div style="text-align: center; color: var(--text-muted); padding: 30px;">
+                No participants registered for this program yet.
+            </div>
+            {% endfor %}
+        </div>
+
+        {% if participations %}
+        <div style="margin-top: 24px; text-align: right;">
+            <button type="submit" class="btn-primary" style="font-size: 1.05rem; padding: 12px 28px; width: 100%; justify-content: center; background: linear-gradient(135deg, var(--accent-emerald), #059669);">
+                <i class="fa-solid fa-floppy-disk"></i> Save Marks & Auto Calculate
+            </button>
+        </div>
+        {% endif %}
+    </form>
+</div>
+{% endblock %}

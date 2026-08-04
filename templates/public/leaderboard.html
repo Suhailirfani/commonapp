@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Team Leaderboard - {{ institution.name }}{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 24px;">
+    <a href="{% url 'public:home' institution.slug %}" style="color: var(--text-muted); text-decoration: none;"><i class="fa-solid fa-arrow-left"></i> Back to Live Home</a>
+    <h1 style="font-size: 2.2rem; font-weight: 800; margin-top: 8px;">🏆 Overall Team Standings Leaderboard</h1>
+    <p style="color: var(--text-muted);">Real-time live points compiled across all announced events.</p>
+</div>
+
+<div class="glass-card">
+    <div class="table-responsive">
+        <table class="custom-table">
+        <thead>
+            <tr>
+                <th>Standings Rank</th>
+                <th>Team Name</th>
+                <th>Wins (1st / 2nd / 3rd)</th>
+                <th>Total Accumulated Points</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in teams %}
+            <tr {% if item.position == 1 %}style="background: rgba(245, 158, 11, 0.1);"{% endif %}>
+                <td>
+                    {% if item.position == 1 %}
+                    <span class="badge badge-pending" style="background: #f59e0b; color: #000; font-size: 0.95rem; padding: 6px 14px;"><i class="fa-solid fa-crown"></i> #1 LEADER</span>
+                    {% else %}
+                    <span class="badge badge-approved" style="font-size: 0.9rem;">#{{ item.position }}</span>
+                    {% endif %}
+                </td>
+                <td><strong style="font-size: 1.1rem;">{{ item.team.name }}</strong></td>
+                <td>
+                    <span style="font-size: 0.9rem; font-weight: 600;">🥇 {{ item.first_count }} | 🥈 {{ item.second_count }} | 🥉 {{ item.third_count }}</span>
+                </td>
+                <td><strong style="font-size: 1.4rem; color: var(--accent-cyan);">{{ item.points }} pts</strong></td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4" style="text-align: center; color: var(--text-muted); padding: 30px;">
+                    No team standings calculated yet.
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</div>
+{% endblock %}
