@@ -22,10 +22,11 @@
             <table class="custom-table" id="batchTable">
                 <thead>
                     <tr>
-                        <th style="width: 25%;">Competition</th>
-                        <th style="width: 25%;">Team</th>
-                        <th style="width: 25%;">Category</th>
-                        <th style="width: 25%;">Contestant Full Name</th>
+                        <th style="width: 20%;">Fest</th>
+                        <th style="width: 20%;">Team</th>
+                        <th style="width: 20%;">Category</th>
+                        <th style="width: 22%;">Contestant Full Name</th>
+                        <th style="width: 18%;">WhatsApp No (Optional)</th>
                         <th>Action</th>
                     </tr>
                 </thead>
@@ -34,28 +35,31 @@
                     {% for i in "12345" %}
                     <tr>
                         <td>
-                            <select name="competition_id[]" class="form-control" style="min-width: 150px;">
+                            <select name="competition_id[]" class="form-control" style="min-width: 140px;">
                                 {% for comp in competitions %}
                                 <option value="{{ comp.id }}">{{ comp.name }}</option>
                                 {% endfor %}
                             </select>
                         </td>
                         <td>
-                            <select name="team_id[]" class="form-control" style="min-width: 150px;">
+                            <select name="team_id[]" class="form-control" style="min-width: 140px;">
                                 {% for team in teams %}
                                 <option value="{{ team.id }}">{{ team.name }}</option>
                                 {% endfor %}
                             </select>
                         </td>
                         <td>
-                            <select name="category_id[]" class="form-control" style="min-width: 150px;">
+                            <select name="category_id[]" class="form-control" style="min-width: 140px;">
                                 {% for cat in categories %}
                                 <option value="{{ cat.id }}">{{ cat.name }}</option>
                                 {% endfor %}
                             </select>
                         </td>
                         <td>
-                            <input type="text" name="name[]" class="form-control" placeholder="e.g. Ahmad Bilal" style="min-width: 180px;">
+                            <input type="text" name="name[]" class="form-control" placeholder="e.g. Ahmad Bilal" style="min-width: 160px;">
+                        </td>
+                        <td>
+                            <input type="text" name="whatsapp_number[]" class="form-control" placeholder="e.g. 9876543210" style="min-width: 140px;">
                         </td>
                         <td>
                             <button type="button" class="btn-danger" style="padding: 6px 10px;" onclick="removeRow(this)"><i class="fa-solid fa-trash"></i></button>

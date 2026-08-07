@@ -32,6 +32,8 @@ class Institution(models.Model):
     primary_color = models.CharField(max_length=20, default='#4f46e5')
     secondary_color = models.CharField(max_length=20, default='#06b6d4')
     status = models.CharField(max_length=15, choices=STATUS_CHOICES, default='PENDING', db_index=True)
+    is_demo = models.BooleanField(default=False, help_text="Is this institution in 5-Day Demo/Trial mode?")
+    demo_expires_at = models.DateTimeField(null=True, blank=True, help_text="Expiration date for Demo Trial")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -46,6 +48,102 @@ class Institution(models.Model):
     @property
     def is_active(self):
         return self.status == 'APPROVED'
+
+    @property
+    def is_demo_active(self):
+        if not self.is_demo or not self.demo_expires_at:
+            return False
+        return timezone.now() < self.demo_expires_at
+
+    @property
+    def is_demo_expired(self):
+        if not self.is_demo or not self.demo_expires_at:
+            return False
+        return timezone.now() >= self.demo_expires_at
+
+    @property
+    def demo_time_remaining(self):
+        if not self.is_demo or not self.demo_expires_at:
+            return None
+        now = timezone.now()
+        diff = self.demo_expires_at - now
+        total_seconds = int(diff.total_seconds())
+
+        if total_seconds <= 0:
+            return {
+                'is_expired': True,
+                'text': 'Demo Trial Expired',
+                'days': 0,
+                'hours': 0,
+                'minutes': 0,
+                'seconds': 0,
+                'is_days': False
+            }
+
+        days = diff.days
+        hours = (total_seconds % 86400) // 3600
+        minutes = (total_seconds % 3600) // 60
+        seconds = total_seconds % 60
+
+        if total_seconds > 86400:
+            formatted = f"{days} Day{'s' if days > 1 else ''} {hours} Hr{'s' if hours != 1 else ''} Left"
+            return {
+                'is_expired': False,
+                'text': formatted,
+                'days': days,
+                'hours': hours,
+                'minutes': minutes,
+                'seconds': seconds,
+                'is_days': True
+            }
+        else:
+            formatted = f"{hours} Hour{'s' if hours != 1 else ''} {minutes} Min{'s' if minutes != 1 else ''} Left"
+            return {
+                'is_expired': False,
+                'text': formatted,
+                'days': 0,
+                'hours': hours,
+                'minutes': minutes,
+                'seconds': seconds,
+                'is_days': False
+            }
+
+    def has_add_on(self, code):
+        return self.granted_add_ons.filter(add_on__code=code, is_active=True, add_on__is_active=True).exists()
+
+    def active_add_ons(self):
+        return self.granted_add_ons.filter(is_active=True, add_on__is_active=True).select_related('add_on')
+
+
+class AddOn(models.Model):
+    name = models.CharField(max_length=150, help_text="Add-on Name (e.g. Contestant User Creation)")
+    code = models.SlugField(max_length=100, unique=True, help_text="Unique Identifier Code (e.g. contestant-user-creation)")
+    price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, help_text="Price for this add-on")
+    description = models.TextField(blank=True)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        if not self.code:
+            self.code = slugify(self.name)
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.name} ({self.code}) - ₹{self.price}"
+
+
+class GrantedAddOn(models.Model):
+    institution = models.ForeignKey(Institution, on_delete=models.CASCADE, related_name='granted_add_ons')
+    add_on = models.ForeignKey(AddOn, on_delete=models.CASCADE, related_name='grants')
+    granted_at = models.DateTimeField(auto_now_add=True)
+    is_active = models.BooleanField(default=True)
+    notes = models.CharField(max_length=255, blank=True, help_text="Optional developer note or custom pricing info")
+
+    class Meta:
+        unique_together = ('institution', 'add_on')
+
+    def __str__(self):
+        return f"{self.institution.name} -> {self.add_on.name}"
 
 
 class InstitutionSubscription(models.Model):
@@ -84,6 +182,7 @@ class SubscriptionApplication(models.Model):
     payment_utr = models.CharField(max_length=100, blank=True, help_text="UPI Payment UTR / Transaction Reference ID")
     desired_admin_username = models.CharField(max_length=150)
     desired_admin_email = models.EmailField()
+    is_demo = models.BooleanField(default=False, help_text="Application requested 5-Day Free Demo mode")
     status = models.CharField(max_length=15, choices=STATUS_CHOICES, default='DRAFT')
     rejection_reason = models.TextField(blank=True)
     submitted_at = models.DateTimeField(auto_now_add=True)

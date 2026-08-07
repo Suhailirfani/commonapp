@@ -11,7 +11,7 @@
         <form method="POST">
             {% csrf_token %}
             <div class="form-group">
-                <label class="form-label">Competition</label>
+                <label class="form-label">Fest</label>
                 <select name="competition_id" class="form-control" required>
                     {% for comp in competitions %}
                     <option value="{{ comp.id }}">{{ comp.name }}</option>
@@ -45,6 +45,11 @@
             <div class="form-group">
                 <label class="form-label">Full Name of Contestant</label>
                 <input type="text" name="name" class="form-control" placeholder="e.g. Muhammed Ali" required autofocus>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">WhatsApp Contact Number (Optional)</label>
+                <input type="text" name="whatsapp_number" class="form-control" placeholder="e.g. +91 9876543210">
             </div>
 
             <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; font-size: 1rem; padding: 12px; margin-top: 10px; background: linear-gradient(135deg, var(--accent-emerald), #059669);">

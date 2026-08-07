@@ -1,12 +1,12 @@
 {% extends 'base.html' %}
 
-{% block title %}Programs & Events - {{ institution.name }}{% endblock %}
+{% block title %}Programs - {{ institution.name }}{% endblock %}
 
 {% block content %}
 <div class="page-header">
     <div>
         <a href="{% url 'core:dashboard' institution.slug %}" style="color: var(--text-muted); text-decoration: none;"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</a>
-        <h2 style="font-size: 1.8rem; font-weight: 800; margin-top: 4px;">Programs & Events Directory</h2>
+        <h2 style="font-size: 1.8rem; font-weight: 800; margin-top: 4px;">Programs Directory</h2>
     </div>
     {% if not request.user.is_team_leader %}
     <div>

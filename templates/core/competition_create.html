@@ -1,22 +1,22 @@
 {% extends 'base.html' %}
 
-{% block title %}Create Competition - {{ institution.name }}{% endblock %}
+{% block title %}Create Fest - {{ institution.name }}{% endblock %}
 
 {% block content %}
-<div style="max-width: 550px; margin: 20px auto;">
+<div style="max-width: 550px; margin: 20px auto; width: 100%;">
     <div class="glass-card">
-        <a href="{% url 'core:competition_list' institution.slug %}" style="color: var(--text-muted); text-decoration: none;"><i class="fa-solid fa-arrow-left"></i> Back to Competitions</a>
-        <h2 style="font-size: 1.6rem; font-weight: 700; margin: 12px 0 20px 0;"><i class="fa-solid fa-trophy"></i> Create Competition</h2>
+        <a href="{% url 'core:competition_list' institution.slug %}" style="color: var(--text-muted); text-decoration: none;"><i class="fa-solid fa-arrow-left"></i> Back to Fest Setup</a>
+        <h2 style="font-size: 1.6rem; font-weight: 700; margin: 12px 0 20px 0;"><i class="fa-solid fa-trophy" style="color: var(--accent-amber);"></i> Create New Fest</h2>
 
         <form method="POST">
             {% csrf_token %}
             <div class="form-group">
-                <label class="form-label">Competition / Fest Name</label>
-                <input type="text" name="name" class="form-control" placeholder="e.g. Arts Fest 2026" required>
+                <label class="form-label">Fest Name</label>
+                <input type="text" name="name" class="form-control" placeholder="e.g. Mueeniyya Grand Fest 2026 or Arts Fest 2026" required>
             </div>
 
             <div class="form-group">
-                <label class="form-label">Competition Type</label>
+                <label class="form-label">Fest Type</label>
                 <select name="type" class="form-control" required>
                     <option value="ON">On-Campus</option>
                     <option value="OFF">Off-Campus</option>
@@ -30,7 +30,7 @@
             </div>
 
             <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; font-size: 1rem; padding: 12px; margin-top: 10px;">
-                <i class="fa-solid fa-floppy-disk"></i> Save Competition
+                <i class="fa-solid fa-floppy-disk"></i> Save Fest
             </button>
         </form>
     </div>

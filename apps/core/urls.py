@@ -28,6 +28,8 @@ urlpatterns = [
     path('portal/<slug:institution_slug>/contestants/batch-create/', views.contestant_batch_create_view, name='contestant_batch_create'),
     path('portal/<slug:institution_slug>/contestants/bulk-upload/', views.contestant_bulk_upload_view, name='contestant_bulk_upload'),
     path('portal/<slug:institution_slug>/contestants/download-template/', views.contestant_download_template_view, name='contestant_download_template'),
+    path('portal/<slug:institution_slug>/contestants/generate-credentials/', views.generate_contestant_credentials_view, name='generate_contestant_credentials'),
+    path('portal/<slug:institution_slug>/contestant/dashboard/', views.contestant_personal_dashboard_view, name='contestant_personal_dashboard'),
     path('portal/<slug:institution_slug>/contestants/<int:contestant_id>/assign/', views.contestant_assign_programs_view, name='contestant_assign_programs'),
     path('portal/<slug:institution_slug>/assignments/', views.assignment_hub_view, name='assignment_hub'),
     path('portal/<slug:institution_slug>/group-assign/', views.group_assign_view, name='group_assign'),
@@ -47,6 +49,8 @@ urlpatterns = [
     path('portal/<slug:institution_slug>/reports/pdf/bulk-valuation-form/', views.download_bulk_valuation_form_pdf_view, name='download_bulk_valuation_form_pdf'),
     
     # Edit & Delete CRUD
+    path('portal/<slug:institution_slug>/teams/<int:team_id>/edit/', views.team_edit_view, name='team_edit'),
+    path('portal/<slug:institution_slug>/teams/<int:team_id>/delete/', views.team_delete_view, name='team_delete'),
     path('portal/<slug:institution_slug>/categories/<int:category_id>/edit/', views.category_edit_view, name='category_edit'),
     path('portal/<slug:institution_slug>/categories/<int:category_id>/delete/', views.category_delete_view, name='category_delete'),
     path('portal/<slug:institution_slug>/programs/<int:program_id>/edit/', views.program_edit_view, name='program_edit'),
@@ -88,4 +92,9 @@ urlpatterns = [
     path('portal/<slug:institution_slug>/schedule/clear-all/', views.clear_all_schedules_view, name='clear_all_schedules'),
     path('portal/<slug:institution_slug>/points-config/', views.points_config_view, name='points_config'),
     path('portal/<slug:institution_slug>/settings/', views.settings_view, name='settings'),
+    
+    # PWA Manifest & ServiceWorker
+    path('manifest.json', views.pwa_manifest_view, name='pwa_manifest'),
+    path('portal/<slug:institution_slug>/manifest.json', views.pwa_manifest_view, name='pwa_manifest_institution'),
+    path('serviceworker.js', views.pwa_serviceworker_view, name='pwa_serviceworker'),
 ]

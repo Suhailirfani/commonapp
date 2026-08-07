@@ -10,6 +10,7 @@ class User(AbstractUser):
         ('TABULATOR', 'Tabulator / Mark Entry Officer'),
         ('JUDGE', 'Judge / Evaluator'),
         ('TEAM_LEADER', 'Team Leader / Manager'),
+        ('CONTESTANT', 'Contestant Pupil'),
     )
 
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='TEAM_LEADER')
@@ -20,6 +21,14 @@ class User(AbstractUser):
         blank=True, 
         related_name='users',
         help_text="Scoped institution for tenant isolation (null for Developers)"
+    )
+    contestant = models.OneToOneField(
+        'core.Contestant',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='user_account',
+        help_text="Linked contestant record for Contestant role"
     )
     assigned_competitions = models.ManyToManyField(
         'core.Competition',
@@ -39,6 +48,13 @@ class User(AbstractUser):
     )
     phone = models.CharField(max_length=20, blank=True)
     designation = models.CharField(max_length=100, blank=True, default='Member')
+
+    def save(self, *args, **kwargs):
+        if self.is_superuser or self.is_staff:
+            self.is_approved = True
+            if self.is_superuser:
+                self.role = 'DEVELOPER'
+        super().save(*args, **kwargs)
 
     def __str__(self):
         inst_name = self.institution.name if self.institution else "Global"
@@ -67,3 +83,7 @@ class User(AbstractUser):
     @property
     def is_team_leader(self):
         return self.role == 'TEAM_LEADER'
+
+    @property
+    def is_contestant(self):
+        return self.role == 'CONTESTANT'

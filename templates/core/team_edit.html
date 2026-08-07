@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Edit Team - {{ team.name }} | {{ institution.name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <a href="{% url 'core:team_list' institution.slug %}" style="color: var(--text-muted); text-decoration: none;"><i class="fa-solid fa-arrow-left"></i> Back to Teams</a>
+        <h2 style="font-size: 1.8rem; font-weight: 800; margin-top: 4px;"><i class="fa-solid fa-pen-to-square" style="color: var(--accent-cyan);"></i> Edit Team: {{ team.name }}</h2>
+    </div>
+</div>
+
+<div style="max-width: 600px; margin: 0 auto; width: 100%;">
+    <div class="glass-card">
+        <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="form-group">
+                <label class="form-label">Fest</label>
+                <select name="competition_id" class="form-control" required>
+                    {% for comp in competitions %}
+                    <option value="{{ comp.id }}" {% if team.competition.id == comp.id %}selected{% endif %}>{{ comp.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Team Name</label>
+                <input type="text" name="name" value="{{ team.name }}" class="form-control" required>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Code / Identification Letter</label>
+                <input type="text" name="code_letter" value="{{ team.code_letter }}" class="form-control" maxlength="10">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Assign Team Leader</label>
+                <select name="leader_id" class="form-control">
+                    <option value="">-- Select Team Leader --</option>
+                    {% for leader in team_leaders %}
+                    <option value="{{ leader.id }}" {% if team.user and team.user.id == leader.id %}selected{% endif %}>{{ leader.username }} {% if leader.managed_team and leader.managed_team.id != team.id %}(Currently: {{ leader.managed_team.name }}){% endif %}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Team Logo / Emblem</label>
+                {% if team.logo %}
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
+                    <img src="{{ team.logo.url }}" alt="{{ team.name }}" style="width: 48px; height: 48px; border-radius: 50%; object-fit: cover; border: 1px solid var(--border-color);">
+                    <span style="color: var(--text-muted); font-size: 0.85rem;">Current Logo</span>
+                </div>
+                {% endif %}
+                <input type="file" name="logo" class="form-control" accept="image/*">
+            </div>
+
+            <div style="display: flex; gap: 12px; margin-top: 20px; flex-wrap: wrap;">
+                <a href="{% url 'core:team_list' institution.slug %}" class="btn-primary" style="flex: 1; min-width: 120px; justify-content: center; background: rgba(255,255,255,0.08); box-shadow: none;">
+                    Cancel
+                </a>
+                <button type="submit" class="btn-primary" style="flex: 2; min-width: 140px; justify-content: center;">
+                    <i class="fa-solid fa-floppy-disk"></i> Update Team
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -9,7 +9,10 @@
         <h2 style="font-size: 2rem; font-weight: 800; margin-top: 6px;">GO FEST Admin Control Center</h2>
         <p style="color: var(--text-muted); margin: 0;">Manage institution subscription applications, approve workspaces, create plans, and oversee active tenants.</p>
     </div>
-    <div>
+    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <a href="/admin/" target="_blank" class="btn-primary" style="padding: 10px 18px; font-weight: 600; text-decoration: none; background: linear-gradient(135deg, #f59e0b, #d97706);">
+            <i class="fa-solid fa-screwdriver-wrench"></i> Django Native Admin (/admin/)
+        </a>
         <a href="{% url 'tenants:plan_create' %}" class="btn-primary" style="padding: 10px 18px; font-weight: 600; text-decoration: none;">
             <i class="fa-solid fa-plus-circle"></i> Create Subscription Plan
         </a>
@@ -171,6 +174,165 @@
     {% endif %}
 </div>
 
+<!-- Paid Add-Ons Management Section -->
+<div class="glass-card" style="margin-bottom: 30px; border-top: 4px solid var(--accent-emerald);">
+    <h3 style="font-size: 1.3rem; font-weight: 700; color: var(--accent-emerald); margin-bottom: 16px;">
+        <i class="fa-solid fa-puzzle-piece"></i> Paid Add-Ons & Custom Extensions Management
+    </h3>
+
+    <!-- New System Updates & Add-On Catalog Grid -->
+    <h4 style="font-size: 1.1rem; font-weight: 700; color: var(--accent-cyan); margin-bottom: 8px; margin-top: 6px;">
+        <i class="fa-solid fa-wand-magic-sparkles"></i> Available System Updates & Extension Add-Ons Catalog
+    </h4>
+    <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 16px;">
+        Click on any system update / extension card below to auto-fill the configuration form, manually set its price (₹) and description, and save/grant it to an institution.
+    </p>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; margin-bottom: 24px;">
+        
+        <!-- Card 1: Contestant User Creation & Portal -->
+        <div onclick="selectAddOn('Contestant User Creation & Personal Portal', 'contestant-user-creation', '500.00', 'Enables bulk contestant user credential generation and pupil personal dashboard access for enrolled programs, stage timings, and published results.')"
+             style="background: rgba(15, 23, 42, 0.6); border: 1px solid var(--accent-cyan); padding: 14px; border-radius: 12px; cursor: pointer; transition: transform 0.2s, border-color 0.2s;"
+             onmouseover="this.style.transform='translateY(-3px)'; this.style.borderColor='var(--accent-emerald)';"
+             onmouseout="this.style.transform='translateY(0)'; this.style.borderColor='var(--accent-cyan)';">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
+                <strong style="color: var(--accent-cyan); font-size: 1rem;"><i class="fa-solid fa-user-graduate"></i> Contestant User Creation & Personal Portal</strong>
+                <span class="badge badge-approved" style="font-size: 0.75rem;">Click to Set Price</span>
+            </div>
+            <p style="font-size: 0.82rem; color: var(--text-muted); margin: 0; line-height: 1.4;">
+                Allows pupils to log in, view enrolled programs, stage venues, timings, and official results.
+            </p>
+            <div style="margin-top: 10px; font-size: 0.85rem; color: var(--accent-emerald); font-weight: 700;">
+                Suggested Price: ₹500.00 <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 400;">(Editable)</span>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="form-grid-2" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 24px;">
+        
+        <!-- 1. Create New Add-On Definition -->
+        <div id="addon_form_card" style="background: rgba(15, 23, 42, 0.6); padding: 18px; border-radius: 12px; border: 1px solid var(--border-color); transition: border-color 0.4s, box-shadow 0.4s;">
+            <h4 style="font-size: 1.05rem; font-weight: 700; color: var(--accent-cyan); margin-bottom: 12px;">
+                <i class="fa-solid fa-plus-circle"></i> Create / Edit Add-On Feature Definition
+            </h4>
+            <form method="POST" action="{% url 'tenants:add_on_manage' %}">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="create_addon">
+                <input type="hidden" name="code" id="addon_code_input" value="">
+
+                <div class="form-group">
+                    <label class="form-label">Add-On Feature Name</label>
+                    <input type="text" name="name" id="addon_name_input" class="form-control" placeholder="e.g. Contestant User Creation" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Price (₹) <span style="color: var(--accent-emerald); font-size: 0.8rem;">(Manually enter or adjust price)</span></label>
+                    <input type="number" step="0.01" name="price" id="addon_price_input" class="form-control" placeholder="500.00" value="0.00" required style="font-weight: 700; color: var(--accent-emerald); font-size: 1.1rem;">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Description <span style="color: var(--accent-cyan); font-size: 0.8rem;">(Manually add or customize feature details)</span></label>
+                    <textarea name="description" id="addon_desc_input" class="form-control" rows="3" placeholder="e.g. Allows institution contestants to log in and view schedules..."></textarea>
+                </div>
+                <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; background: linear-gradient(135deg, var(--accent-cyan), #0284c7);">
+                    <i class="fa-solid fa-save"></i> Save & Register Add-On Definition
+                </button>
+            </form>
+        </div>
+
+        <!-- 2. Grant Add-On to Institution -->
+        <div style="background: rgba(15, 23, 42, 0.6); padding: 18px; border-radius: 12px; border: 1px solid var(--border-color);">
+            <h4 style="font-size: 1.05rem; font-weight: 700; color: var(--accent-emerald); margin-bottom: 12px;">
+                <i class="fa-solid fa-hand-holding-hand"></i> Grant Add-On to Institution
+            </h4>
+            <form method="POST" action="{% url 'tenants:add_on_manage' %}">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="grant_addon">
+                
+                <div class="form-group">
+                    <label class="form-label">Select Institution</label>
+                    <select name="institution_id" class="form-control" required>
+                        <option value="">-- Choose Institution --</option>
+                        {% for inst in institutions %}
+                        <option value="{{ inst.id }}">{{ inst.name }} ({{ inst.slug }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Select Add-On Feature</label>
+                    <select name="addon_id" class="form-control" required>
+                        <option value="">-- Choose Add-On --</option>
+                        {% for addon in add_ons %}
+                        <option value="{{ addon.id }}">{{ addon.name }} (₹{{ addon.price }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Custom Notes (Optional)</label>
+                    <input type="text" name="notes" class="form-control" placeholder="e.g. Paid via UPI on 8 Aug">
+                </div>
+
+                <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; background: linear-gradient(135deg, var(--accent-emerald), #059669);">
+                    <i class="fa-solid fa-check-circle"></i> Grant Add-On Access
+                </button>
+            </form>
+        </div>
+
+    </div>
+
+    <!-- Active Granted Add-Ons Table -->
+    <h4 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 12px; color: var(--text-main);">
+        <i class="fa-solid fa-list-check"></i> Active Granted Add-Ons History ({{ granted_add_ons.count }})
+    </h4>
+
+    {% if granted_add_ons %}
+    <div class="table-responsive">
+        <table class="custom-table">
+            <thead>
+                <tr>
+                    <th>Institution</th>
+                    <th>Add-On Feature</th>
+                    <th>Price</th>
+                    <th>Granted Date</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for grant in granted_add_ons %}
+                <tr>
+                    <td><strong>{{ grant.institution.name }}</strong> (<code>{{ grant.institution.slug }}</code>)</td>
+                    <td><span class="badge badge-approved" style="font-size: 0.85rem;"><i class="fa-solid fa-puzzle-piece"></i> {{ grant.add_on.name }}</span></td>
+                    <td><strong style="color: var(--accent-emerald);">₹{{ grant.add_on.price }}</strong></td>
+                    <td>{{ grant.granted_at|date:"d M Y, h:i A" }}</td>
+                    <td>
+                        {% if grant.is_active %}
+                        <span class="badge badge-approved"><i class="fa-solid fa-circle-check"></i> Active</span>
+                        {% else %}
+                        <span class="badge badge-rejected"><i class="fa-solid fa-circle-pause"></i> Revoked</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <form method="POST" action="{% url 'tenants:add_on_manage' %}" style="display: inline;">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="toggle_grant">
+                            <input type="hidden" name="grant_id" value="{{ grant.id }}">
+                            <button type="submit" class="btn-primary" style="padding: 4px 10px; font-size: 0.78rem; background: rgba(255,255,255,0.08); box-shadow: none;">
+                                {% if grant.is_active %}<i class="fa-solid fa-ban" style="color: var(--accent-rose);"></i> Revoke{% else %}<i class="fa-solid fa-check" style="color: var(--accent-emerald);"></i> Re-Activate{% endif %}
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p style="color: var(--text-muted);">No Add-Ons granted to institutions yet.</p>
+    {% endif %}
+</div>
+
 <!-- All Institutions Section -->
 <div class="glass-card">
     <h3 style="font-size: 1.3rem; font-weight: 700;"><i class="fa-solid fa-city"></i> All Registered Institutions</h3>
@@ -181,7 +343,7 @@
                 <th>ID</th>
                 <th>Institution Name</th>
                 <th>Slug</th>
-                <th>Subscription Plan & Total Billing</th>
+                <th>Plan & Granted Add-Ons</th>
                 <th>Status</th>
                 <th>Created At</th>
                 <th>Public Link</th>
@@ -200,14 +362,27 @@
                         {% if inst.subscription.additional_work_charge > 0 %}
                         <br><span style="color: var(--accent-amber); font-size: 0.85rem;">+ Extra Work: ₹{{ inst.subscription.additional_work_charge }}</span>
                         {% endif %}
-                        <br><strong style="color: var(--accent-emerald);">Total: ₹{{ inst.subscription.total_subscription_cost }}</strong>
+                        <br><strong style="color: var(--accent-emerald);">Total Base: ₹{{ inst.subscription.total_subscription_cost }}</strong>
                     </div>
                     {% else %}
-                    <span style="color: var(--text-muted);">No Active Plan</span>
+                    <span style="color: var(--text-muted);">No Active Base Plan</span>
+                    {% endif %}
+
+                    {% if inst.active_add_ons %}
+                    <div style="margin-top: 6px; padding-top: 4px; border-top: 1px dashed rgba(255,255,255,0.1);">
+                        <small style="color: var(--accent-cyan); font-weight: 700;">✨ Add-Ons Granted:</small><br>
+                        {% for g in inst.active_add_ons %}
+                        <span class="badge badge-approved" style="font-size: 0.72rem; margin-right: 2px; margin-bottom: 2px; display: inline-block;">
+                            {{ g.add_on.name }} (₹{{ g.add_on.price }})
+                        </span>
+                        {% endfor %}
+                    </div>
                     {% endif %}
                 </td>
                 <td>
-                    {% if inst.status == 'APPROVED' %}
+                    {% if inst.is_demo %}
+                    <span class="badge badge-pending" style="font-size: 0.8rem; background: var(--accent-amber); color: #000;"><i class="fa-solid fa-clock"></i> 5-Day Demo</span>
+                    {% elif inst.status == 'APPROVED' %}
                     <span class="badge badge-approved"><i class="fa-solid fa-circle-check"></i> Active</span>
                     {% elif inst.status == 'PENDING' %}
                     <span class="badge badge-pending"><i class="fa-solid fa-clock"></i> Pending</span>
@@ -231,4 +406,25 @@
     </table>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function selectAddOn(name, code, price, desc) {
+    document.getElementById('addon_name_input').value = name;
+    document.getElementById('addon_code_input').value = code;
+    document.getElementById('addon_price_input').value = price;
+    document.getElementById('addon_desc_input').value = desc;
+
+    var card = document.getElementById('addon_form_card');
+    card.style.borderColor = 'var(--accent-emerald)';
+    card.style.boxShadow = '0 0 15px rgba(16, 185, 129, 0.4)';
+    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+    setTimeout(function() {
+        document.getElementById('addon_price_input').focus();
+        document.getElementById('addon_price_input').select();
+    }, 400);
+}
+</script>
 {% endblock %}

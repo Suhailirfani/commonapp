@@ -5,6 +5,7 @@ from django.contrib import messages
 from django.utils import timezone
 from django.db.models import Q
 from apps.tenants.models import Institution
+from apps.users.models import User
 from .models import (
     Competition, Category, Program, Team, Stage, 
     FestDay, Contestant, Participation, GroupParticipation, 
@@ -360,8 +361,48 @@ def program_bulk_upload_view(request, institution_slug):
 @login_required
 def team_list_view(request, institution_slug):
     institution = get_object_or_404(Institution, slug=institution_slug)
-    teams = Team.objects.filter(institution=institution)
-    return render(request, 'core/team_list.html', {'institution': institution, 'teams': teams})
+    competitions = Competition.objects.filter(institution=institution)
+    team_leaders = User.objects.filter(institution=institution, role='TEAM_LEADER')
+    
+    if request.method == 'POST':
+        comp_id = request.POST.get('competition_id')
+        name = request.POST.get('name')
+        code_letter = request.POST.get('code_letter', '').strip().upper()
+        leader_id = request.POST.get('leader_id')
+        logo = request.FILES.get('logo')
+
+        comp = Competition.objects.filter(id=comp_id, institution=institution).first()
+        if not comp:
+            comp = competitions.first()
+
+        if comp and name:
+            team = Team.objects.create(
+                institution=institution,
+                competition=comp,
+                name=name,
+                code_letter=code_letter,
+                logo=logo
+            )
+            if leader_id:
+                leader = User.objects.filter(id=leader_id, institution=institution, role='TEAM_LEADER').first()
+                if leader:
+                    Team.objects.filter(institution=institution, user=leader).exclude(id=team.id).update(user=None)
+                    team.user = leader
+                    team.save()
+
+            messages.success(request, f"Team '{name}' created successfully!")
+            return redirect('core:team_list', institution_slug=institution.slug)
+        else:
+            messages.error(request, "Failed to create team. Name and competition are required.")
+
+    teams = Team.objects.filter(institution=institution).select_related('competition', 'user')
+
+    return render(request, 'core/team_list.html', {
+        'institution': institution,
+        'teams': teams,
+        'competitions': competitions,
+        'team_leaders': team_leaders
+    })
 
 
 @login_required
@@ -396,6 +437,7 @@ def contestant_create_view(request, institution_slug):
         team_id = request.POST.get('team_id')
         cat_id = request.POST.get('category_id')
         name = request.POST.get('name')
+        wa_num = request.POST.get('whatsapp_number', '').strip()
 
         comp = get_object_or_404(Competition, id=comp_id, institution=institution)
         team = get_object_or_404(Team, id=team_id, institution=institution)
@@ -410,7 +452,8 @@ def contestant_create_view(request, institution_slug):
             competition=comp,
             team=team,
             category=cat,
-            name=name
+            name=name,
+            whatsapp_number=wa_num
         )
         messages.success(request, f"Contestant #{c.chest_no} '{c.name}' registered successfully!")
         return redirect('core:contestant_list', institution_slug=institution.slug)
@@ -435,6 +478,7 @@ def contestant_batch_create_view(request, institution_slug):
         team_ids = request.POST.getlist('team_id[]')
         cat_ids = request.POST.getlist('category_id[]')
         names = request.POST.getlist('name[]')
+        wa_numbers = request.POST.getlist('whatsapp_number[]')
 
         registered_count = 0
         for i in range(len(names)):
@@ -445,6 +489,7 @@ def contestant_batch_create_view(request, institution_slug):
             comp_id = comp_ids[i] if i < len(comp_ids) else None
             team_id = team_ids[i] if i < len(team_ids) else None
             cat_id = cat_ids[i] if i < len(cat_ids) else None
+            wa_num = wa_numbers[i].strip() if i < len(wa_numbers) else ''
 
             comp = Competition.objects.filter(id=comp_id, institution=institution).first()
             team = Team.objects.filter(id=team_id, institution=institution).first()
@@ -456,7 +501,8 @@ def contestant_batch_create_view(request, institution_slug):
                     competition=comp,
                     team=team,
                     category=cat,
-                    name=c_name
+                    name=c_name,
+                    whatsapp_number=wa_num
                 )
                 registered_count += 1
 
@@ -482,17 +528,17 @@ def contestant_download_template_view(request, institution_slug):
     ws = wb.active
     ws.title = "Contestants Template"
 
-    headers = ["Competition Name", "Team Name", "Category Name", "Contestant Name", "Chest No (Optional)"]
+    headers = ["Fest Name", "Team Name", "Category Name", "Contestant Name", "Chest No (Optional)", "WhatsApp Number (Optional)"]
     ws.append(headers)
 
     sample_comp = Competition.objects.filter(institution=institution).first()
     comp_name = sample_comp.name if sample_comp else "Mueeniyya Grand Fest 2026"
 
     sample_rows = [
-        [comp_name, "Red House Alpha", "Junior Category", "Ahmad Bilal", 1001],
-        [comp_name, "Blue House Titans", "Junior Category", "Zayd Haris", 1002],
-        [comp_name, "Green Gladiators", "Senior Category", "Hamza Ali", 1003],
-        [comp_name, "Red House Alpha", "Senior Category", "Umar Farooq", ""],
+        [comp_name, "Red House Alpha", "Junior Category", "Ahmad Bilal", 1001, "9876543210"],
+        [comp_name, "Blue House Titans", "Junior Category", "Zayd Haris", 1002, "9876543211"],
+        [comp_name, "Green Gladiators", "Senior Category", "Hamza Ali", 1003, ""],
+        [comp_name, "Red House Alpha", "Senior Category", "Umar Farooq", "", "9876543212"],
     ]
     for row in sample_rows:
         ws.append(row)
@@ -542,6 +588,9 @@ def contestant_bulk_upload_view(request, institution_slug):
                 chest_no_raw = row[4] if len(row) > 4 and row[4] else None
                 chest_no = int(chest_no_raw) if chest_no_raw and str(chest_no_raw).isdigit() else None
 
+                wa_num_raw = row[5] if len(row) > 5 and row[5] else ""
+                wa_num = str(wa_num_raw).strip() if wa_num_raw else ""
+
                 comp, _ = Competition.objects.get_or_create(
                     institution=institution,
                     name=comp_name,
@@ -566,7 +615,8 @@ def contestant_bulk_upload_view(request, institution_slug):
                     team=team,
                     category=cat,
                     name=c_name,
-                    chest_no=chest_no
+                    chest_no=chest_no,
+                    whatsapp_number=wa_num
                 )
                 imported_count += 1
 
@@ -971,18 +1021,21 @@ def contestant_assign_programs_view(request, institution_slug, contestant_id):
 def assignment_hub_view(request, institution_slug):
     institution = get_object_or_404(Institution, slug=institution_slug)
     programs = Program.objects.filter(institution=institution).select_related('category', 'competition')
+    categories = Category.objects.filter(institution=institution)
+    teams = Team.objects.filter(institution=institution)
     contestants = Contestant.objects.filter(institution=institution).select_related('team', 'category')
     
     managed_team = getattr(request.user, 'managed_team', None) if request.user.is_team_leader else None
 
     if managed_team:
         contestants = contestants.filter(team=managed_team)
+        teams = teams.filter(id=managed_team.id)
 
     selected_program_id = request.GET.get('program_id')
     selected_program = None
     eligible_contestants = []
     existing_part_ids = set()
-    teams = None
+    program_teams = None
 
     if selected_program_id:
         selected_program = Program.objects.filter(id=selected_program_id, institution=institution).first()
@@ -998,18 +1051,21 @@ def assignment_hub_view(request, institution_slug):
 
             if selected_program.is_group:
                 existing_part_ids = set(GroupParticipation.objects.filter(program=selected_program).values_list('team_id', flat=True))
-                teams = Team.objects.filter(id=managed_team.id) if managed_team else Team.objects.filter(institution=institution)
+                program_teams = teams
             else:
                 existing_part_ids = set(Participation.objects.filter(program=selected_program).values_list('contestant_id', flat=True))
 
     return render(request, 'core/assignment_hub.html', {
         'institution': institution,
         'programs': programs,
+        'categories': categories,
+        'teams': teams,
         'contestants': contestants,
         'selected_program': selected_program,
         'eligible_contestants': eligible_contestants,
         'existing_part_ids': existing_part_ids,
-        'teams': teams,
+        'program_teams': program_teams,
+        'managed_team': managed_team,
     })
 
 
@@ -1430,6 +1486,60 @@ def category_delete_view(request, institution_slug, category_id):
     return redirect('core:category_list', institution_slug=institution.slug)
 
 
+# ---------------- Team Edit & Delete ----------------
+@login_required
+def team_edit_view(request, institution_slug, team_id):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    team = get_object_or_404(Team, id=team_id, institution=institution)
+    competitions = Competition.objects.filter(institution=institution)
+    team_leaders = User.objects.filter(institution=institution, role='TEAM_LEADER')
+
+    if request.method == 'POST':
+        comp_id = request.POST.get('competition_id')
+        name = request.POST.get('name')
+        code_letter = request.POST.get('code_letter', '').strip().upper()
+        leader_id = request.POST.get('leader_id')
+
+        comp = get_object_or_404(Competition, id=comp_id, institution=institution)
+        team.competition = comp
+        team.name = name
+        team.code_letter = code_letter
+
+        if leader_id:
+            leader = User.objects.filter(id=leader_id, institution=institution, role='TEAM_LEADER').first()
+            if leader:
+                Team.objects.filter(institution=institution, user=leader).exclude(id=team.id).update(user=None)
+                team.user = leader
+            else:
+                team.user = None
+        else:
+            team.user = None
+
+        if request.FILES.get('logo'):
+            team.logo = request.FILES['logo']
+
+        team.save()
+        messages.success(request, f"Team '{name}' updated successfully!")
+        return redirect('core:team_list', institution_slug=institution.slug)
+
+    return render(request, 'core/team_edit.html', {
+        'institution': institution,
+        'team': team,
+        'competitions': competitions,
+        'team_leaders': team_leaders
+    })
+
+
+@login_required
+def team_delete_view(request, institution_slug, team_id):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    team = get_object_or_404(Team, id=team_id, institution=institution)
+    name = team.name
+    team.delete()
+    messages.success(request, f"Team '{name}' deleted successfully!")
+    return redirect('core:team_list', institution_slug=institution.slug)
+
+
 # ---------------- Program Edit & Delete ----------------
 @login_required
 def program_edit_view(request, institution_slug, program_id):
@@ -1502,9 +1612,12 @@ def contestant_edit_view(request, institution_slug, contestant_id):
             messages.error(request, f"Contestants cannot be assigned to Combined Category '{cat.name}'. Please choose a Base Category.")
             return redirect('core:contestant_edit', institution_slug=institution.slug, contestant_id=contestant.id)
 
+        wa_num = request.POST.get('whatsapp_number', '').strip()
+
         if chest_no:
             contestant.chest_no = int(chest_no)
         contestant.name = name
+        contestant.whatsapp_number = wa_num
         contestant.competition = comp
         contestant.team = team
         contestant.category = cat
@@ -2341,6 +2454,268 @@ def team_results_view(request, institution_slug, team_id=None):
 def help_guide_view(request, institution_slug):
     institution = get_object_or_404(Institution, slug=institution_slug)
     return render(request, 'core/help_guide.html', {'institution': institution})
+
+
+@login_required
+def generate_contestant_credentials_view(request, institution_slug):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    if not (request.user.is_institution_admin or request.user.is_developer):
+        messages.error(request, "Access Denied: Institution Admin clearance required.")
+        return redirect('core:contestant_list', institution_slug=institution.slug)
+
+    from django.utils.text import slugify
+
+    unregistered_contestants = Contestant.objects.filter(
+        institution=institution,
+        user_account__isnull=True
+    ).select_related('team', 'category').order_by('chest_no')
+
+    if request.method == 'POST':
+        generated_count = 0
+        for c in unregistered_contestants:
+            # Format Name as Username (clean & slugified)
+            clean_name = slugify(c.name).replace('-', '_')
+            if not clean_name:
+                clean_name = f"contestant_{c.chest_no}"
+
+            username = clean_name
+            # If username is taken, append chest number
+            if User.objects.filter(username=username).exists():
+                username = f"{clean_name}_{c.chest_no}"
+
+            # Password is Chest Number
+            pwd = str(c.chest_no)
+
+            user = User.objects.create_user(
+                username=username,
+                password=pwd,
+                role='CONTESTANT',
+                institution=institution,
+                contestant=c,
+                is_approved=True,
+                email=f"chest{c.chest_no}@{institution.slug}.local"
+            )
+            generated_count += 1
+
+        if generated_count > 0:
+            messages.success(request, f"🎉 Successfully generated login accounts for {generated_count} contestants!")
+        else:
+            messages.info(request, "All contestants already have active login accounts.")
+
+        return redirect('core:generate_contestant_credentials', institution_slug=institution.slug)
+
+    # Fetch all contestants with active credentials to display on the page
+    registered_contestants = Contestant.objects.filter(
+        institution=institution,
+        user_account__isnull=False
+    ).select_related('team', 'category', 'user_account').order_by('chest_no')
+
+    import urllib.parse
+    host = request.get_host()
+    scheme = 'https' if request.is_secure() else 'http'
+    login_url = f"{scheme}://{host}/auth/login/"
+
+    credentials_list = []
+    for c in registered_contestants:
+        wa_link = None
+        if c.whatsapp_number:
+            clean_phone = "".join(filter(str.isdigit, str(c.whatsapp_number)))
+            if clean_phone:
+                if len(clean_phone) == 10:
+                    clean_phone = "91" + clean_phone
+                message = (
+                    f"Assalamu Alaikum / Greetings *{c.name}*,\n\n"
+                    f"Here are your login credentials for *{institution.name}*:\n\n"
+                    f"👤 *Username:* `{c.user_account.username}`\n"
+                    f"🔑 *Password:* `{c.chest_no}`\n"
+                    f"🏷️ *Chest No:* #{c.chest_no}\n"
+                    f"🏫 *Team:* {c.team.name}\n\n"
+                    f"🌐 *Login Portal:* {login_url}\n\n"
+                    f"Log in to view your enrolled programs, stage venues, timings, and official results!"
+                )
+                encoded_msg = urllib.parse.quote(message)
+                wa_link = f"https://api.whatsapp.com/send?phone={clean_phone}&text={encoded_msg}"
+
+        credentials_list.append({
+            'contestant': c,
+            'username': c.user_account.username,
+            'password': str(c.chest_no),
+            'whatsapp_phone': c.whatsapp_number,
+            'whatsapp_link': wa_link
+        })
+
+    return render(request, 'core/contestant_credentials_report.html', {
+        'institution': institution,
+        'unregistered_count': unregistered_contestants.count(),
+        'credentials_list': credentials_list,
+    })
+
+
+@login_required
+def contestant_personal_dashboard_view(request, institution_slug):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    
+    # Resolve contestant (either logged in contestant or admin viewing specific contestant)
+    if request.user.is_contestant and request.user.contestant:
+        contestant = request.user.contestant
+    else:
+        contestant_id = request.GET.get('contestant_id')
+        if contestant_id:
+            contestant = Contestant.objects.filter(id=contestant_id, institution=institution).first()
+        else:
+            contestant = getattr(request.user, 'contestant', None)
+
+    if not contestant:
+        messages.error(request, "No contestant profile linked to your user account.")
+        return redirect('landing_page')
+
+    # 1. Gather Enrolled Programs & Timings
+    single_parts = contestant.participations.select_related(
+        'program', 'program__category', 'program__schedule', 
+        'program__schedule__stage', 'program__schedule__fest_day'
+    )
+    group_parts = contestant.group_entries.select_related(
+        'program', 'program__category', 'program__schedule', 
+        'program__schedule__stage', 'program__schedule__fest_day'
+    )
+
+    enrolled_programs = []
+    
+    for p in single_parts:
+        sched = getattr(p.program, 'schedule', None)
+        enrolled_programs.append({
+            'program': p.program,
+            'format': 'Single Event',
+            'is_group': False,
+            'type': p.program.get_program_type_display(),
+            'schedule': sched,
+            'code_letter': p.code_letter,
+            'result': p if p.program.is_announced else None
+        })
+
+    for gp in group_parts:
+        sched = getattr(gp.program, 'schedule', None)
+        enrolled_programs.append({
+            'program': gp.program,
+            'format': 'Group Event',
+            'is_group': True,
+            'type': gp.program.get_program_type_display(),
+            'schedule': sched,
+            'code_letter': gp.code_letter,
+            'result': gp if gp.program.is_announced else None
+        })
+
+    # 2. Gather Published Results
+    published_results = []
+    total_individual_points = 0
+    ranks_count = {1: 0, 2: 0, 3: 0}
+    grades_count = {'A+': 0, 'A': 0, 'B': 0, 'C': 0}
+
+    for item in enrolled_programs:
+        res = item['result']
+        if res and (res.rank or res.grade):
+            pts = res.total_points
+            if not item['is_group']:
+                total_individual_points += pts
+
+            if res.rank in ranks_count:
+                ranks_count[res.rank] += 1
+            if res.grade in grades_count:
+                grades_count[res.grade] += 1
+
+            published_results.append({
+                'program_name': item['program'].name,
+                'category_name': item['program'].category.name,
+                'format': item['format'],
+                'code_letter': res.code_letter,
+                'marks': res.marks,
+                'rank': res.rank,
+                'grade': res.grade,
+                'points': pts,
+            })
+
+    return render(request, 'core/contestant_personal_dashboard.html', {
+        'institution': institution,
+        'contestant': contestant,
+        'enrolled_programs': enrolled_programs,
+        'published_results': published_results,
+        'total_individual_points': total_individual_points,
+        'ranks_count': ranks_count,
+        'aplus_count': grades_count.get('A+', 0),
+        'a_count': grades_count.get('A', 0),
+        'b_count': grades_count.get('B', 0),
+        'c_count': grades_count.get('C', 0),
+    })
+
+
+def pwa_manifest_view(request, institution_slug=None):
+    from django.http import JsonResponse
+    inst_name = "GO FEST - Festival Portal"
+    start_url = request.build_absolute_uri('/')
+
+    if institution_slug:
+        inst = Institution.objects.filter(slug=institution_slug).first()
+        if inst:
+            inst_name = f"{inst.name} Fest Portal"
+            start_url = request.build_absolute_uri(f'/portal/{inst.slug}/contestant/dashboard/')
+
+    data = {
+        "name": inst_name,
+        "short_name": "GO FEST",
+        "description": f"Official Mobile App Portal for {inst_name}",
+        "start_url": start_url,
+        "scope": "/",
+        "display": "standalone",
+        "orientation": "portrait",
+        "background_color": "#0f172a",
+        "theme_color": "#06b6d4",
+        "icons": [
+            {
+                "src": "/static/img/gofest_icon.png",
+                "sizes": "192x192",
+                "type": "image/png",
+                "purpose": "any maskable"
+            },
+            {
+                "src": "/static/img/GOFEST APP ICON.png",
+                "sizes": "512x512",
+                "type": "image/png",
+                "purpose": "any maskable"
+            }
+        ]
+    }
+    return JsonResponse(data, content_type="application/manifest+json")
+
+
+def pwa_serviceworker_view(request):
+    from django.http import HttpResponse
+    js_content = """
+    const CACHE_NAME = 'gofest-pwa-v1';
+    const urlsToCache = [
+        '/',
+        '/static/css/main.css',
+        '/static/img/gofest_icon.png',
+        '/static/img/gf_emblem.png'
+    ];
+
+    self.addEventListener('install', (event) => {
+        event.waitUntil(
+            caches.open(CACHE_NAME).then((cache) => cache.addAll(urlsToCache))
+        );
+        self.skipWaiting();
+    });
+
+    self.addEventListener('activate', (event) => {
+        event.waitUntil(self.clients.claim());
+    });
+
+    self.addEventListener('fetch', (event) => {
+        event.respondWith(
+            fetch(event.request).catch(() => caches.match(event.request))
+        );
+    });
+    """
+    return HttpResponse(js_content, content_type="application/javascript")
 
 
 

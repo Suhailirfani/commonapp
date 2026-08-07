@@ -15,6 +15,33 @@
     </div>
 </div>
 
+<!-- SEARCH & FILTER BAR -->
+<div class="glass-card" style="margin-bottom: 20px; padding: 16px;">
+    <form method="GET" style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
+        <div style="flex: 2; min-width: 200px;">
+            <input type="text" name="q" value="{{ q }}" class="form-control" placeholder="Search by username, email, or designation...">
+        </div>
+        <div style="flex: 1; min-width: 160px;">
+            <select name="role" class="form-control">
+                <option value="">-- All Roles --</option>
+                {% for code, label in role_choices %}
+                <option value="{{ code }}" {% if role_filter == code %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div style="display: flex; gap: 8px;">
+            <button type="submit" class="btn-primary">
+                <i class="fa-solid fa-magnifying-glass"></i> Search Users
+            </button>
+            {% if q or role_filter %}
+            <a href="{% url 'users:user_list' institution.slug %}" class="btn-primary" style="background: rgba(255,255,255,0.08); box-shadow: none;">
+                <i class="fa-solid fa-xmark"></i> Clear
+            </a>
+            {% endif %}
+        </div>
+    </form>
+</div>
+
 <!-- DESKTOP TABLE VIEW -->
 <div class="glass-card desktop-table-view">
     <div class="table-responsive">

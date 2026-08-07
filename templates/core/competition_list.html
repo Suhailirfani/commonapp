@@ -1,15 +1,15 @@
 {% extends 'base.html' %}
 
-{% block title %}Competitions - {{ institution.name }}{% endblock %}
+{% block title %}Fest Setup - {{ institution.name }}{% endblock %}
 
 {% block content %}
 <div class="page-header">
     <div>
         <a href="{% url 'core:dashboard' institution.slug %}" style="color: var(--text-muted); text-decoration: none;"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</a>
-        <h2 style="font-size: 1.8rem; font-weight: 800; margin-top: 4px;">Competitions & Fests</h2>
+        <h2 style="font-size: 1.8rem; font-weight: 800; margin-top: 4px;"><i class="fa-solid fa-trophy" style="color: var(--accent-amber);"></i> Fest Setup</h2>
     </div>
     <a href="{% url 'core:competition_create' institution.slug %}" class="btn-primary">
-        <i class="fa-solid fa-plus"></i> Create New Competition
+        <i class="fa-solid fa-plus"></i> Create New Fest
     </a>
 </div>
 
@@ -19,7 +19,7 @@
         <thead>
             <tr>
                 <th>ID</th>
-                <th>Competition Name</th>
+                <th>Fest Name</th>
                 <th>Type</th>
                 <th>Year</th>
                 <th>Status</th>
@@ -45,7 +45,7 @@
             {% empty %}
             <tr>
                 <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 30px;">
-                    No competitions created yet. Click "Create New Competition" above to start!
+                    No fests created yet. Click "Create New Fest" above to start!
                 </td>
             </tr>
             {% endfor %}

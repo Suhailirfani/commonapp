@@ -23,6 +23,11 @@
         <a href="{% url 'core:contestant_download_template' institution.slug %}" class="btn-success" style="background: linear-gradient(135deg, #0284c7, var(--accent-cyan));">
             <i class="fa-solid fa-download"></i> Excel Template
         </a>
+        {% if not request.user.is_team_leader %}
+        <a href="{% url 'core:generate_contestant_credentials' institution.slug %}" class="btn-primary" style="background: linear-gradient(135deg, var(--accent-amber), #d97706);">
+            <i class="fa-solid fa-key"></i> Generate Contestant Credentials
+        </a>
+        {% endif %}
     </div>
 </div>
 
@@ -64,7 +69,14 @@
             {% for contestant in contestants %}
             <tr>
                 <td><strong style="color: var(--accent-cyan);">#{{ contestant.chest_no }}</strong></td>
-                <td><strong>{{ contestant.name }}</strong></td>
+                <td>
+                    <strong>{{ contestant.name }}</strong>
+                    {% if contestant.whatsapp_number %}
+                    <br><a href="https://wa.me/{{ contestant.whatsapp_number }}" target="_blank" style="font-size: 0.8rem; color: var(--accent-emerald); text-decoration: none;">
+                        <i class="fa-brands fa-whatsapp"></i> {{ contestant.whatsapp_number }}
+                    </a>
+                    {% endif %}
+                </td>
                 {% if not request.user.is_team_leader %}<td><span class="badge badge-approved">{{ contestant.team.name }}</span></td>{% endif %}
                 <td>{{ contestant.category.name }}</td>
                 <td><strong style="color: var(--accent-cyan);">{{ contestant.calculated_total_points }} pts</strong></td>
@@ -101,6 +113,13 @@
         <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 8px;">
             <div>
                 <strong style="color: var(--accent-cyan); font-size: 1.1rem; display: block; font-weight: 800;">#{{ contestant.chest_no }} {{ contestant.name }}</strong>
+                {% if contestant.whatsapp_number %}
+                <div style="margin-top: 4px;">
+                    <a href="https://wa.me/{{ contestant.whatsapp_number }}" target="_blank" style="font-size: 0.8rem; color: var(--accent-emerald); text-decoration: none;">
+                        <i class="fa-brands fa-whatsapp"></i> {{ contestant.whatsapp_number }}
+                    </a>
+                </div>
+                {% endif %}
                 <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px;">
                     <span class="badge badge-approved" style="font-size: 0.75rem;">{{ contestant.category.name }}</span>
                     {% if not request.user.is_team_leader %}

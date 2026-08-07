@@ -20,7 +20,7 @@
         <form method="POST">
             {% csrf_token %}
             <div class="form-group">
-                <label class="form-label">Competition</label>
+                <label class="form-label">Fest</label>
                 <select name="competition_id" class="form-control" required>
                     {% for comp in competitions %}
                     <option value="{{ comp.id }}">{{ comp.name }}</option>
@@ -70,62 +70,116 @@
         </form>
     </div>
 
-    <!-- Category List Table -->
-    <div class="glass-card">
-        <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 16px;"><i class="fa-solid fa-list-check"></i> Configured Categories</h3>
-        <div class="table-responsive">
-            <table class="custom-table">
-                <thead>
-                    <tr>
-                        <th>Category Name</th>
-                        <th>Type</th>
-                        <th>Included Sub-Categories</th>
-                        <th style="min-width: 120px;">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for cat in categories %}
-                    <tr>
-                        <td><strong>{{ cat.name }}</strong></td>
-                        <td>
-                            {% if cat.is_common %}
-                            <span class="badge badge-pending" style="font-size: 0.75rem;"><i class="fa-solid fa-object-group"></i> Common</span>
-                            {% else %}
-                            <span class="badge badge-approved" style="font-size: 0.75rem;">Base</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if cat.is_common %}
-                            {% for inc in cat.included_categories.all %}
-                            <span class="badge badge-approved" style="font-size: 0.7rem; margin-right: 2px; margin-bottom: 2px; display: inline-block;">{{ inc.name }}</span>
-                            {% empty %}
-                            <span style="color: var(--text-muted); font-size: 0.85rem;">All Categories</span>
-                            {% endfor %}
-                            {% else %}
-                            <span style="color: var(--text-muted); font-size: 0.85rem;">-</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-                                <a href="{% url 'core:category_edit' institution.slug cat.id %}" class="btn-primary" style="padding: 6px 10px; font-size: 0.78rem; background: rgba(255,255,255,0.08); box-shadow: none;" title="Edit Category">
-                                    <i class="fa-solid fa-pen-to-square"></i> Edit
-                                </a>
-                                <a href="{% url 'core:category_delete' institution.slug cat.id %}" class="btn-primary" style="padding: 6px 10px; font-size: 0.78rem; background: rgba(225, 29, 72, 0.2); border: 1px solid #e11d48; color: #f43f5e;" onclick="return confirm('Are you sure you want to delete category \'{{ cat.name }}\'?');" title="Delete Category">
-                                    <i class="fa-solid fa-trash"></i>
-                                </a>
-                            </div>
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="4" style="text-align: center; color: var(--text-muted); padding: 24px;">
-                            No categories created yet.
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+    <!-- Category List Container -->
+    <div>
+        <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 16px;"><i class="fa-solid fa-list-check"></i> Configured Categories ({{ categories.count }})</h3>
+        
+        <!-- DESKTOP TABLE VIEW -->
+        <div class="glass-card desktop-table-view">
+            <div class="table-responsive">
+                <table class="custom-table">
+                    <thead>
+                        <tr>
+                            <th>Category Name</th>
+                            <th>Type</th>
+                            <th>Included Sub-Categories</th>
+                            <th style="min-width: 120px; text-align: right;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for cat in categories %}
+                        <tr>
+                            <td><strong>{{ cat.name }}</strong></td>
+                            <td>
+                                {% if cat.is_common %}
+                                <span class="badge badge-pending" style="font-size: 0.75rem;"><i class="fa-solid fa-object-group"></i> Common</span>
+                                {% else %}
+                                <span class="badge badge-approved" style="font-size: 0.75rem;">Base</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if cat.is_common %}
+                                {% for inc in cat.included_categories.all %}
+                                <span class="badge badge-approved" style="font-size: 0.7rem; margin-right: 2px; margin-bottom: 2px; display: inline-block;">{{ inc.name }}</span>
+                                {% empty %}
+                                <span style="color: var(--text-muted); font-size: 0.85rem;">All Categories</span>
+                                {% endfor %}
+                                {% else %}
+                                <span style="color: var(--text-muted); font-size: 0.85rem;">-</span>
+                                {% endif %}
+                            </td>
+                            <td style="text-align: right;">
+                                <div style="display: flex; gap: 6px; justify-content: flex-end;">
+                                    <a href="{% url 'core:category_edit' institution.slug cat.id %}" class="btn-primary" style="padding: 6px 10px; font-size: 0.78rem; background: rgba(255,255,255,0.08); box-shadow: none;" title="Edit Category">
+                                        <i class="fa-solid fa-pen-to-square"></i> Edit
+                                    </a>
+                                    <a href="{% url 'core:category_delete' institution.slug cat.id %}" class="btn-primary" style="padding: 6px 10px; font-size: 0.78rem; background: rgba(225, 29, 72, 0.2); border: 1px solid #e11d48; color: #f43f5e;" onclick="return confirm('Are you sure you want to delete category \'{{ cat.name|escapejs }}\'?');" title="Delete Category">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" style="text-align: center; color: var(--text-muted); padding: 24px;">
+                                No categories created yet.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
+
+        <!-- MOBILE CARD LIST VIEW -->
+        <div class="mobile-card-list-view">
+            {% for cat in categories %}
+            <div class="glass-card" style="margin-bottom: 12px; padding: 14px; border-radius: 14px; border: 1px solid var(--border-color);">
+                <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 10px;">
+                    <div>
+                        <strong style="font-size: 1.1rem; color: var(--text-main); display: block;">{{ cat.name }}</strong>
+                        {% if cat.description %}
+                        <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 2px;">{{ cat.description }}</p>
+                        {% endif %}
+                    </div>
+                    <div>
+                        {% if cat.is_common %}
+                        <span class="badge badge-pending" style="font-size: 0.75rem;"><i class="fa-solid fa-object-group"></i> Common</span>
+                        {% else %}
+                        <span class="badge badge-approved" style="font-size: 0.75rem;">Base</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {% if cat.is_common %}
+                <div style="margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.06);">
+                    <div style="font-size: 0.78rem; color: var(--accent-cyan); font-weight: 600; margin-bottom: 4px;">Included Base Categories:</div>
+                    <div>
+                        {% for inc in cat.included_categories.all %}
+                        <span class="badge badge-approved" style="font-size: 0.72rem; margin-right: 4px; margin-bottom: 4px; display: inline-block;">{{ inc.name }}</span>
+                        {% empty %}
+                        <span style="color: var(--text-muted); font-size: 0.78rem;">All Categories</span>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <div style="display: flex; gap: 8px; justify-content: flex-end; margin-top: 12px;">
+                    <a href="{% url 'core:category_edit' institution.slug cat.id %}" class="btn-primary" style="flex: 1; justify-content: center; padding: 6px 12px; font-size: 0.8rem; background: rgba(255,255,255,0.08); box-shadow: none;">
+                        <i class="fa-solid fa-pen-to-square"></i> Edit
+                    </a>
+                    <a href="{% url 'core:category_delete' institution.slug cat.id %}" class="btn-primary" style="flex: 1; justify-content: center; padding: 6px 12px; font-size: 0.8rem; background: rgba(225, 29, 72, 0.2); border: 1px solid #e11d48; color: #f43f5e;" onclick="return confirm('Are you sure you want to delete category \'{{ cat.name|escapejs }}\'?');">
+                        <i class="fa-solid fa-trash"></i> Delete
+                    </a>
+                </div>
+            </div>
+            {% empty %}
+            <div class="glass-card" style="text-align: center; color: var(--text-muted); padding: 30px;">
+                No categories created yet.
+            </div>
+            {% endfor %}
+        </div>
+
     </div>
 
 </div>

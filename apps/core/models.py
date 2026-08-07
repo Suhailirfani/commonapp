@@ -177,6 +177,7 @@ class Contestant(TenantBaseModel):
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='contestants')
     chest_no = models.PositiveIntegerField(db_index=True)
     name = models.CharField(max_length=120)
+    whatsapp_number = models.CharField(max_length=20, blank=True, null=True, help_text="Optional WhatsApp contact number")
     total_points = models.IntegerField(default=0)
 
     class Meta:
@@ -186,16 +187,13 @@ class Contestant(TenantBaseModel):
     @property
     def calculated_total_points(self):
         """
-        Dynamically calculates total points earned by this contestant across 
-        single participations and group participations (announced items).
+        Dynamically calculates total individual points earned by this contestant across 
+        single participations (announced items). Group items award points to the Team, not the individual.
         """
         pts = 0
         for p in self.participations.filter(marks__isnull=False, program__is_announced=True):
             if p.rank or p.grade:
                 pts += p.total_points
-        for gp in self.group_entries.filter(marks__isnull=False, program__is_announced=True):
-            if gp.rank or gp.grade:
-                pts += gp.total_points
         return pts
 
     def __str__(self):

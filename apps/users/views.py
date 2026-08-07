@@ -10,7 +10,9 @@ def login_view(request):
     if request.user.is_authenticated:
         if request.user.is_developer:
             return redirect('tenants:developer_dashboard')
-        elif request.user.is_judge:
+        elif request.user.is_contestant and request.user.institution:
+            return redirect('core:contestant_personal_dashboard', institution_slug=request.user.institution.slug)
+        elif request.user.is_judge and request.user.institution:
             return redirect('core:judge_dashboard', institution_slug=request.user.institution.slug)
         elif request.user.institution:
             return redirect('core:dashboard', institution_slug=request.user.institution.slug)
@@ -33,7 +35,9 @@ def login_view(request):
             messages.success(request, f"Welcome back, {user.username}!")
             if user.is_developer:
                 return redirect('tenants:developer_dashboard')
-            elif user.is_judge:
+            elif user.is_contestant and user.institution:
+                return redirect('core:contestant_personal_dashboard', institution_slug=user.institution.slug)
+            elif user.is_judge and user.institution:
                 return redirect('core:judge_dashboard', institution_slug=user.institution.slug)
             return redirect('core:dashboard', institution_slug=user.institution.slug)
         else:
@@ -52,7 +56,22 @@ def logout_view(request):
 def user_list_view(request, institution_slug):
     institution = get_object_or_404(Institution, slug=institution_slug)
     users = User.objects.filter(institution=institution).prefetch_related('assigned_competitions', 'assigned_programs').order_by('role', 'username')
-    return render(request, 'users/user_list.html', {'institution': institution, 'users': users})
+    
+    q = request.GET.get('q', '').strip()
+    role_filter = request.GET.get('role', '').strip()
+
+    if q:
+        users = users.filter(Q(username__icontains=q) | Q(email__icontains=q) | Q(designation__icontains=q))
+    if role_filter:
+        users = users.filter(role=role_filter)
+
+    return render(request, 'users/user_list.html', {
+        'institution': institution, 
+        'users': users,
+        'q': q,
+        'role_filter': role_filter,
+        'role_choices': User.ROLE_CHOICES
+    })
 
 
 @login_required

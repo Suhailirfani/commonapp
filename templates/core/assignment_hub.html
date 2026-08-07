@@ -13,23 +13,96 @@
 
 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px;">
 
-    <!-- Way 1: Assign by Student -->
-    <div class="glass-card">
-        <h3 style="font-size: 1.2rem; font-weight: 700; color: var(--accent-cyan); margin-bottom: 12px;">
-            <i class="fa-solid fa-user-check"></i> Way 1: Assign by Contestant (Student)
-        </h3>
-        <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 16px;">
-            Select a contestant to view eligible programs for their category and tick to enroll.
-        </p>
+    <!-- Way 1: Step-by-Step Contestant Picker & Search (Assign by Student) -->
+    <div class="glass-card" style="grid-column: 1 / -1; border-top: 4px solid var(--accent-cyan);">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
+            <div>
+                <h3 style="font-size: 1.3rem; font-weight: 700; color: var(--accent-cyan);">
+                    <i class="fa-solid fa-user-check"></i> Way 1: Assign by Contestant (Student)
+                </h3>
+                <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 2px;">
+                    {% if managed_team %}
+                    Filter contestants by <strong>Category</strong> or <strong>Search Name/Chest No</strong> to enroll in programs.
+                    {% else %}
+                    Filter contestants by <strong>Team</strong>, <strong>Category</strong> or <strong>Search Name/Chest No</strong> to enroll in programs.
+                    {% endif %}
+                </p>
+            </div>
+            {% if managed_team %}
+            <span class="badge badge-approved" style="font-size: 0.9rem; padding: 6px 14px;"><i class="fa-solid fa-people-group"></i> Team: {{ managed_team.name }}</span>
+            {% endif %}
+        </div>
 
-        <div class="form-group">
-            <label class="form-label">Pick Contestant</label>
-            <select id="contestant_picker" class="form-control" onchange="goToContestantAssign()">
-                <option value="">-- Choose Contestant (#Chest No - Name) --</option>
-                {% for c in contestants %}
-                <option value="{{ c.id }}">#{{ c.chest_no }} {{ c.name }} ({{ c.category.name }} - {{ c.team.name }})</option>
-                {% endfor %}
-            </select>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; background: rgba(15, 23, 42, 0.5); padding: 16px; border-radius: 12px; border: 1px solid var(--border-color); margin-bottom: 20px;">
+            
+            {% if not managed_team %}
+            <!-- ADMIN Step 1: Team Select First -->
+            <div class="form-group" style="margin: 0;">
+                <label class="form-label" style="color: var(--accent-amber); font-weight: 700;">
+                    <span class="badge badge-pending" style="font-size: 0.75rem; margin-right: 4px;">Step 1</span> Select Team
+                </label>
+                <select id="hub_team_select" class="form-control" onchange="filterHubContestants()">
+                    <option value="">-- All Teams / Houses --</option>
+                    {% for t in teams %}
+                    <option value="{{ t.id }}">{{ t.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+
+            <!-- Step 2 (Admin) / Step 1 (Team Leader): Category Select -->
+            <div class="form-group" style="margin: 0;">
+                <label class="form-label" style="color: var(--accent-cyan); font-weight: 700;">
+                    <span class="badge badge-pending" style="font-size: 0.75rem; margin-right: 4px;">{% if managed_team %}Step 1{% else %}Step 2{% endif %}</span> Select Category
+                </label>
+                <select id="hub_category_select" class="form-control" onchange="filterHubContestants()">
+                    <option value="">-- All Categories --</option>
+                    {% for cat in categories %}
+                    <option value="{{ cat.id }}">{{ cat.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Step 3 (Admin) / Step 2 (Team Leader): Choose Contestant Dropdown -->
+            <div class="form-group" style="margin: 0;">
+                <label class="form-label" style="color: var(--accent-emerald); font-weight: 700;">
+                    <span class="badge badge-pending" style="font-size: 0.75rem; margin-right: 4px;">{% if managed_team %}Step 2{% else %}Step 3{% endif %}</span> Choose Contestant
+                </label>
+                <select id="hub_contestant_dropdown" class="form-control" onchange="goToSelectedContestant()">
+                    <option value="">-- Choose Contestant (#Chest No - Name) --</option>
+                    {% for c in contestants %}
+                    <option value="{{ c.id }}" data-team="{{ c.team.id }}" data-category="{{ c.category.id }}" data-search="#{{ c.chest_no }} {{ c.name|lower }} {{ c.team.name|lower }} {{ c.category.name|lower }}">
+                        #{{ c.chest_no }} {{ c.name }} ({{ c.category.name }} - {{ c.team.name }})
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Real-time Live Search Input Option -->
+            <div class="form-group" style="margin: 0;">
+                <label class="form-label" style="color: #a78bfa; font-weight: 700;">
+                    <i class="fa-solid fa-magnifying-glass"></i> Search Contestant
+                </label>
+                <input type="text" id="hub_search_input" class="form-control" placeholder="Type Chest No or Name..." onkeyup="filterHubContestants()">
+            </div>
+        </div>
+
+        <!-- Matching Contestants Live Cards Grid -->
+        <div id="hub_contestants_grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; max-height: 400px; overflow-y: auto; padding: 4px;">
+            {% for c in contestants %}
+            <div class="hub-contestant-card" data-id="{{ c.id }}" data-team="{{ c.team.id }}" data-category="{{ c.category.id }}" data-search="#{{ c.chest_no }} {{ c.name|lower }} {{ c.team.name|lower }} {{ c.category.name|lower }}" style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 12px; padding: 12px; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+                <div>
+                    <strong style="color: var(--accent-cyan); font-size: 1.05rem;">#{{ c.chest_no }} {{ c.name }}</strong>
+                    <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px;">
+                        <span class="badge badge-approved" style="font-size: 0.72rem;">{{ c.team.name }}</span>
+                        <span class="badge badge-approved" style="font-size: 0.72rem;">{{ c.category.name }}</span>
+                    </div>
+                </div>
+                <a href="{% url 'core:dashboard' institution.slug %}" onclick="event.preventDefault(); window.location.href='{% url 'core:dashboard' institution.slug %}'.replace('/dashboard/', '/contestants/{{ c.id }}/assign/');" class="btn-primary" style="padding: 6px 12px; font-size: 0.8rem; background: linear-gradient(135deg, var(--accent-emerald), #059669); text-decoration: none;">
+                    <i class="fa-solid fa-list-check"></i> Assign
+                </a>
+            </div>
+            {% endfor %}
         </div>
     </div>
 
@@ -55,6 +128,8 @@
                 </select>
             </div>
         </form>
+    </div>
+
     <!-- Way 3: Group Program Assignment & Captain Selection -->
     <div class="glass-card">
         <h3 style="font-size: 1.2rem; font-weight: 700; color: var(--accent-amber); margin-bottom: 12px;">
@@ -103,7 +178,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for team in teams %}
+                    {% for team in program_teams %}
                     <tr>
                         <td>
                             <input type="checkbox" name="selected_ids[]" value="{{ team.id }}" class="assign-check" {% if team.id in existing_part_ids %}checked{% endif %} style="width: 18px; height: 18px; cursor: pointer;">
@@ -151,7 +226,7 @@
         <!-- MOBILE CARD CHECKLIST VIEW -->
         <div class="mobile-card-list-view">
             {% if selected_program.is_group %}
-                {% for team in teams %}
+                {% for team in program_teams %}
                 <div style="background: rgba(255,255,255,0.02); padding: 12px; border-radius: 10px; border: 1px solid var(--border-color); margin-bottom: 8px; display: flex; align-items: center; gap: 12px;">
                     <input type="checkbox" name="selected_ids[]" value="{{ team.id }}" class="assign-check" {% if team.id in existing_part_ids %}checked{% endif %} style="width: 20px; height: 20px; cursor: pointer;">
                     <strong>{{ team.name }}</strong>
@@ -189,10 +264,60 @@
 
 {% block extra_js %}
 <script>
-function goToContestantAssign() {
-    var contestantId = document.getElementById('contestant_picker').value;
+function filterHubContestants() {
+    var teamElem = document.getElementById('hub_team_select');
+    var teamId = teamElem ? teamElem.value : '';
+    
+    var catElem = document.getElementById('hub_category_select');
+    var catId = catElem ? catElem.value : '';
+    
+    var searchVal = document.getElementById('hub_search_input').value.toLowerCase().trim();
+
+    // 1. Filter Dropdown Options
+    var dropdown = document.getElementById('hub_contestant_dropdown');
+    var options = dropdown.querySelectorAll('option');
+
+    options.forEach(function(opt) {
+        if (!opt.value) return; // Keep default prompt option
+        var optTeam = opt.getAttribute('data-team');
+        var optCat = opt.getAttribute('data-category');
+        var optSearch = opt.getAttribute('data-search');
+
+        var matchTeam = !teamId || optTeam === teamId;
+        var matchCat = !catId || optCat === catId;
+        var matchSearch = !searchVal || (optSearch && optSearch.indexOf(searchVal) !== -1);
+
+        if (matchTeam && matchCat && matchSearch) {
+            opt.style.display = 'block';
+        } else {
+            opt.style.display = 'none';
+        }
+    });
+
+    // 2. Filter Live Cards Grid
+    var cards = document.querySelectorAll('.hub-contestant-card');
+    cards.forEach(function(card) {
+        var cardTeam = card.getAttribute('data-team');
+        var cardCat = card.getAttribute('data-category');
+        var cardSearch = card.getAttribute('data-search');
+
+        var matchTeam = !teamId || cardTeam === teamId;
+        var matchCat = !catId || cardCat === catId;
+        var matchSearch = !searchVal || (cardSearch && cardSearch.indexOf(searchVal) !== -1);
+
+        if (matchTeam && matchCat && matchSearch) {
+            card.style.display = 'flex';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+}
+
+function goToSelectedContestant() {
+    var contestantId = document.getElementById('hub_contestant_dropdown').value;
     if (contestantId) {
-        window.location.href = "{% url 'core:dashboard' institution.slug %}".replace('/dashboard/', '/contestants/' + contestantId + '/assign/');
+        var url = "{% url 'core:dashboard' institution.slug %}".replace('/dashboard/', '/contestants/' + contestantId + '/assign/');
+        window.location.href = url;
     }
 }
 

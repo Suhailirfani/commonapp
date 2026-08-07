@@ -13,16 +13,21 @@
 
 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px;">
 
-    <!-- Section 1: Competitions Setup (Rare setup) -->
+    <!-- Section 1: Fest Setup (Initial setup task) -->
     <div class="glass-card" style="grid-column: 1 / -1;">
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
             <div>
-                <h3 style="font-size: 1.3rem; font-weight: 700;"><i class="fa-solid fa-trophy" style="color: var(--accent-amber);"></i> Competitions & Fests Setup</h3>
-                <p style="color: var(--text-muted); font-size: 0.85rem;">Setup your yearly fests or active competitions (Initial setup task).</p>
+                <h3 style="font-size: 1.3rem; font-weight: 700;"><i class="fa-solid fa-trophy" style="color: var(--accent-amber);"></i> Fest Setup</h3>
+                <p style="color: var(--text-muted); font-size: 0.85rem;">Setup your yearly fest (e.g. Mueeniyya Grand Fest 2026).</p>
             </div>
-            <a href="{% url 'core:competition_create' institution.slug %}" class="btn-primary" style="font-size: 0.9rem;">
-                <i class="fa-solid fa-plus"></i> Create New Competition
-            </a>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <a href="{% url 'core:team_list' institution.slug %}" class="btn-primary" style="font-size: 0.9rem; background: rgba(255,255,255,0.08); box-shadow: none;">
+                    <i class="fa-solid fa-people-group"></i> Manage Teams / Houses
+                </a>
+                <a href="{% url 'core:competition_create' institution.slug %}" class="btn-primary" style="font-size: 0.9rem;">
+                    <i class="fa-solid fa-plus"></i> Create New Fest
+                </a>
+            </div>
         </div>
 
         <div class="table-responsive">
@@ -30,7 +35,7 @@
                 <thead>
                     <tr>
                         <th>ID</th>
-                        <th>Competition Name</th>
+                        <th>Fest Name</th>
                         <th>Type</th>
                         <th>Year</th>
                         <th>Status</th>
@@ -56,7 +61,7 @@
                     {% empty %}
                     <tr>
                         <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 24px;">
-                            No competitions configured yet. Click "Create New Competition" above to start.
+                            No fests configured yet. Click "Create New Fest" above to start.
                         </td>
                     </tr>
                     {% endfor %}
@@ -106,6 +111,16 @@
                 <li><strong>Status:</strong> <span class="badge badge-approved"><i class="fa-solid fa-check"></i> {{ institution.get_status_display }}</span></li>
                 <li><strong>Contact Email:</strong> {{ institution.email }}</li>
                 <li><strong>Public Results URL:</strong> <a href="{% url 'public:home' institution.slug %}" target="_blank" style="color: var(--accent-cyan); text-decoration: none;">domain.com/public/{{ institution.slug }}/</a></li>
+                {% if institution.active_add_ons %}
+                <li style="margin-top: 8px;">
+                    <strong style="color: var(--accent-emerald);">✨ Active Paid Add-Ons:</strong>
+                    <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px;">
+                        {% for grant in institution.active_add_ons %}
+                        <span class="badge badge-approved" style="font-size: 0.8rem;"><i class="fa-solid fa-puzzle-piece"></i> {{ grant.add_on.name }}</span>
+                        {% endfor %}
+                    </div>
+                </li>
+                {% endif %}
             </ul>
         </div>
         <div style="margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 16px; display: flex; flex-direction: column; gap: 10px;">

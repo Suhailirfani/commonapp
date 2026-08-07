@@ -6,12 +6,14 @@
 {% block content %}
 <div class="page-header">
     <div>
-        <div style="display: flex; gap: 16px; align-items: center; flex-wrap: wrap; margin-bottom: 4px;">
-            <a href="{% url 'core:contestant_list' institution.slug %}" style="color: var(--text-muted); text-decoration: none;"><i class="fa-solid fa-arrow-left"></i> Back to Contestants</a>
-            <a href="{% url 'core:assignment_hub' institution.slug %}" style="color: var(--accent-cyan); text-decoration: none;"><i class="fa-solid fa-list-check"></i> Back to Program Assignment Hub</a>
-        </div>
+        <a href="{% url 'core:contestant_list' institution.slug %}" style="color: var(--text-muted); text-decoration: none;"><i class="fa-solid fa-arrow-left"></i> Back to Contestants</a>
         <h2 style="font-size: 1.8rem; font-weight: 800; margin-top: 4px;">Assign Programs: <span style="color: var(--accent-emerald);">#{{ contestant.chest_no }} {{ contestant.name }}</span></h2>
         <p style="color: var(--text-muted); font-size: 0.9rem;">Team: <strong>{{ contestant.team.name }}</strong> | Category: <strong>{{ contestant.category.name }}</strong></p>
+    </div>
+    <div>
+        <a href="{% url 'core:assignment_hub' institution.slug %}" class="btn-primary" style="background: linear-gradient(135deg, var(--accent-cyan), #0284c7); text-decoration: none; padding: 10px 18px; font-weight: 700;">
+            <i class="fa-solid fa-layer-group"></i> Go to Program Assignment Hub
+        </a>
     </div>
 </div>
 

@@ -77,8 +77,23 @@
                 </div>
             </div>
 
-            <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; font-size: 1.1rem; padding: 14px; margin-top: 16px; background: linear-gradient(135deg, var(--accent-indigo), var(--accent-cyan));">
-                Save Details & Continue to Payment <i class="fa-solid fa-arrow-right" style="margin-left: 8px;"></i>
+            <!-- 5-Day Demo Trial Option Card -->
+            <div style="background: rgba(16, 185, 129, 0.08); border: 2px dashed var(--accent-emerald); border-radius: 12px; margin: 24px 0 16px 0; padding: 16px;">
+                <label style="display: flex; align-items: flex-start; gap: 14px; cursor: pointer;">
+                    <input type="checkbox" name="is_demo" value="1" id="is_demo_checkbox" onchange="toggleDemoMode()" style="width: 22px; height: 22px; margin-top: 2px; cursor: pointer; accent-color: var(--accent-emerald);">
+                    <div>
+                        <strong style="color: var(--accent-emerald); font-size: 1.08rem; display: block;">
+                            🎁 Start 5-Day Free Demo Trial (No Immediate Payment Required)
+                        </strong>
+                        <span style="color: var(--text-muted); font-size: 0.88rem; display: block; margin-top: 2px;">
+                            Skip UPI payment and launch your fest workspace immediately! Includes full access for 5 days.
+                        </span>
+                    </div>
+                </label>
+            </div>
+
+            <button type="submit" id="submit_btn" class="btn-primary" style="width: 100%; justify-content: center; font-size: 1.1rem; padding: 14px; margin-top: 8px; background: linear-gradient(135deg, var(--accent-indigo), var(--accent-cyan));">
+                <span id="btn_text">Save Details & Continue to Payment</span> <i class="fa-solid fa-arrow-right" style="margin-left: 8px;"></i>
             </button>
         </form>
     </div>
@@ -87,6 +102,20 @@
 
 {% block extra_js %}
 <script>
+function toggleDemoMode() {
+    const isDemo = document.getElementById('is_demo_checkbox').checked;
+    const btnText = document.getElementById('btn_text');
+    const submitBtn = document.getElementById('submit_btn');
+
+    if (isDemo) {
+        btnText.innerText = '🎁 Launch 5-Day Free Demo Workspace Instantly';
+        submitBtn.style.background = 'linear-gradient(135deg, var(--accent-emerald), #059669)';
+    } else {
+        btnText.innerText = 'Save Details & Continue to Payment';
+        submitBtn.style.background = 'linear-gradient(135deg, var(--accent-indigo), var(--accent-cyan))';
+    }
+}
+
 function autoSlug() {
     let name = document.getElementById('inst_name').value;
     let slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');

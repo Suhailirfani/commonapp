@@ -1,8 +1,85 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}{{ institution.name }} - Portal Dashboard{% endblock %}
 
 {% block content %}
+
+{% if institution.is_demo %}
+<!-- DEMO TRIAL COUNTDOWN & PAY NOW BANNER -->
+<div class="glass-card" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(225, 29, 72, 0.12)); border: 1px solid var(--accent-amber); margin-bottom: 24px; padding: 20px; border-radius: 16px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+        <div style="display: flex; align-items: center; gap: 16px;">
+            <div style="width: 52px; height: 52px; border-radius: 14px; background: rgba(245, 158, 11, 0.2); display: flex; align-items: center; justify-content: center; font-size: 1.8rem;">
+                🎁
+            </div>
+            <div>
+                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                    <h3 style="font-size: 1.25rem; font-weight: 800; margin: 0; color: var(--text-main);">
+                        5-Day Free Demo Trial
+                    </h3>
+                    <span id="demo_countdown_badge" class="badge badge-pending" style="background: linear-gradient(135deg, #f59e0b, #d97706); color: #000; font-size: 0.88rem; font-weight: 800; padding: 6px 14px; box-shadow: 0 0 12px rgba(245, 158, 11, 0.4);">
+                        {% with remaining=institution.demo_time_remaining %}
+                        {% if remaining.is_expired %}
+                        🚨 Demo Trial Expired
+                        {% else %}
+                        ⏳ {{ remaining.text }}
+                        {% endif %}
+                        {% endwith %}
+                    </span>
+                </div>
+                <p style="color: var(--text-muted); font-size: 0.88rem; margin-top: 4px;">
+                    You are exploring <strong>{{ institution.name }}</strong> in 5-day trial mode. Click <strong>Pay Now</strong> to upgrade to a lifetime permanent plan anytime!
+                </p>
+            </div>
+        </div>
+
+        <a href="{% url 'tenants:demo_pay_now' institution.slug %}" class="btn-primary" style="background: linear-gradient(135deg, var(--accent-emerald), #059669); font-size: 1rem; padding: 12px 24px; font-weight: 800; box-shadow: 0 0 20px rgba(16, 185, 129, 0.4); text-decoration: none;">
+            <i class="fa-solid fa-credit-card"></i> Pay Now & Upgrade Plan
+        </a>
+    </div>
+</div>
+
+<script>
+(function() {
+    const expiresTimestamp = new Date("{{ institution.demo_expires_at|date:'c' }}").getTime();
+    
+    function updateCountdown() {
+        const now = new Date().getTime();
+        const diff = expiresTimestamp - now;
+        const badge = document.getElementById('demo_countdown_badge');
+        if (!badge) return;
+
+        if (diff <= 0) {
+            badge.className = 'badge badge-rejected';
+            badge.style.background = '#e11d48';
+            badge.style.color = '#fff';
+            badge.innerHTML = '🚨 Demo Trial Expired';
+            return;
+        }
+
+        const totalSeconds = Math.floor(diff / 1000);
+        const days = Math.floor(totalSeconds / 86400);
+        const hours = Math.floor((totalSeconds % 86400) / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
+
+        if (totalSeconds > 86400) {
+            badge.innerHTML = `⏳ ${days} Day${days > 1 ? 's' : ''} ${hours} Hr${hours !== 1 ? 's' : ''} Left`;
+            badge.style.background = 'linear-gradient(135deg, #f59e0b, #d97706)';
+            badge.style.color = '#000';
+        } else {
+            badge.innerHTML = `⚠️ ${hours} Hr${hours !== 1 ? 's' : ''} ${minutes} Min${minutes !== 1 ? 's' : ''} ${seconds} Sec${seconds !== 1 ? 's' : ''} Left`;
+            badge.style.background = 'linear-gradient(135deg, #ef4444, #dc2626)';
+            badge.style.color = '#fff';
+        }
+    }
+
+    updateCountdown();
+    setInterval(updateCountdown, 1000);
+})();
+</script>
+{% endif %}
 
 {% if is_team_leader_dashboard %}
 
@@ -93,7 +170,7 @@
 
     <a href="{% url 'core:program_list' institution.slug %}" class="glass-card" style="text-decoration: none; color: inherit;">
         <i class="fa-solid fa-list-check" style="font-size: 1.8rem; color: var(--accent-indigo); margin-bottom: 12px;"></i>
-        <h4 style="font-size: 1.1rem; font-weight: 700;">Programs & Events (Read-Only)</h4>
+        <h4 style="font-size: 1.1rem; font-weight: 700;">Programs (Read-Only)</h4>
         <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">View fest schedule & event rules</p>
     </a>
 
@@ -118,7 +195,13 @@
         <span class="badge badge-approved"><i class="fa-solid fa-building"></i> {{ institution.name }} Workspace</span>
         <h2 style="font-size: 2rem; font-weight: 800; margin-top: 4px;">Institution Dashboard</h2>
     </div>
-    <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+    <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
+        <!-- DOWNLOAD AS APP BUTTON FOR INSTITUTION USER -->
+        <button type="button" id="pwaInstallBtnInst" onclick="installPwaApp()" class="btn-primary" style="background: linear-gradient(135deg, var(--accent-emerald), #059669); color: #fff; font-size: 0.9rem; font-weight: 700; padding: 10px 18px; border-radius: 12px; border: none; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 0 16px rgba(16, 185, 129, 0.4); cursor: pointer;">
+            <img src="{% static 'img/gofest_icon.png' %}" style="width: 20px; height: 20px; border-radius: 5px; object-fit: contain;">
+            <span>Download App</span>
+        </button>
+
         <a href="{% url 'public:home' institution.slug %}" target="_blank" class="btn-primary" style="background: linear-gradient(135deg, var(--accent-cyan), #0284c7);">
             <i class="fa-solid fa-share-nodes"></i> Shareable Public Result Link
         </a>
@@ -131,7 +214,7 @@
 <!-- Stats Grid -->
 <div class="dashboard-stats-grid">
     <div class="glass-card">
-        <div style="color: var(--text-muted); font-size: 0.85rem; font-weight: 600;">ACTIVE COMPETITIONS</div>
+        <div style="color: var(--text-muted); font-size: 0.85rem; font-weight: 600;">ACTIVE FESTS</div>
         <div style="font-size: 2.2rem; font-weight: 800; color: var(--accent-indigo); margin-top: 4px;">{{ competitions_count }}</div>
     </div>
     <div class="glass-card">
@@ -139,7 +222,7 @@
         <div style="font-size: 2.2rem; font-weight: 800; color: var(--accent-cyan); margin-top: 4px;">{{ teams_count }}</div>
     </div>
     <div class="glass-card">
-        <div style="color: var(--text-muted); font-size: 0.85rem; font-weight: 600;">EVENTS / PROGRAMS</div>
+        <div style="color: var(--text-muted); font-size: 0.85rem; font-weight: 600;">TOTAL PROGRAMS</div>
         <div style="font-size: 2.2rem; font-weight: 800; color: var(--accent-emerald); margin-top: 4px;">{{ programs_count }}</div>
     </div>
     <div class="glass-card">
@@ -151,6 +234,12 @@
 <!-- Navigation Grid -->
 <h3 style="font-size: 1.3rem; margin-bottom: 16px;">Daily Operations</h3>
 <div class="dashboard-grid">
+    <a href="{% url 'core:team_list' institution.slug %}" class="glass-card" style="text-decoration: none; color: inherit;">
+        <i class="fa-solid fa-people-group" style="font-size: 1.8rem; color: var(--accent-cyan); margin-bottom: 12px;"></i>
+        <h4 style="font-size: 1.1rem; font-weight: 700;">Teams & Houses Management</h4>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Create, edit & manage fest teams/houses, logos & team leaders</p>
+    </a>
+
     <a href="{% url 'core:category_list' institution.slug %}" class="glass-card" style="text-decoration: none; color: inherit;">
         <i class="fa-solid fa-tags" style="font-size: 1.8rem; color: var(--accent-cyan); margin-bottom: 12px;"></i>
         <h4 style="font-size: 1.1rem; font-weight: 700;">Categories & Combined Groups</h4>
@@ -159,7 +248,7 @@
 
     <a href="{% url 'core:program_list' institution.slug %}" class="glass-card" style="text-decoration: none; color: inherit;">
         <i class="fa-solid fa-list-check" style="font-size: 1.8rem; color: var(--accent-indigo); margin-bottom: 12px;"></i>
-        <h4 style="font-size: 1.1rem; font-weight: 700;">Programs & Events</h4>
+        <h4 style="font-size: 1.1rem; font-weight: 700;">Programs</h4>
         <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Single/group stage & off-stage programs</p>
     </a>
 
@@ -196,7 +285,7 @@
     <a href="{% url 'core:settings' institution.slug %}" class="glass-card" style="text-decoration: none; color: inherit;">
         <i class="fa-solid fa-gear" style="font-size: 1.8rem; color: var(--accent-indigo); margin-bottom: 12px;"></i>
         <h4 style="font-size: 1.1rem; font-weight: 700;">Portal Settings & Setup</h4>
-        <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Competitions, stages & points rules</p>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Fest setup, stages & points rules</p>
     </a>
 </div>
 
@@ -241,4 +330,31 @@
 </div>
 
 {% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let deferredPromptInst;
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPromptInst = e;
+    const btn = document.getElementById('pwaInstallBtnInst');
+    if (btn) btn.style.display = 'inline-flex';
+});
+
+function installPwaApp() {
+    if (deferredPromptInst) {
+        deferredPromptInst.prompt();
+        deferredPromptInst.userChoice.then((choiceResult) => {
+            if (choiceResult.outcome === 'accepted') {
+                const btn = document.getElementById('pwaInstallBtnInst');
+                if (btn) btn.style.display = 'none';
+            }
+            deferredPromptInst = null;
+        });
+    } else {
+        alert("📱 To Download & Install GO FEST App on your phone:\n\n• Android / Chrome: Tap browser menu (⋮) -> 'Add to Home screen' or 'Install App'\n• iPhone / Safari: Tap Share button (⎋) -> 'Add to Home Screen'");
+    }
+}
+</script>
 {% endblock %}

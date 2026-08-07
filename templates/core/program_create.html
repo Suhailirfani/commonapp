@@ -11,7 +11,7 @@
         <form method="POST">
             {% csrf_token %}
             <div class="form-group">
-                <label class="form-label">Competition</label>
+                <label class="form-label">Fest</label>
                 <select name="competition_id" class="form-control" required>
                     {% for comp in competitions %}
                     <option value="{{ comp.id }}">{{ comp.name }} ({{ comp.get_type_display }})</option>

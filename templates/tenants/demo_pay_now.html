@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+
+{% block title %}Pay Now & Upgrade Plan - {{ institution.name }}{% endblock %}
+
+{% block content %}
+<div style="max-width: 650px; margin: 20px auto; width: 100%;">
+    <div class="glass-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
+            <h2 style="font-size: 1.6rem; font-weight: 800; color: var(--accent-emerald);">
+                <i class="fa-solid fa-credit-card"></i> Pay Now & Upgrade Plan
+            </h2>
+            <span class="badge badge-pending" style="font-size: 0.85rem;"><i class="fa-solid fa-clock"></i> 5-Day Free Demo Mode</span>
+        </div>
+
+        <p style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.6;">
+            Convert <strong>{{ institution.name }}</strong> from Demo Trial mode into a <strong>Permanent Lifetime Fest Workspace</strong>!
+        </p>
+
+        <!-- Selected Plan Summary Card -->
+        <div style="background: rgba(15, 23, 42, 0.6); padding: 18px; border-radius: 12px; border: 1px solid var(--accent-indigo); margin: 20px 0;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h4 style="font-size: 1.15rem; font-weight: 700; color: var(--accent-cyan); margin: 0;">
+                        {{ plan.name|default:"Standard Plan" }}
+                    </h4>
+                    <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 2px;">
+                        Max {{ plan.max_competitions|default:5 }} Fests | Max {{ plan.max_contestants|default:1000 }} Contestants
+                    </p>
+                </div>
+                <div style="text-align: right;">
+                    <div style="font-size: 1.6rem; font-weight: 800; color: var(--accent-emerald);">₹{{ plan.price|default:"999" }}</div>
+                    <span style="font-size: 0.78rem; color: var(--text-muted); text-decoration: line-through;">Regular ₹{{ plan.original_price|default:"3000" }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- UPI Payment Box -->
+        <div style="background: rgba(16, 185, 129, 0.06); padding: 20px; border-radius: 14px; border: 1px solid var(--accent-emerald); margin-bottom: 24px;">
+            <h4 style="color: var(--accent-emerald); font-size: 1.05rem; font-weight: 700; margin-bottom: 12px;">
+                <i class="fa-solid fa-qrcode"></i> Scan or Pay via UPI
+            </h4>
+            <div style="display: flex; gap: 16px; align-items: center; flex-wrap: wrap;">
+                <div style="background: #fff; padding: 10px; border-radius: 12px; display: inline-block;">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=upi://pay?pa={{ upi_id }}%26pn=BYTOLA%20WEBSOLUTIONS%26am={{ plan.price|default:'999' }}%26cu=INR" alt="UPI QR Code" style="width: 140px; height: 140px; display: block;">
+                </div>
+                <div style="flex: 1; min-width: 200px;">
+                    <div style="font-size: 0.85rem; color: var(--text-muted);">Official UPI ID:</div>
+                    <div style="font-size: 1.1rem; font-weight: 700; color: var(--accent-cyan); word-break: break-all;" id="upi_id_text">{{ upi_id }}</div>
+                    
+                    <button type="button" class="btn-primary" onclick="copyUpiId()" style="margin-top: 10px; padding: 6px 14px; font-size: 0.82rem; background: rgba(255,255,255,0.08); box-shadow: none;">
+                        <i class="fa-solid fa-copy"></i> <span id="copy_btn_text">Copy UPI ID</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <form method="POST">
+            {% csrf_token %}
+            <div class="form-group">
+                <label class="form-label" style="font-weight: 700; color: var(--accent-amber);">
+                    <i class="fa-solid fa-receipt"></i> Enter UPI Transaction Reference / UTR Number
+                </label>
+                <input type="text" name="payment_utr" class="form-control" placeholder="e.g. 423819203912 or UPI Ref No" required>
+                <small style="color: var(--text-muted); margin-top: 4px; display: block;">
+                    Enter the 12-digit UTR/Ref number from your Google Pay / PhonePe / Paytm payment receipt.
+                </small>
+            </div>
+
+            <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; font-size: 1.1rem; padding: 14px; background: linear-gradient(135deg, var(--accent-emerald), #059669);">
+                <i class="fa-solid fa-check-circle"></i> Submit Payment Reference & Activate Plan
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function copyUpiId() {
+    const upiId = document.getElementById('upi_id_text').innerText;
+    navigator.clipboard.writeText(upiId).then(() => {
+        const btnText = document.getElementById('copy_btn_text');
+        btnText.innerText = 'Copied!';
+        setTimeout(() => { btnText.innerText = 'Copy UPI ID'; }, 2000);
+    }).catch(err => {
+        alert('UPI ID copied: ' + upiId);
+    });
+}
+</script>
+{% endblock %}

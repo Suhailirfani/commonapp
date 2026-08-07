@@ -10,11 +10,11 @@
     </div>
 </div>
 
-<div class="glass-card" style="max-width: 650px; margin: 0 auto;">
+<div class="glass-card" style="max-width: 650px; margin: 0 auto; width: 100%;">
     <form method="POST">
         {% csrf_token %}
         <div class="form-group">
-            <label class="form-label">Competition</label>
+            <label class="form-label">Fest</label>
             <select name="competition_id" class="form-control" required>
                 {% for comp in competitions %}
                 <option value="{{ comp.id }}" {% if comp.id == category.competition.id %}selected{% endif %}>{{ comp.name }} ({{ comp.year }})</option>
@@ -29,14 +29,14 @@
 
         <div class="form-group">
             <label class="form-label">Category Type</label>
-            <div style="display: flex; gap: 14px; align-items: center; flex-wrap: wrap; margin-top: 6px;">
-                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; background: rgba(255,255,255,0.03); padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border-color);">
+            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 6px;">
+                <label style="flex: 1; min-width: 140px; display: flex; align-items: center; gap: 8px; cursor: pointer; background: rgba(255,255,255,0.03); padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border-color);">
                     <input type="radio" name="is_common" value="0" id="type_base" {% if not category.is_common %}checked{% endif %} onchange="toggleCategoryType()" style="width: 16px; height: 16px;">
-                    <span>Base Category (e.g. Sub-Junior, Junior)</span>
+                    <span style="font-size: 0.88rem;">Base Category (e.g. Sub-Junior, Junior)</span>
                 </label>
-                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; background: rgba(255,255,255,0.03); padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border-color);">
+                <label style="flex: 1; min-width: 140px; display: flex; align-items: center; gap: 8px; cursor: pointer; background: rgba(255,255,255,0.03); padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border-color);">
                     <input type="radio" name="is_common" value="1" id="type_common" {% if category.is_common %}checked{% endif %} onchange="toggleCategoryType()" style="width: 16px; height: 16px;">
-                    <span>Common Category (e.g. General A)</span>
+                    <span style="font-size: 0.88rem;">Common Category (e.g. General A)</span>
                 </label>
             </div>
         </div>
@@ -59,8 +59,8 @@
         </div>
 
         <div style="display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; margin-top: 24px;">
-            <a href="{% url 'core:category_list' institution.slug %}" class="btn-primary" style="background: rgba(255,255,255,0.08); box-shadow: none;">Cancel</a>
-            <button type="submit" class="btn-success">
+            <a href="{% url 'core:category_list' institution.slug %}" class="btn-primary" style="flex: 1; min-width: 100px; justify-content: center; background: rgba(255,255,255,0.08); box-shadow: none;">Cancel</a>
+            <button type="submit" class="btn-success" style="flex: 2; min-width: 140px; justify-content: center;">
                 <i class="fa-solid fa-save"></i> Save Changes
             </button>
         </div>
