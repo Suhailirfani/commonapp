@@ -2718,6 +2718,11 @@ def pwa_serviceworker_view(request):
     return HttpResponse(js_content, content_type="application/javascript")
 
 
+def custom_403_view(request, exception=None):
+    from django.shortcuts import render
+    return render(request, '403.html', status=403)
+
+
 
 
 
