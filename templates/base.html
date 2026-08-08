@@ -122,6 +122,67 @@
             });
         });
     }
+
+    // PWA Universal Install Manager
+    (function() {
+        let deferredPrompt = null;
+
+        function isStandalone() {
+            return window.matchMedia('(display-mode: standalone)').matches ||
+                   window.navigator.standalone === true ||
+                   document.referrer.includes('android-app://');
+        }
+
+        function updateInstallButtonsState() {
+            const btns = document.querySelectorAll('.pwa-install-btn');
+            if (isStandalone()) {
+                btns.forEach(b => b.style.display = 'none');
+            } else if (deferredPrompt) {
+                btns.forEach(b => b.style.display = 'inline-flex');
+            } else {
+                const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+                if (isIOS) {
+                    btns.forEach(b => b.style.display = 'inline-flex');
+                } else {
+                    btns.forEach(b => b.style.display = 'none');
+                }
+            }
+        }
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            updateInstallButtonsState();
+        });
+
+        window.addEventListener('appinstalled', () => {
+            deferredPrompt = null;
+            const btns = document.querySelectorAll('.pwa-install-btn');
+            btns.forEach(b => b.style.display = 'none');
+        });
+
+        window.installPwaApp = function() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        const btns = document.querySelectorAll('.pwa-install-btn');
+                        btns.forEach(b => b.style.display = 'none');
+                    }
+                    deferredPrompt = null;
+                });
+            } else {
+                const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+                if (isIOS) {
+                    alert("📲 To Install GO FEST App on iPhone / iPad:\n\n1. Tap the Share icon (⎋) in Safari.\n2. Scroll down & tap 'Add to Home Screen' (+).");
+                }
+            }
+        };
+
+        document.addEventListener("DOMContentLoaded", function() {
+            updateInstallButtonsState();
+        });
+    })();
     </script>
     {% block extra_js %}{% endblock %}
 </body>

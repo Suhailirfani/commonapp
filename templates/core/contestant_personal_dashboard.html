@@ -187,7 +187,7 @@
 
                     <!-- DOWNLOAD AS APP BUTTON & JSON -->
                     <div style="display: flex; align-items: center; gap: 4px;">
-                        <button type="button" id="pwaInstallBtn" onclick="installPwaApp()" class="btn-primary" style="padding: 3px 10px; font-size: 0.75rem; font-weight: 700; border-radius: 20px; background: linear-gradient(135deg, var(--accent-cyan), #0284c7); border: none; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 0 10px rgba(6, 182, 212, 0.4); cursor: pointer;">
+                        <button type="button" id="pwaInstallBtn" onclick="installPwaApp()" class="btn-primary pwa-install-btn" style="display: none; padding: 3px 10px; font-size: 0.75rem; font-weight: 700; border-radius: 20px; background: linear-gradient(135deg, var(--accent-cyan), #0284c7); border: none; align-items: center; gap: 5px; box-shadow: 0 0 10px rgba(6, 182, 212, 0.4); cursor: pointer;">
                             <img src="{% static 'img/gofest_icon.png' %}" style="width: 16px; height: 16px; border-radius: 4px; object-fit: contain;">
                             <span>Download App</span>
                         </button>
@@ -412,31 +412,6 @@ function showTab(tabName) {
 
         if (bNavR) bNavR.classList.add('active');
         if (bNavP) bNavP.classList.remove('active');
-    }
-}
-
-let deferredPrompt;
-window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault();
-    deferredPrompt = e;
-    const installBtn = document.getElementById('pwaInstallBtn');
-    if (installBtn) {
-        installBtn.style.display = 'inline-flex';
-    }
-});
-
-function installPwaApp() {
-    if (deferredPrompt) {
-        deferredPrompt.prompt();
-        deferredPrompt.userChoice.then((choiceResult) => {
-            if (choiceResult.outcome === 'accepted') {
-                const installBtn = document.getElementById('pwaInstallBtn');
-                if (installBtn) installBtn.style.display = 'none';
-            }
-            deferredPrompt = null;
-        });
-    } else {
-        alert("📱 To Download & Install GO FEST as an App on your phone:\n\n• Android / Chrome: Tap browser menu (⋮) -> 'Add to Home screen' or 'Install App'\n• iPhone / Safari: Tap Share button (⎋) -> 'Add to Home Screen'");
     }
 }
 </script>

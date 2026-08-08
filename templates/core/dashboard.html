@@ -197,7 +197,7 @@
     </div>
     <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
         <!-- DOWNLOAD AS APP BUTTON FOR INSTITUTION USER -->
-        <button type="button" id="pwaInstallBtnInst" onclick="installPwaApp()" class="btn-primary" style="background: linear-gradient(135deg, var(--accent-emerald), #059669); color: #fff; font-size: 0.9rem; font-weight: 700; padding: 10px 18px; border-radius: 12px; border: none; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 0 16px rgba(16, 185, 129, 0.4); cursor: pointer;">
+        <button type="button" id="pwaInstallBtnInst" onclick="installPwaApp()" class="btn-primary pwa-install-btn" style="display: none; background: linear-gradient(135deg, var(--accent-emerald), #059669); color: #fff; font-size: 0.9rem; font-weight: 700; padding: 10px 18px; border-radius: 12px; border: none; align-items: center; gap: 8px; box-shadow: 0 0 16px rgba(16, 185, 129, 0.4); cursor: pointer;">
             <img src="{% static 'img/gofest_icon.png' %}" style="width: 20px; height: 20px; border-radius: 5px; object-fit: contain;">
             <span>Download App</span>
         </button>
@@ -330,31 +330,4 @@
 </div>
 
 {% endif %}
-{% endblock %}
-
-{% block extra_js %}
-<script>
-let deferredPromptInst;
-window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault();
-    deferredPromptInst = e;
-    const btn = document.getElementById('pwaInstallBtnInst');
-    if (btn) btn.style.display = 'inline-flex';
-});
-
-function installPwaApp() {
-    if (deferredPromptInst) {
-        deferredPromptInst.prompt();
-        deferredPromptInst.userChoice.then((choiceResult) => {
-            if (choiceResult.outcome === 'accepted') {
-                const btn = document.getElementById('pwaInstallBtnInst');
-                if (btn) btn.style.display = 'none';
-            }
-            deferredPromptInst = null;
-        });
-    } else {
-        alert("📱 To Download & Install GO FEST App on your phone:\n\n• Android / Chrome: Tap browser menu (⋮) -> 'Add to Home screen' or 'Install App'\n• iPhone / Safari: Tap Share button (⎋) -> 'Add to Home Screen'");
-    }
-}
-</script>
 {% endblock %}
