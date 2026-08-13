@@ -17,7 +17,7 @@
         <a href="{% url 'core:contestant_batch_create' institution.slug %}" class="btn-primary" style="background: linear-gradient(135deg, var(--accent-emerald), #059669);">
             <i class="fa-solid fa-users"></i> Multi-Contestant Grid
         </a>
-        <a href="{% url 'core:download_contestants_teamwise_pdf' institution.slug %}" target="_blank" download class="btn-primary" style="background: linear-gradient(135deg, var(--accent-emerald), #047857);">
+        <a href="{% url 'core:download_contestants_teamwise_pdf' institution.slug %}" download class="btn-primary" style="background: linear-gradient(135deg, var(--accent-emerald), #047857);">
             <i class="fa-solid fa-file-pdf"></i> {% if request.user.is_team_leader and managed_team %}{{ managed_team.name }} Contestants PDF{% else %}Team-Wise PDF{% endif %}
         </a>
         <a href="{% url 'core:contestant_download_template' institution.slug %}" class="btn-success" style="background: linear-gradient(135deg, #0284c7, var(--accent-cyan));">

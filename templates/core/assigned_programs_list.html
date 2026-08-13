@@ -10,7 +10,7 @@
         <h2 style="font-size: 1.8rem; font-weight: 800; margin-top: 4px;"><i class="fa-solid fa-book-bookmark" style="color: var(--accent-cyan);"></i> Assigned Programs Directory</h2>
     </div>
     <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-        <a href="{% url 'core:download_assigned_programs_teamwise_pdf' institution.slug %}" target="_blank" download class="btn-primary" style="background: linear-gradient(135deg, #4f46e5, #3730a3);">
+        <a href="{% url 'core:download_assigned_programs_teamwise_pdf' institution.slug %}" download class="btn-primary" style="background: linear-gradient(135deg, #4f46e5, #3730a3);">
             <i class="fa-solid fa-file-pdf"></i> Download PDF (Team & Category)
         </a>
         <a href="{% url 'core:assignment_hub' institution.slug %}" class="btn-primary">
