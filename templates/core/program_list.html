@@ -16,7 +16,7 @@
         <a href="{% url 'core:program_batch_create' institution.slug %}" class="btn-primary">
             <i class="fa-solid fa-layer-group"></i> Multi-Program Grid
         </a>
-        <a href="{% url 'core:download_programs_pdf' institution.slug %}" target="_blank" class="btn-primary" style="background: linear-gradient(135deg, #0284c7, #0369a1);">
+        <a href="{% url 'core:download_programs_pdf' institution.slug %}" target="_blank" download class="btn-primary" style="background: linear-gradient(135deg, #0284c7, #0369a1);">
             <i class="fa-solid fa-file-pdf"></i> Download PDF Report
         </a>
         <a href="{% url 'core:program_download_template' institution.slug %}" class="btn-success" style="background: linear-gradient(135deg, #0284c7, var(--accent-cyan));">
@@ -38,13 +38,13 @@
             <strong style="font-size: 0.95rem;">Bulk Print Forms for All Programs:</strong>
         </div>
         <div style="display: flex; gap: 8px; flex-wrap: wrap;" class="page-header-actions">
-            <a href="{% url 'core:download_bulk_green_room_pdf' institution.slug %}" target="_blank" class="btn-primary" style="padding: 8px 14px; font-size: 0.85rem; background: rgba(21, 128, 61, 0.4); border: 1px solid #15803d; color: #4ade80;">
+            <a href="{% url 'core:download_bulk_green_room_pdf' institution.slug %}" target="_blank" download class="btn-primary" style="padding: 8px 14px; font-size: 0.85rem; background: rgba(21, 128, 61, 0.4); border: 1px solid #15803d; color: #4ade80;">
                 <i class="fa-solid fa-file-pdf"></i> Green Room Sheets
             </a>
-            <a href="{% url 'core:download_bulk_call_list_pdf' institution.slug %}" target="_blank" class="btn-primary" style="padding: 8px 14px; font-size: 0.85rem; background: rgba(3, 105, 161, 0.4); border: 1px solid #0369a1; color: #38bdf8;">
+            <a href="{% url 'core:download_bulk_call_list_pdf' institution.slug %}" target="_blank" download class="btn-primary" style="padding: 8px 14px; font-size: 0.85rem; background: rgba(3, 105, 161, 0.4); border: 1px solid #0369a1; color: #38bdf8;">
                 <i class="fa-solid fa-file-pdf"></i> Call Lists
             </a>
-            <a href="{% url 'core:download_bulk_valuation_form_pdf' institution.slug %}" target="_blank" class="btn-primary" style="padding: 8px 14px; font-size: 0.85rem; background: rgba(217, 119, 6, 0.4); border: 1px solid #d97706; color: #fbbf24;">
+            <a href="{% url 'core:download_bulk_valuation_form_pdf' institution.slug %}" target="_blank" download class="btn-primary" style="padding: 8px 14px; font-size: 0.85rem; background: rgba(217, 119, 6, 0.4); border: 1px solid #d97706; color: #fbbf24;">
                 <i class="fa-solid fa-file-pdf"></i> Valuation Forms
             </a>
         </div>
@@ -127,13 +127,13 @@
                                 <i class="fa-solid fa-file-pdf" style="color: var(--accent-amber);"></i> Forms <i class="fa-solid fa-chevron-down" style="font-size: 0.7rem; margin-left: 2px;"></i>
                             </button>
                             <div class="forms-dropdown-menu" style="display: none; position: absolute; right: 0; top: 100%; margin-top: 4px; background: #0f172a; border: 1px solid var(--border-color); border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); z-index: 999; min-width: 175px; padding: 6px 0;">
-                                <a href="{% url 'core:download_green_room_pdf' institution.slug prog.id %}" target="_blank" style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; color: #4ade80; text-decoration: none; font-size: 0.82rem;">
+                                <a href="{% url 'core:download_green_room_pdf' institution.slug prog.id %}" target="_blank" download style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; color: #4ade80; text-decoration: none; font-size: 0.82rem;">
                                     <i class="fa-solid fa-circle-stop"></i> Green Room Sheet
                                 </a>
-                                <a href="{% url 'core:download_call_list_pdf' institution.slug prog.id %}" target="_blank" style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; color: #38bdf8; text-decoration: none; font-size: 0.82rem;">
+                                <a href="{% url 'core:download_call_list_pdf' institution.slug prog.id %}" target="_blank" download style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; color: #38bdf8; text-decoration: none; font-size: 0.82rem;">
                                     <i class="fa-solid fa-bullhorn"></i> Call List
                                 </a>
-                                <a href="{% url 'core:download_valuation_form_pdf' institution.slug prog.id %}" target="_blank" style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; color: #fbbf24; text-decoration: none; font-size: 0.82rem;">
+                                <a href="{% url 'core:download_valuation_form_pdf' institution.slug prog.id %}" target="_blank" download style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; color: #fbbf24; text-decoration: none; font-size: 0.82rem;">
                                     <i class="fa-solid fa-clipboard-check"></i> Valuation Form
                                 </a>
                             </div>
@@ -199,13 +199,13 @@
                     <i class="fa-solid fa-file-pdf" style="color: var(--accent-amber);"></i> Forms <i class="fa-solid fa-chevron-down" style="font-size: 0.7rem; margin-left: 2px;"></i>
                 </button>
                 <div class="forms-dropdown-menu" style="display: none; position: absolute; left: 0; top: 100%; margin-top: 4px; background: #0f172a; border: 1px solid var(--border-color); border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); z-index: 999; min-width: 175px; padding: 6px 0;">
-                    <a href="{% url 'core:download_green_room_pdf' institution.slug prog.id %}" target="_blank" style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; color: #4ade80; text-decoration: none; font-size: 0.82rem;">
+                    <a href="{% url 'core:download_green_room_pdf' institution.slug prog.id %}" target="_blank" download style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; color: #4ade80; text-decoration: none; font-size: 0.82rem;">
                         <i class="fa-solid fa-circle-stop"></i> Green Room Sheet
                     </a>
-                    <a href="{% url 'core:download_call_list_pdf' institution.slug prog.id %}" target="_blank" style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; color: #38bdf8; text-decoration: none; font-size: 0.82rem;">
+                    <a href="{% url 'core:download_call_list_pdf' institution.slug prog.id %}" target="_blank" download style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; color: #38bdf8; text-decoration: none; font-size: 0.82rem;">
                         <i class="fa-solid fa-bullhorn"></i> Call List
                     </a>
-                    <a href="{% url 'core:download_valuation_form_pdf' institution.slug prog.id %}" target="_blank" style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; color: #fbbf24; text-decoration: none; font-size: 0.82rem;">
+                    <a href="{% url 'core:download_valuation_form_pdf' institution.slug prog.id %}" target="_blank" download style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; color: #fbbf24; text-decoration: none; font-size: 0.82rem;">
                         <i class="fa-solid fa-clipboard-check"></i> Valuation Form
                     </a>
                 </div>

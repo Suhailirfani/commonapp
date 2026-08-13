@@ -1106,21 +1106,34 @@ def assigned_programs_list_view(request, institution_slug):
     })
 
 
-def render_to_pdf(template_src, context_dict={}, filename="document.pdf"):
+def render_to_pdf(template_src, context_dict={}, filename="document.pdf", request=None):
     import io
+    import re
+    import urllib.parse
     from xhtml2pdf import pisa
     from django.template.loader import get_template
-    from django.http import HttpResponse
+    from django.http import HttpResponse, HttpResponseServerError
+
+    # Sanitize filename for Content-Disposition header
+    clean_filename = re.sub(r'[\r\n\t"\\\/]', '_', str(filename)).strip()
+    if not clean_filename.lower().endswith('.pdf'):
+        clean_filename += '.pdf'
+
+    encoded_filename = urllib.parse.quote(clean_filename)
 
     template = get_template(template_src)
     html = template.render(context_dict)
     result = io.BytesIO()
     pdf = pisa.pisaDocument(io.BytesIO(html.encode("UTF-8")), result)
     if not pdf.err:
-        response = HttpResponse(result.getvalue(), content_type='application/pdf')
-        response['Content-Disposition'] = f'inline; filename="{filename}"'
+        pdf_bytes = result.getvalue()
+        response = HttpResponse(pdf_bytes, content_type='application/pdf')
+        # Allow optional inline preview via ?preview=1 or ?inline=1, otherwise default to attachment
+        disposition_type = 'inline' if (request and (request.GET.get('preview') == '1' or request.GET.get('inline') == '1')) else 'attachment'
+        response['Content-Disposition'] = f'{disposition_type}; filename="{clean_filename}"; filename*=UTF-8\'\'{encoded_filename}'
+        response['Content-Length'] = str(len(pdf_bytes))
         return response
-    return HttpResponse("Error generating PDF", status=500)
+    return HttpResponseServerError("Error generating PDF document", content_type="text/plain")
 
 
 @login_required
@@ -1134,7 +1147,7 @@ def download_programs_pdf_view(request, institution_slug):
         'generated_at': timezone.now()
     }
     filename = f"{institution.slug}_programs_list.pdf"
-    return render_to_pdf('pdf/programs_pdf.html', context, filename)
+    return render_to_pdf('pdf/programs_pdf.html', context, filename, request=request)
 
 
 @login_required
@@ -1162,7 +1175,7 @@ def download_contestants_teamwise_pdf_view(request, institution_slug):
         'teams': teams,
         'generated_at': timezone.now()
     }
-    return render_to_pdf('pdf/contestants_teamwise_pdf.html', context, filename)
+    return render_to_pdf('pdf/contestants_teamwise_pdf.html', context, filename, request=request)
 
 
 @login_required
@@ -1249,7 +1262,7 @@ def download_team_results_pdf_view(request, institution_slug, team_id=None):
         'generated_at': timezone.now()
     }
     filename = f"{team.name}_detailed_points.pdf"
-    return render_to_pdf('pdf/team_detailed_results_pdf.html', context, filename)
+    return render_to_pdf('pdf/team_detailed_results_pdf.html', context, filename, request=request)
 
 
 @login_required
@@ -1289,7 +1302,7 @@ def download_assigned_programs_teamwise_pdf_view(request, institution_slug):
         'team_data': team_data,
         'generated_at': timezone.now()
     }
-    return render_to_pdf('pdf/assigned_programs_teamwise_pdf.html', context, filename)
+    return render_to_pdf('pdf/assigned_programs_teamwise_pdf.html', context, filename, request=request)
 
 
 @login_required
@@ -1311,7 +1324,7 @@ def download_green_room_pdf_view(request, institution_slug, program_id):
         'generated_at': timezone.now()
     }
     filename = f"{program.name}_green_room.pdf"
-    return render_to_pdf('pdf/green_room_pdf.html', context, filename)
+    return render_to_pdf('pdf/green_room_pdf.html', context, filename, request=request)
 
 
 @login_required
@@ -1333,7 +1346,7 @@ def download_call_list_pdf_view(request, institution_slug, program_id):
         'generated_at': timezone.now()
     }
     filename = f"{program.name}_call_list.pdf"
-    return render_to_pdf('pdf/call_list_pdf.html', context, filename)
+    return render_to_pdf('pdf/call_list_pdf.html', context, filename, request=request)
 
 
 @login_required
@@ -1355,7 +1368,7 @@ def download_valuation_form_pdf_view(request, institution_slug, program_id):
         'generated_at': timezone.now()
     }
     filename = f"{program.name}_valuation_form.pdf"
-    return render_to_pdf('pdf/valuation_form_pdf.html', context, filename)
+    return render_to_pdf('pdf/valuation_form_pdf.html', context, filename, request=request)
 
 
 @login_required
@@ -1381,7 +1394,7 @@ def download_bulk_green_room_pdf_view(request, institution_slug):
         'generated_at': timezone.now()
     }
     filename = f"{institution.slug}_all_green_room_sheets.pdf"
-    return render_to_pdf('pdf/bulk_green_room_pdf.html', context, filename)
+    return render_to_pdf('pdf/bulk_green_room_pdf.html', context, filename, request=request)
 
 
 @login_required
@@ -1407,7 +1420,7 @@ def download_bulk_call_list_pdf_view(request, institution_slug):
         'generated_at': timezone.now()
     }
     filename = f"{institution.slug}_all_call_lists.pdf"
-    return render_to_pdf('pdf/bulk_call_list_pdf.html', context, filename)
+    return render_to_pdf('pdf/bulk_call_list_pdf.html', context, filename, request=request)
 
 
 @login_required
@@ -1433,7 +1446,7 @@ def download_bulk_valuation_form_pdf_view(request, institution_slug):
         'generated_at': timezone.now()
     }
     filename = f"{institution.slug}_all_valuation_forms.pdf"
-    return render_to_pdf('pdf/bulk_valuation_form_pdf.html', context, filename)
+    return render_to_pdf('pdf/bulk_valuation_form_pdf.html', context, filename, request=request)
 
 
 # ---------------- Category Edit & Delete ----------------

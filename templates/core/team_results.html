@@ -11,7 +11,7 @@
         </h2>
     </div>
     <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-        <a href="{% url 'core:download_team_results_detail_pdf' institution.slug team.id %}" target="_blank" class="btn-primary" style="background: linear-gradient(135deg, var(--accent-emerald), #047857);">
+        <a href="{% url 'core:download_team_results_detail_pdf' institution.slug team.id %}" target="_blank" download class="btn-primary" style="background: linear-gradient(135deg, var(--accent-emerald), #047857);">
             <i class="fa-solid fa-file-pdf"></i> Download {{ team.name }} Points PDF
         </a>
         <span class="badge badge-pending" style="background: #f59e0b; color: #000; font-size: 1rem; padding: 8px 16px; font-weight: 800;">
