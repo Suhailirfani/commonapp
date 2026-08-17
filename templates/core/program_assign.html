@@ -8,7 +8,15 @@
     <div>
         <a href="{% url 'core:program_list' institution.slug %}" style="color: var(--text-muted); text-decoration: none;"><i class="fa-solid fa-arrow-left"></i> Back to Programs</a>
         <h2 style="font-size: 1.8rem; font-weight: 800; margin-top: 4px;">Assign Contestants: <span style="color: var(--accent-cyan);">{{ program.name }}</span></h2>
-        <p style="color: var(--text-muted); font-size: 0.9rem;">Category: <strong>{{ program.category.name }}</strong> | Format: <strong>{% if program.is_group %}Group Event{% else %}Single Event{% endif %}</strong></p>
+        <p style="color: var(--text-muted); font-size: 0.9rem;">
+            Category: <strong>{{ program.category.name }}</strong>
+            {% if program.category.is_common %}
+            <span class="badge badge-pending" style="font-size: 0.78rem; margin-left: 4px;">
+                Combined Category ({% for inc in program.category.get_eligible_categories %}{{ inc.name }}{% if not forloop.last %}, {% endif %}{% endfor %})
+            </span>
+            {% endif %}
+            | Format: <strong>{% if program.is_group %}Group Event{% else %}Single Event{% endif %}</strong>
+        </p>
     </div>
 </div>
 

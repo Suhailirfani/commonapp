@@ -65,9 +65,11 @@ class Category(TenantBaseModel):
     def get_eligible_categories(self):
         """Returns list of Category objects eligible for this category (included base categories for combined categories)."""
         if self.is_common:
-            if self.included_categories.exists():
-                return list(self.included_categories.all())
-            return list(Category.objects.filter(institution=self.institution, is_common=False))
+            cats = set(self.included_categories.all())
+            cats.add(self)
+            if not self.included_categories.exists():
+                cats.update(Category.objects.filter(institution=self.institution, is_common=False))
+            return list(cats)
         return [self]
 
 

@@ -40,7 +40,7 @@
                             <input type="checkbox" name="selected_program_ids[]" value="{{ prog.id }}" {% if prog.id in existing_prog_ids %}checked{% endif %} style="width: 18px; height: 18px; cursor: pointer;">
                         </td>
                         <td><strong>{{ prog.name }}</strong></td>
-                        <td><span class="badge badge-approved">{{ prog.category.name }}</span></td>
+                        <td><span class="badge badge-approved">{{ prog.category.name }}</span>{% if prog.category.is_common %}<span class="badge badge-pending" style="font-size: 0.72rem; margin-left: 4px;">Combined</span>{% endif %}</td>
                         <td>{{ prog.get_program_type_display }}</td>
                         <td>{% if prog.is_group %}<span class="badge badge-pending">Group Event</span>{% else %}<span class="badge badge-approved">Single Event</span>{% endif %}</td>
                     </tr>

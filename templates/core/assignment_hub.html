@@ -58,7 +58,9 @@
                 <select id="hub_category_select" class="form-control" onchange="filterHubContestants()">
                     <option value="">-- All Categories --</option>
                     {% for cat in categories %}
-                    <option value="{{ cat.id }}">{{ cat.name }}</option>
+                    <option value="{{ cat.id }}" data-is-common="{% if cat.is_common %}1{% else %}0{% endif %}" data-included-cats="{% for inc in cat.included_categories.all %}{{ inc.id }}{% if not forloop.last %},{% endif %}{% endfor %}">
+                        {{ cat.name }} {% if cat.is_common %}[Combined Category]{% endif %}
+                    </option>
                     {% endfor %}
                 </select>
             </div>
@@ -122,7 +124,7 @@
                     <option value="">-- Choose Program / Event --</option>
                     {% for p in programs %}
                     <option value="{{ p.id }}" {% if selected_program and selected_program.id == p.id %}selected{% endif %}>
-                        {{ p.name }} ({{ p.category.name }})
+                        {{ p.name }} ({{ p.category.name }}){% if p.category.is_common %} [Combined]{% endif %}
                     </option>
                     {% endfor %}
                 </select>
@@ -155,7 +157,13 @@
                 Program: <span style="color: var(--accent-emerald);">{{ selected_program.name }}</span>
             </h3>
             <p style="color: var(--text-muted); font-size: 0.85rem;">
-                Category: <strong>{{ selected_program.category.name }}</strong> | Previously assigned participants are <strong>pre-ticked</strong> below!
+                Category: <strong>{{ selected_program.category.name }}</strong>
+                {% if selected_program.category.is_common %}
+                <span class="badge badge-pending" style="font-size: 0.78rem; margin-left: 6px;">
+                    Combined Category ({% for inc in selected_program.category.get_eligible_categories %}{{ inc.name }}{% if not forloop.last %}, {% endif %}{% endfor %})
+                </span>
+                {% endif %}
+                | Previously assigned participants are <strong>pre-ticked</strong> below!
             </p>
         </div>
         <div style="display: flex; gap: 8px;">
@@ -270,8 +278,25 @@ function filterHubContestants() {
     
     var catElem = document.getElementById('hub_category_select');
     var catId = catElem ? catElem.value : '';
+    var selectedOpt = catElem && catElem.selectedIndex >= 0 ? catElem.options[catElem.selectedIndex] : null;
+    var isCommon = selectedOpt ? (selectedOpt.getAttribute('data-is-common') === '1') : false;
+    var includedCatsStr = selectedOpt ? (selectedOpt.getAttribute('data-included-cats') || '') : '';
+    var includedCats = includedCatsStr ? includedCatsStr.split(',') : [];
     
     var searchVal = document.getElementById('hub_search_input').value.toLowerCase().trim();
+
+    function matchesCategory(optCat) {
+        if (!catId) return true;
+        if (optCat === catId) return true;
+        if (isCommon) {
+            if (includedCats.length > 0) {
+                return includedCats.indexOf(optCat) !== -1;
+            } else {
+                return true;
+            }
+        }
+        return false;
+    }
 
     // 1. Filter Dropdown Options
     var dropdown = document.getElementById('hub_contestant_dropdown');
@@ -284,7 +309,7 @@ function filterHubContestants() {
         var optSearch = opt.getAttribute('data-search');
 
         var matchTeam = !teamId || optTeam === teamId;
-        var matchCat = !catId || optCat === catId;
+        var matchCat = matchesCategory(optCat);
         var matchSearch = !searchVal || (optSearch && optSearch.indexOf(searchVal) !== -1);
 
         if (matchTeam && matchCat && matchSearch) {
@@ -302,7 +327,7 @@ function filterHubContestants() {
         var cardSearch = card.getAttribute('data-search');
 
         var matchTeam = !teamId || cardTeam === teamId;
-        var matchCat = !catId || cardCat === catId;
+        var matchCat = matchesCategory(cardCat);
         var matchSearch = !searchVal || (cardSearch && cardSearch.indexOf(searchVal) !== -1);
 
         if (matchTeam && matchCat && matchSearch) {

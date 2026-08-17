@@ -1021,7 +1021,7 @@ def contestant_assign_programs_view(request, institution_slug, contestant_id):
 def assignment_hub_view(request, institution_slug):
     institution = get_object_or_404(Institution, slug=institution_slug)
     programs = Program.objects.filter(institution=institution).select_related('category', 'competition')
-    categories = Category.objects.filter(institution=institution)
+    categories = Category.objects.filter(institution=institution).prefetch_related('included_categories')
     teams = Team.objects.filter(institution=institution)
     contestants = Contestant.objects.filter(institution=institution).select_related('team', 'category')
     
