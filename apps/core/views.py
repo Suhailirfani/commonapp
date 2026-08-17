@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta, time
 from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
@@ -959,7 +960,7 @@ def program_assign_contestants_view(request, institution_slug, program_id):
             Participation.objects.filter(program=program).exclude(contestant_id__in=selected_ids_set).delete()
 
         messages.success(request, f"Assigned participants updated for program '{program.name}'!")
-        return redirect('core:program_list', institution_slug=institution.slug)
+        return redirect(f"{reverse('core:assignment_hub', kwargs={'institution_slug': institution.slug})}?program_id={program.id}")
 
     teams = Team.objects.filter(institution=institution) if program.is_group else None
 
@@ -1007,7 +1008,7 @@ def contestant_assign_programs_view(request, institution_slug, contestant_id):
         Participation.objects.filter(contestant=contestant).exclude(program_id__in=selected_prog_ids_set).delete()
 
         messages.success(request, f"Assigned programs updated for contestant #{contestant.chest_no} '{contestant.name}'!")
-        return redirect('core:contestant_list', institution_slug=institution.slug)
+        return redirect('core:assignment_hub', institution_slug=institution.slug)
 
     return render(request, 'core/contestant_assign.html', {
         'institution': institution,
