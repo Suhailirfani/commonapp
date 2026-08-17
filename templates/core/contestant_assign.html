@@ -64,6 +64,9 @@
                     <strong style="color: var(--text-main); font-size: 1.05rem;">{{ prog.name }}</strong>
                     <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px;">
                         <span class="badge badge-approved" style="font-size: 0.72rem;">{{ prog.category.name }}</span>
+                        {% if prog.category.is_common %}
+                        <span class="badge badge-pending" style="font-size: 0.72rem;">Combined</span>
+                        {% endif %}
                         {% if prog.is_group %}
                         <span class="badge badge-pending" style="font-size: 0.72rem;">Group</span>
                         {% else %}

@@ -984,15 +984,27 @@ def contestant_assign_programs_view(request, institution_slug, contestant_id):
             messages.error(request, "Permission Denied: You can only assign programs to your own team members.")
             return redirect('core:contestant_list', institution_slug=institution.slug)
 
-    all_programs = Program.objects.filter(institution=institution, is_group=False).select_related('category')
+    existing_prog_ids = set(Participation.objects.filter(contestant=contestant).values_list('program_id', flat=True))
+
+    all_programs = Program.objects.filter(institution=institution, is_group=False).select_related('category').prefetch_related('category__included_categories')
     
+    c_cat = contestant.category
+    c_included_cat_ids = set(c_cat.included_categories.values_list('id', flat=True)) if c_cat.is_common else set()
+
     eligible_programs = []
     for prog in all_programs:
-        eligible_cats = prog.category.get_eligible_categories()
-        if contestant.category in eligible_cats:
+        p_cat = prog.category
+        if p_cat.id == c_cat.id:
             eligible_programs.append(prog)
-
-    existing_prog_ids = set(Participation.objects.filter(contestant=contestant).values_list('program_id', flat=True))
+        elif p_cat.is_common:
+            p_inc_ids = set(p_cat.included_categories.values_list('id', flat=True))
+            if not p_inc_ids or c_cat.id in p_inc_ids:
+                eligible_programs.append(prog)
+        elif c_cat.is_common:
+            if not c_included_cat_ids or p_cat.id in c_included_cat_ids:
+                eligible_programs.append(prog)
+        elif prog.id in existing_prog_ids:
+            eligible_programs.append(prog)
 
     if request.method == 'POST':
         selected_prog_ids = request.POST.getlist('selected_program_ids[]')
