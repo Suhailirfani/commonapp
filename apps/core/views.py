@@ -726,22 +726,38 @@ def mark_entry_matrix_view(request, institution_slug, program_id):
         participations = Participation.objects.filter(program=program).select_related('contestant', 'contestant__team')
 
     if request.method == 'POST':
-        for key, val in request.POST.items():
+        part_ids = set()
+        for key in request.POST.keys():
             if key.startswith('code_letter_'):
-                part_id = key.replace('code_letter_', '')
-                code = val.strip()
-                marks_val = request.POST.get(f'marks_{part_id}')
-                marks = int(marks_val) if marks_val and marks_val.isdigit() else None
+                part_ids.add(key.replace('code_letter_', ''))
+            elif key.startswith('marks_'):
+                part_ids.add(key.replace('marks_', ''))
 
-                if program.is_group:
-                    p = GroupParticipation.objects.filter(id=part_id, program=program).first()
-                else:
-                    p = Participation.objects.filter(id=part_id, program=program).first()
+        for part_id in part_ids:
+            code_vals = [v.strip() for v in request.POST.getlist(f'code_letter_{part_id}') if v.strip() != '']
+            code = code_vals[0] if code_vals else ''
 
-                if p:
-                    p.code_letter = code
-                    p.marks = marks
-                    p.save()
+            marks_vals = [v.strip() for v in request.POST.getlist(f'marks_{part_id}') if v.strip() != '']
+            marks = None
+            if marks_vals:
+                m_str = marks_vals[0]
+                try:
+                    marks = int(m_str)
+                except ValueError:
+                    try:
+                        marks = int(float(m_str))
+                    except ValueError:
+                        marks = None
+
+            if program.is_group:
+                p = GroupParticipation.objects.filter(id=part_id, program=program).first()
+            else:
+                p = Participation.objects.filter(id=part_id, program=program).first()
+
+            if p:
+                p.code_letter = code
+                p.marks = marks
+                p.save()
 
         from .services import calculate_program_results
         calculate_program_results(program)
