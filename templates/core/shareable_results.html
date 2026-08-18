@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Winner Graphics Studio (10 Themes) – {{ institution.name }}</title>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=DM+Serif+Display&family=Manjari:wght@700&family=Montserrat:wght@600;800;900&family=Outfit:wght@400;600;700;800;900&family=Playfair+Display:wght@700;900&family=Plus+Jakarta+Sans:wght@500;700;800&family=Space+Grotesk:wght@600;700;800&display=swap" rel="stylesheet">
+    <title>Pro Winner Graphics Studio (10 Themes) – {{ institution.name }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Anek+Malayalam:wght@600;700;800&family=Cinzel:wght@700;900&family=DM+Serif+Display&family=Manjari:wght@700;900&family=Montserrat:wght@700;800;900&family=Outfit:wght@400;600;700;800;900&family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Plus+Jakarta+Sans:wght@600;800&family=Space+Grotesk:wght@600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <!-- html2canvas for JPEG download -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -149,9 +149,9 @@
         /* ── CARDS GRID ─────────────────────────────────────────── */
         .cards-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-            gap: 28px;
-            max-width: 1400px;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 30px;
+            max-width: 1440px;
             margin: 0 auto;
             padding: 0 20px;
         }
@@ -167,181 +167,197 @@
             }
         }
 
-        /* ── BASE WINNER CARD ────────────────────────────────────── */
+        /* ── BASE WINNER CARD (1:1 / 4:5 Poster Aspect) ──────────────── */
         .winner-card {
             border-radius: 0px;
             border: none !important;
             overflow: hidden;
             position: relative;
             transition: transform 0.3s, box-shadow 0.3s;
-            box-shadow: 0 12px 35px rgba(0,0,0,0.6);
+            box-shadow: 0 16px 40px rgba(0,0,0,0.7);
+            aspect-ratio: 1 / 1.15;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
         }
         .winner-card:hover {
             transform: translateY(-6px);
-            box-shadow: 0 22px 50px rgba(0,0,0,0.8);
+            box-shadow: 0 24px 60px rgba(0,0,0,0.85);
         }
 
         .card-inner {
             padding: 24px;
             position: relative;
             z-index: 2;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
         }
 
         .card-texture-motif {
             position: absolute;
-            right: -10px;
-            bottom: -10px;
-            font-size: 11.5rem;
-            opacity: 0.22;
+            right: -15px;
+            bottom: -15px;
+            font-size: 13rem;
+            opacity: 0.15;
             pointer-events: none;
             z-index: 1;
             transform: rotate(-10deg);
-            filter: drop-shadow(0 0 10px rgba(255,255,255,0.1));
             transition: all 0.3s;
         }
 
-        .theme-1 .card-texture-motif { color: #fbbf24; opacity: 0.25; }
-        .theme-2 .card-texture-motif { color: #34d399; opacity: 0.25; }
-        .theme-3 .card-texture-motif { color: #fb7185; opacity: 0.25; }
-        .theme-4 .card-texture-motif { color: #38bdf8; opacity: 0.22; }
-        .theme-5 .card-texture-motif { color: #b45309; opacity: 0.18; }
-        .theme-6 .card-texture-motif { color: #34d399; opacity: 0.22; }
-        .theme-7 .card-texture-motif { color: #fde047; opacity: 0.25; }
-        .theme-8 .card-texture-motif { color: #f59e0b; opacity: 0.25; }
-        .theme-9 .card-texture-motif { color: #2dd4bf; opacity: 0.25; }
-        .theme-10 .card-texture-motif { color: #f59e0b; opacity: 0.22; }
-
-        .glossy-shine {
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: linear-gradient(135deg, rgba(255,255,255,0.05) 15%, rgba(255,255,255,0) 65%);
-            pointer-events: none;
-            z-index: 2;
+        .prog-header-top {
+            display: flex;
+            align-items: baseline;
+            gap: 12px;
+            margin-top: 10px;
         }
-
-        .card-top-branding { text-align: center; padding-bottom: 12px; margin-bottom: 14px; }
-        .card-bottom-branding { display: none; text-align: center; padding-top: 14px; margin-top: 14px; border-top: 1px dashed rgba(255,255,255,0.15); }
-        .card-side-branding {
-            display: none; position: absolute; top: 0; bottom: 0; padding: 15px 10px;
-            font-size: 0.68rem; font-weight: 900; letter-spacing: 2.5px; text-transform: uppercase;
-            z-index: 4; align-items: center; justify-content: center; writing-mode: vertical-rl; pointer-events: none;
+        .result-number-huge {
+            font-size: 3.8rem;
+            font-weight: 900;
+            line-height: 0.9;
+            letter-spacing: -2px;
         }
+        .prog-title-wrap { flex: 1; }
+        .prog-name { font-size: 1.35rem; font-weight: 800; line-height: 1.2; word-break: break-word; }
+        .cat-subtitle { font-size: 0.85rem; opacity: 0.85; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
 
-        .inst-title { font-size: 0.75rem; font-weight: 800; letter-spacing: 1.8px; text-transform: uppercase; opacity: 0.9; }
-        .fest-badge { font-size: 0.95rem; font-weight: 900; letter-spacing: 1.2px; text-transform: uppercase; margin-top: 2px; }
-
-        .prog-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
-        .prog-name { font-size: clamp(1.45rem, 3vw, 1.85rem); font-weight: 900; line-height: 1.2; letter-spacing: -0.5px; margin-bottom: 6px; word-break: break-word; }
-        .cat-badge { display: inline-block; font-size: 0.68rem; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; padding: 3px 10px; }
-        .type-badge { font-size: 0.68rem; font-weight: 800; padding: 3px 10px; text-transform: uppercase; }
-
-        .ranks-list { display: flex; flex-direction: column; gap: 10px; }
-        .rank-row { display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: rgba(255,255,255,0.06); }
-        .rank-medal { width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; font-weight: 900; flex-shrink: 0; }
+        .ranks-list { display: flex; flex-direction: column; gap: 12px; margin-top: 15px; margin-bottom: 15px; }
+        .rank-row { display: flex; align-items: center; gap: 12px; padding: 10px 14px; position: relative; z-index: 3; }
+        .rank-num { font-size: 1.15rem; font-weight: 900; width: 24px; flex-shrink: 0; text-align: center; }
         .rank-info { flex: 1; min-width: 0; }
-        .winner-name { font-size: 0.95rem; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .team-name { font-size: 0.78rem; opacity: 0.8; font-weight: 600; }
-        .members-name { font-size: 0.72rem; opacity: 0.7; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .rank-grade { font-size: 0.7rem; font-weight: 800; padding: 2px 8px; flex-shrink: 0; }
+        .winner-name { font-size: 1.05rem; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .team-loc { font-size: 0.8rem; opacity: 0.85; font-weight: 600; margin-top: 1px; }
+
+        .card-footer-branding {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            border-top: 1px solid rgba(255,255,255,0.15);
+            padding-top: 12px;
+            margin-top: auto;
+        }
+        .fest-art-title { font-size: 1.25rem; font-weight: 900; line-height: 1.1; letter-spacing: -0.5px; }
+        .inst-sub { font-size: 0.72rem; opacity: 0.8; text-transform: uppercase; letter-spacing: 1px; }
 
         .card-actions-bar {
-            padding: 12px 18px; background: rgba(0,0,0,0.35); display: flex; justify-content: space-between; align-items: center; gap: 8px; position: relative; z-index: 5;
+            padding: 10px 16px; background: rgba(0,0,0,0.4); display: flex; justify-content: space-between; align-items: center; gap: 8px; position: relative; z-index: 5;
         }
         .card-theme-select {
-            background: rgba(255,255,255,0.12); border: none; color: #fff; font-size: 0.75rem; font-weight: 700; padding: 5px 10px; outline: none; cursor: pointer;
+            background: rgba(255,255,255,0.12); border: none; color: #fff; font-size: 0.75rem; font-weight: 700; padding: 5px 10px; outline: none; cursor: pointer; border-radius: 4px;
         }
         .card-theme-select option { background: #18181b; color: #fff; }
         .btn-dl-card {
-            background: #f59e0b; color: #000; border: none; padding: 6px 14px; font-size: 0.78rem; font-weight: 800; cursor: pointer; transition: opacity 0.2s;
+            background: #f59e0b; color: #000; border: none; padding: 6px 14px; font-size: 0.78rem; font-weight: 800; cursor: pointer; transition: opacity 0.2s; border-radius: 4px;
         }
         .btn-dl-card:hover { opacity: 0.9; }
 
-        /* THEMES */
-        .theme-1 { background: linear-gradient(135deg, #1e1b4b 0%, #31103f 50%, #170b3b 100%); color: #fff; font-family: 'Cinzel', serif; }
-        .theme-1 .fest-badge { color: #fbbf24; }
-        .theme-1 .prog-name { color: #ffffff; }
-        .theme-1 .cat-badge { background: rgba(251, 191, 36, 0.18); color: #fbbf24; }
-        .theme-1 .type-badge { background: rgba(255,255,255,0.1); color: #e4e4e7; }
-        .theme-1 .rank-medal { background: linear-gradient(135deg, #f59e0b, #d97706); color: #000; }
+        /* ==========================================================================
+           10 PRO ARTISTIC FESTIVAL THEMES (Inspired by Malayalam Sahityotsav & Kalotsav posters)
+           ========================================================================== */
 
-        .theme-2 { background: linear-gradient(135deg, #042014 0%, #0d3827 50%, #021a0f 100%); color: #ecfdf5; font-family: 'Space Grotesk', sans-serif; }
-        .theme-2 .fest-badge { color: #34d399; }
-        .theme-2 .prog-name { color: #a7f3d0; }
-        .theme-2 .cat-badge { background: rgba(16, 185, 129, 0.2); color: #6ee7b7; }
-        .theme-2 .type-badge { background: rgba(6, 182, 212, 0.2); color: #67e8f9; }
-        .theme-2 .rank-medal { background: linear-gradient(135deg, #10b981, #059669); color: #000; }
+        /* 1. Heritage Cottage Watercolor (Parchment & Red House Illustration) */
+        .theme-1 { background: #fbf7ee; color: #1c1917; font-family: 'Outfit', sans-serif; }
+        .theme-1 .result-number-huge { color: #0f2b46; }
+        .theme-1 .prog-name { color: #0f2b46; font-size: 1.45rem; }
+        .theme-1 .cat-subtitle { color: #64748b; }
+        .theme-1 .rank-row { background: rgba(255,255,255,0.6); border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+        .theme-1 .rank-num { color: #0f2b46; }
+        .theme-1 .winner-name { color: #0f2b46; font-weight: 900; }
+        .theme-1 .team-loc { color: #475569; }
+        .theme-1 .card-footer-branding { border-top-color: #cbd5e1; }
+        .theme-1 .fest-art-title { color: #991b1b; font-family: 'Anek Malayalam', sans-serif; }
 
-        .theme-3 { background: linear-gradient(135deg, #4c0519 0%, #881337 50%, #58081c 100%); color: #fff1f2; font-family: 'Outfit', sans-serif; }
-        .theme-3 .fest-badge { color: #fecdd3; }
-        .theme-3 .prog-name { color: #ffffff; }
-        .theme-3 .cat-badge { background: rgba(244, 63, 94, 0.3); color: #ffe4e6; }
-        .theme-3 .type-badge { background: rgba(251, 146, 60, 0.25); color: #fdba74; }
-        .theme-3 .rank-medal { background: linear-gradient(135deg, #fb7185, #e11d48); color: #fff; }
+        /* 2. Terracotta & Halftone Red (Kasargod Sahityotsav Accent) */
+        .theme-2 { background: linear-gradient(135deg, #7f1d1d 0%, #450a0a 100%); color: #fff; font-family: 'Plus Jakarta Sans', sans-serif; }
+        .theme-2 .result-number-huge { color: #fef08a; }
+        .theme-2 .prog-name { color: #ffffff; }
+        .theme-2 .cat-subtitle { color: #fca5a5; }
+        .theme-2 .rank-row { background: rgba(0,0,0,0.25); border-left: 3px solid #fef08a; }
+        .theme-2 .rank-num { color: #fef08a; }
+        .theme-2 .winner-name { color: #fff; }
+        .theme-2 .fest-art-title { font-family: 'Playfair Display', serif; color: #fef08a; }
 
-        .theme-4 { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #f0f9ff; font-family: 'Playfair Display', serif; }
-        .theme-4 .fest-badge { color: #38bdf8; }
-        .theme-4 .prog-name { color: #ffffff; }
-        .theme-4 .cat-badge { background: rgba(56, 189, 248, 0.2); color: #bae6fd; }
-        .theme-4 .type-badge { background: rgba(147, 51, 234, 0.25); color: #c084fc; }
-        .theme-4 .rank-medal { background: linear-gradient(135deg, #38bdf8, #0284c7); color: #000; }
+        /* 3. Parchment Ink Pen Art (Sahityotsav Yellow & Calligraphy Pen) */
+        .theme-3 { background: #fef08a; color: #1c1917; font-family: 'Outfit', sans-serif; }
+        .theme-3 .result-number-huge { color: #854d0e; }
+        .theme-3 .prog-name { color: #000; font-weight: 900; }
+        .theme-3 .cat-subtitle { color: #713f12; }
+        .theme-3 .rank-row { background: rgba(255,255,255,0.7); border-radius: 6px; }
+        .theme-3 .rank-num { color: #854d0e; }
+        .theme-3 .winner-name { color: #000; font-weight: 800; }
+        .theme-3 .fest-art-title { color: #991b1b; font-family: 'Cinzel', serif; }
 
-        .theme-5 { background: #fdfbf7; color: #1e293b; font-family: 'DM Serif Display', serif; }
-        .theme-5 .fest-badge { color: #b45309; }
-        .theme-5 .prog-name { color: #0f172a; }
-        .theme-5 .cat-badge { background: #fef3c7; color: #92400e; }
-        .theme-5 .type-badge { background: #e2e8f0; color: #334155; }
-        .theme-5 .rank-medal { background: linear-gradient(135deg, #f59e0b, #b45309); color: #fff; }
+        /* 4. Bold Angular Slant (Red & Dark Grey Modern Sector Fest) */
+        .theme-4 { background: #18181b; color: #fff; font-family: 'Space Grotesk', sans-serif; }
+        .theme-4 .prog-header-top { background: #dc2626; padding: 12px; clip-path: polygon(0 0, 100% 0, 95% 100%, 0 100%); margin: -24px -24px 15px -24px; }
+        .theme-4 .result-number-huge { color: #ef4444; font-size: 4.2rem; }
+        .theme-4 .prog-name { color: #fff; }
+        .theme-4 .cat-subtitle { color: #9ca3af; }
+        .theme-4 .rank-row { background: #27272a; border-radius: 4px; }
+        .theme-4 .rank-num { color: #ef4444; }
+        .theme-4 .fest-art-title { color: #ef4444; }
 
-        /* Theme 6: Cyberpunk Neon Hologram */
-        .theme-6 { background: linear-gradient(135deg, #090919 0%, #17092c 50%, #031326 100%); color: #06b6d4; font-family: 'Space Grotesk', sans-serif; border: 1px solid #06b6d4; box-shadow: 0 0 20px rgba(6, 182, 212, 0.3); }
-        .theme-6 .fest-badge { color: #ec4899; text-shadow: 0 0 8px rgba(236, 72, 153, 0.6); }
-        .theme-6 .prog-name { color: #ffffff; text-shadow: 0 0 10px rgba(6, 182, 212, 0.5); }
-        .theme-6 .cat-badge { background: rgba(6, 182, 212, 0.2); color: #67e8f9; border: 1px solid #06b6d4; }
-        .theme-6 .type-badge { background: rgba(236, 72, 153, 0.2); color: #f472b6; }
-        .theme-6 .rank-medal { background: linear-gradient(135deg, #06b6d4, #ec4899); color: #fff; box-shadow: 0 0 10px rgba(6, 182, 212, 0.5); }
-        .theme-6 .rank-row { background: rgba(6, 182, 212, 0.06); border-left: 3px solid #06b6d4; }
-        .theme-6 .winner-name { color: #fff; }
+        /* 5. Sunset Crimson Voyage (Sailboat Gradient) */
+        .theme-5 { background: linear-gradient(180deg, #f43f5e 0%, #881337 50%, #4c0519 100%); color: #fff; font-family: 'Outfit', sans-serif; }
+        .theme-5 .result-number-huge { color: #ffe4e6; opacity: 0.9; }
+        .theme-5 .prog-name { color: #ffffff; }
+        .theme-5 .cat-subtitle { color: #fecdd3; }
+        .theme-5 .rank-row { background: rgba(0, 0, 0, 0.2); border-bottom: 1px solid rgba(255,255,255,0.15); }
+        .theme-5 .rank-num { color: #fecdd3; }
+        .theme-5 .winner-name { color: #fff; }
+        .theme-5 .fest-art-title { font-family: 'Playfair Display', serif; font-style: italic; }
 
-        /* Theme 7: Midnight Obsidian Rose Gold */
-        .theme-7 { background: linear-gradient(135deg, #121212 0%, #1c1917 50%, #0c0a09 100%); color: #fecdd3; font-family: 'Playfair Display', serif; }
-        .theme-7 .fest-badge { color: #fb7185; }
-        .theme-7 .prog-name { color: #fff1f2; }
-        .theme-7 .cat-badge { background: rgba(251, 113, 133, 0.2); color: #fda4af; }
-        .theme-7 .type-badge { background: rgba(244, 63, 94, 0.2); color: #fecdd3; }
-        .theme-7 .rank-medal { background: linear-gradient(135deg, #fb7185, #e11d48); color: #fff; }
-        .theme-7 .rank-row { background: rgba(251, 113, 133, 0.07); border-left: 3px solid #fb7185; }
-        .theme-7 .winner-name { color: #fff; }
+        /* 6. Royal Emerald Mosque (Muqarnas Dome Motif) */
+        .theme-6 { background: linear-gradient(135deg, #022c22 0%, #064e3b 60%, #021a0f 100%); color: #ecfdf5; font-family: 'Cinzel', serif; }
+        .theme-6 .result-number-huge { color: #fbbf24; }
+        .theme-6 .prog-name { color: #fef08a; font-family: 'Outfit', sans-serif; }
+        .theme-6 .cat-subtitle { color: #a7f3d0; }
+        .theme-6 .rank-row { background: rgba(6, 78, 59, 0.5); border: 1px solid rgba(251, 191, 36, 0.3); border-radius: 6px; }
+        .theme-6 .rank-num { color: #fbbf24; }
+        .theme-6 .winner-name { color: #fff; font-family: 'Outfit', sans-serif; }
+        .theme-6 .fest-art-title { color: #fbbf24; }
 
-        /* Theme 8: Islamic Geometric Heritage */
-        .theme-8 { background: linear-gradient(135deg, #064e3b 0%, #022c22 50%, #0f382c 100%); color: #fde047; font-family: 'Cinzel', serif; }
-        .theme-8 .fest-badge { color: #fbbf24; }
-        .theme-8 .prog-name { color: #fef08a; }
-        .theme-8 .cat-badge { background: rgba(250, 204, 21, 0.2); color: #fde047; }
-        .theme-8 .type-badge { background: rgba(16, 185, 129, 0.3); color: #a7f3d0; }
-        .theme-8 .rank-medal { background: linear-gradient(135deg, #f59e0b, #d97706); color: #000; }
-        .theme-8 .rank-row { background: rgba(250, 204, 21, 0.08); border: 1px solid rgba(250, 204, 21, 0.2); }
+        /* 7. Midnight Rose Gold Luxury */
+        .theme-7 { background: linear-gradient(135deg, #18181b 0%, #09090b 100%); color: #fda4af; font-family: 'Playfair Display', serif; border: 1px solid #f43f5e; }
+        .theme-7 .result-number-huge { color: #fb7185; }
+        .theme-7 .prog-name { color: #fff; font-family: 'Outfit', sans-serif; }
+        .theme-7 .cat-subtitle { color: #fecdd3; }
+        .theme-7 .rank-row { background: rgba(244, 63, 94, 0.08); border-left: 3px solid #fb7185; }
+        .theme-7 .rank-num { color: #fb7185; }
+        .theme-7 .winner-name { color: #fff; font-family: 'Outfit', sans-serif; }
+        .theme-7 .fest-art-title { color: #fb7185; }
+
+        /* 8. Cyberpunk Futuristic Hologram */
+        .theme-8 { background: #030712; color: #38bdf8; font-family: 'Space Grotesk', sans-serif; border: 1px solid #38bdf8; }
+        .theme-8 .result-number-huge { color: #a855f7; text-shadow: 0 0 10px #a855f7; }
+        .theme-8 .prog-name { color: #fff; }
+        .theme-8 .cat-subtitle { color: #7dd3fc; }
+        .theme-8 .rank-row { background: rgba(56, 189, 248, 0.08); border-radius: 4px; }
+        .theme-8 .rank-num { color: #38bdf8; }
         .theme-8 .winner-name { color: #fff; }
+        .theme-8 .fest-art-title { color: #38bdf8; letter-spacing: 2px; }
 
-        /* Theme 9: Galactic Cosmic Nebula */
-        .theme-9 { background: linear-gradient(135deg, #2e1065 0%, #581c87 50%, #1e1b4b 100%); color: #e0e7ff; font-family: 'Outfit', sans-serif; }
-        .theme-9 .fest-badge { color: #a7f3d0; }
-        .theme-9 .prog-name { color: #ffffff; }
-        .theme-9 .cat-badge { background: rgba(167, 243, 208, 0.2); color: #a7f3d0; }
-        .theme-9 .type-badge { background: rgba(192, 132, 252, 0.25); color: #e9d5ff; }
-        .theme-9 .rank-medal { background: linear-gradient(135deg, #c084fc, #7e22ce); color: #fff; }
-        .theme-9 .rank-row { background: rgba(192, 132, 252, 0.1); border-radius: 8px; }
-        .theme-9 .winner-name { color: #fff; }
+        /* 9. Vintage Gold Parchment Stamp */
+        .theme-9 { background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); color: #78350f; font-family: 'DM Serif Display', serif; border: 3px double #b45309; }
+        .theme-9 .result-number-huge { color: #b45309; }
+        .theme-9 .prog-name { color: #451a03; }
+        .theme-9 .cat-subtitle { color: #92400e; }
+        .theme-9 .rank-row { background: rgba(180, 83, 9, 0.08); border-bottom: 1px solid #b45309; }
+        .theme-9 .rank-num { color: #b45309; }
+        .theme-9 .winner-name { color: #451a03; font-family: 'Outfit', sans-serif; }
+        .theme-9 .fest-art-title { color: #78350f; }
 
-        /* Theme 10: Vintage Gold Parchment */
-        .theme-10 { background: linear-gradient(135deg, #fef3c7 0%, #fde68a 50%, #fef08a 100%); color: #78350f; font-family: 'DM Serif Display', serif; border: 2px solid #b45309; }
-        .theme-10 .fest-badge { color: #92400e; }
-        .theme-10 .prog-name { color: #451a03; }
-        .theme-10 .cat-badge { background: #fef08a; color: #78350f; border: 1px solid #b45309; }
-        .theme-10 .type-badge { background: #d97706; color: #fff; }
-        .theme-10 .rank-medal { background: linear-gradient(135deg, #b45309, #78350f); color: #fff; }
-        .theme-10 .rank-row { background: rgba(180, 83, 9, 0.08); border-bottom: 1px solid rgba(180, 83, 9, 0.2); }
-        .theme-10 .winner-name { color: #451a03; }
-        .theme-10 .team-name { color: #78350f; }
+        /* 10. Cosmic Purple Nebula */
+        .theme-10 { background: linear-gradient(135deg, #2e1065 0%, #581c87 50%, #1e1b4b 100%); color: #e0e7ff; font-family: 'Outfit', sans-serif; }
+        .theme-10 .result-number-huge { color: #c084fc; }
+        .theme-10 .prog-name { color: #ffffff; }
+        .theme-10 .cat-subtitle { color: #ddd6fe; }
+        .theme-10 .rank-row { background: rgba(192, 132, 252, 0.12); border-radius: 8px; }
+        .theme-10 .rank-num { color: #c084fc; }
+        .theme-10 .winner-name { color: #fff; }
+        .theme-10 .fest-art-title { color: #c084fc; }
 
         #dl-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -362,13 +378,13 @@
 
 <div id="dl-overlay">
     <div class="spinner"></div>
-    <span style="color:#fff;font-weight:700">Generating High Quality Winner Card JPEG…</span>
+    <span style="color:#fff;font-weight:700">Generating High-Res Winner Card JPEG…</span>
 </div>
 
 <div class="page-header">
     <p class="fest-title">{{ institution.name }}</p>
-    <h1>🏆 Winner Graphics Studio (10 Themes)</h1>
-    <p class="subtitle">Select from 10 distinct, formal, and artistic winner card designs with custom background textures & finishes</p>
+    <h1>🎨 Pro Winner Studio (10 Festival Posters)</h1>
+    <p class="subtitle">Inspired by authentic Malayalam Sahityotsav & Kalotsav artistic layouts with 1-click JPEG download</p>
 </div>
 
 <div class="controls-wrapper">
@@ -386,38 +402,38 @@
 
     <div class="theme-selector-wrap">
         <div class="theme-selector-title">
-            <i class="fas fa-palette"></i> Select Global Theme (10 Distinct Styles):
+            <i class="fas fa-palette"></i> Select Festival Graphic Theme:
         </div>
         <div class="theme-chips">
-            <div class="theme-chip active" onclick="setGlobalTheme('theme-1', this, 'fa-lightbulb')">
-                <i class="fas fa-lightbulb text-warning"></i> 1. Royal Gold
+            <div class="theme-chip active" onclick="setGlobalTheme('theme-1', this, 'fa-house-chimney')">
+                <i class="fas fa-house-chimney text-danger"></i> 1. Heritage Cottage Watercolor
             </div>
-            <div class="theme-chip" onclick="setGlobalTheme('theme-2', this, 'fa-microphone-alt')">
-                <i class="fas fa-microphone-alt text-info"></i> 2. Cyber Emerald
+            <div class="theme-chip" onclick="setGlobalTheme('theme-2', this, 'fa-paint-roller')">
+                <i class="fas fa-paint-roller text-warning"></i> 2. Terracotta Sahityotsav
             </div>
-            <div class="theme-chip" onclick="setGlobalTheme('theme-3', this, 'fa-drum')">
-                <i class="fas fa-drum text-danger"></i> 3. Sunset Crimson
+            <div class="theme-chip" onclick="setGlobalTheme('theme-3', this, 'fa-feather')">
+                <i class="fas fa-feather text-warning"></i> 3. Ink Pen Parchment
             </div>
-            <div class="theme-chip" onclick="setGlobalTheme('theme-4', this, 'fa-book-open')">
-                <i class="fas fa-book-open text-primary"></i> 4. Regal Sapphire
+            <div class="theme-chip" onclick="setGlobalTheme('theme-4', this, 'fa-vector-square')">
+                <i class="fas fa-vector-square text-danger"></i> 4. Sector Red & Black Slant
             </div>
-            <div class="theme-chip" onclick="setGlobalTheme('theme-5', this, 'fa-glasses')">
-                <i class="fas fa-glasses me-1" style="color:#b45309"></i> 5. Luxury White
+            <div class="theme-chip" onclick="setGlobalTheme('theme-5', this, 'fa-ship')">
+                <i class="fas fa-ship text-danger"></i> 5. Crimson Voyage
             </div>
-            <div class="theme-chip" onclick="setGlobalTheme('theme-6', this, 'fa-bolt')">
-                <i class="fas fa-bolt text-info"></i> 6. Cyberpunk Neon
+            <div class="theme-chip" onclick="setGlobalTheme('theme-6', this, 'fa-mosque')">
+                <i class="fas fa-mosque text-success"></i> 6. Royal Emerald Mosque
             </div>
             <div class="theme-chip" onclick="setGlobalTheme('theme-7', this, 'fa-gem')">
                 <i class="fas fa-gem text-danger"></i> 7. Midnight Rose Gold
             </div>
-            <div class="theme-chip" onclick="setGlobalTheme('theme-8', this, 'fa-certificate')">
-                <i class="fas fa-certificate text-warning"></i> 8. Islamic Heritage Gold
+            <div class="theme-chip" onclick="setGlobalTheme('theme-8', this, 'fa-bolt')">
+                <i class="fas fa-bolt text-info"></i> 8. Cyberpunk Hologram
             </div>
-            <div class="theme-chip" onclick="setGlobalTheme('theme-9', this, 'fa-wand-magic-sparkles')">
-                <i class="fas fa-wand-magic-sparkles text-primary"></i> 9. Galactic Nebula
+            <div class="theme-chip" onclick="setGlobalTheme('theme-9', this, 'fa-award')">
+                <i class="fas fa-award text-warning"></i> 9. Vintage Parchment Stamp
             </div>
-            <div class="theme-chip" onclick="setGlobalTheme('theme-10', this, 'fa-award')">
-                <i class="fas fa-award text-warning"></i> 10. Vintage Gold Parchment
+            <div class="theme-chip" onclick="setGlobalTheme('theme-10', this, 'fa-wand-magic-sparkles')">
+                <i class="fas fa-wand-magic-sparkles text-primary"></i> 10. Cosmic Purple Nebula
             </div>
         </div>
     </div>
@@ -432,58 +448,54 @@
     {% for item in cards_data %}
     {% with prog=item.program %}
     <div class="winner-card theme-1" data-prog="{{ prog.name|lower }}">
-        <div class="glossy-shine"></div>
         <div class="card-texture-motif">
-            <i class="fas fa-trophy"></i>
+            <i class="fas fa-house-chimney"></i>
         </div>
 
         <div class="card-inner">
-            <div class="card-top-branding">
-                <div class="inst-title">{{ institution.name }}</div>
-                <div class="fest-badge">GO FEST</div>
-            </div>
-
-            <div class="prog-header">
-                <div>
+            <div class="prog-header-top">
+                <div class="result-number-huge">{{ forloop.counter }}</div>
+                <div class="prog-title-wrap">
                     <div class="prog-name">{{ prog.name }}</div>
-                    <span class="cat-badge">{{ prog.category.name }}</span>
+                    <div class="cat-subtitle">{{ prog.category.name }} • {% if prog.is_group %}Group{% else %}Solo{% endif %}</div>
                 </div>
-                <span class="type-badge">{% if prog.is_group %}Group{% else %}Solo{% endif %}</span>
             </div>
 
             <div class="ranks-list">
                 {% for w in item.winners %}
                 <div class="rank-row">
-                    <div class="rank-medal">
-                        {% if w.rank == 1 %}🥇{% elif w.rank == 2 %}🥈{% else %}🥉{% endif %}
-                    </div>
+                    <div class="rank-num">{{ w.rank }}.</div>
                     <div class="rank-info">
                         <div class="winner-name">{{ w.name }}</div>
-                        <div class="team-name">{{ w.team }}</div>
-                        {% if w.members %}
-                        <div class="members-name">{{ w.members }}</div>
-                        {% endif %}
+                        <div class="team-loc">{{ w.team }}{% if w.members %} ({{ w.members }}){% endif %}</div>
                     </div>
-                    {% if w.grade %}
-                    <div class="rank-grade">Grade {{ w.grade }}</div>
-                    {% endif %}
                 </div>
                 {% endfor %}
+            </div>
+
+            <div class="card-footer-branding">
+                <div>
+                    <div class="fest-art-title">Sahityotsav</div>
+                    <div class="inst-sub">{{ institution.name }}</div>
+                </div>
+                <div style="text-align: right; font-size: 0.72rem; opacity: 0.8;">
+                    <strong>2026 FEST</strong>
+                </div>
             </div>
         </div>
 
         <div class="card-actions-bar">
             <select class="card-theme-select" onchange="changeSingleCardTheme(this)">
-                <option value="theme-1|fa-trophy" selected>1. Royal Gold</option>
-                <option value="theme-2|fa-microphone-alt">2. Cyber Emerald</option>
-                <option value="theme-3|fa-drum">3. Sunset Crimson</option>
-                <option value="theme-4|fa-book-open">4. Regal Sapphire</option>
-                <option value="theme-5|fa-glasses">5. Luxury White</option>
-                <option value="theme-6|fa-bolt">6. Cyberpunk Neon</option>
+                <option value="theme-1|fa-house-chimney" selected>1. Heritage Cottage</option>
+                <option value="theme-2|fa-paint-roller">2. Terracotta Sahityotsav</option>
+                <option value="theme-3|fa-feather">3. Ink Pen Parchment</option>
+                <option value="theme-4|fa-vector-square">4. Sector Red & Black</option>
+                <option value="theme-5|fa-ship">5. Crimson Voyage</option>
+                <option value="theme-6|fa-mosque">6. Royal Emerald Mosque</option>
                 <option value="theme-7|fa-gem">7. Midnight Rose Gold</option>
-                <option value="theme-8|fa-certificate">8. Islamic Heritage Gold</option>
-                <option value="theme-9|fa-wand-magic-sparkles">9. Galactic Nebula</option>
-                <option value="theme-10|fa-award">10. Vintage Gold Parchment</option>
+                <option value="theme-8|fa-bolt">8. Cyberpunk Hologram</option>
+                <option value="theme-9|fa-award">9. Vintage Gold Parchment</option>
+                <option value="theme-10|fa-wand-magic-sparkles">10. Cosmic Purple Nebula</option>
             </select>
             <button class="btn-dl-card" onclick="downloadCard(this, '{{ prog.name }}')">
                 <i class="fas fa-download"></i> JPEG
@@ -536,6 +548,10 @@
             card.style.display = card.dataset.prog.includes(q) ? '' : 'none';
         });
     }
+
+    function showOverlay() { document.getElementById('dl-overlay').classList.add('active'); }
+    function hideOverlay() { document.getElementById('dl-overlay').classList.remove('active'); }
+    function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
 
     async function downloadCard(btn, progName) {
         const card = btn.closest('.winner-card');
@@ -598,10 +614,6 @@
     }
 
     function safeFileName(name) { return name.replace(/[^a-z0-9]/gi, '_').toLowerCase(); }
-    function showOverlay() { document.getElementById('dl-overlay').classList.add('active'); }
-    function hideOverlay() { document.getElementById('dl-overlay').classList.remove('active'); }
-    function sleep(ms)     { return new Promise(r => setTimeout(r, ms)); }
 </script>
-
 </body>
 </html>
