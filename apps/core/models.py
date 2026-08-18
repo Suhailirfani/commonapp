@@ -98,12 +98,24 @@ class Stage(TenantBaseModel):
     name = models.CharField(max_length=100)
     stage_type = models.CharField(max_length=15, choices=STAGE_TYPES, default='STAGE')
     location_details = models.CharField(max_length=200, blank=True)
+    reserved_days = models.ManyToManyField(
+        'FestDay',
+        blank=True,
+        related_name='reserved_stages',
+        help_text="Fest days this stage is active/reserved for"
+    )
 
     class Meta:
         ordering = ['stage_type', 'name']
 
     def __str__(self):
         return f"{self.name} [{self.get_stage_type_display()}]"
+
+    def get_reserved_days_list(self):
+        """Returns list of reserved FestDays or all institution FestDays if none explicitly selected."""
+        if self.reserved_days.exists():
+            return list(self.reserved_days.all().order_by('day_number'))
+        return list(FestDay.objects.filter(institution=self.institution).order_by('day_number'))
 
 
 # ----------------- Fest Days & Schedule -----------------

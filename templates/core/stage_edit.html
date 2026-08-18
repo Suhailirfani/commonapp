@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Edit Stage / Venue - {{ stage.name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <a href="{% url 'core:stage_list' institution.slug %}" style="color: var(--text-muted); text-decoration: none;"><i class="fa-solid fa-arrow-left"></i> Back to Stages</a>
+        <h2 style="font-size: 1.8rem; font-weight: 800; margin-top: 4px;">
+            <i class="fa-solid fa-pen-to-square" style="color: var(--accent-cyan);"></i> Edit Stage / Venue: <span style="color: var(--accent-cyan);">{{ stage.name }}</span>
+        </h2>
+    </div>
+</div>
+
+<div class="glass-card" style="max-width: 600px;">
+    <form method="POST">
+        {% csrf_token %}
+        <div class="form-group">
+            <label class="form-label">Stage / Venue Name</label>
+            <input type="text" name="name" class="form-control" value="{{ stage.name }}" required>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Venue Type</label>
+            <select name="stage_type" class="form-control" required>
+                <option value="STAGE" {% if stage.stage_type == 'STAGE' %}selected{% endif %}>Stage Event Venue</option>
+                <option value="OFF_STAGE" {% if stage.stage_type == 'OFF_STAGE' %}selected{% endif %}>Off-Stage Class / Hall</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Location / Details</label>
+            <input type="text" name="location_details" class="form-control" value="{{ stage.location_details }}">
+        </div>
+
+        <!-- Reserved Days Section -->
+        <div class="form-group" style="background: rgba(15, 23, 42, 0.5); padding: 14px; border-radius: 10px; border: 1px solid var(--border-color);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <label class="form-label" style="color: var(--accent-amber); font-weight: 700; margin: 0;">
+                    <i class="fa-solid fa-calendar-check"></i> Reserved Days for this Venue
+                </label>
+                <div style="display: flex; gap: 6px;">
+                    <button type="button" class="btn-primary" style="padding: 2px 8px; font-size: 0.75rem; background: rgba(255,255,255,0.08); box-shadow: none;" onclick="toggleStageDays(true)">Select All</button>
+                    <button type="button" class="btn-primary" style="padding: 2px 8px; font-size: 0.75rem; background: rgba(255,255,255,0.08); box-shadow: none;" onclick="toggleStageDays(false)">Deselect All</button>
+                </div>
+            </div>
+            <p style="color: var(--text-muted); font-size: 0.8rem; margin-bottom: 10px;">
+                Tick days when this venue is active. (Untick days when this venue is closed/reserved for other purposes).
+            </p>
+
+            <div style="display: flex; flex-wrap: wrap; gap: 12px;">
+                {% for d in fest_days %}
+                <label style="display: flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.04); padding: 6px 12px; border-radius: 6px; border: 1px solid var(--border-color); cursor: pointer; font-size: 0.88rem;">
+                    <input type="checkbox" name="reserved_days[]" value="{{ d.id }}" class="stage-day-check" {% if d.id in reserved_day_ids %}checked{% endif %} style="width: 16px; height: 16px; accent-color: var(--accent-amber);">
+                    <strong>Day {{ d.day_number }}</strong> {% if d.name %}({{ d.name }}){% endif %}
+                </label>
+                {% empty %}
+                <span style="color: var(--text-muted); font-size: 0.82rem;">No fest days created yet.</span>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+            <a href="{% url 'core:stage_list' institution.slug %}" class="btn-primary" style="background: rgba(255,255,255,0.08); box-shadow: none; text-decoration: none;">Cancel</a>
+            <button type="submit" class="btn-primary" style="background: linear-gradient(135deg, var(--accent-emerald), #059669);">
+                <i class="fa-solid fa-floppy-disk"></i> Save Venue Changes
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+function toggleStageDays(status) {
+    document.querySelectorAll('.stage-day-check').forEach(function(c) { c.checked = status; });
+}
+</script>
+{% endblock %}

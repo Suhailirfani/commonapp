@@ -346,11 +346,16 @@
             <div style="margin-top: 16px;">
                 {% for day in fest_days %}
                 <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(255,255,255,0.03); border-radius: 8px; margin-bottom: 6px;">
-                    <span><strong>Day {{ day.day_number }}</strong> - {{ day.start_time|time:"h:i A" }} to {{ day.end_time|time:"h:i A" }}</span>
-                    <form method="POST" action="{% url 'core:delete_fest_day' institution.slug day.id %}">
-                        {% csrf_token %}
-                        <button type="submit" class="btn-danger" style="padding: 4px 8px; font-size: 0.75rem;" onclick="return confirm('Delete this fest day?');"><i class="fa-solid fa-trash"></i></button>
-                    </form>
+                    <span><strong>Day {{ day.day_number }}</strong> {% if day.name %}({{ day.name }}){% endif %} - {{ day.start_time|time:"h:i A" }} to {{ day.end_time|time:"h:i A" }}</span>
+                    <div style="display: flex; gap: 4px; align-items: center;">
+                        <a href="{% url 'core:fest_day_edit' institution.slug day.id %}" class="btn-primary" style="padding: 4px 8px; font-size: 0.75rem; background: rgba(255,255,255,0.08); box-shadow: none;" title="Edit Fest Day">
+                            <i class="fa-solid fa-pen"></i>
+                        </a>
+                        <form method="POST" action="{% url 'core:delete_fest_day' institution.slug day.id %}" style="display: inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="btn-danger" style="padding: 4px 8px; font-size: 0.75rem;" onclick="return confirm('Delete this fest day?');" title="Delete Fest Day"><i class="fa-solid fa-trash"></i></button>
+                        </form>
+                    </div>
                 </div>
                 {% endfor %}
             </div>
@@ -372,6 +377,23 @@
                         <option value="OFF_STAGE">Off-Stage Class / Hall</option>
                     </select>
                 </div>
+                <div class="form-group" style="background: rgba(15, 23, 42, 0.5); padding: 10px; border-radius: 8px; border: 1px solid var(--border-color);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                        <label class="form-label" style="color: var(--accent-amber); font-weight: 700; margin: 0; font-size: 0.82rem;">
+                            <i class="fa-solid fa-calendar-check"></i> Reserved Days (Default: All)
+                        </label>
+                    </div>
+                    <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                        {% for d in fest_days %}
+                        <label style="display: flex; align-items: center; gap: 4px; cursor: pointer; font-size: 0.8rem; background: rgba(255,255,255,0.04); padding: 3px 8px; border-radius: 4px;">
+                            <input type="checkbox" name="reserved_days[]" value="{{ d.id }}" checked style="width: 14px; height: 14px; accent-color: var(--accent-amber);">
+                            Day {{ d.day_number }}
+                        </label>
+                        {% empty %}
+                        <span style="color: var(--text-muted); font-size: 0.78rem;">No days created yet</span>
+                        {% endfor %}
+                    </div>
+                </div>
                 <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; margin-top: 10px;">
                     <i class="fa-solid fa-plus"></i> Add Stage / Venue
                 </button>
@@ -380,11 +402,25 @@
             <div style="margin-top: 16px;">
                 {% for st in stages %}
                 <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(255,255,255,0.03); border-radius: 8px; margin-bottom: 6px;">
-                    <span><strong>{{ st.name }}</strong> ({{ st.get_stage_type_display }})</span>
-                    <form method="POST" action="{% url 'core:delete_stage' institution.slug st.id %}">
-                        {% csrf_token %}
-                        <button type="submit" class="btn-danger" style="padding: 4px 8px; font-size: 0.75rem;" onclick="return confirm('Delete this venue?');"><i class="fa-solid fa-trash"></i></button>
-                    </form>
+                    <div>
+                        <strong>{{ st.name }}</strong> <span style="color: var(--text-muted); font-size: 0.8rem;">({{ st.get_stage_type_display }})</span>
+                        <div style="display: flex; gap: 4px; margin-top: 2px;">
+                            {% for rd in st.get_reserved_days_list %}
+                                <span class="badge badge-approved" style="font-size: 0.65rem; padding: 1px 5px;">Day {{ rd.day_number }}</span>
+                            {% empty %}
+                                <span style="color: var(--text-muted); font-size: 0.72rem;">All Days</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 4px; align-items: center;">
+                        <a href="{% url 'core:stage_edit' institution.slug st.id %}" class="btn-primary" style="padding: 4px 8px; font-size: 0.75rem; background: rgba(255,255,255,0.08); box-shadow: none;" title="Edit Stage">
+                            <i class="fa-solid fa-pen"></i>
+                        </a>
+                        <form method="POST" action="{% url 'core:delete_stage' institution.slug st.id %}" style="display: inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="btn-danger" style="padding: 4px 8px; font-size: 0.75rem;" onclick="return confirm('Delete this venue?');" title="Delete Stage"><i class="fa-solid fa-trash"></i></button>
+                        </form>
+                    </div>
                 </div>
                 {% endfor %}
             </div>

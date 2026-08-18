@@ -780,21 +780,36 @@ def announce_results_view(request, institution_slug, program_id):
 @login_required
 def stage_list_view(request, institution_slug):
     institution = get_object_or_404(Institution, slug=institution_slug)
+    fest_days = FestDay.objects.filter(institution=institution).order_by('day_number')
+
     if request.method == 'POST':
-        name = request.POST.get('name')
+        name = request.POST.get('name', '').strip()
         stype = request.POST.get('stage_type', 'STAGE')
         details = request.POST.get('location_details', '')
-        Stage.objects.create(
-            institution=institution,
-            name=name,
-            stage_type=stype,
-            location_details=details
-        )
-        messages.success(request, f"Stage / Venue '{name}' created successfully!")
-        return redirect('core:stage_list', institution_slug=institution.slug)
+        reserved_day_ids = request.POST.getlist('reserved_days[]')
 
-    stages = Stage.objects.filter(institution=institution)
-    return render(request, 'core/stage_list.html', {'institution': institution, 'stages': stages})
+        if name:
+            stage = Stage.objects.create(
+                institution=institution,
+                name=name,
+                stage_type=stype,
+                location_details=details
+            )
+            if reserved_day_ids:
+                days = FestDay.objects.filter(id__in=reserved_day_ids, institution=institution)
+                stage.reserved_days.set(days)
+            else:
+                stage.reserved_days.set(fest_days)
+
+            messages.success(request, f"Stage / Venue '{name}' created successfully!")
+            return redirect('core:stage_list', institution_slug=institution.slug)
+
+    stages = Stage.objects.filter(institution=institution).prefetch_related('reserved_days')
+    return render(request, 'core/stage_list.html', {
+        'institution': institution,
+        'stages': stages,
+        'fest_days': fest_days,
+    })
 
 
 @login_required
@@ -2021,7 +2036,7 @@ def manage_schedule_view(request, institution_slug):
     institution = get_object_or_404(Institution, slug=institution_slug)
 
     fest_days = FestDay.objects.filter(institution=institution).order_by('day_number')
-    stages = Stage.objects.filter(institution=institution).order_by('stage_type', 'name')
+    stages = Stage.objects.filter(institution=institution).prefetch_related('reserved_days').order_by('stage_type', 'name')
     programs = Program.objects.filter(institution=institution).select_related('category', 'schedule', 'schedule__fest_day', 'schedule__stage').all()
 
     program_list = []
@@ -2113,6 +2128,52 @@ def add_fest_day_view(request, institution_slug):
 
 
 @login_required
+def fest_day_edit_view(request, institution_slug, day_id):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    day = get_object_or_404(FestDay, id=day_id, institution=institution)
+
+    if request.method == 'POST':
+        day_number = request.POST.get('day_number')
+        date_str = request.POST.get('date')
+        name = request.POST.get('name', '').strip()
+        start_time_str = request.POST.get('start_time', '09:00')
+        end_time_str = request.POST.get('end_time', '21:00')
+
+        if day_number:
+            parsed_date = None
+            if date_str:
+                try:
+                    parsed_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+                except ValueError:
+                    pass
+
+            try:
+                st_time = datetime.strptime(start_time_str, '%H:%M').time()
+            except ValueError:
+                st_time = day.start_time
+
+            try:
+                en_time = datetime.strptime(end_time_str, '%H:%M').time()
+            except ValueError:
+                en_time = day.end_time
+
+            day.day_number = int(day_number)
+            day.date = parsed_date
+            day.name = name
+            day.start_time = st_time
+            day.end_time = en_time
+            day.save()
+
+            messages.success(request, f"Fest Day #{day.day_number} updated successfully!")
+            return redirect('core:manage_schedule', institution_slug=institution.slug)
+
+    return render(request, 'core/fest_day_edit.html', {
+        'institution': institution,
+        'day': day,
+    })
+
+
+@login_required
 def delete_fest_day_view(request, institution_slug, day_id):
     institution = get_object_or_404(Institution, slug=institution_slug)
     day = get_object_or_404(FestDay, id=day_id, institution=institution)
@@ -2125,21 +2186,65 @@ def delete_fest_day_view(request, institution_slug, day_id):
 @login_required
 def add_stage_view(request, institution_slug):
     institution = get_object_or_404(Institution, slug=institution_slug)
+    fest_days = FestDay.objects.filter(institution=institution).order_by('day_number')
     if request.method == 'POST':
         name = request.POST.get('name', '').strip()
         stage_type = request.POST.get('stage_type', 'STAGE')
         location_details = request.POST.get('location_details', '').strip()
+        reserved_day_ids = request.POST.getlist('reserved_days[]')
 
         if name:
-            Stage.objects.create(
+            stage = Stage.objects.create(
                 institution=institution,
                 name=name,
                 stage_type=stage_type,
                 location_details=location_details
             )
+            if reserved_day_ids:
+                days = FestDay.objects.filter(id__in=reserved_day_ids, institution=institution)
+                stage.reserved_days.set(days)
+            else:
+                stage.reserved_days.set(fest_days)
+
             messages.success(request, f"Venue / Stage '{name}' ({stage_type}) added successfully!")
 
     return redirect('core:manage_schedule', institution_slug=institution.slug)
+
+
+@login_required
+def stage_edit_view(request, institution_slug, stage_id):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    stage = get_object_or_404(Stage, id=stage_id, institution=institution)
+    fest_days = FestDay.objects.filter(institution=institution).order_by('day_number')
+
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        stage_type = request.POST.get('stage_type', 'STAGE')
+        location_details = request.POST.get('location_details', '').strip()
+        reserved_day_ids = request.POST.getlist('reserved_days[]')
+
+        if name:
+            stage.name = name
+            stage.stage_type = stage_type
+            stage.location_details = location_details
+            stage.save()
+
+            if reserved_day_ids:
+                days = FestDay.objects.filter(id__in=reserved_day_ids, institution=institution)
+                stage.reserved_days.set(days)
+            else:
+                stage.reserved_days.clear()
+
+            messages.success(request, f"Stage / Venue '{stage.name}' updated successfully!")
+            return redirect('core:stage_list', institution_slug=institution.slug)
+
+    reserved_day_ids = set(stage.reserved_days.values_list('id', flat=True))
+    return render(request, 'core/stage_edit.html', {
+        'institution': institution,
+        'stage': stage,
+        'fest_days': fest_days,
+        'reserved_day_ids': reserved_day_ids,
+    })
 
 
 @login_required

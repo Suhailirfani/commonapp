@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Edit Fest Day #{{ day.day_number }} - {{ institution.name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <a href="{% url 'core:manage_schedule' institution.slug %}" style="color: var(--text-muted); text-decoration: none;"><i class="fa-solid fa-arrow-left"></i> Back to Schedule Engine</a>
+        <h2 style="font-size: 1.8rem; font-weight: 800; margin-top: 4px;">
+            <i class="fa-solid fa-pen-to-square" style="color: var(--accent-emerald);"></i> Edit Fest Day: <span style="color: var(--accent-emerald);">Day #{{ day.day_number }}</span>
+        </h2>
+    </div>
+</div>
+
+<div class="glass-card" style="max-width: 550px;">
+    <form method="POST">
+        {% csrf_token %}
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+            <div class="form-group">
+                <label class="form-label">Day Number</label>
+                <input type="number" name="day_number" class="form-control" value="{{ day.day_number }}" required min="1">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Title / Label (Optional)</label>
+                <input type="text" name="name" class="form-control" value="{{ day.name|default:'' }}" placeholder="e.g. Inauguration Day">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Date (Optional)</label>
+            <input type="date" name="date" class="form-control" value="{{ day.date|date:'Y-m-d'|default:'' }}">
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+            <div class="form-group">
+                <label class="form-label">Operating Start Time</label>
+                <input type="time" name="start_time" class="form-control" value="{{ day.start_time|time:'H:i' }}" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Operating End Time</label>
+                <input type="time" name="end_time" class="form-control" value="{{ day.end_time|time:'H:i' }}" required>
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+            <a href="{% url 'core:manage_schedule' institution.slug %}" class="btn-primary" style="background: rgba(255,255,255,0.08); box-shadow: none; text-decoration: none;">Cancel</a>
+            <button type="submit" class="btn-primary" style="background: linear-gradient(135deg, var(--accent-emerald), #059669);">
+                <i class="fa-solid fa-floppy-disk"></i> Save Fest Day Changes
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

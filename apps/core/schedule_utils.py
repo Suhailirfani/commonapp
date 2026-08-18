@@ -125,7 +125,7 @@ def generate_smart_auto_schedule(institution, buffer_between_programs_mins=5):
     Auto-schedules all unscheduled programs for an institution across available FestDays and Stages.
     """
     fest_days = list(FestDay.objects.filter(institution=institution).order_by('day_number'))
-    stages = list(Stage.objects.filter(institution=institution).order_by('stage_type', 'name'))
+    stages = list(Stage.objects.filter(institution=institution).prefetch_related('reserved_days').order_by('stage_type', 'name'))
 
     if not fest_days or not stages:
         return {'error': 'Please add at least one Fest Day and one Stage before running Auto-Scheduler.'}
@@ -192,6 +192,9 @@ def generate_smart_auto_schedule(institution, buffer_between_programs_mins=5):
             for stage in valid_stages:
                 if is_placed:
                     break
+
+                if stage.reserved_days.exists() and day not in stage.reserved_days.all():
+                    continue
 
                 curr_start = day_start_dt
                 

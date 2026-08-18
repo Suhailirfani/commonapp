@@ -36,6 +36,28 @@
                 <input type="text" name="location_details" class="form-control" placeholder="e.g. Ground Floor, Block A">
             </div>
 
+            <div class="form-group" style="background: rgba(15, 23, 42, 0.5); padding: 12px; border-radius: 8px; border: 1px solid var(--border-color);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <label class="form-label" style="color: var(--accent-amber); font-weight: 700; margin: 0;">
+                        <i class="fa-solid fa-calendar-check"></i> Reserved Days (Default: All Days)
+                    </label>
+                    <div style="display: flex; gap: 4px;">
+                        <button type="button" class="btn-primary" style="padding: 2px 6px; font-size: 0.72rem; background: rgba(255,255,255,0.08); box-shadow: none;" onclick="toggleAllDays(true)">All</button>
+                        <button type="button" class="btn-primary" style="padding: 2px 6px; font-size: 0.72rem; background: rgba(255,255,255,0.08); box-shadow: none;" onclick="toggleAllDays(false)">None</button>
+                    </div>
+                </div>
+                <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px;">
+                    {% for d in fest_days %}
+                    <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 0.82rem; background: rgba(255,255,255,0.04); padding: 4px 8px; border-radius: 4px;">
+                        <input type="checkbox" name="reserved_days[]" value="{{ d.id }}" class="new-stage-day-check" checked style="width: 15px; height: 15px; accent-color: var(--accent-amber);">
+                        Day {{ d.day_number }} {% if d.name %}({{ d.name }}){% endif %}
+                    </label>
+                    {% empty %}
+                    <span style="color: var(--text-muted); font-size: 0.8rem;">No fest days created yet.</span>
+                    {% endfor %}
+                </div>
+            </div>
+
             <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; margin-top: 10px;">
                 <i class="fa-solid fa-floppy-disk"></i> Save Stage
             </button>
@@ -51,13 +73,19 @@
                     <tr>
                         <th>Stage Name</th>
                         <th>Type</th>
-                        <th>Location</th>
+                        <th>Reserved Days</th>
+                        <th style="width: 90px; text-align: right;">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for stage in stages %}
                     <tr>
-                        <td><strong>{{ stage.name }}</strong></td>
+                        <td>
+                            <strong>{{ stage.name }}</strong>
+                            {% if stage.location_details %}
+                            <div style="font-size: 0.78rem; color: var(--text-muted);">{{ stage.location_details }}</div>
+                            {% endif %}
+                        </td>
                         <td>
                             {% if stage.stage_type == 'STAGE' %}
                             <span class="badge badge-approved">Stage Venue</span>
@@ -65,11 +93,30 @@
                             <span class="badge badge-pending">Off-Stage</span>
                             {% endif %}
                         </td>
-                        <td>{{ stage.location_details|default:"-" }}</td>
+                        <td>
+                            {% for rd in stage.get_reserved_days_list %}
+                                <span class="badge badge-approved" style="font-size: 0.7rem; padding: 2px 6px;">Day {{ rd.day_number }}</span>
+                            {% empty %}
+                                <span style="color: var(--text-muted); font-size: 0.8rem;">All Days</span>
+                            {% endfor %}
+                        </td>
+                        <td style="text-align: right;">
+                            <div style="display: flex; gap: 4px; justify-content: flex-end;">
+                                <a href="{% url 'core:stage_edit' institution.slug stage.id %}" class="btn-primary" style="padding: 4px 8px; font-size: 0.75rem; background: rgba(255,255,255,0.08); box-shadow: none;" title="Edit Stage">
+                                    <i class="fa-solid fa-pen"></i>
+                                </a>
+                                <form method="POST" action="{% url 'core:delete_stage' institution.slug stage.id %}" style="display: inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn-danger" style="padding: 4px 8px; font-size: 0.75rem;" onclick="return confirm('Delete stage {{ stage.name }}?');" title="Delete Stage">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="3" style="text-align: center; color: var(--text-muted); padding: 24px;">
+                        <td colspan="4" style="text-align: center; color: var(--text-muted); padding: 24px;">
                             No stages created yet.
                         </td>
                     </tr>
@@ -80,4 +127,10 @@
     </div>
 
 </div>
+
+<script>
+function toggleAllDays(status) {
+    document.querySelectorAll('.new-stage-day-check').forEach(function(c) { c.checked = status; });
+}
+</script>
 {% endblock %}

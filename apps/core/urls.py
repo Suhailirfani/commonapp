@@ -80,8 +80,10 @@ urlpatterns = [
     
     # Scheduling, Settings & Points Configuration
     path('portal/<slug:institution_slug>/stages/', views.stage_list_view, name='stage_list'),
+    path('portal/<slug:institution_slug>/stages/<int:stage_id>/edit/', views.stage_edit_view, name='stage_edit'),
     path('portal/<slug:institution_slug>/schedule/', views.manage_schedule_view, name='manage_schedule'),
     path('portal/<slug:institution_slug>/schedule/fest-day/add/', views.add_fest_day_view, name='add_fest_day'),
+    path('portal/<slug:institution_slug>/schedule/fest-day/<int:day_id>/edit/', views.fest_day_edit_view, name='fest_day_edit'),
     path('portal/<slug:institution_slug>/schedule/fest-day/<int:day_id>/delete/', views.delete_fest_day_view, name='delete_fest_day'),
     path('portal/<slug:institution_slug>/schedule/stage/add/', views.add_stage_view, name='add_stage'),
     path('portal/<slug:institution_slug>/schedule/stage/<int:stage_id>/delete/', views.delete_stage_view, name='delete_stage'),
