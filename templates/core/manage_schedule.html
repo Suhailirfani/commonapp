@@ -64,13 +64,13 @@
 
 <!-- Mode Switcher Tabs (3 in one row) -->
 <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px;">
-    <button class="btn-primary tab-btn active" onclick="showTab('timetable-tab', this)" style="background: linear-gradient(135deg, var(--accent-cyan), #0284c7); padding: 8px 4px; font-size: 0.78rem; text-align: center; justify-content: center;">
+    <button class="btn-primary tab-btn active" id="btn-timetable-tab" onclick="showTab('timetable-tab', this)" style="background: linear-gradient(135deg, var(--accent-cyan), #0284c7); padding: 8px 4px; font-size: 0.78rem; text-align: center; justify-content: center;">
         <i class="fa-solid fa-border-all"></i> 1. Timetable
     </button>
-    <button class="btn-primary tab-btn" onclick="showTab('manual-tab', this)" style="background: rgba(255,255,255,0.08); box-shadow: none; padding: 8px 4px; font-size: 0.78rem; text-align: center; justify-content: center;">
+    <button class="btn-primary tab-btn" id="btn-manual-tab" onclick="showTab('manual-tab', this)" style="background: rgba(255,255,255,0.08); box-shadow: none; padding: 8px 4px; font-size: 0.78rem; text-align: center; justify-content: center;">
         <i class="fa-solid fa-clock"></i> 2. Manual Slots
     </button>
-    <button class="btn-primary tab-btn" onclick="showTab('setup-tab', this)" style="background: rgba(255,255,255,0.08); box-shadow: none; padding: 8px 4px; font-size: 0.78rem; text-align: center; justify-content: center;">
+    <button class="btn-primary tab-btn" id="btn-setup-tab" onclick="showTab('setup-tab', this)" style="background: rgba(255,255,255,0.08); box-shadow: none; padding: 8px 4px; font-size: 0.78rem; text-align: center; justify-content: center;">
         <i class="fa-solid fa-sliders"></i> 3. Days & Venues
     </button>
 </div>
@@ -478,10 +478,25 @@ function showTab(tabId, btnEl) {
     document.querySelectorAll('.tab-btn').forEach(b => {
         b.style.background = 'rgba(255,255,255,0.08)';
         b.style.boxShadow = 'none';
+        b.classList.remove('active');
     });
 
-    document.getElementById(tabId).style.display = 'block';
-    btnEl.style.background = 'linear-gradient(135deg, var(--accent-cyan), #0284c7)';
+    var targetPane = document.getElementById(tabId);
+    if (targetPane) {
+        targetPane.style.display = 'block';
+    }
+
+    if (!btnEl) {
+        btnEl = document.getElementById('btn-' + tabId);
+    }
+    if (btnEl) {
+        btnEl.style.background = 'linear-gradient(135deg, var(--accent-cyan), #0284c7)';
+        btnEl.classList.add('active');
+    }
+
+    try {
+        localStorage.setItem('active_schedule_tab', tabId);
+    } catch(e) {}
 }
 
 function openManualSlotModal(programId, programName) {
@@ -493,5 +508,15 @@ function openManualSlotModal(programId, programName) {
 function closeManualSlotModal() {
     document.getElementById('manualSlotModal').style.display = 'none';
 }
+
+document.addEventListener('DOMContentLoaded', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const paramTab = urlParams.get('tab');
+    const savedTab = paramTab || localStorage.getItem('active_schedule_tab');
+
+    if (savedTab && document.getElementById(savedTab)) {
+        showTab(savedTab, document.getElementById('btn-' + savedTab));
+    }
+});
 </script>
 {% endblock %}

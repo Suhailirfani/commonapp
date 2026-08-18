@@ -2174,13 +2174,59 @@ def fest_day_edit_view(request, institution_slug, day_id):
 
 
 @login_required
+def fest_day_edit_view(request, institution_slug, day_id):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    day = get_object_or_404(FestDay, id=day_id, institution=institution)
+
+    if request.method == 'POST':
+        day_number = request.POST.get('day_number')
+        date_str = request.POST.get('date')
+        name = request.POST.get('name', '').strip()
+        start_time_str = request.POST.get('start_time', '09:00')
+        end_time_str = request.POST.get('end_time', '21:00')
+
+        if day_number:
+            parsed_date = None
+            if date_str:
+                try:
+                    parsed_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+                except ValueError:
+                    pass
+
+            try:
+                st_time = datetime.strptime(start_time_str, '%H:%M').time()
+            except ValueError:
+                st_time = day.start_time
+
+            try:
+                en_time = datetime.strptime(end_time_str, '%H:%M').time()
+            except ValueError:
+                en_time = day.end_time
+
+            day.day_number = int(day_number)
+            day.date = parsed_date
+            day.name = name
+            day.start_time = st_time
+            day.end_time = en_time
+            day.save()
+
+            messages.success(request, f"Fest Day #{day.day_number} updated successfully!")
+            return redirect(f"{reverse('core:manage_schedule', kwargs={'institution_slug': institution.slug})}?tab=setup-tab")
+
+    return render(request, 'core/fest_day_edit.html', {
+        'institution': institution,
+        'day': day,
+    })
+
+
+@login_required
 def delete_fest_day_view(request, institution_slug, day_id):
     institution = get_object_or_404(Institution, slug=institution_slug)
     day = get_object_or_404(FestDay, id=day_id, institution=institution)
     day_num = day.day_number
     day.delete()
     messages.success(request, f"Fest Day #{day_num} deleted successfully.")
-    return redirect('core:manage_schedule', institution_slug=institution.slug)
+    return redirect(f"{reverse('core:manage_schedule', kwargs={'institution_slug': institution.slug})}?tab=setup-tab")
 
 
 @login_required
@@ -2208,7 +2254,7 @@ def add_stage_view(request, institution_slug):
 
             messages.success(request, f"Venue / Stage '{name}' ({stage_type}) added successfully!")
 
-    return redirect('core:manage_schedule', institution_slug=institution.slug)
+    return redirect(f"{reverse('core:manage_schedule', kwargs={'institution_slug': institution.slug})}?tab=setup-tab")
 
 
 @login_required
@@ -2254,7 +2300,7 @@ def delete_stage_view(request, institution_slug, stage_id):
     st_name = stage.name
     stage.delete()
     messages.success(request, f"Venue '{st_name}' deleted successfully.")
-    return redirect('core:manage_schedule', institution_slug=institution.slug)
+    return redirect(f"{reverse('core:manage_schedule', kwargs={'institution_slug': institution.slug})}?tab=setup-tab")
 
 
 @login_required
@@ -2275,7 +2321,7 @@ def save_program_schedule_view(request, institution_slug):
                 start_t = datetime.strptime(start_time_str, '%H:%M').time()
             except ValueError:
                 messages.error(request, "Invalid start time format.")
-                return redirect('core:manage_schedule', institution_slug=institution.slug)
+                return redirect(f"{reverse('core:manage_schedule', kwargs={'institution_slug': institution.slug})}?tab=manual-tab")
 
             calc_mins = calculate_program_duration(program)
             end_t = (datetime.combine(datetime.today(), start_t) + timedelta(minutes=calc_mins)).time()
@@ -2293,7 +2339,7 @@ def save_program_schedule_view(request, institution_slug):
             )
             messages.success(request, f"Schedule saved for '{program.name}'!")
 
-    return redirect('core:manage_schedule', institution_slug=institution.slug)
+    return redirect(f"{reverse('core:manage_schedule', kwargs={'institution_slug': institution.slug})}?tab=manual-tab")
 
 
 @login_required
@@ -2303,7 +2349,7 @@ def delete_program_schedule_view(request, institution_slug, schedule_id):
     prog_name = sched.program.name
     sched.delete()
     messages.success(request, f"Schedule for '{prog_name}' removed.")
-    return redirect('core:manage_schedule', institution_slug=institution.slug)
+    return redirect(f"{reverse('core:manage_schedule', kwargs={'institution_slug': institution.slug})}?tab=manual-tab")
 
 
 @login_required
@@ -2320,7 +2366,7 @@ def run_auto_scheduler_view(request, institution_slug):
             if skip_count > 0:
                 messages.warning(request, f"Could not fit {skip_count} programs into available time slots. Consider adding another fest day or stage.")
 
-    return redirect('core:manage_schedule', institution_slug=institution.slug)
+    return redirect(f"{reverse('core:manage_schedule', kwargs={'institution_slug': institution.slug})}?tab=timetable-tab")
 
 
 @login_required
@@ -2331,7 +2377,7 @@ def clear_all_schedules_view(request, institution_slug):
         ProgramSchedule.objects.filter(institution=institution).delete()
         messages.success(request, f"Cleared all {count} program schedules.")
 
-    return redirect('core:manage_schedule', institution_slug=institution.slug)
+    return redirect(f"{reverse('core:manage_schedule', kwargs={'institution_slug': institution.slug})}?tab=timetable-tab")
 
 
 @login_required
@@ -2368,7 +2414,7 @@ def update_program_duration_view(request, institution_slug, program_id):
 
         messages.success(request, f"Schedule settings for '{program.name}' updated.")
 
-    return redirect('core:manage_schedule', institution_slug=institution.slug)
+    return redirect(f"{reverse('core:manage_schedule', kwargs={'institution_slug': institution.slug})}?tab=manual-tab")
 
 
 from django.urls import reverse
