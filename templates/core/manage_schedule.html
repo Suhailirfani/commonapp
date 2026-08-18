@@ -434,7 +434,7 @@
 
             <div class="form-group">
                 <label class="form-label">Select Fest Day</label>
-                <select name="fest_day_id" class="form-control" required>
+                <select name="fest_day_id" id="modalFestDaySelect" class="form-control" required onchange="updateSuggestedStartTime()">
                     {% for d in fest_days %}
                     <option value="{{ d.id }}">Day {{ d.day_number }} {% if d.name %}({{ d.name }}){% endif %} [{{ d.start_time|time:"h:i A" }} - {{ d.end_time|time:"h:i A" }}]</option>
                     {% endfor %}
@@ -443,7 +443,7 @@
 
             <div class="form-group">
                 <label class="form-label">Select Venue / Stage</label>
-                <select name="stage_id" class="form-control" required>
+                <select name="stage_id" id="modalStageSelect" class="form-control" required onchange="updateSuggestedStartTime()">
                     {% for st in stages %}
                     <option value="{{ st.id }}">{{ st.name }} ({{ st.get_stage_type_display }})</option>
                     {% endfor %}
@@ -451,8 +451,8 @@
             </div>
 
             <div class="form-group">
-                <label class="form-label">Start Time</label>
-                <input type="time" name="start_time" class="form-control" value="09:00" required>
+                <label class="form-label">Start Time (Defaults to next minute after previous booking)</label>
+                <input type="time" name="start_time" id="modalStartTimeInput" class="form-control" value="09:00" required>
             </div>
 
             <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
@@ -466,6 +466,31 @@
 </div>
 
 <script>
+const nextTimesMap = {{ next_times_json|safe }};
+const programScheduleData = {
+    {% for item in program_list %}
+    {% if item.has_schedule %}
+    "{{ item.program.id }}": {
+        "day_id": "{{ item.schedule.fest_day.id }}",
+        "stage_id": "{{ item.schedule.stage.id }}",
+        "start_time": "{{ item.schedule.start_time|time:'H:i' }}"
+    },
+    {% endif %}
+    {% endfor %}
+};
+
+function updateSuggestedStartTime() {
+    const daySelect = document.getElementById('modalFestDaySelect');
+    const stageSelect = document.getElementById('modalStageSelect');
+    const timeInput = document.getElementById('modalStartTimeInput');
+    if (!daySelect || !stageSelect || !timeInput) return;
+
+    const key = daySelect.value + '_' + stageSelect.value;
+    if (nextTimesMap && nextTimesMap[key]) {
+        timeInput.value = nextTimesMap[key];
+    }
+}
+
 function showTab(tabId, btnEl) {
     document.querySelectorAll('.tab-pane').forEach(p => p.style.display = 'none');
     document.querySelectorAll('.tab-btn').forEach(b => {
@@ -495,6 +520,20 @@ function showTab(tabId, btnEl) {
 function openManualSlotModal(programId, programName) {
     document.getElementById('modalProgramId').value = programId;
     document.getElementById('modalProgramTitle').innerText = 'Manual Slot: ' + programName;
+
+    const daySelect = document.getElementById('modalFestDaySelect');
+    const stageSelect = document.getElementById('modalStageSelect');
+    const timeInput = document.getElementById('modalStartTimeInput');
+
+    const existing = programScheduleData[programId];
+    if (existing) {
+        if (daySelect && existing.day_id) daySelect.value = existing.day_id;
+        if (stageSelect && existing.stage_id) stageSelect.value = existing.stage_id;
+        if (timeInput && existing.start_time) timeInput.value = existing.start_time;
+    } else {
+        updateSuggestedStartTime();
+    }
+
     document.getElementById('manualSlotModal').style.display = 'flex';
 }
 

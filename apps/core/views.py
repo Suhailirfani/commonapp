@@ -1,3 +1,4 @@
+import json
 from datetime import datetime, timedelta, time
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
@@ -2087,18 +2088,33 @@ def manage_schedule_view(request, institution_slug):
         schedule_map.setdefault((s.fest_day_id, s.stage_id), []).append(s)
 
     timetable_by_day = []
+    next_times_map = {}
+    base_date = datetime.today().date()
+
     for day in fest_days:
         day_stages = []
+        day_default_str = day.start_time.strftime("%H:%M")
         for stage in stages:
             schedules = sorted(schedule_map.get((day.id, stage.id), []), key=lambda x: x.start_time)
             day_stages.append({
                 'stage': stage,
                 'schedules': schedules
             })
+
+            key = f"{day.id}_{stage.id}"
+            if schedules:
+                latest_end = max(s.end_time for s in schedules)
+                next_dt = datetime.combine(base_date, latest_end) + timedelta(minutes=1)
+                next_times_map[key] = next_dt.time().strftime("%H:%M")
+            else:
+                next_times_map[key] = day_default_str
+
         timetable_by_day.append({
             'day': day,
             'stages': day_stages
         })
+
+    next_times_json = json.dumps(next_times_map)
 
     return render(request, 'core/manage_schedule.html', {
         'institution': institution,
@@ -2108,7 +2124,8 @@ def manage_schedule_view(request, institution_slug):
         'total_programs': len(programs),
         'scheduled_count': scheduled_count,
         'clash_data': clash_data,
-        'timetable_by_day': timetable_by_day
+        'timetable_by_day': timetable_by_day,
+        'next_times_json': next_times_json,
     })
 
 
