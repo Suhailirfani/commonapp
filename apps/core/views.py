@@ -4,7 +4,7 @@ from django.urls import reverse
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
-from django.db.models import Q
+from django.db.models import Q, Count
 from apps.tenants.models import Institution
 from apps.users.models import User
 from .models import (
@@ -2039,11 +2039,33 @@ def manage_schedule_view(request, institution_slug):
     stages = Stage.objects.filter(institution=institution).prefetch_related('reserved_days').order_by('stage_type', 'name')
     programs = Program.objects.filter(institution=institution).select_related('category', 'schedule', 'schedule__fest_day', 'schedule__stage').all()
 
+    # Pre-cache participant counts to eliminate N+1 queries
+    part_counts = dict(
+        Participation.objects.filter(institution=institution)
+        .values('program_id')
+        .annotate(c=Count('id'))
+        .values_list('program_id', 'c')
+    )
+    group_counts = dict(
+        GroupParticipation.objects.filter(institution=institution)
+        .values('program_id')
+        .annotate(c=Count('id'))
+        .values_list('program_id', 'c')
+    )
+
     program_list = []
     scheduled_count = 0
     for p in programs:
-        assigned_count = get_program_assigned_count(p)
-        calc_dur = calculate_program_duration(p)
+        assigned_count = group_counts.get(p.id, 0) if p.is_group else part_counts.get(p.id, 0)
+        
+        # Calculate duration in-memory
+        if p.presentation_mode == 'SIMULTANEOUS':
+            calc_dur = p.duration_per_participant + (p.buffer_margin_minutes or 0)
+        else:
+            cnt = assigned_count if assigned_count > 0 else 1
+            calc_dur = (cnt * p.duration_per_participant) + (p.buffer_margin_minutes or 0)
+        calc_dur = max(calc_dur, 5)
+
         has_sched = hasattr(p, 'schedule') and p.schedule is not None
         if has_sched:
             scheduled_count += 1
@@ -2058,11 +2080,17 @@ def manage_schedule_view(request, institution_slug):
 
     clash_data = detect_all_clashes(institution)
 
+    # Bulk fetch timetable schedules to prevent N+1 query loops
+    all_schedules = list(ProgramSchedule.objects.filter(institution=institution).select_related('program', 'program__category'))
+    schedule_map = {}
+    for s in all_schedules:
+        schedule_map.setdefault((s.fest_day_id, s.stage_id), []).append(s)
+
     timetable_by_day = []
     for day in fest_days:
         day_stages = []
         for stage in stages:
-            schedules = ProgramSchedule.objects.filter(institution=institution, fest_day=day, stage=stage).select_related('program', 'program__category').order_by('start_time')
+            schedules = sorted(schedule_map.get((day.id, stage.id), []), key=lambda x: x.start_time)
             day_stages.append({
                 'stage': stage,
                 'schedules': schedules

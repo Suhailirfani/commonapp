@@ -162,37 +162,37 @@
                         <td>
                             <strong>{{ item.program.name }}</strong>
                             <div style="color: var(--text-muted); font-size: 0.75rem;">{{ item.program.category.name }}</div>
+                            <form method="POST" action="{% url 'core:update_program_duration' institution.slug item.program.id %}" id="dur-form-desk-{{ item.program.id }}">
+                                {% csrf_token %}
+                            </form>
                         </td>
-                        <form method="POST" action="{% url 'core:update_program_duration' institution.slug item.program.id %}">
-                            {% csrf_token %}
-                            <td>
-                                <select name="program_type" class="form-control" style="font-size: 0.8rem; padding: 4px 8px;" onchange="this.form.submit()">
-                                    <option value="STAGE" {% if item.program.program_type == 'STAGE' %}selected{% endif %}>Stage</option>
-                                    <option value="OFF_STAGE" {% if item.program.program_type == 'OFF_STAGE' %}selected{% endif %}>Off-Stage</option>
-                                </select>
-                            </td>
-                            <td>
-                                <select name="presentation_mode" class="form-control" style="font-size: 0.8rem; padding: 4px 8px;" onchange="this.form.submit()">
-                                    <option value="SEQUENTIAL" {% if item.program.presentation_mode == 'SEQUENTIAL' %}selected{% endif %}>SEQ (Per Part)</option>
-                                    <option value="SIMULTANEOUS" {% if item.program.presentation_mode == 'SIMULTANEOUS' %}selected{% endif %}>SIM (All-at-once)</option>
-                                </select>
-                            </td>
-                            <td>
-                                <select name="preferred_stage_id" class="form-control" style="font-size: 0.8rem; padding: 4px 8px;" onchange="this.form.submit()">
-                                    <option value="">Auto Preference</option>
-                                    {% for st in stages %}
-                                    <option value="{{ st.id }}" {% if item.program.preferred_stage_id == st.id %}selected{% endif %}>⭐ {{ st.name }}</option>
-                                    {% endfor %}
-                                </select>
-                            </td>
-                            <td><span class="badge badge-approved">{{ item.assigned_count }}</span></td>
-                            <td>
-                                <input type="number" name="duration_per_participant" value="{{ item.program.duration_per_participant }}" class="form-control" style="width: 60px; font-size: 0.8rem; padding: 4px 6px;" min="1" onchange="this.form.submit()">
-                            </td>
-                            <td>
-                                <input type="number" name="buffer_margin_minutes" value="{{ item.program.buffer_margin_minutes }}" class="form-control" style="width: 50px; font-size: 0.8rem; padding: 4px 6px;" min="0" onchange="this.form.submit()">
-                            </td>
-                        </form>
+                        <td>
+                            <select name="program_type" form="dur-form-desk-{{ item.program.id }}" class="form-control" style="font-size: 0.8rem; padding: 4px 8px;" onchange="document.getElementById('dur-form-desk-{{ item.program.id }}').submit()">
+                                <option value="STAGE" {% if item.program.program_type == 'STAGE' %}selected{% endif %}>Stage</option>
+                                <option value="OFF_STAGE" {% if item.program.program_type == 'OFF_STAGE' %}selected{% endif %}>Off-Stage</option>
+                            </select>
+                        </td>
+                        <td>
+                            <select name="presentation_mode" form="dur-form-desk-{{ item.program.id }}" class="form-control" style="font-size: 0.8rem; padding: 4px 8px;" onchange="document.getElementById('dur-form-desk-{{ item.program.id }}').submit()">
+                                <option value="SEQUENTIAL" {% if item.program.presentation_mode == 'SEQUENTIAL' %}selected{% endif %}>SEQ (Per Part)</option>
+                                <option value="SIMULTANEOUS" {% if item.program.presentation_mode == 'SIMULTANEOUS' %}selected{% endif %}>SIM (All-at-once)</option>
+                            </select>
+                        </td>
+                        <td>
+                            <select name="preferred_stage_id" form="dur-form-desk-{{ item.program.id }}" class="form-control" style="font-size: 0.8rem; padding: 4px 8px;" onchange="document.getElementById('dur-form-desk-{{ item.program.id }}').submit()">
+                                <option value="">Auto Preference</option>
+                                {% for st in stages %}
+                                <option value="{{ st.id }}" {% if item.program.preferred_stage_id == st.id %}selected{% endif %}>⭐ {{ st.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                        <td><span class="badge badge-approved">{{ item.assigned_count }}</span></td>
+                        <td>
+                            <input type="number" name="duration_per_participant" form="dur-form-desk-{{ item.program.id }}" value="{{ item.program.duration_per_participant }}" class="form-control" style="width: 60px; font-size: 0.8rem; padding: 4px 6px;" min="1" onchange="document.getElementById('dur-form-desk-{{ item.program.id }}').submit()">
+                        </td>
+                        <td>
+                            <input type="number" name="buffer_margin_minutes" form="dur-form-desk-{{ item.program.id }}" value="{{ item.program.buffer_margin_minutes }}" class="form-control" style="width: 50px; font-size: 0.8rem; padding: 4px 6px;" min="0" onchange="document.getElementById('dur-form-desk-{{ item.program.id }}').submit()">
+                        </td>
 
                         <td style="font-weight: 800; color: var(--accent-cyan);">{{ item.calculated_duration }}m</td>
 
