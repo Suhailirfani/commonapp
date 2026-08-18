@@ -24,7 +24,10 @@
         </a>
     </div>
     {% else %}
-    <div>
+    <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+        <a href="{% url 'core:download_programs_pdf' institution.slug %}" download class="btn-primary" style="background: linear-gradient(135deg, #0284c7, #0369a1);">
+            <i class="fa-solid fa-file-pdf"></i> Download PDF Report
+        </a>
         <span class="badge badge-approved" style="font-size: 0.9rem; padding: 8px 14px;"><i class="fa-solid fa-eye"></i> Read-Only Events Directory</span>
     </div>
     {% endif %}
