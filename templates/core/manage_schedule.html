@@ -202,7 +202,7 @@
                         </td>
                         <td style="padding: 6px 8px; text-align: right;">
                             <div style="display: flex; gap: 4px; justify-content: flex-end; align-items: center;">
-                                <button type="button" class="btn-primary" style="padding: 4px 8px; font-size: 0.72rem;" onclick="openManualSlotModal('{{ item.program.id }}', '{{ item.program.name|escapejs }}')" title="Set Manual Time Slot">
+                                <button type="button" class="btn-primary" style="padding: 4px 8px; font-size: 0.72rem;" onclick="openManualSlotModal('{{ item.program.id }}', '{{ item.program.name|escapejs }}', '{{ item.program.program_type }}', '{{ item.program.preferred_stage_id|default:'' }}')" title="Set Manual Time Slot">
                                     <i class="fa-solid fa-clock"></i> Slot
                                 </button>
                                 {% if item.has_schedule %}
@@ -285,7 +285,7 @@
                         Parts: <strong style="color: #fff;">{{ item.assigned_count }}</strong> | Total: <strong style="color: var(--accent-cyan);">{{ item.calculated_duration }}m</strong>
                     </div>
                     <div style="display: flex; gap: 6px; align-items: center;">
-                        <button type="button" class="btn-primary" style="padding: 6px 10px; font-size: 0.78rem;" onclick="openManualSlotModal('{{ item.program.id }}', '{{ item.program.name|escapejs }}')">
+                        <button type="button" class="btn-primary" style="padding: 6px 10px; font-size: 0.78rem;" onclick="openManualSlotModal('{{ item.program.id }}', '{{ item.program.name|escapejs }}', '{{ item.program.program_type }}', '{{ item.program.preferred_stage_id|default:'' }}')">
                             <i class="fa-solid fa-clock"></i> Manual Slot
                         </button>
                         {% if item.has_schedule %}
@@ -445,7 +445,7 @@
                 <label class="form-label">Select Venue / Stage</label>
                 <select name="stage_id" id="modalStageSelect" class="form-control" required onchange="updateSuggestedStartTime()">
                     {% for st in stages %}
-                    <option value="{{ st.id }}">{{ st.name }} ({{ st.get_stage_type_display }})</option>
+                    <option value="{{ st.id }}" data-stage-type="{{ st.stage_type }}">{{ st.name }} ({{ st.get_stage_type_display }})</option>
                     {% endfor %}
                 </select>
             </div>
@@ -517,7 +517,7 @@ function showTab(tabId, btnEl) {
     } catch(e) {}
 }
 
-function openManualSlotModal(programId, programName) {
+function openManualSlotModal(programId, programName, programType, preferredStageId) {
     document.getElementById('modalProgramId').value = programId;
     document.getElementById('modalProgramTitle').innerText = 'Manual Slot: ' + programName;
 
@@ -531,6 +531,14 @@ function openManualSlotModal(programId, programName) {
         if (stageSelect && existing.stage_id) stageSelect.value = existing.stage_id;
         if (timeInput && existing.start_time) timeInput.value = existing.start_time;
     } else {
+        if (preferredStageId && stageSelect && stageSelect.querySelector(`option[value="${preferredStageId}"]`)) {
+            stageSelect.value = preferredStageId;
+        } else if (programType && stageSelect) {
+            const matchingOpt = Array.from(stageSelect.options).find(opt => opt.getAttribute('data-stage-type') === programType);
+            if (matchingOpt) {
+                stageSelect.value = matchingOpt.value;
+            }
+        }
         updateSuggestedStartTime();
     }
 
