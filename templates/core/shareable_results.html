@@ -543,11 +543,11 @@
 
             <div class="card-footer-branding">
                 <div>
-                    <div class="fest-art-title">Sahityotsav</div>
+                    <div class="fest-art-title">{{ prog.competition.name|default:"Festival" }}</div>
                     <div class="inst-sub">{{ institution.name }}</div>
                 </div>
                 <div style="text-align: right; font-size: 0.72rem; opacity: 0.8;">
-                    <strong>2026 FEST</strong>
+                    <strong>{% if prog.competition.year %}{{ prog.competition.year }} FEST{% else %}FESTIVAL{% endif %}</strong>
                 </div>
             </div>
         </div>

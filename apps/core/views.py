@@ -1986,7 +1986,7 @@ def announcement_balancer_view(request, institution_slug):
 @login_required
 def shareable_results_view(request, institution_slug):
     institution = get_object_or_404(Institution, slug=institution_slug)
-    programs = Program.objects.filter(institution=institution, is_announced=True).select_related('category').distinct()
+    programs = Program.objects.filter(institution=institution, is_announced=True).select_related('category', 'competition').distinct()
 
     cards_data = []
     for prog in programs:
