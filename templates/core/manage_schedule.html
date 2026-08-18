@@ -139,83 +139,76 @@
             Set manual time slots for specific programs or adjust per-participant duration, buffer time, and stage priorities.
         </p>
 
-        <!-- DESKTOP TABLE VIEW -->
-        <div class="table-responsive desktop-table-view">
-            <table class="custom-table">
+        <!-- DESKTOP TABLE VIEW (Compact Non-Scrolling Layout) -->
+        <div class="desktop-table-view">
+            <table class="custom-table" style="font-size: 0.82rem; width: 100%; table-layout: auto;">
                 <thead>
                     <tr>
-                        <th>Program Name</th>
-                        <th>Venue Type</th>
-                        <th>Mode</th>
-                        <th>Stage Priority</th>
-                        <th>Part.</th>
-                        <th>Mins / Part</th>
-                        <th>Buffer</th>
-                        <th>Total</th>
-                        <th>Current Slot</th>
-                        <th>Actions</th>
+                        <th style="padding: 8px 10px;">Program & Slot</th>
+                        <th style="padding: 8px 6px; width: 90px;">Type</th>
+                        <th style="padding: 8px 6px; width: 75px;">Mode</th>
+                        <th style="padding: 8px 6px; width: 120px;">Priority Stage</th>
+                        <th style="padding: 8px 6px; width: 170px;">Parts & Duration</th>
+                        <th style="padding: 8px 10px; width: 85px; text-align: right;">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for item in program_list %}
                     <tr>
-                        <td>
-                            <strong>{{ item.program.name }}</strong>
-                            <div style="color: var(--text-muted); font-size: 0.75rem;">{{ item.program.category.name }}</div>
+                        <td style="padding: 8px 10px;">
+                            <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                                <strong style="font-size: 0.88rem; color: #fff;">{{ item.program.name }}</strong>
+                                <span class="badge badge-approved" style="font-size: 0.65rem; padding: 1px 5px;">{{ item.program.category.name }}</span>
+                            </div>
+                            {% if item.has_schedule %}
+                            <div style="font-size: 0.72rem; color: var(--accent-emerald); margin-top: 2px;">
+                                <i class="fa-solid fa-location-dot"></i> Day {{ item.schedule.fest_day.day_number }} @ {{ item.schedule.stage.name }}
+                                ({{ item.schedule.start_time|time:"h:i A" }} - {{ item.schedule.end_time|time:"h:i A" }})
+                            </div>
+                            {% else %}
+                            <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;">Unscheduled</div>
+                            {% endif %}
                             <form method="POST" action="{% url 'core:update_program_duration' institution.slug item.program.id %}" id="dur-form-desk-{{ item.program.id }}">
                                 {% csrf_token %}
                             </form>
                         </td>
-                        <td>
-                            <select name="program_type" form="dur-form-desk-{{ item.program.id }}" class="form-control" style="font-size: 0.8rem; padding: 4px 8px;" onchange="document.getElementById('dur-form-desk-{{ item.program.id }}').submit()">
+                        <td style="padding: 6px 4px;">
+                            <select name="program_type" form="dur-form-desk-{{ item.program.id }}" class="form-control" style="font-size: 0.75rem; padding: 3px 5px; width: 100%;" onchange="document.getElementById('dur-form-desk-{{ item.program.id }}').submit()">
                                 <option value="STAGE" {% if item.program.program_type == 'STAGE' %}selected{% endif %}>Stage</option>
                                 <option value="OFF_STAGE" {% if item.program.program_type == 'OFF_STAGE' %}selected{% endif %}>Off-Stage</option>
                             </select>
                         </td>
-                        <td>
-                            <select name="presentation_mode" form="dur-form-desk-{{ item.program.id }}" class="form-control" style="font-size: 0.8rem; padding: 4px 8px;" onchange="document.getElementById('dur-form-desk-{{ item.program.id }}').submit()">
-                                <option value="SEQUENTIAL" {% if item.program.presentation_mode == 'SEQUENTIAL' %}selected{% endif %}>SEQ (Per Part)</option>
-                                <option value="SIMULTANEOUS" {% if item.program.presentation_mode == 'SIMULTANEOUS' %}selected{% endif %}>SIM (All-at-once)</option>
+                        <td style="padding: 6px 4px;">
+                            <select name="presentation_mode" form="dur-form-desk-{{ item.program.id }}" class="form-control" style="font-size: 0.75rem; padding: 3px 5px; width: 100%;" onchange="document.getElementById('dur-form-desk-{{ item.program.id }}').submit()">
+                                <option value="SEQUENTIAL" {% if item.program.presentation_mode == 'SEQUENTIAL' %}selected{% endif %}>SEQ</option>
+                                <option value="SIMULTANEOUS" {% if item.program.presentation_mode == 'SIMULTANEOUS' %}selected{% endif %}>SIM</option>
                             </select>
                         </td>
-                        <td>
-                            <select name="preferred_stage_id" form="dur-form-desk-{{ item.program.id }}" class="form-control" style="font-size: 0.8rem; padding: 4px 8px;" onchange="document.getElementById('dur-form-desk-{{ item.program.id }}').submit()">
-                                <option value="">Auto Preference</option>
+                        <td style="padding: 6px 4px;">
+                            <select name="preferred_stage_id" form="dur-form-desk-{{ item.program.id }}" class="form-control" style="font-size: 0.75rem; padding: 3px 5px; width: 100%;" onchange="document.getElementById('dur-form-desk-{{ item.program.id }}').submit()">
+                                <option value="">Auto</option>
                                 {% for st in stages %}
                                 <option value="{{ st.id }}" {% if item.program.preferred_stage_id == st.id %}selected{% endif %}>⭐ {{ st.name }}</option>
                                 {% endfor %}
                             </select>
                         </td>
-                        <td><span class="badge badge-approved">{{ item.assigned_count }}</span></td>
-                        <td>
-                            <input type="number" name="duration_per_participant" form="dur-form-desk-{{ item.program.id }}" value="{{ item.program.duration_per_participant }}" class="form-control" style="width: 60px; font-size: 0.8rem; padding: 4px 6px;" min="1" onchange="document.getElementById('dur-form-desk-{{ item.program.id }}').submit()">
+                        <td style="padding: 6px 4px;">
+                            <div style="display: flex; align-items: center; gap: 4px; font-size: 0.75rem;">
+                                <span class="badge badge-approved" style="font-size: 0.65rem; padding: 1px 4px;" title="Assigned Participants">{{ item.assigned_count }}p</span>
+                                <input type="number" name="duration_per_participant" form="dur-form-desk-{{ item.program.id }}" value="{{ item.program.duration_per_participant }}" class="form-control" style="width: 42px; font-size: 0.75rem; padding: 2px 3px;" min="1" title="Minutes per participant" onchange="document.getElementById('dur-form-desk-{{ item.program.id }}').submit()">m
+                                +<input type="number" name="buffer_margin_minutes" form="dur-form-desk-{{ item.program.id }}" value="{{ item.program.buffer_margin_minutes }}" class="form-control" style="width: 38px; font-size: 0.75rem; padding: 2px 3px;" min="0" title="Buffer margin minutes" onchange="document.getElementById('dur-form-desk-{{ item.program.id }}').submit()">m
+                                =<strong style="color: var(--accent-cyan); font-size: 0.82rem; margin-left: 2px;">{{ item.calculated_duration }}m</strong>
+                            </div>
                         </td>
-                        <td>
-                            <input type="number" name="buffer_margin_minutes" form="dur-form-desk-{{ item.program.id }}" value="{{ item.program.buffer_margin_minutes }}" class="form-control" style="width: 50px; font-size: 0.8rem; padding: 4px 6px;" min="0" onchange="document.getElementById('dur-form-desk-{{ item.program.id }}').submit()">
-                        </td>
-
-                        <td style="font-weight: 800; color: var(--accent-cyan);">{{ item.calculated_duration }}m</td>
-
-                        <td>
-                            {% if item.has_schedule %}
-                            <span class="badge badge-approved" style="font-size: 0.75rem;">
-                                Day {{ item.schedule.fest_day.day_number }} @ {{ item.schedule.stage.name }}
-                                ({{ item.schedule.start_time|time:"h:i A" }} - {{ item.schedule.end_time|time:"h:i A" }})
-                            </span>
-                            {% else %}
-                            <span class="badge badge-pending" style="font-size: 0.75rem;">Unscheduled</span>
-                            {% endif %}
-                        </td>
-
-                        <td>
-                            <div style="display: flex; gap: 6px; align-items: center;">
-                                <button type="button" class="btn-primary" style="padding: 6px 10px; font-size: 0.78rem;" onclick="openManualSlotModal('{{ item.program.id }}', '{{ item.program.name|escapejs }}')">
-                                    <i class="fa-solid fa-clock"></i> Manual Slot
+                        <td style="padding: 6px 8px; text-align: right;">
+                            <div style="display: flex; gap: 4px; justify-content: flex-end; align-items: center;">
+                                <button type="button" class="btn-primary" style="padding: 4px 8px; font-size: 0.72rem;" onclick="openManualSlotModal('{{ item.program.id }}', '{{ item.program.name|escapejs }}')" title="Set Manual Time Slot">
+                                    <i class="fa-solid fa-clock"></i> Slot
                                 </button>
                                 {% if item.has_schedule %}
-                                <form method="POST" action="{% url 'core:delete_program_schedule' institution.slug item.schedule.id %}">
+                                <form method="POST" action="{% url 'core:delete_program_schedule' institution.slug item.schedule.id %}" style="display: inline;">
                                     {% csrf_token %}
-                                    <button type="submit" class="btn-danger" style="padding: 6px 8px; font-size: 0.78rem;" title="Remove Slot"><i class="fa-solid fa-trash"></i></button>
+                                    <button type="submit" class="btn-danger" style="padding: 4px 6px; font-size: 0.72rem;" title="Remove Slot"><i class="fa-solid fa-trash"></i></button>
                                 </form>
                                 {% endif %}
                             </div>
