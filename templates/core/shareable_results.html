@@ -292,6 +292,57 @@
         .theme-5 .type-badge { background: #e2e8f0; color: #334155; }
         .theme-5 .rank-medal { background: linear-gradient(135deg, #f59e0b, #b45309); color: #fff; }
 
+        /* Theme 6: Cyberpunk Neon Hologram */
+        .theme-6 { background: linear-gradient(135deg, #090919 0%, #17092c 50%, #031326 100%); color: #06b6d4; font-family: 'Space Grotesk', sans-serif; border: 1px solid #06b6d4; box-shadow: 0 0 20px rgba(6, 182, 212, 0.3); }
+        .theme-6 .fest-badge { color: #ec4899; text-shadow: 0 0 8px rgba(236, 72, 153, 0.6); }
+        .theme-6 .prog-name { color: #ffffff; text-shadow: 0 0 10px rgba(6, 182, 212, 0.5); }
+        .theme-6 .cat-badge { background: rgba(6, 182, 212, 0.2); color: #67e8f9; border: 1px solid #06b6d4; }
+        .theme-6 .type-badge { background: rgba(236, 72, 153, 0.2); color: #f472b6; }
+        .theme-6 .rank-medal { background: linear-gradient(135deg, #06b6d4, #ec4899); color: #fff; box-shadow: 0 0 10px rgba(6, 182, 212, 0.5); }
+        .theme-6 .rank-row { background: rgba(6, 182, 212, 0.06); border-left: 3px solid #06b6d4; }
+        .theme-6 .winner-name { color: #fff; }
+
+        /* Theme 7: Midnight Obsidian Rose Gold */
+        .theme-7 { background: linear-gradient(135deg, #121212 0%, #1c1917 50%, #0c0a09 100%); color: #fecdd3; font-family: 'Playfair Display', serif; }
+        .theme-7 .fest-badge { color: #fb7185; }
+        .theme-7 .prog-name { color: #fff1f2; }
+        .theme-7 .cat-badge { background: rgba(251, 113, 133, 0.2); color: #fda4af; }
+        .theme-7 .type-badge { background: rgba(244, 63, 94, 0.2); color: #fecdd3; }
+        .theme-7 .rank-medal { background: linear-gradient(135deg, #fb7185, #e11d48); color: #fff; }
+        .theme-7 .rank-row { background: rgba(251, 113, 133, 0.07); border-left: 3px solid #fb7185; }
+        .theme-7 .winner-name { color: #fff; }
+
+        /* Theme 8: Islamic Geometric Heritage */
+        .theme-8 { background: linear-gradient(135deg, #064e3b 0%, #022c22 50%, #0f382c 100%); color: #fde047; font-family: 'Cinzel', serif; }
+        .theme-8 .fest-badge { color: #fbbf24; }
+        .theme-8 .prog-name { color: #fef08a; }
+        .theme-8 .cat-badge { background: rgba(250, 204, 21, 0.2); color: #fde047; }
+        .theme-8 .type-badge { background: rgba(16, 185, 129, 0.3); color: #a7f3d0; }
+        .theme-8 .rank-medal { background: linear-gradient(135deg, #f59e0b, #d97706); color: #000; }
+        .theme-8 .rank-row { background: rgba(250, 204, 21, 0.08); border: 1px solid rgba(250, 204, 21, 0.2); }
+        .theme-8 .winner-name { color: #fff; }
+
+        /* Theme 9: Galactic Cosmic Nebula */
+        .theme-9 { background: linear-gradient(135deg, #2e1065 0%, #581c87 50%, #1e1b4b 100%); color: #e0e7ff; font-family: 'Outfit', sans-serif; }
+        .theme-9 .fest-badge { color: #a7f3d0; }
+        .theme-9 .prog-name { color: #ffffff; }
+        .theme-9 .cat-badge { background: rgba(167, 243, 208, 0.2); color: #a7f3d0; }
+        .theme-9 .type-badge { background: rgba(192, 132, 252, 0.25); color: #e9d5ff; }
+        .theme-9 .rank-medal { background: linear-gradient(135deg, #c084fc, #7e22ce); color: #fff; }
+        .theme-9 .rank-row { background: rgba(192, 132, 252, 0.1); border-radius: 8px; }
+        .theme-9 .winner-name { color: #fff; }
+
+        /* Theme 10: Vintage Gold Parchment */
+        .theme-10 { background: linear-gradient(135deg, #fef3c7 0%, #fde68a 50%, #fef08a 100%); color: #78350f; font-family: 'DM Serif Display', serif; border: 2px solid #b45309; }
+        .theme-10 .fest-badge { color: #92400e; }
+        .theme-10 .prog-name { color: #451a03; }
+        .theme-10 .cat-badge { background: #fef08a; color: #78350f; border: 1px solid #b45309; }
+        .theme-10 .type-badge { background: #d97706; color: #fff; }
+        .theme-10 .rank-medal { background: linear-gradient(135deg, #b45309, #78350f); color: #fff; }
+        .theme-10 .rank-row { background: rgba(180, 83, 9, 0.08); border-bottom: 1px solid rgba(180, 83, 9, 0.2); }
+        .theme-10 .winner-name { color: #451a03; }
+        .theme-10 .team-name { color: #78350f; }
+
         #dl-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.85); backdrop-filter: blur(8px);
@@ -339,19 +390,34 @@
         </div>
         <div class="theme-chips">
             <div class="theme-chip active" onclick="setGlobalTheme('theme-1', this, 'fa-lightbulb')">
-                <i class="fas fa-lightbulb text-warning"></i> 1. Royal Gold (Glossy)
+                <i class="fas fa-lightbulb text-warning"></i> 1. Royal Gold
             </div>
             <div class="theme-chip" onclick="setGlobalTheme('theme-2', this, 'fa-microphone-alt')">
-                <i class="fas fa-microphone-alt text-info"></i> 2. Cyber Emerald (Glossy)
+                <i class="fas fa-microphone-alt text-info"></i> 2. Cyber Emerald
             </div>
             <div class="theme-chip" onclick="setGlobalTheme('theme-3', this, 'fa-drum')">
-                <i class="fas fa-drum text-danger"></i> 3. Sunset Crimson (Glossy)
+                <i class="fas fa-drum text-danger"></i> 3. Sunset Crimson
             </div>
             <div class="theme-chip" onclick="setGlobalTheme('theme-4', this, 'fa-book-open')">
-                <i class="fas fa-book-open text-primary"></i> 4. Regal Sapphire (Matte)
+                <i class="fas fa-book-open text-primary"></i> 4. Regal Sapphire
             </div>
             <div class="theme-chip" onclick="setGlobalTheme('theme-5', this, 'fa-glasses')">
-                <i class="fas fa-glasses me-1" style="color:#b45309"></i> 5. Luxury White (Matte)
+                <i class="fas fa-glasses me-1" style="color:#b45309"></i> 5. Luxury White
+            </div>
+            <div class="theme-chip" onclick="setGlobalTheme('theme-6', this, 'fa-bolt')">
+                <i class="fas fa-bolt text-info"></i> 6. Cyberpunk Neon
+            </div>
+            <div class="theme-chip" onclick="setGlobalTheme('theme-7', this, 'fa-gem')">
+                <i class="fas fa-gem text-danger"></i> 7. Midnight Rose Gold
+            </div>
+            <div class="theme-chip" onclick="setGlobalTheme('theme-8', this, 'fa-certificate')">
+                <i class="fas fa-certificate text-warning"></i> 8. Islamic Heritage Gold
+            </div>
+            <div class="theme-chip" onclick="setGlobalTheme('theme-9', this, 'fa-wand-magic-sparkles')">
+                <i class="fas fa-wand-magic-sparkles text-primary"></i> 9. Galactic Nebula
+            </div>
+            <div class="theme-chip" onclick="setGlobalTheme('theme-10', this, 'fa-award')">
+                <i class="fas fa-award text-warning"></i> 10. Vintage Gold Parchment
             </div>
         </div>
     </div>
@@ -413,6 +479,11 @@
                 <option value="theme-3|fa-drum">3. Sunset Crimson</option>
                 <option value="theme-4|fa-book-open">4. Regal Sapphire</option>
                 <option value="theme-5|fa-glasses">5. Luxury White</option>
+                <option value="theme-6|fa-bolt">6. Cyberpunk Neon</option>
+                <option value="theme-7|fa-gem">7. Midnight Rose Gold</option>
+                <option value="theme-8|fa-certificate">8. Islamic Heritage Gold</option>
+                <option value="theme-9|fa-wand-magic-sparkles">9. Galactic Nebula</option>
+                <option value="theme-10|fa-award">10. Vintage Gold Parchment</option>
             </select>
             <button class="btn-dl-card" onclick="downloadCard(this, '{{ prog.name }}')">
                 <i class="fas fa-download"></i> JPEG
