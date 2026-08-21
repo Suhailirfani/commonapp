@@ -2492,10 +2492,11 @@ def group_assign_view(request, institution_slug, program_id=None):
     else:
         teams = Team.objects.filter(institution=institution)
     
+    req_program_id = request.GET.get('program_id') or program_id
     selected_program = None
-    if program_id:
-        selected_program = get_object_or_404(Program, id=program_id, institution=institution, is_group=True)
-    elif group_programs.exists():
+    if req_program_id:
+        selected_program = Program.objects.filter(id=req_program_id, institution=institution, is_group=True).first()
+    if not selected_program and group_programs.exists():
         selected_program = group_programs.first()
 
     selected_team_id = request.GET.get('team_id')
