@@ -200,6 +200,23 @@ def developer_dashboard_view(request):
     add_ons = AddOn.objects.all().order_by('-id')
     granted_add_ons = GrantedAddOn.objects.select_related('institution', 'add_on').order_by('-granted_at')
 
+    # Map applications and admin users for instant contact info resolution
+    app_map = {app.institution_slug: app for app in SubscriptionApplication.objects.all()}
+    from apps.users.models import User
+    admin_user_map = {u.institution_id: u for u in User.objects.filter(role='INSTITUTION_ADMIN')}
+
+    for inst in institutions:
+        app = app_map.get(inst.slug)
+        if app and app.contact_name:
+            inst.contact_name_val = app.contact_name
+        else:
+            admin_u = admin_user_map.get(inst.id)
+            inst.contact_name_val = admin_u.get_full_name() if (admin_u and admin_u.get_full_name()) else (admin_u.username if admin_u else "N/A")
+        
+        inst.contact_phone_val = inst.phone or (app.phone if app else "N/A")
+        admin_u = admin_user_map.get(inst.id)
+        inst.admin_username_val = app.desired_admin_username if app else (admin_u.username if admin_u else "admin")
+
     return render(request, 'tenants/developer_dashboard.html', {
         'pending_apps': pending_apps,
         'institutions': institutions,

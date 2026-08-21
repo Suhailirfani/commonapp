@@ -3,35 +3,231 @@
 {% block title %}Developer Admin Control Center - GO FEST | BYTOLA WEBSOLUTIONS{% endblock %}
 
 {% block content %}
-<div style="margin-bottom: 24px; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 16px;">
+<style>
+.quick-nav-bar {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+    margin-bottom: 20px;
+    -webkit-overflow-scrolling: touch;
+}
+.quick-nav-pill {
+    white-space: nowrap;
+    padding: 8px 16px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color);
+    border-radius: 30px;
+    color: var(--text-main);
+    text-decoration: none;
+    font-size: 0.85rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+}
+.quick-nav-pill:hover, .quick-nav-pill:focus {
+    background: rgba(56, 189, 248, 0.15);
+    border-color: var(--accent-cyan);
+    color: #fff;
+}
+.whatsapp-btn {
+    background: #25D366 !important;
+    color: #ffffff !important;
+    border: none !important;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    box-shadow: 0 4px 12px rgba(37, 211, 102, 0.3);
+}
+.whatsapp-btn:hover {
+    background: #1da851 !important;
+}
+@media (max-width: 768px) {
+    .dash-header-wrap {
+        flex-direction: column;
+        align-items: stretch !important;
+    }
+    .dash-header-actions {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+    .dash-header-actions a {
+        justify-content: center;
+        text-align: center;
+        padding: 10px !important;
+        font-size: 0.85rem !important;
+    }
+    .custom-table th, .custom-table td {
+        padding: 8px 8px !important;
+        font-size: 0.82rem !important;
+    }
+    .action-flex-wrap {
+        flex-direction: column;
+        width: 100%;
+    }
+    .action-flex-wrap > * {
+        width: 100%;
+    }
+}
+</style>
+
+<!-- Top Control Header -->
+<div class="dash-header-wrap" style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 16px;">
     <div>
         <span class="badge badge-approved" style="font-size: 0.85rem;"><i class="fa-solid fa-user-shield"></i> Developer Clearance - BYTOLA WEBSOLUTIONS</span>
-        <h2 style="font-size: 2rem; font-weight: 800; margin-top: 6px;">GO FEST Admin Control Center</h2>
+        <h2 style="font-size: 1.8rem; font-weight: 800; margin-top: 6px;">GO FEST Admin Control Center</h2>
         <p style="color: var(--text-muted); margin: 0;">Manage institution subscription applications, approve workspaces, create plans, and oversee active tenants.</p>
     </div>
-    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+    <div class="dash-header-actions" style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <a href="#registered-institutions" class="btn-primary" style="padding: 10px 18px; font-weight: 700; text-decoration: none; background: linear-gradient(135deg, var(--accent-cyan), #0284c7);">
+            <i class="fa-solid fa-city"></i> Registered Institutions ({{ institutions.count }})
+        </a>
         <a href="/admin/" target="_blank" class="btn-primary" style="padding: 10px 18px; font-weight: 600; text-decoration: none; background: linear-gradient(135deg, #f59e0b, #d97706);">
-            <i class="fa-solid fa-screwdriver-wrench"></i> Django Native Admin (/admin/)
+            <i class="fa-solid fa-screwdriver-wrench"></i> Django Admin (/admin/)
         </a>
         <a href="{% url 'tenants:plan_create' %}" class="btn-primary" style="padding: 10px 18px; font-weight: 600; text-decoration: none;">
-            <i class="fa-solid fa-plus-circle"></i> Create Subscription Plan
+            <i class="fa-solid fa-plus-circle"></i> Create Plan
         </a>
     </div>
 </div>
 
+<!-- Mobile Quick Navigation Pills -->
+<div class="quick-nav-bar">
+    <a href="#registered-institutions" class="quick-nav-pill">
+        <i class="fa-solid fa-city" style="color: var(--accent-cyan);"></i> Registered Institutions ({{ institutions.count }})
+    </a>
+    <a href="#pending-applications" class="quick-nav-pill">
+        <i class="fa-solid fa-clock-history" style="color: var(--accent-amber);"></i> Pending Apps ({{ pending_apps.count }})
+    </a>
+    <a href="#subscription-plans" class="quick-nav-pill">
+        <i class="fa-solid fa-layer-group" style="color: var(--accent-indigo);"></i> Plans ({{ plans.count }})
+    </a>
+    <a href="#paid-addons" class="quick-nav-pill">
+        <i class="fa-solid fa-puzzle-piece" style="color: var(--accent-emerald);"></i> Add-Ons Catalog
+    </a>
+</div>
+
+<!-- Registered Institutions Section (Positioned prominently with Top Link target) -->
+<div class="glass-card" id="registered-institutions" style="margin-bottom: 30px; border-top: 4px solid var(--accent-cyan);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+        <h3 style="font-size: 1.3rem; font-weight: 700; color: var(--accent-cyan); margin: 0;">
+            <i class="fa-solid fa-city"></i> All Registered Institutions ({{ institutions.count }})
+        </h3>
+        <span class="badge badge-approved" style="font-size: 0.8rem;">
+            <i class="fa-solid fa-check-double"></i> Active Workspaces
+        </span>
+    </div>
+
+    <div class="table-responsive">
+        <table class="custom-table">
+        <thead>
+            <tr>
+                <th style="min-width: 60px;">ID</th>
+                <th style="min-width: 140px;">Institution</th>
+                <th style="min-width: 170px;">Contact Person & Mobile</th>
+                <th style="min-width: 180px;">Plan & Granted Add-Ons</th>
+                <th style="min-width: 100px;">Status</th>
+                <th style="min-width: 110px;">Created At</th>
+                <th style="min-width: 110px;">Public Link</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for inst in institutions %}
+            <tr>
+                <td>#{{ inst.id }}</td>
+                <td>
+                    <strong>{{ inst.name }}</strong><br>
+                    <code style="font-size: 0.78rem;">{{ inst.slug }}</code>
+                </td>
+                <td>
+                    <div style="line-height: 1.4;">
+                        <strong style="color: #fff;"><i class="fa-solid fa-user-tie" style="color: var(--accent-cyan);"></i> {{ inst.contact_name_val }}</strong><br>
+                        {% if inst.contact_phone_val and inst.contact_phone_val != 'N/A' %}
+                        <a href="tel:{{ inst.contact_phone_val }}" style="color: var(--text-muted); text-decoration: none; font-size: 0.82rem;">
+                            <i class="fa-solid fa-phone" style="color: var(--accent-amber);"></i> {{ inst.contact_phone_val }}
+                        </a><br>
+                        <button type="button" class="btn-primary whatsapp-btn" style="padding: 3px 8px; font-size: 0.75rem; margin-top: 4px;" onclick="sendWhatsAppApproval('{{ inst.contact_name_val|escapejs }}', '{{ inst.name|escapejs }}', '{{ inst.contact_phone_val|escapejs }}', '{{ inst.admin_username_val|escapejs }}')">
+                            <i class="fa-brands fa-whatsapp"></i> WhatsApp Msg
+                        </button>
+                        {% else %}
+                        <span style="color: var(--text-muted); font-size: 0.8rem;">No mobile provided</span>
+                        {% endif %}
+                    </div>
+                </td>
+                <td>
+                    {% if inst.subscription %}
+                    <div>
+                        <strong>{{ inst.subscription.plan.name }}</strong> (Base: ₹{{ inst.subscription.plan.price }})
+                        {% if inst.subscription.additional_work_charge > 0 %}
+                        <br><span style="color: var(--accent-amber); font-size: 0.82rem;">+ Extra Work: ₹{{ inst.subscription.additional_work_charge }}</span>
+                        {% endif %}
+                        <br><strong style="color: var(--accent-emerald);">Total Base: ₹{{ inst.subscription.total_subscription_cost }}</strong>
+                    </div>
+                    {% else %}
+                    <span style="color: var(--text-muted);">No Active Base Plan</span>
+                    {% endif %}
+
+                    {% if inst.active_add_ons %}
+                    <div style="margin-top: 6px; padding-top: 4px; border-top: 1px dashed rgba(255,255,255,0.1);">
+                        <small style="color: var(--accent-cyan); font-weight: 700;">✨ Add-Ons Granted:</small><br>
+                        {% for g in inst.active_add_ons %}
+                        <span class="badge badge-approved" style="font-size: 0.72rem; margin-right: 2px; margin-bottom: 2px; display: inline-block;">
+                            {{ g.add_on.name }} (₹{{ g.add_on.price }})
+                        </span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if inst.is_demo %}
+                    <span class="badge badge-pending" style="font-size: 0.78rem; background: var(--accent-amber); color: #000;"><i class="fa-solid fa-clock"></i> 5-Day Demo</span>
+                    {% elif inst.status == 'APPROVED' %}
+                    <span class="badge badge-approved"><i class="fa-solid fa-circle-check"></i> Active</span>
+                    {% elif inst.status == 'PENDING' %}
+                    <span class="badge badge-pending"><i class="fa-solid fa-clock"></i> Pending</span>
+                    {% else %}
+                    <span class="badge badge-rejected">{{ inst.status }}</span>
+                    {% endif %}
+                </td>
+                <td style="font-size: 0.82rem;">{{ inst.created_at|date:"d M Y, h:i A" }}</td>
+                <td>
+                    {% if inst.status == 'APPROVED' %}
+                    <a href="{% url 'public:home' inst.slug %}" target="_blank" class="btn-secondary" style="padding: 4px 8px; font-size: 0.78rem; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+                        <i class="fa-solid fa-external-link"></i> Portal
+                    </a>
+                    {% else %}
+                    <span style="color: var(--text-muted);">N/A</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 20px;">No registered institutions found.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</div>
+
 <!-- Pending Applications Section -->
-<div class="glass-card" style="margin-bottom: 30px;">
+<div class="glass-card" id="pending-applications" style="margin-bottom: 30px;">
     <h3 style="font-size: 1.3rem; font-weight: 700; color: var(--accent-amber);"><i class="fa-solid fa-clock-history"></i> Pending Institution Applications ({{ pending_apps.count }})</h3>
     {% if pending_apps %}
     <div class="table-responsive">
         <table class="custom-table">
         <thead>
             <tr>
-                <th>Institution & Contact</th>
-                <th>Desired Plan</th>
-                <th>Requested Additional Features / Custom Needs</th>
-                <th>Admin Account</th>
-                <th>Set Work Fee & Action</th>
+                <th style="min-width: 170px;">Institution & Contact</th>
+                <th style="min-width: 130px;">Desired Plan</th>
+                <th style="min-width: 200px;">Requested Additional Features / Custom Needs</th>
+                <th style="min-width: 110px;">Admin Account</th>
+                <th style="min-width: 200px;">Set Work Fee & Actions</th>
             </tr>
         </thead>
         <tbody>
@@ -40,7 +236,11 @@
                 <td>
                     <strong>{{ app.institution_name }}</strong><br>
                     <code style="font-size: 0.8rem;">{{ app.institution_slug }}</code><br>
-                    <small style="color: var(--text-muted);">{{ app.contact_name }} | {{ app.phone }} | {{ app.email }}</small>
+                    <div style="font-size: 0.82rem; color: var(--text-muted); margin-top: 4px;">
+                        <i class="fa-solid fa-user-tie" style="color: var(--accent-cyan);"></i> {{ app.contact_name }}<br>
+                        <i class="fa-solid fa-phone" style="color: var(--accent-amber);"></i> {{ app.phone }}<br>
+                        <i class="fa-solid fa-envelope"></i> {{ app.email }}
+                    </div>
                 </td>
                 <td>
                     <span class="badge badge-approved">{{ app.desired_plan.name }}</span><br>
@@ -78,13 +278,16 @@
                         {% csrf_token %}
                         <div>
                             <label style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-bottom: 2px;">Additional Work Fee (₹):</label>
-                            <input type="number" step="0.01" min="0" name="additional_work_charge" class="form-control" value="0.00" style="width: 140px; font-size: 0.85rem; padding: 4px 8px;">
+                            <input type="number" step="0.01" min="0" name="additional_work_charge" class="form-control" value="0.00" style="width: 100%; max-width: 140px; font-size: 0.85rem; padding: 4px 8px;">
                         </div>
-                        <div style="display: flex; gap: 6px;">
-                            <button type="submit" class="btn-success" onclick="return confirm('Approve this application and activate admin credentials?');" style="padding: 6px 12px; font-size: 0.85rem;">
+                        <div class="action-flex-wrap" style="display: flex; gap: 6px; flex-wrap: wrap;">
+                            <button type="submit" class="btn-success" onclick="return confirm('Approve this application and activate admin credentials?');" style="padding: 6px 12px; font-size: 0.85rem; font-weight: 600;">
                                 <i class="fa-solid fa-check"></i> Approve
                             </button>
-                            <a href="{% url 'tenants:reject_application' app.id %}" class="btn-danger" onclick="return confirm('Reject this application?');" style="padding: 6px 12px; font-size: 0.85rem;">
+                            <button type="button" class="btn-primary whatsapp-btn" style="padding: 6px 10px; font-size: 0.82rem;" onclick="sendWhatsAppApproval('{{ app.contact_name|escapejs }}', '{{ app.institution_name|escapejs }}', '{{ app.phone|escapejs }}', '{{ app.desired_admin_username|escapejs }}')">
+                                <i class="fa-brands fa-whatsapp"></i> WhatsApp
+                            </button>
+                            <a href="{% url 'tenants:reject_application' app.id %}" class="btn-danger" onclick="return confirm('Reject this application?');" style="padding: 6px 10px; font-size: 0.85rem; text-decoration: none;">
                                 <i class="fa-solid fa-xmark"></i> Reject
                             </a>
                         </div>
@@ -101,7 +304,7 @@
 </div>
 
 <!-- Subscription Plans Section -->
-<div class="glass-card" style="margin-bottom: 30px;">
+<div class="glass-card" id="subscription-plans" style="margin-bottom: 30px;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
         <h3 style="font-size: 1.3rem; font-weight: 700; margin: 0; color: var(--accent-cyan);"><i class="fa-solid fa-layer-group"></i> Subscription Plans Management ({{ plans.count }})</h3>
         <a href="{% url 'tenants:plan_create' %}" class="btn-primary" style="font-size: 0.85rem; padding: 6px 14px; text-decoration: none;">
@@ -148,7 +351,7 @@
                         {% endif %}
                     </td>
                     <td>
-                        <div style="display: flex; gap: 6px; align-items: center;">
+                        <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
                             <a href="{% url 'tenants:plan_edit' plan.id %}" class="btn-secondary" style="padding: 4px 10px; font-size: 0.8rem; text-decoration: none;" title="Edit Plan">
                                 <i class="fa-solid fa-pen-to-square"></i> Edit
                             </a>
@@ -175,7 +378,7 @@
 </div>
 
 <!-- Paid Add-Ons Management Section -->
-<div class="glass-card" style="margin-bottom: 30px; border-top: 4px solid var(--accent-emerald);">
+<div class="glass-card" id="paid-addons" style="margin-bottom: 30px; border-top: 4px solid var(--accent-emerald);">
     <h3 style="font-size: 1.3rem; font-weight: 700; color: var(--accent-emerald); margin-bottom: 16px;">
         <i class="fa-solid fa-puzzle-piece"></i> Paid Add-Ons & Custom Extensions Management
     </h3>
@@ -332,84 +535,21 @@
     <p style="color: var(--text-muted);">No Add-Ons granted to institutions yet.</p>
     {% endif %}
 </div>
-
-<!-- All Institutions Section -->
-<div class="glass-card">
-    <h3 style="font-size: 1.3rem; font-weight: 700;"><i class="fa-solid fa-city"></i> All Registered Institutions</h3>
-    <div class="table-responsive">
-        <table class="custom-table">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Institution Name</th>
-                <th>Slug</th>
-                <th>Plan & Granted Add-Ons</th>
-                <th>Status</th>
-                <th>Created At</th>
-                <th>Public Link</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for inst in institutions %}
-            <tr>
-                <td>#{{ inst.id }}</td>
-                <td><strong>{{ inst.name }}</strong></td>
-                <td><code>{{ inst.slug }}</code></td>
-                <td>
-                    {% if inst.subscription %}
-                    <div>
-                        <strong>{{ inst.subscription.plan.name }}</strong> (Base: ₹{{ inst.subscription.plan.price }})
-                        {% if inst.subscription.additional_work_charge > 0 %}
-                        <br><span style="color: var(--accent-amber); font-size: 0.85rem;">+ Extra Work: ₹{{ inst.subscription.additional_work_charge }}</span>
-                        {% endif %}
-                        <br><strong style="color: var(--accent-emerald);">Total Base: ₹{{ inst.subscription.total_subscription_cost }}</strong>
-                    </div>
-                    {% else %}
-                    <span style="color: var(--text-muted);">No Active Base Plan</span>
-                    {% endif %}
-
-                    {% if inst.active_add_ons %}
-                    <div style="margin-top: 6px; padding-top: 4px; border-top: 1px dashed rgba(255,255,255,0.1);">
-                        <small style="color: var(--accent-cyan); font-weight: 700;">✨ Add-Ons Granted:</small><br>
-                        {% for g in inst.active_add_ons %}
-                        <span class="badge badge-approved" style="font-size: 0.72rem; margin-right: 2px; margin-bottom: 2px; display: inline-block;">
-                            {{ g.add_on.name }} (₹{{ g.add_on.price }})
-                        </span>
-                        {% endfor %}
-                    </div>
-                    {% endif %}
-                </td>
-                <td>
-                    {% if inst.is_demo %}
-                    <span class="badge badge-pending" style="font-size: 0.8rem; background: var(--accent-amber); color: #000;"><i class="fa-solid fa-clock"></i> 5-Day Demo</span>
-                    {% elif inst.status == 'APPROVED' %}
-                    <span class="badge badge-approved"><i class="fa-solid fa-circle-check"></i> Active</span>
-                    {% elif inst.status == 'PENDING' %}
-                    <span class="badge badge-pending"><i class="fa-solid fa-clock"></i> Pending</span>
-                    {% else %}
-                    <span class="badge badge-rejected">{{ inst.status }}</span>
-                    {% endif %}
-                </td>
-                <td>{{ inst.created_at|date:"d M Y, h:i A" }}</td>
-                <td>
-                    {% if inst.status == 'APPROVED' %}
-                    <a href="{% url 'public:home' inst.slug %}" target="_blank" style="color: var(--accent-cyan); text-decoration: none;">
-                        <i class="fa-solid fa-external-link"></i> Public Portal
-                    </a>
-                    {% else %}
-                    <span style="color: var(--text-muted);">N/A</span>
-                    {% endif %}
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    </div>
-</div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
+function sendWhatsAppApproval(contactName, instName, phone, username) {
+    let cleanPhone = (phone || '').replace(/\D/g, '');
+    if (cleanPhone.length === 10) {
+        cleanPhone = '91' + cleanPhone;
+    }
+    const loginUrl = window.location.origin + '/login/';
+    const text = `നമസ്കാരം ${contactName},\n\nനിങ്ങളുടെ സ്ഥാപനമായ '${instName}' -ന്റെ GO FEST ഫെസ്റ്റ് മാനേജ്മെന്റ് പോർട്ടൽ അപേക്ഷ വിജയകരമായി അംഗീകരിച്ചു (Approved)!\n\n🔑 അഡ്മിൻ ലോഗിൻ വിവരങ്ങൾ:\n• ലോഗിൻ ലിങ്ക്: ${loginUrl}\n• യൂസർനെയിം: ${username}\n\nസംശയങ്ങൾക്ക് ബന്ധപ്പെടുക.\nനന്ദി,\nBYTOLA WEBSOLUTIONS`;
+    const waUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(text)}`;
+    window.open(waUrl, '_blank');
+}
+
 function selectAddOn(name, code, price, desc) {
     document.getElementById('addon_name_input').value = name;
     document.getElementById('addon_code_input').value = code;
