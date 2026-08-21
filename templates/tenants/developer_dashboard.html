@@ -545,7 +545,7 @@ function sendWhatsAppApproval(contactName, instName, phone, username) {
         cleanPhone = '91' + cleanPhone;
     }
     const loginUrl = window.location.origin + '/login/';
-    const text = `നമസ്കാരം ${contactName},\n\nനിങ്ങളുടെ സ്ഥാപനമായ '${instName}' -ന്റെ GO FEST ഫെസ്റ്റ് മാനേജ്മെന്റ് പോർട്ടൽ അപേക്ഷ വിജയകരമായി അംഗീകരിച്ചു (Approved)!\n\n🔑 അഡ്മിൻ ലോഗിൻ വിവരങ്ങൾ:\n• ലോഗിൻ ലിങ്ക്: ${loginUrl}\n• യൂസർനെയിം: ${username}\n\nസംശയങ്ങൾക്ക് ബന്ധപ്പെടുക.\nനന്ദി,\nBYTOLA WEBSOLUTIONS`;
+    const text = `Hi ${contactName},\n\nനിങ്ങളുടെ സ്ഥാപനമായ '${instName}' -ന്റെ GO FEST ഫെസ്റ്റ് മാനേജ്മെന്റ് പോർട്ടൽ അപേക്ഷ വിജയകരമായി അംഗീകരിച്ചു (Approved)!\n\n🔑 അഡ്മിൻ ലോഗിൻ വിവരങ്ങൾ:\n• ലോഗിൻ ലിങ്ക്: ${loginUrl}\n• യൂസർനെയിം: ${username}\n\nസംശയങ്ങൾക്ക് ബന്ധപ്പെടുക.\nനന്ദി,\nBYTOLA WEBSOLUTIONS`;
     const waUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(text)}`;
     window.open(waUrl, '_blank');
 }
