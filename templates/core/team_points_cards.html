@@ -17,13 +17,13 @@
             background: #09090b;
             min-height: 100vh;
             color: #fff;
-            padding-bottom: 60px;
+            padding-bottom: 40px;
         }
 
         /* ── HEADER ─────────────────────────────────────────────── */
         .page-header {
             text-align: center;
-            padding: 30px 20px 15px;
+            padding: 24px 20px 15px;
             background: linear-gradient(180deg, #18181b 0%, #09090b 100%);
             border-bottom: 1px solid #27272a;
         }
@@ -33,10 +33,10 @@
             letter-spacing: 3px;
             text-transform: uppercase;
             color: #fbbf24;
-            margin-bottom: 6px;
+            margin-bottom: 4px;
         }
         .page-header h1 {
-            font-size: clamp(1.8rem, 4vw, 2.6rem);
+            font-size: clamp(1.6rem, 3.5vw, 2.4rem);
             font-weight: 900;
             background: linear-gradient(90deg, #f59e0b, #ffffff, #ec4899);
             -webkit-background-clip: text;
@@ -44,32 +44,59 @@
             background-clip: text;
         }
         .page-header .subtitle {
-            margin-top: 6px;
+            margin-top: 4px;
             color: #a1a1aa;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
         }
 
-        /* ── CONTROLS & SELECTOR BARS ────────────────────────────── */
-        .controls-wrapper {
-            max-width: 1200px;
+        /* ── STUDIO LAYOUT GRID (OPTIONS ON LEFT, PREVIEW ON RIGHT ON WIDE SCREENS) ── */
+        .studio-layout-grid {
+            max-width: 1450px;
             margin: 0 auto;
             padding: 20px;
+            display: grid;
+            grid-template-columns: 360px 1fr;
+            gap: 24px;
+            align-items: start;
+        }
+
+        .controls-sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .preview-stage-col {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            align-items: center;
+            width: 100%;
+        }
+
+        .preview-header-bar {
+            width: 100%;
+            max-width: 800px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            padding: 0 4px;
         }
 
         .controls {
             display: flex;
-            justify-content: center;
-            flex-wrap: wrap;
+            flex-direction: column;
             gap: 10px;
-            margin-bottom: 20px;
         }
         .btn {
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            padding: 10px 22px;
+            padding: 10px 20px;
             border-radius: 50px;
-            font-size: 0.9rem;
+            font-size: 0.88rem;
             font-weight: 700;
             cursor: pointer;
             border: none;
@@ -88,13 +115,7 @@
             background: #18181b;
             border: 1px solid rgba(245, 158, 11, 0.4);
             border-radius: 16px;
-            padding: 16px 20px;
-            margin-bottom: 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 14px;
+            padding: 16px 18px;
         }
 
         /* 10 ALIGNMENTS SELECTOR CHIPS */
@@ -102,11 +123,10 @@
             background: #18181b;
             border: 1px solid #27272a;
             border-radius: 16px;
-            padding: 18px 20px;
-            margin-bottom: 25px;
+            padding: 18px;
         }
         .theme-selector-title {
-            font-size: 0.85rem;
+            font-size: 0.82rem;
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 1.5px;
@@ -116,21 +136,24 @@
             align-items: center;
             gap: 8px;
         }
-        .theme-chips {
+        .theme-chips-list {
             display: flex;
-            flex-wrap: wrap;
+            flex-direction: column;
             gap: 8px;
         }
         .theme-chip {
-            padding: 8px 16px;
-            border-radius: 30px;
-            font-size: 0.82rem;
+            padding: 9px 16px;
+            border-radius: 12px;
+            font-size: 0.84rem;
             font-weight: 700;
             cursor: pointer;
             border: 1px solid #3f3f46;
             background: #27272a;
             color: #a1a1aa;
             transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
         .theme-chip:hover { color: #fff; border-color: #71717a; }
         .theme-chip.active {
@@ -146,7 +169,7 @@
             justify-content: center;
             align-items: flex-start;
             margin: 0 auto;
-            padding: 0 10px;
+            padding: 0;
             overflow: hidden;
             width: 100%;
             position: relative;
@@ -288,9 +311,7 @@
         }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-
         /* ── 10 ALIGNMENTS SPECIFIC A4 BACKGROUND & STYLES (NO BORDER LINES) ── */
-
         .card-layout-1 { background: radial-gradient(circle at top center, #1e293b 0%, #0f172a 60%, #020617 100%); }
         .card-layout-2 { background: linear-gradient(135deg, #0c4a6e 0%, #0f172a 70%, #020617 100%); }
         .card-layout-3 { background: linear-gradient(135deg, #064e3b 0%, #0f172a 70%, #022c22 100%); }
@@ -301,6 +322,30 @@
         .card-layout-8 { background: linear-gradient(135deg, #78350f 0%, #451a03 70%, #0f172a 100%); }
         .card-layout-9 { background: linear-gradient(135deg, #831843 0%, #500724 70%, #0f172a 100%); }
         .card-layout-10 { background: linear-gradient(135deg, #134e4a 0%, #042f2e 70%, #020617 100%); }
+
+        /* Responsive Breakpoint for Mobile (< 992px) */
+        @media (max-width: 991px) {
+            .studio-layout-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+                padding: 12px;
+            }
+            .controls {
+                flex-direction: row;
+                flex-wrap: wrap;
+            }
+            .btn {
+                flex: 1 1 auto;
+                justify-content: center;
+            }
+            .theme-chips-list {
+                flex-direction: row;
+                flex-wrap: wrap;
+            }
+            .theme-chip {
+                border-radius: 30px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -309,114 +354,125 @@
     <div class="page-header">
         <div class="fest-title"><i class="fa-solid fa-trophy"></i> {{ fest_title }}</div>
         <h1>🏆 Official 4:5 Leaderboard Studio</h1>
-        <div class="subtitle">Select layout alignment to preview & download 4:5 aspect ratio (4 Width × 5 Height) official team points leaderboard cards</div>
+        <div class="subtitle">Select layout alignment to preview & download 4:5 aspect ratio official team points leaderboard cards</div>
     </div>
 
-    <div class="controls-wrapper">
-        <!-- TOP BUTTONS -->
-        <div class="controls">
-            <a href="{% url 'core:team_standings' institution.slug %}{% if selected_n %}?n_results={{ selected_n }}{% endif %}" class="btn btn-outline">
-                <i class="fa-solid fa-arrow-left"></i> Back to Leaderboard
-            </a>
-            <button class="btn btn-gold" onclick="downloadCurrentCard()">
-                <i class="fa-solid fa-download"></i> Download Selected 4:5 Card (JPG)
-            </button>
-            <button class="btn btn-dl-all" onclick="downloadAllAlignments()">
-                <i class="fa-solid fa-file-export"></i> Download All 10 Alignments (JPG)
-            </button>
-            <a href="{% url 'core:shareable_results' institution.slug %}" class="btn btn-pink">
-                <i class="fa-solid fa-award"></i> Winner Program Cards
-            </a>
-        </div>
+    <!-- MAIN STUDIO LAYOUT GRID (OPTIONS LEFT, PREVIEW RIGHT) -->
+    <div class="studio-layout-grid">
 
-        <!-- N RESULTS SELECTOR BAR -->
-        <div class="n-selector-wrap">
-            <div>
-                <div style="font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #fbbf24; display: flex; align-items: center; gap: 6px;">
-                    <i class="fa-solid fa-filter"></i> Leaderboard Points Calculated After N Results
-                </div>
-                <div style="font-size: 0.9rem; color: #a1a1aa; margin-top: 2px;">
-                    {% if selected_n %}
-                        Showing standings after <strong>{{ selected_n }}</strong> announced programs (out of {{ total_announced_programs }} total)
-                    {% else %}
-                        Showing overall standings across <strong>All {{ total_announced_programs }}</strong> announced programs
-                    {% endif %}
-                </div>
-            </div>
+        <!-- LEFT COLUMN: OPTIONS & CONTROLS PANEL -->
+        <div class="controls-sidebar">
 
-            <form method="get" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-                <span style="font-size: 0.82rem; color: #a1a1aa; font-weight: 600;">Presets:</span>
-                <a href="?n_results=" class="theme-chip {% if not selected_n %}active{% endif %}" style="text-decoration: none;">
-                    All ({{ total_announced_programs }})
+            <!-- ACTION BUTTONS -->
+            <div class="controls">
+                <button class="btn btn-gold" onclick="downloadCurrentCard()" style="justify-content: center; box-shadow: 0 4px 14px rgba(245, 158, 11, 0.4);">
+                    <i class="fa-solid fa-download"></i> Download Selected Card (JPG)
+                </button>
+                <button class="btn btn-dl-all" onclick="downloadAllAlignments()" style="justify-content: center;">
+                    <i class="fa-solid fa-file-export"></i> Download All 10 Alignments (JPG)
+                </button>
+                <a href="{% url 'core:team_standings' institution.slug %}{% if selected_n %}?n_results={{ selected_n }}{% endif %}" class="btn btn-outline" style="justify-content: center;">
+                    <i class="fa-solid fa-arrow-left"></i> Back to Leaderboard
                 </a>
-                {% for n_opt in n_presets %}
-                <a href="?n_results={{ n_opt }}" class="theme-chip {% if selected_n == n_opt %}active{% endif %}" style="text-decoration: none;">
-                    After {{ n_opt }}
+                <a href="{% url 'core:shareable_results' institution.slug %}" class="btn btn-pink" style="justify-content: center;">
+                    <i class="fa-solid fa-award"></i> Winner Program Cards
                 </a>
-                {% endfor %}
+            </div>
 
-                <div style="display: flex; gap: 6px; align-items: center; margin-left: 6px;">
-                    <input type="number" name="n_results" value="{{ selected_n|default:'' }}" min="1" max="{{ total_announced_programs }}" placeholder="Custom N..." style="width: 105px; padding: 7px 12px; border-radius: 20px; background: #27272a; border: 1px solid #3f3f46; color: #fff; font-size: 0.85rem; outline: none;">
-                    <button type="submit" class="btn btn-pink" style="padding: 7px 16px; font-size: 0.82rem;">Apply N</button>
+            <!-- N RESULTS SELECTOR BAR -->
+            <div class="n-selector-wrap">
+                <div>
+                    <div style="font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #fbbf24; display: flex; align-items: center; gap: 6px;">
+                        <i class="fa-solid fa-filter"></i> Calculated After N Results
+                    </div>
+                    <div style="font-size: 0.85rem; color: #a1a1aa; margin-top: 2px;">
+                        {% if selected_n %}
+                            Showing after <strong>{{ selected_n }}</strong> programs (out of {{ total_announced_programs }})
+                        {% else %}
+                            Showing overall (All {{ total_announced_programs }} programs)
+                        {% endif %}
+                    </div>
                 </div>
-            </form>
-        </div>
 
-        <!-- 10 ALIGNMENTS SELECTOR CHIPS -->
-        <div class="theme-selector-wrap">
-            <div class="theme-selector-title">
-                <i class="fa-solid fa-sliders"></i> Select Layout Alignment (Click to Preview Single Card)
+                <form method="get" style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin-top: 10px;">
+                    <a href="?n_results=" class="theme-chip {% if not selected_n %}active{% endif %}" style="text-decoration: none; padding: 5px 12px; font-size: 0.78rem;">
+                        All ({{ total_announced_programs }})
+                    </a>
+                    {% for n_opt in n_presets %}
+                    <a href="?n_results={{ n_opt }}" class="theme-chip {% if selected_n == n_opt %}active{% endif %}" style="text-decoration: none; padding: 5px 12px; font-size: 0.78rem;">
+                        After {{ n_opt }}
+                    </a>
+                    {% endfor %}
+
+                    <div style="display: flex; gap: 6px; align-items: center; margin-top: 6px; width: 100%;">
+                        <input type="number" name="n_results" value="{{ selected_n|default:'' }}" min="1" max="{{ total_announced_programs }}" placeholder="Custom N..." style="flex: 1; padding: 7px 12px; border-radius: 20px; background: #27272a; border: 1px solid #3f3f46; color: #fff; font-size: 0.85rem; outline: none;">
+                        <button type="submit" class="btn btn-pink" style="padding: 7px 16px; font-size: 0.82rem;">Apply N</button>
+                    </div>
+                </form>
             </div>
-            <div class="theme-chips">
-                <div class="theme-chip active" id="chip-1" onclick="switchAlignment(1)">1. Centered Gold Crown</div>
-                <div class="theme-chip" id="chip-2" onclick="switchAlignment(2)">2. Left Hero Showcase</div>
-                <div class="theme-chip" id="chip-3" onclick="switchAlignment(3)">3. Right Hero Showcase</div>
-                <div class="theme-chip" id="chip-4" onclick="switchAlignment(4)">4. Staggered Alternating</div>
-                <div class="theme-chip" id="chip-5" onclick="switchAlignment(5)">5. Dual Column (Top 3 + Rest)</div>
-                <div class="theme-chip" id="chip-6" onclick="switchAlignment(6)">6. Royal Vintage Parchment</div>
-                <div class="theme-chip" id="chip-7" onclick="switchAlignment(7)">7. Top Banner Left-Align</div>
-                <div class="theme-chip" id="chip-8" onclick="switchAlignment(8)">8. Right-Aligned Power</div>
-                <div class="theme-chip" id="chip-9" onclick="switchAlignment(9)">9. Rose Quad Grid</div>
-                <div class="theme-chip" id="chip-10" onclick="switchAlignment(10)">10. Cyber Neon Split</div>
-            </div>
-        </div>
-    </div>
 
-
-    <!-- ── SINGLE PREVIEW STAGE WITH TOP ACTION BAR ────────────────────────────── -->
-    <div style="max-width: 800px; margin: 0 auto 12px; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; padding: 0 10px;">
-        <div style="font-size: 0.9rem; font-weight: 800; color: #fbbf24; display: flex; align-items: center; gap: 8px;">
-            <i class="fa-solid fa-eye"></i> Active Preview: <span id="current-layout-badge" style="color: #fff; background: #27272a; padding: 4px 12px; border-radius: 20px; font-weight: 700;">1. Centered Gold Crown</span>
-        </div>
-
-        <div style="display: flex; gap: 8px; align-items: center;">
-            <button onclick="prevAlignment()" class="btn btn-outline" style="padding: 6px 14px; font-size: 0.8rem;">
-                <i class="fa-solid fa-chevron-left"></i> Prev
-            </button>
-            <button onclick="downloadCurrentCard()" class="btn btn-gold" style="padding: 8px 20px; font-size: 0.88rem; box-shadow: 0 4px 14px rgba(245, 158, 11, 0.4);">
-                <i class="fa-solid fa-download"></i> Download Selected Card (JPG)
-            </button>
-            <button onclick="nextAlignment()" class="btn btn-outline" style="padding: 6px 14px; font-size: 0.8rem;">
-                Next <i class="fa-solid fa-chevron-right"></i>
-            </button>
-        </div>
-    </div>
-
-    <!-- ── SINGLE PREVIEW STAGE WITH AUTOMATIC VIEWPORT FIT & NO SCROLLING ────── -->
-    <div class="preview-stage" id="preview-stage-wrap">
-        <div id="card-scale-container" class="card-scale-container">
-            <!-- ALIGNMENT CARD (800px x 1000px DESIGN FOR HIGH-RES DOWNLOAD) -->
-            <div class="a4-card card-layout-1" id="active-a4-card" data-align-index="1">
-                <!-- Giant Background Watermark Motifs -->
-                <div class="bg-motif-1"><i class="fa-solid fa-pen-nib" id="motif-icon-1"></i></div>
-                <div class="bg-motif-2"><i class="fa-solid fa-palette" id="motif-icon-2"></i></div>
-
-                <!-- Card Inner Content -->
-                <div class="card-content" id="card-inner-content">
-                    <!-- Content dynamically populated & auto-spaced -->
+            <!-- 10 ALIGNMENTS SELECTOR CHIPS -->
+            <div class="theme-selector-wrap">
+                <div class="theme-selector-title">
+                    <i class="fa-solid fa-sliders"></i> Select Layout Alignment
+                </div>
+                <div class="theme-chips-list">
+                    <div class="theme-chip active" id="chip-1" onclick="switchAlignment(1)"><span>1. Centered Gold Crown</span> <i class="fa-solid fa-chevron-right" style="font-size: 0.75rem;"></i></div>
+                    <div class="theme-chip" id="chip-2" onclick="switchAlignment(2)"><span>2. Left Hero Showcase</span> <i class="fa-solid fa-chevron-right" style="font-size: 0.75rem;"></i></div>
+                    <div class="theme-chip" id="chip-3" onclick="switchAlignment(3)"><span>3. Right Hero Showcase</span> <i class="fa-solid fa-chevron-right" style="font-size: 0.75rem;"></i></div>
+                    <div class="theme-chip" id="chip-4" onclick="switchAlignment(4)"><span>4. Staggered Alternating</span> <i class="fa-solid fa-chevron-right" style="font-size: 0.75rem;"></i></div>
+                    <div class="theme-chip" id="chip-5" onclick="switchAlignment(5)"><span>5. Dual Column Showcase</span> <i class="fa-solid fa-chevron-right" style="font-size: 0.75rem;"></i></div>
+                    <div class="theme-chip" id="chip-6" onclick="switchAlignment(6)"><span>6. Royal Vintage Parchment</span> <i class="fa-solid fa-chevron-right" style="font-size: 0.75rem;"></i></div>
+                    <div class="theme-chip" id="chip-7" onclick="switchAlignment(7)"><span>7. Top Banner Left-Align</span> <i class="fa-solid fa-chevron-right" style="font-size: 0.75rem;"></i></div>
+                    <div class="theme-chip" id="chip-8" onclick="switchAlignment(8)"><span>8. Right-Aligned Power</span> <i class="fa-solid fa-chevron-right" style="font-size: 0.75rem;"></i></div>
+                    <div class="theme-chip" id="chip-9" onclick="switchAlignment(9)"><span>9. Rose Quad Grid</span> <i class="fa-solid fa-chevron-right" style="font-size: 0.75rem;"></i></div>
+                    <div class="theme-chip" id="chip-10" onclick="switchAlignment(10)"><span>10. Cyber Neon Split</span> <i class="fa-solid fa-chevron-right" style="font-size: 0.75rem;"></i></div>
                 </div>
             </div>
+
         </div>
+
+
+        <!-- RIGHT COLUMN: CARD PREVIEW STAGE PANEL -->
+        <div class="preview-stage-col">
+
+            <!-- Active Card Header Bar -->
+            <div class="preview-header-bar">
+                <div style="font-size: 0.92rem; font-weight: 800; color: #fbbf24; display: flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-eye"></i> Active Preview: <span id="current-layout-badge" style="color: #fff; background: #27272a; padding: 4px 14px; border-radius: 20px; font-weight: 700;">1. Centered Gold Crown</span>
+                </div>
+
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <button onclick="prevAlignment()" class="btn btn-outline" style="padding: 6px 14px; font-size: 0.82rem;">
+                        <i class="fa-solid fa-chevron-left"></i> Prev
+                    </button>
+                    <button onclick="downloadCurrentCard()" class="btn btn-gold" style="padding: 7px 16px; font-size: 0.84rem;">
+                        <i class="fa-solid fa-download"></i> Download JPG
+                    </button>
+                    <button onclick="nextAlignment()" class="btn btn-outline" style="padding: 6px 14px; font-size: 0.82rem;">
+                        Next <i class="fa-solid fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Single Preview Stage with Automatic Viewport Fit -->
+            <div class="preview-stage" id="preview-stage-wrap">
+                <div id="card-scale-container" class="card-scale-container">
+                    <div class="a4-card card-layout-1" id="active-a4-card" data-align-index="1">
+                        <!-- Giant Background Watermark Motifs -->
+                        <div class="bg-motif-1"><i class="fa-solid fa-pen-nib" id="motif-icon-1"></i></div>
+                        <div class="bg-motif-2"><i class="fa-solid fa-palette" id="motif-icon-2"></i></div>
+
+                        <!-- Card Inner Content -->
+                        <div class="card-content" id="card-inner-content">
+                            <!-- Content dynamically populated & auto-spaced -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
     </div>
 
 
@@ -456,13 +512,16 @@
 
         const stageTop = previewStage.getBoundingClientRect().top;
         const availableHeight = Math.max(320, windowHeight - stageTop - 20);
-        const availableWidth = Math.min(800, windowWidth - 24);
+        
+        // On wide screens (>= 992px), stage container is inside right column (~900px wide max)
+        const stageWidth = previewStage.clientWidth || Math.min(800, windowWidth - 380);
+        const availableWidth = Math.min(800, stageWidth - 10);
 
         const scaleH = availableHeight / 1000;
         const scaleW = availableWidth / 800;
 
         let scale = Math.min(scaleH, scaleW);
-        scale = Math.min(0.92, Math.max(0.32, scale));
+        scale = Math.min(0.92, Math.max(0.30, scale));
 
         scaleContainer.style.transform = `scale(${scale})`;
         previewStage.style.height = `${Math.ceil(1000 * scale)}px`;
@@ -482,7 +541,7 @@
         "2. Left Hero Showcase",
         "3. Right Hero Showcase",
         "4. Staggered Alternating",
-        "5. Dual Column (Top 3 + Rest)",
+        "5. Dual Column Showcase",
         "6. Royal Vintage Parchment",
         "7. Top Banner Left-Align",
         "8. Right-Aligned Power",
