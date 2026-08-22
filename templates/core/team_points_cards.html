@@ -1,0 +1,1061 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Official 4:5 Leaderboard Graphic Cards Studio – {{ institution.name }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Anek+Malayalam:wght@600;700;800&family=Cinzel:wght@700;900&family=DM+Serif+Display&family=Manjari:wght@700;900&family=Montserrat:wght@700;800;900&family=Outfit:wght@400;600;700;800;900&family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Plus+Jakarta+Sans:wght@600;800&family=Space+Grotesk:wght@600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <!-- html2canvas for JPEG export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: #09090b;
+            min-height: 100vh;
+            color: #fff;
+            padding-bottom: 60px;
+        }
+
+        /* ── HEADER ─────────────────────────────────────────────── */
+        .page-header {
+            text-align: center;
+            padding: 30px 20px 15px;
+            background: linear-gradient(180deg, #18181b 0%, #09090b 100%);
+            border-bottom: 1px solid #27272a;
+        }
+        .page-header .fest-title {
+            font-size: 0.85rem;
+            font-weight: 700;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: #fbbf24;
+            margin-bottom: 6px;
+        }
+        .page-header h1 {
+            font-size: clamp(1.8rem, 4vw, 2.6rem);
+            font-weight: 900;
+            background: linear-gradient(90deg, #f59e0b, #ffffff, #ec4899);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .page-header .subtitle {
+            margin-top: 6px;
+            color: #a1a1aa;
+            font-size: 0.95rem;
+        }
+
+        /* ── CONTROLS & SELECTOR BARS ────────────────────────────── */
+        .controls-wrapper {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 22px;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+            text-decoration: none;
+        }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.4); }
+
+        .btn-gold    { background: linear-gradient(135deg, #f59e0b, #d97706); color: #fff; }
+        .btn-pink    { background: linear-gradient(135deg, #ec4899, #be185d); color: #fff; }
+        .btn-outline { background: #18181b; color: #e4e4e7; border: 1px solid #3f3f46; }
+        .btn-dl-all  { background: linear-gradient(135deg, #10b981, #059669); color: #fff; }
+
+        /* N Selector Control Bar */
+        .n-selector-wrap {
+            background: #18181b;
+            border: 1px solid rgba(245, 158, 11, 0.4);
+            border-radius: 16px;
+            padding: 16px 20px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 14px;
+        }
+
+        /* 10 ALIGNMENTS SELECTOR CHIPS */
+        .theme-selector-wrap {
+            background: #18181b;
+            border: 1px solid #27272a;
+            border-radius: 16px;
+            padding: 18px 20px;
+            margin-bottom: 25px;
+        }
+        .theme-selector-title {
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #fbbf24;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .theme-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .theme-chip {
+            padding: 8px 16px;
+            border-radius: 30px;
+            font-size: 0.82rem;
+            font-weight: 700;
+            cursor: pointer;
+            border: 1px solid #3f3f46;
+            background: #27272a;
+            color: #a1a1aa;
+            transition: all 0.2s;
+        }
+        .theme-chip:hover { color: #fff; border-color: #71717a; }
+        .theme-chip.active {
+            background: #f59e0b;
+            color: #000;
+            border-color: #fbbf24;
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+        }
+
+        /* ── SINGLE PREVIEW STAGE ─────────────────────────── */
+        .preview-stage {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0 auto;
+            padding: 10px;
+        }
+
+        /* 4:5 ASPECT RATIO CARD (4 Width x 5 Height Proportions) */
+        .a4-card {
+            width: 800px;
+            height: 1000px;
+            aspect-ratio: 4 / 5;
+            border-radius: 24px; /* Corner curves, no border lines */
+            border: none !important;
+            padding: 40px 36px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.8);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            background-size: cover;
+            background-position: center;
+        }
+
+        /* GIANT BACKGROUND MOTIF WATERMARKS */
+        .bg-motif-1 {
+            position: absolute;
+            right: -40px;
+            bottom: -30px;
+            font-size: 24rem;
+            opacity: 0.08;
+            pointer-events: none;
+            z-index: 1;
+            transform: rotate(-12deg);
+        }
+        .bg-motif-2 {
+            position: absolute;
+            left: -40px;
+            top: 15%;
+            font-size: 20rem;
+            opacity: 0.07;
+            pointer-events: none;
+            z-index: 1;
+            transform: rotate(15deg);
+        }
+
+        /* CARD CONTENT WRAPPER ABOVE WATERMARKS */
+        .card-content {
+            position: relative;
+            z-index: 2;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .card-body-section {
+            flex: 1 1 auto;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-evenly;
+            gap: 14px;
+        }
+
+        /* HERO FEST TITLE STYLING */
+        .fest-hero-title {
+            font-size: 3.2rem !important;
+            font-weight: 900 !important;
+            letter-spacing: -0.5px !important;
+            line-height: 1.08 !important;
+            color: #ffffff !important;
+            text-transform: uppercase;
+            margin-top: 6px;
+            margin-bottom: 4px;
+            text-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        }
+
+        /* BOLD TOP 3 STYLING UTILITIES */
+        .top-3-rank-1 {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.28), rgba(217, 119, 6, 0.38));
+            border-radius: 14px;
+            color: #fbbf24 !important;
+            font-weight: 900 !important;
+        }
+        .top-3-rank-2 {
+            background: linear-gradient(135deg, rgba(203, 213, 225, 0.22), rgba(148, 163, 184, 0.3));
+            border-radius: 14px;
+            color: #f1f5f9 !important;
+            font-weight: 900 !important;
+        }
+        .top-3-rank-3 {
+            background: linear-gradient(135deg, rgba(249, 115, 22, 0.22), rgba(194, 65, 12, 0.3));
+            border-radius: 14px;
+            color: #ffedd5 !important;
+            font-weight: 900 !important;
+        }
+
+        .summary-table {
+            width: 100%;
+            border-collapse: separate;
+        }
+        .summary-table th {
+            text-align: left;
+            padding: 10px 14px;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: rgba(255,255,255,0.7);
+        }
+        .summary-table td {
+            font-size: 1rem;
+        }
+
+        /* Overlay */
+        .download-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.85);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .download-overlay.active { display: flex; }
+        .spinner {
+            width: 50px; height: 50px;
+            border: 4px solid rgba(255,255,255,0.2);
+            border-top-color: #f59e0b;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+
+        /* ── 10 ALIGNMENTS SPECIFIC A4 BACKGROUND & STYLES (NO BORDER LINES) ── */
+
+        .card-layout-1 { background: radial-gradient(circle at top center, #1e293b 0%, #0f172a 60%, #020617 100%); }
+        .card-layout-2 { background: linear-gradient(135deg, #0c4a6e 0%, #0f172a 70%, #020617 100%); }
+        .card-layout-3 { background: linear-gradient(135deg, #064e3b 0%, #0f172a 70%, #022c22 100%); }
+        .card-layout-4 { background: linear-gradient(135deg, #881337 0%, #4c0519 60%, #0f172a 100%); }
+        .card-layout-5 { background: linear-gradient(135deg, #581c87 0%, #3b0764 60%, #0f172a 100%); }
+        .card-layout-6 { background: linear-gradient(135deg, #292524 0%, #1c1917 100%); font-family: 'Cinzel', serif; }
+        .card-layout-7 { background: linear-gradient(135deg, #1e1b4b 0%, #0f172a 70%, #020617 100%); }
+        .card-layout-8 { background: linear-gradient(135deg, #78350f 0%, #451a03 70%, #0f172a 100%); }
+        .card-layout-9 { background: linear-gradient(135deg, #831843 0%, #500724 70%, #0f172a 100%); }
+        .card-layout-10 { background: linear-gradient(135deg, #134e4a 0%, #042f2e 70%, #020617 100%); }
+    </style>
+</head>
+<body>
+
+    <!-- PAGE HEADER -->
+    <div class="page-header">
+        <div class="fest-title"><i class="fa-solid fa-trophy"></i> {{ fest_title }}</div>
+        <h1>🏆 Official 4:5 Leaderboard Studio</h1>
+        <div class="subtitle">Select layout alignment to preview & download 4:5 aspect ratio (4 Width × 5 Height) official team points leaderboard cards</div>
+    </div>
+
+    <div class="controls-wrapper">
+        <!-- TOP BUTTONS -->
+        <div class="controls">
+            <a href="{% url 'core:team_standings' institution.slug %}{% if selected_n %}?n_results={{ selected_n }}{% endif %}" class="btn btn-outline">
+                <i class="fa-solid fa-arrow-left"></i> Back to Leaderboard
+            </a>
+            <button class="btn btn-gold" onclick="downloadCurrentCard()">
+                <i class="fa-solid fa-download"></i> Download Selected 4:5 Card (JPG)
+            </button>
+            <button class="btn btn-dl-all" onclick="downloadAllAlignments()">
+                <i class="fa-solid fa-file-export"></i> Download All 10 Alignments (JPG)
+            </button>
+            <a href="{% url 'core:shareable_results' institution.slug %}" class="btn btn-pink">
+                <i class="fa-solid fa-award"></i> Winner Program Cards
+            </a>
+        </div>
+
+        <!-- N RESULTS SELECTOR BAR -->
+        <div class="n-selector-wrap">
+            <div>
+                <div style="font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #fbbf24; display: flex; align-items: center; gap: 6px;">
+                    <i class="fa-solid fa-filter"></i> Leaderboard Points Calculated After N Results
+                </div>
+                <div style="font-size: 0.9rem; color: #a1a1aa; margin-top: 2px;">
+                    {% if selected_n %}
+                        Showing standings after <strong>{{ selected_n }}</strong> announced programs (out of {{ total_announced_programs }} total)
+                    {% else %}
+                        Showing overall standings across <strong>All {{ total_announced_programs }}</strong> announced programs
+                    {% endif %}
+                </div>
+            </div>
+
+            <form method="get" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                <span style="font-size: 0.82rem; color: #a1a1aa; font-weight: 600;">Presets:</span>
+                <a href="?n_results=" class="theme-chip {% if not selected_n %}active{% endif %}" style="text-decoration: none;">
+                    All ({{ total_announced_programs }})
+                </a>
+                {% for n_opt in n_presets %}
+                <a href="?n_results={{ n_opt }}" class="theme-chip {% if selected_n == n_opt %}active{% endif %}" style="text-decoration: none;">
+                    After {{ n_opt }}
+                </a>
+                {% endfor %}
+
+                <div style="display: flex; gap: 6px; align-items: center; margin-left: 6px;">
+                    <input type="number" name="n_results" value="{{ selected_n|default:'' }}" min="1" max="{{ total_announced_programs }}" placeholder="Custom N..." style="width: 105px; padding: 7px 12px; border-radius: 20px; background: #27272a; border: 1px solid #3f3f46; color: #fff; font-size: 0.85rem; outline: none;">
+                    <button type="submit" class="btn btn-pink" style="padding: 7px 16px; font-size: 0.82rem;">Apply N</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- 10 ALIGNMENTS SELECTOR CHIPS -->
+        <div class="theme-selector-wrap">
+            <div class="theme-selector-title">
+                <i class="fa-solid fa-sliders"></i> Select Layout Alignment (Click to Preview Single Card)
+            </div>
+            <div class="theme-chips">
+                <div class="theme-chip active" id="chip-1" onclick="switchAlignment(1)">1. Centered Gold Crown</div>
+                <div class="theme-chip" id="chip-2" onclick="switchAlignment(2)">2. Left Hero Showcase</div>
+                <div class="theme-chip" id="chip-3" onclick="switchAlignment(3)">3. Right Hero Showcase</div>
+                <div class="theme-chip" id="chip-4" onclick="switchAlignment(4)">4. Staggered Alternating</div>
+                <div class="theme-chip" id="chip-5" onclick="switchAlignment(5)">5. Dual Column (Top 3 + Rest)</div>
+                <div class="theme-chip" id="chip-6" onclick="switchAlignment(6)">6. Royal Vintage Parchment</div>
+                <div class="theme-chip" id="chip-7" onclick="switchAlignment(7)">7. Top Banner Left-Align</div>
+                <div class="theme-chip" id="chip-8" onclick="switchAlignment(8)">8. Right-Aligned Power</div>
+                <div class="theme-chip" id="chip-9" onclick="switchAlignment(9)">9. Rose Quad Grid</div>
+                <div class="theme-chip" id="chip-10" onclick="switchAlignment(10)">10. Cyber Neon Split</div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ── SINGLE PREVIEW STAGE WITH TOP ACTION BAR ────────────────────────────── -->
+    <div style="max-width: 800px; margin: 0 auto 12px; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; padding: 0 10px;">
+        <div style="font-size: 0.9rem; font-weight: 800; color: #fbbf24; display: flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-eye"></i> Active Preview: <span id="current-layout-badge" style="color: #fff; background: #27272a; padding: 4px 12px; border-radius: 20px; font-weight: 700;">1. Centered Gold Crown</span>
+        </div>
+
+        <div style="display: flex; gap: 8px; align-items: center;">
+            <button onclick="prevAlignment()" class="btn btn-outline" style="padding: 6px 14px; font-size: 0.8rem;">
+                <i class="fa-solid fa-chevron-left"></i> Prev
+            </button>
+            <button onclick="downloadCurrentCard()" class="btn btn-gold" style="padding: 8px 20px; font-size: 0.88rem; box-shadow: 0 4px 14px rgba(245, 158, 11, 0.4);">
+                <i class="fa-solid fa-download"></i> Download Selected Card (JPG)
+            </button>
+            <button onclick="nextAlignment()" class="btn btn-outline" style="padding: 6px 14px; font-size: 0.8rem;">
+                Next <i class="fa-solid fa-chevron-right"></i>
+            </button>
+        </div>
+    </div>
+
+    <div class="preview-stage">
+
+        <!-- ========================================================================= -->
+        <!-- ALIGNMENT CARD (DEFAULT DISPLAYED CARD) -->
+        <!-- ========================================================================= -->
+        <div class="a4-card card-layout-1" id="active-a4-card" data-align-index="1">
+            <!-- Giant Background Watermark Motifs -->
+            <div class="bg-motif-1"><i class="fa-solid fa-pen-nib" id="motif-icon-1"></i></div>
+            <div class="bg-motif-2"><i class="fa-solid fa-palette" id="motif-icon-2"></i></div>
+
+            <!-- Card Inner Content -->
+            <div class="card-content" id="card-inner-content">
+                <!-- Content dynamically populated & auto-spaced -->
+            </div>
+        </div>
+
+    </div>
+
+
+    <!-- DOWNLOAD OVERLAY -->
+    <div class="download-overlay" id="dl-overlay">
+        <div class="spinner"></div>
+        <div style="font-size: 1.2rem; font-weight: 800; color: #fff;">Generating High-Resolution 4:5 Card...</div>
+        <div style="font-size: 0.9rem; color: #a1a1aa;">Please wait a moment</div>
+    </div>
+
+
+<!-- ── 10 DYNAMIC ALIGNMENT LAYOUT TEMPLATES (RENDER ENGINE) ────────────────── -->
+<script>
+    // Motif pairs for background watermarks
+    const motifPairs = [
+        ['fa-pen-nib', 'fa-palette'],          // 1
+        ['fa-tree', 'fa-microphone-lines'],     // 2
+        ['fa-book-open', 'fa-music'],           // 3
+        ['fa-paint-brush', 'fa-feather-pointed'],// 4
+        ['fa-trophy', 'fa-scroll'],             // 5
+        ['fa-feather-pointed', 'fa-book-open'], // 6
+        ['fa-microphone-lines', 'fa-tree'],     // 7
+        ['fa-palette', 'fa-pen-nib'],           // 8
+        ['fa-music', 'fa-leaf'],                // 9
+        ['fa-tree', 'fa-paint-brush']           // 10
+    ];
+
+    let currentAlignment = 1;
+
+    // Initialize default card on page load
+    document.addEventListener("DOMContentLoaded", function() {
+        switchAlignment(1);
+    });
+
+    const layoutNames = [
+        "1. Centered Gold Crown",
+        "2. Left Hero Showcase",
+        "3. Right Hero Showcase",
+        "4. Staggered Alternating",
+        "5. Dual Column (Top 3 + Rest)",
+        "6. Royal Vintage Parchment",
+        "7. Top Banner Left-Align",
+        "8. Right-Aligned Power",
+        "9. Rose Quad Grid",
+        "10. Cyber Neon Split"
+    ];
+
+    function switchAlignment(alignIndex) {
+        currentAlignment = alignIndex;
+
+        // Update active chip
+        document.querySelectorAll('.theme-chip').forEach(c => c.classList.remove('active'));
+        const activeChip = document.getElementById('chip-' + alignIndex);
+        if (activeChip) activeChip.classList.add('active');
+
+        // Update top action bar layout badge
+        const badge = document.getElementById('current-layout-badge');
+        if (badge && layoutNames[alignIndex - 1]) {
+            badge.innerText = layoutNames[alignIndex - 1];
+        }
+
+        const card = document.getElementById('active-a4-card');
+        card.className = 'a4-card card-layout-' + alignIndex;
+        card.setAttribute('data-align-index', alignIndex);
+
+        // Update background motif watermarks
+        const m1 = document.getElementById('motif-icon-1');
+        const m2 = document.getElementById('motif-icon-2');
+        if (m1 && m2 && motifPairs[alignIndex - 1]) {
+            m1.className = 'fa-solid ' + motifPairs[alignIndex - 1][0];
+            m2.className = 'fa-solid ' + motifPairs[alignIndex - 1][1];
+        }
+
+        // Render dynamic content for alignment
+        const innerContent = document.getElementById('card-inner-content');
+        innerContent.innerHTML = renderAlignmentHTML(alignIndex);
+    }
+
+    function prevAlignment() {
+        let newIndex = currentAlignment - 1;
+        if (newIndex < 1) newIndex = 10;
+        switchAlignment(newIndex);
+    }
+
+    function nextAlignment() {
+        let newIndex = currentAlignment + 1;
+        if (newIndex > 10) newIndex = 1;
+        switchAlignment(newIndex);
+    }
+
+    function renderAlignmentHTML(index) {
+        const festTitle = "{{ fest_title|escapejs }}";
+        const instName = "{{ institution.name|escapejs }}";
+        const selectedN = "{% if selected_n %}{{ selected_n }}{% else %}All {{ total_announced_programs }}{% endif %}";
+
+        // Extract Django context arrays
+        const topThree = [
+            {% for tdata in top_three %}
+            { pos: {{ tdata.position }}, name: "{{ tdata.team.name|escapejs }}", points: {{ tdata.points }}, c1: {{ tdata.first_count }}, c2: {{ tdata.second_count }}, c3: {{ tdata.third_count }} },
+            {% endfor %}
+        ];
+
+        const allTeams = [
+            {% for tdata in teams %}
+            { pos: {{ tdata.position }}, name: "{{ tdata.team.name|escapejs }}", points: {{ tdata.points }}, c1: {{ tdata.first_count }}, c2: {{ tdata.second_count }}, c3: {{ tdata.third_count }} },
+            {% endfor %}
+        ];
+
+        const remainingTeams = [
+            {% for tdata in remaining_teams %}
+            { pos: {{ tdata.position }}, name: "{{ tdata.team.name|escapejs }}", points: {{ tdata.points }}, c1: {{ tdata.first_count }}, c2: {{ tdata.second_count }}, c3: {{ tdata.third_count }} },
+            {% endfor %}
+        ];
+
+        // Adaptive spacing calculations
+        const teamCount = allTeams.length;
+        const borderSpacing = teamCount <= 4 ? '0 14px' : teamCount <= 6 ? '0 10px' : '0 6px';
+        const cellPadding = teamCount <= 4 ? '18px 16px' : teamCount <= 6 ? '15px 14px' : '11px 12px';
+        const fontSize = teamCount <= 4 ? '1.18rem' : teamCount <= 6 ? '1.1rem' : '1rem';
+        const podiumPadding = teamCount <= 4 ? '24px 14px' : teamCount <= 6 ? '18px 12px' : '14px 10px';
+
+        const summaryBarHTML = teamCount <= 6 ? `
+            <div style="background: rgba(0,0,0,0.3); border-radius: 16px; padding: 14px 20px; display: flex; justify-content: space-around; align-items: center; text-align: center; border: 1px solid rgba(255,255,255,0.1); margin: 10px 0;">
+                <div>
+                    <div style="font-size: 0.72rem; font-weight: 800; color: rgba(255,255,255,0.6); text-transform: uppercase;">TOTAL TEAMS</div>
+                    <div style="font-size: 1.25rem; font-weight: 900; color: #fff; margin-top: 2px;">${teamCount}</div>
+                </div>
+                <div style="width: 1px; height: 25px; background: rgba(255,255,255,0.15);"></div>
+                <div>
+                    <div style="font-size: 0.72rem; font-weight: 800; color: rgba(255,255,255,0.6); text-transform: uppercase;">ANNOUNCED RESULTS</div>
+                    <div style="font-size: 1.25rem; font-weight: 900; color: #fbbf24; margin-top: 2px;">${selectedN}</div>
+                </div>
+                <div style="width: 1px; height: 25px; background: rgba(255,255,255,0.15);"></div>
+                <div>
+                    <div style="font-size: 0.72rem; font-weight: 800; color: rgba(255,255,255,0.6); text-transform: uppercase;">CURRENT LEADER</div>
+                    <div style="font-size: 1.25rem; font-weight: 900; color: #34d399; margin-top: 2px;">${topThree[0] ? topThree[0].name : 'None'}</div>
+                </div>
+            </div>
+        ` : '';
+
+        // 1. ALIGNMENT 1: Centered Gold Crown Podium
+        if (index === 1) {
+            return `
+                <div>
+                    <div style="text-align: center; margin-bottom: 16px;">
+                        <div style="background: linear-gradient(90deg, #f59e0b, #d97706); color: #000; font-weight: 900; padding: 6px 24px; border-radius: 30px; font-size: 0.8rem; letter-spacing: 2px; text-transform: uppercase; display: inline-block;">
+                            OFFICIAL TEAM LEADERBOARD
+                        </div>
+                        <h1 class="fest-hero-title">${festTitle}</h1>
+                        <div style="font-size: 1.05rem; color: #cbd5e1; margin-top: 2px;">
+                            ${instName} &bull; <strong style="color: #fbbf24;">Points Table After ${selectedN} Results</strong>
+                        </div>
+                    </div>
+
+                    ${topThree.length ? `
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 18px; text-align: center;">
+                        ${topThree.map(t => `
+                            <div class="${t.pos === 1 ? 'top-3-rank-1' : t.pos === 2 ? 'top-3-rank-2' : 'top-3-rank-3'}" style="padding: ${podiumPadding}; box-shadow: 0 8px 24px rgba(0,0,0,0.4);">
+                                <div style="font-size: 2.2rem;">${t.pos === 1 ? '🥇' : t.pos === 2 ? '🥈' : '🥉'}</div>
+                                <div style="font-size: 0.8rem; font-weight: 900; letter-spacing: 1px; text-transform: uppercase; margin-top: 4px;">RANK #${t.pos}</div>
+                                <div style="font-size: 1.3rem; font-weight: 900; margin: 4px 0; color: #fff;">${t.name}</div>
+                                <div style="font-size: 1.6rem; font-weight: 900;">${t.points} <span style="font-size: 0.85rem;">pts</span></div>
+                                <div style="font-size: 0.78rem; margin-top: 4px; opacity: 0.9;">🥇 ${t.c1} | 🥈 ${t.c2} | 🥉 ${t.c3}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                    ` : ''}
+                </div>
+
+                <div class="card-body-section">
+                    <table class="summary-table" style="border-spacing: ${borderSpacing};">
+                        <thead>
+                            <tr><th>Rank</th><th>Team Name</th><th>1st</th><th>2nd</th><th>3rd</th><th style="text-align: right;">Total Points</th></tr>
+                        </thead>
+                        <tbody>
+                            ${allTeams.map(t => `
+                                <tr class="${t.pos === 1 ? 'top-3-rank-1' : t.pos === 2 ? 'top-3-rank-2' : t.pos === 3 ? 'top-3-rank-3' : ''}">
+                                    <td style="padding: ${cellPadding};"><strong style="font-size: ${fontSize};">${t.pos === 1 ? '🥇 #1' : t.pos === 2 ? '🥈 #2' : t.pos === 3 ? '🥉 #3' : '#' + t.pos}</strong></td>
+                                    <td style="padding: ${cellPadding};"><strong style="font-size: ${fontSize}; color: #fff;">${t.name}</strong></td>
+                                    <td style="padding: ${cellPadding};">🥇 ${t.c1}</td>
+                                    <td style="padding: ${cellPadding};">🥈 ${t.c2}</td>
+                                    <td style="padding: ${cellPadding};">🥉 ${t.c3}</td>
+                                    <td style="padding: ${cellPadding}; text-align: right;"><strong style="font-size: ${fontSize};">${t.points} pts</strong></td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+
+                    ${summaryBarHTML}
+                </div>
+
+                <div style="padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.15); display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; color: rgba(255,255,255,0.7);">
+                    <div>Official Result Announcement</div>
+                    <div>${instName}</div>
+                </div>
+            `;
+        }
+
+        // 2. ALIGNMENT 2: Split Left Hero Showcase
+        if (index === 2) {
+            const champion = topThree[0] || { name: 'None', points: 0 };
+            return `
+                <div class="card-body-section" style="display: grid; grid-template-columns: 38% 58%; gap: 4%; height: 100%;">
+                    <div style="background: rgba(0,0,0,0.35); padding: 36px 22px; border-radius: 22px; text-align: center; display: flex; flex-direction: column; justify-content: center;">
+                        <div style="font-size: 0.8rem; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; color: #38bdf8;">FEST LEADER</div>
+                        <div style="font-size: 4.5rem; margin: 16px 0;">🥇</div>
+                        <h2 style="font-size: 2.3rem; font-weight: 900; color: #fff; margin-bottom: 8px;">${champion.name}</h2>
+                        <div style="font-size: 3.6rem; font-weight: 900; color: #38bdf8;">${champion.points} <span style="font-size: 1.2rem;">pts</span></div>
+                        <div style="font-size: 0.88rem; color: #93c5fd; margin-top: 20px;">Standings After ${selectedN} Results</div>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; justify-content: space-between;">
+                        <div>
+                            <div style="margin-bottom: 16px;">
+                                <h1 class="fest-hero-title">${festTitle}</h1>
+                                <div style="font-size: 0.98rem; color: #94a3b8;">${instName}</div>
+                            </div>
+
+                            <table class="summary-table" style="border-spacing: ${borderSpacing};">
+                                <thead><tr><th>Rank</th><th>Team</th><th>Wins</th><th style="text-align: right;">Points</th></tr></thead>
+                                <tbody>
+                                    ${allTeams.map(t => `
+                                        <tr class="${t.pos === 1 ? 'top-3-rank-1' : t.pos === 2 ? 'top-3-rank-2' : t.pos === 3 ? 'top-3-rank-3' : ''}">
+                                            <td style="padding: ${cellPadding};"><strong style="font-size: ${fontSize};">#${t.pos}</strong></td>
+                                            <td style="padding: ${cellPadding};"><strong style="color: #fff; font-size: ${fontSize};">${t.name}</strong></td>
+                                            <td style="padding: ${cellPadding};">🥇${t.c1} 🥈${t.c2} 🥉${t.c3}</td>
+                                            <td style="padding: ${cellPadding}; text-align: right;"><strong style="font-size: ${fontSize};">${t.points} pts</strong></td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        ${summaryBarHTML}
+                    </div>
+                </div>
+
+                <div style="padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.15); display: flex; justify-content: space-between; font-size: 0.85rem; color: #94a3b8;">
+                    <div>Nature & Art Festival Leaderboard</div><div>${instName}</div>
+                </div>
+            `;
+        }
+
+        // 3. ALIGNMENT 3: Split Right Hero Showcase
+        if (index === 3) {
+            const champion = topThree[0] || { name: 'None', points: 0 };
+            return `
+                <div class="card-body-section" style="display: grid; grid-template-columns: 58% 38%; gap: 4%; height: 100%;">
+                    <div style="display: flex; flex-direction: column; justify-content: space-between;">
+                        <div>
+                            <div style="margin-bottom: 16px;">
+                                <h1 class="fest-hero-title">${festTitle}</h1>
+                                <div style="font-size: 0.98rem; color: #a7f3d0;">${instName}</div>
+                            </div>
+
+                            <table class="summary-table" style="border-spacing: ${borderSpacing};">
+                                <thead><tr><th>Rank</th><th>Team</th><th>Wins</th><th style="text-align: right;">Points</th></tr></thead>
+                                <tbody>
+                                    ${allTeams.map(t => `
+                                        <tr class="${t.pos === 1 ? 'top-3-rank-1' : t.pos === 2 ? 'top-3-rank-2' : t.pos === 3 ? 'top-3-rank-3' : ''}">
+                                            <td style="padding: ${cellPadding};"><strong style="font-size: ${fontSize};">#${t.pos}</strong></td>
+                                            <td style="padding: ${cellPadding};"><strong style="color: #fff; font-size: ${fontSize};">${t.name}</strong></td>
+                                            <td style="padding: ${cellPadding};">🥇${t.c1} 🥈${t.c2} 🥉${t.c3}</td>
+                                            <td style="padding: ${cellPadding}; text-align: right;"><strong style="font-size: ${fontSize};">${t.points} pts</strong></td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        ${summaryBarHTML}
+                    </div>
+
+                    <div style="background: rgba(0,0,0,0.35); padding: 36px 22px; border-radius: 22px; text-align: center; display: flex; flex-direction: column; justify-content: center;">
+                        <div style="font-size: 0.8rem; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; color: #34d399;">FEST LEADER</div>
+                        <div style="font-size: 4.5rem; margin: 16px 0;">🥇</div>
+                        <h2 style="font-size: 2.3rem; font-weight: 900; color: #fff; margin-bottom: 8px;">${champion.name}</h2>
+                        <div style="font-size: 3.6rem; font-weight: 900; color: #34d399;">${champion.points} <span style="font-size: 1.2rem;">pts</span></div>
+                        <div style="font-size: 0.88rem; color: #a7f3d0; margin-top: 20px;">Standings After ${selectedN} Results</div>
+                    </div>
+                </div>
+
+                <div style="padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.15); display: flex; justify-content: space-between; font-size: 0.85rem; color: #a7f3d0;">
+                    <div>Performing Arts & Stage Competitions</div><div>${instName}</div>
+                </div>
+            `;
+        }
+
+        // 4. ALIGNMENT 4: Staggered Alternating Rows
+        if (index === 4) {
+            return `
+                <div>
+                    <div style="margin-bottom: 16px;">
+                        <h1 class="fest-hero-title">${festTitle}</h1>
+                        <div style="font-size: 1.05rem; color: #fca5a5;">${instName} &bull; Standings After ${selectedN} Results</div>
+                    </div>
+                </div>
+
+                <div class="card-body-section" style="display: flex; flex-direction: column; justify-content: space-evenly; gap: 14px;">
+                    ${allTeams.map((t, idx) => `
+                        <div class="${t.pos === 1 ? 'top-3-rank-1' : t.pos === 2 ? 'top-3-rank-2' : t.pos === 3 ? 'top-3-rank-3' : ''}" style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.35); padding: ${teamCount <= 4 ? '20px 28px' : '16px 22px'}; border-radius: 18px; ${idx % 2 === 1 ? 'margin-left: 40px;' : 'margin-right: 40px;'}">
+                            <div style="display: flex; align-items: center; gap: 18px;">
+                                <span style="font-size: 1.35rem; font-weight: 900; width: 45px;">${t.pos === 1 ? '🥇 #1' : t.pos === 2 ? '🥈 #2' : t.pos === 3 ? '🥉 #3' : '#' + t.pos}</span>
+                                <span style="font-size: 1.25rem; font-weight: 900; color: #fff;">${t.name}</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 24px;">
+                                <span style="font-size: 0.95rem;">🥇${t.c1} 🥈${t.c2} 🥉${t.c3}</span>
+                                <span style="font-size: 1.45rem; font-weight: 900;">${t.points} pts</span>
+                            </div>
+                        </div>
+                    `).join('')}
+
+                    ${summaryBarHTML}
+                </div>
+
+                <div style="padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.15); display: flex; justify-content: space-between; font-size: 0.85rem; color: #fca5a5;">
+                    <div>Staggered Ranking Layout</div><div>${instName}</div>
+                </div>
+            `;
+        }
+
+        // 5. ALIGNMENT 5: Dual Column Grid Layout (Podium Pyramid Left, Leaderboard Right)
+        if (index === 5) {
+            const champion = topThree[0] || { name: 'None', points: 0, c1:0, c2:0, c3:0 };
+            const second = topThree[1] || null;
+            const third = topThree[2] || null;
+
+            return `
+                <div>
+                    <div style="text-align: center; margin-bottom: 18px;">
+                        <span style="background: rgba(192, 132, 252, 0.2); border: 1px solid #c084fc; color: #e9d5ff; font-weight: 900; padding: 4px 18px; border-radius: 30px; font-size: 0.78rem; letter-spacing: 2px; text-transform: uppercase; display: inline-block;">
+                            DUAL COLUMN LEADERBOARD
+                        </span>
+                        <h1 class="fest-hero-title">${festTitle}</h1>
+                        <div style="font-size: 1rem; color: #e9d5ff; margin-top: 2px;">${instName} &bull; Points After ${selectedN} Results</div>
+                    </div>
+                </div>
+
+                <div class="card-body-section" style="display: grid; grid-template-columns: 46% 50%; gap: 4%; align-items: stretch;">
+                    <!-- LEFT COLUMN: PODIUM HERO PYRAMID -->
+                    <div style="display: flex; flex-direction: column; justify-content: space-between; background: rgba(0,0,0,0.3); padding: 20px; border-radius: 20px; border: 1px solid rgba(192, 132, 252, 0.3);">
+                        <div style="font-size: 0.8rem; font-weight: 900; color: #c084fc; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
+                            <i class="fa-solid fa-crown" style="color: #f59e0b;"></i> PODIUM CHAMPIONS
+                        </div>
+
+                        <!-- 1st Rank Giant Hero Box -->
+                        <div class="top-3-rank-1" style="padding: 24px 16px; text-align: center; border-radius: 16px; box-shadow: 0 8px 24px rgba(0,0,0,0.4); margin-bottom: 14px;">
+                            <div style="font-size: 2.8rem; line-height: 1;">🥇</div>
+                            <div style="font-size: 0.75rem; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; margin-top: 6px; color: #fbbf24;">1ST PLACE CHAMPION</div>
+                            <h2 style="font-size: 1.8rem; font-weight: 900; color: #fff; margin: 4px 0 6px 0;">${champion.name}</h2>
+                            <div style="font-size: 2.6rem; font-weight: 900; color: #fbbf24;">${champion.points} <span style="font-size: 0.9rem;">pts</span></div>
+                            <div style="font-size: 0.8rem; opacity: 0.9; margin-top: 6px;">🥇 ${champion.c1} | 🥈 ${champion.c2} | 🥉 ${champion.c3}</div>
+                        </div>
+
+                        <!-- 2nd & 3rd Rank Side-by-Side Cards -->
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                            ${second ? `
+                                <div class="top-3-rank-2" style="padding: 14px 10px; text-align: center; border-radius: 14px;">
+                                    <div style="font-size: 1.6rem;">🥈</div>
+                                    <div style="font-size: 0.7rem; font-weight: 900;">2ND PLACE</div>
+                                    <div style="font-size: 1.05rem; font-weight: 900; color: #fff; margin: 2px 0;">${second.name}</div>
+                                    <div style="font-size: 1.3rem; font-weight: 900;">${second.points} <span style="font-size: 0.7rem;">pts</span></div>
+                                </div>
+                            ` : ''}
+
+                            ${third ? `
+                                <div class="top-3-rank-3" style="padding: 14px 10px; text-align: center; border-radius: 14px;">
+                                    <div style="font-size: 1.6rem;">🥉</div>
+                                    <div style="font-size: 0.7rem; font-weight: 900;">3RD PLACE</div>
+                                    <div style="font-size: 1.05rem; font-weight: 900; color: #fff; margin: 2px 0;">${third.name}</div>
+                                    <div style="font-size: 1.3rem; font-weight: 900;">${third.points} <span style="font-size: 0.7rem;">pts</span></div>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+
+                    <!-- RIGHT COLUMN: TEAM LEADERBOARD SCORES -->
+                    <div style="display: flex; flex-direction: column; justify-content: space-between; background: rgba(0,0,0,0.25); padding: 20px; border-radius: 20px; border: 1px solid rgba(192, 132, 252, 0.2);">
+                        <div style="font-size: 0.8rem; font-weight: 900; color: #c084fc; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
+                            <i class="fa-solid fa-list-ol"></i> FULL TEAM STANDINGS
+                        </div>
+
+                        <div style="display: flex; flex-direction: column; gap: 10px; flex: 1 1 auto; justify-content: space-evenly;">
+                            ${allTeams.map(t => `
+                                <div class="${t.pos === 1 ? 'top-3-rank-1' : t.pos === 2 ? 'top-3-rank-2' : t.pos === 3 ? 'top-3-rank-3' : ''}" style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.3); padding: 12px 16px; border-radius: 14px;">
+                                    <div style="display: flex; align-items: center; gap: 12px;">
+                                        <strong style="font-size: 1.1rem; width: 35px;">${t.pos === 1 ? '🥇' : t.pos === 2 ? '🥈' : t.pos === 3 ? '🥉' : '#' + t.pos}</strong>
+                                        <strong style="font-size: 1.1rem; color: #fff;">${t.name}</strong>
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: 14px;">
+                                        <span style="font-size: 0.8rem; opacity: 0.9;">🥇${t.c1} 🥈${t.c2} 🥉${t.c3}</span>
+                                        <strong style="font-size: 1.25rem;">${t.points} pts</strong>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    ${summaryBarHTML}
+                    <div style="margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.15); display: flex; justify-content: space-between; font-size: 0.85rem; color: #e9d5ff;">
+                        <div>Dual Column Leaderboard Showcase</div><div>${instName}</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // 6. ALIGNMENT 6: Royal Vintage Parchment Certificate
+        if (index === 6) {
+            return `
+                <div>
+                    <div style="text-align: center; margin-bottom: 16px;">
+                        <div style="font-size: 0.85rem; letter-spacing: 3px; font-weight: 700; text-transform: uppercase; color: #f59e0b;">OFFICIAL CERTIFICATE OF STANDINGS</div>
+                        <h1 class="fest-hero-title">${festTitle}</h1>
+                        <div style="font-size: 1.05rem; color: #d6d3d1;">${instName} &bull; Points After ${selectedN} Results</div>
+                    </div>
+                </div>
+
+                <div class="card-body-section">
+                    <table class="summary-table" style="background: rgba(0,0,0,0.3); border-spacing: ${borderSpacing};">
+                        <thead>
+                            <tr><th style="color: #fde047;">Rank</th><th style="color: #fde047;">Team / House Name</th><th style="color: #fde047;">1st</th><th style="color: #fde047;">2nd</th><th style="color: #fde047;">3rd</th><th style="text-align: right; color: #fde047;">Total Points</th></tr>
+                        </thead>
+                        <tbody>
+                            ${allTeams.map(t => `
+                                <tr class="${t.pos === 1 ? 'top-3-rank-1' : t.pos === 2 ? 'top-3-rank-2' : t.pos === 3 ? 'top-3-rank-3' : ''}">
+                                    <td style="padding: ${cellPadding};"><strong style="font-size: ${fontSize};">${t.pos === 1 ? '🥇 #1' : t.pos === 2 ? '🥈 #2' : t.pos === 3 ? '🥉 #3' : '#' + t.pos}</strong></td>
+                                    <td style="padding: ${cellPadding};"><strong style="font-size: ${fontSize}; color: #fff;">${t.name}</strong></td>
+                                    <td style="padding: ${cellPadding};">🥇 ${t.c1}</td>
+                                    <td style="padding: ${cellPadding};">🥈 ${t.c2}</td>
+                                    <td style="padding: ${cellPadding};">🥉 ${t.c3}</td>
+                                    <td style="padding: ${cellPadding}; text-align: right;"><strong style="font-size: ${fontSize};">${t.points} pts</strong></td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+
+                    ${summaryBarHTML}
+                </div>
+
+                <div style="padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.15); display: flex; justify-content: space-between; font-size: 0.85rem; color: #d6d3d1;">
+                    <div>Signed & Verified Official Document</div><div>${instName}</div>
+                </div>
+            `;
+        }
+
+        // 7. ALIGNMENT 7: Top Banner Left-Align
+        if (index === 7) {
+            return `
+                <div>
+                    <div style="background: rgba(0,0,0,0.4); padding: 24px 28px; border-radius: 20px; margin-bottom: 20px;">
+                        <h1 class="fest-hero-title" style="margin: 0;">${festTitle}</h1>
+                        <div style="font-size: 1.05rem; color: #c7d2fe; margin-top: 6px;">${instName} &bull; Points Table After ${selectedN} Results</div>
+                    </div>
+                </div>
+
+                <div class="card-body-section" style="display: flex; flex-direction: column; justify-content: space-evenly; gap: 12px;">
+                    ${allTeams.map(t => `
+                        <div class="${t.pos === 1 ? 'top-3-rank-1' : t.pos === 2 ? 'top-3-rank-2' : t.pos === 3 ? 'top-3-rank-3' : ''}" style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.3); padding: ${cellPadding}; border-radius: 16px;">
+                            <div style="display: flex; align-items: center; gap: 18px;">
+                                <span style="font-size: 1.25rem; font-weight: 900; width: 45px;">${t.pos === 1 ? '🥇 #1' : t.pos === 2 ? '🥈 #2' : t.pos === 3 ? '🥉 #3' : '#' + t.pos}</span>
+                                <span style="font-size: 1.2rem; font-weight: 900; color: #fff;">${t.name}</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 24px;">
+                                <span style="font-size: 0.95rem;">🥇${t.c1} 🥈${t.c2} 🥉${t.c3}</span>
+                                <span style="font-size: 1.35rem; font-weight: 900;">${t.points} pts</span>
+                            </div>
+                        </div>
+                    `).join('')}
+
+                    ${summaryBarHTML}
+                </div>
+
+                <div style="padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.15); font-size: 0.85rem; color: #c7d2fe; display: flex; justify-content: space-between;">
+                    <div>Arts Festival Leaderboard</div><div>${instName}</div>
+                </div>
+            `;
+        }
+
+        // 8. ALIGNMENT 8: Right-Aligned Power
+        if (index === 8) {
+            return `
+                <div>
+                    <div style="text-align: right; margin-bottom: 20px;">
+                        <h1 class="fest-hero-title">${festTitle}</h1>
+                        <div style="font-size: 1.05rem; color: #fef08a; margin-top: 4px;">${instName} &bull; Points After ${selectedN} Results</div>
+                    </div>
+                </div>
+
+                <div class="card-body-section">
+                    <table class="summary-table" style="text-align: right; border-spacing: ${borderSpacing};">
+                        <thead>
+                            <tr><th style="text-align: left;">Team Name</th><th style="text-align: center;">Wins</th><th style="text-align: right;">Rank</th><th style="text-align: right;">Points</th></tr>
+                        </thead>
+                        <tbody>
+                            ${allTeams.map(t => `
+                                <tr class="${t.pos === 1 ? 'top-3-rank-1' : t.pos === 2 ? 'top-3-rank-2' : t.pos === 3 ? 'top-3-rank-3' : ''}">
+                                    <td style="text-align: left; padding: ${cellPadding};"><strong style="color: #fff; font-size: ${fontSize};">${t.name}</strong></td>
+                                    <td style="text-align: center; padding: ${cellPadding};">🥇${t.c1} 🥈${t.c2} 🥉${t.c3}</td>
+                                    <td style="padding: ${cellPadding};"><strong style="font-size: ${fontSize};">${t.pos === 1 ? '🥇 #1' : t.pos === 2 ? '🥈 #2' : t.pos === 3 ? '🥉 #3' : '#' + t.pos}</strong></td>
+                                    <td style="text-align: right; padding: ${cellPadding};"><strong style="font-size: ${fontSize};">${t.points} pts</strong></td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+
+                    ${summaryBarHTML}
+                </div>
+
+                <div style="padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.15); text-align: right; font-size: 0.85rem; color: #fef08a;">
+                    Official Result Portal &bull; ${instName}
+                </div>
+            `;
+        }
+
+        // 9. ALIGNMENT 9: Rose Quartz Quad Grid
+        if (index === 9) {
+            return `
+                <div>
+                    <div style="margin-bottom: 20px;">
+                        <h1 class="fest-hero-title">${festTitle}</h1>
+                        <div style="font-size: 1.05rem; color: #fbcfe8; margin-top: 4px;">${instName} &bull; Points After ${selectedN} Results</div>
+                    </div>
+                </div>
+
+                <div class="card-body-section">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 18px;">
+                        ${allTeams.map(t => `
+                            <div class="${t.pos === 1 ? 'top-3-rank-1' : t.pos === 2 ? 'top-3-rank-2' : t.pos === 3 ? 'top-3-rank-3' : ''}" style="background: rgba(0,0,0,0.3); padding: ${teamCount <= 4 ? '24px 20px' : '18px 16px'}; border-radius: 18px; display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <div style="font-size: 0.85rem; font-weight: 900; letter-spacing: 1px;">${t.pos === 1 ? '🥇 RANK #1' : t.pos === 2 ? '🥈 RANK #2' : t.pos === 3 ? '🥉 RANK #3' : 'RANK #' + t.pos}</div>
+                                    <div style="font-size: 1.25rem; font-weight: 900; color: #fff; margin-top: 4px;">${t.name}</div>
+                                    <div style="font-size: 0.82rem; margin-top: 6px; opacity: 0.9;">🥇${t.c1} 🥈${t.c2} 🥉${t.c3}</div>
+                                </div>
+                                <div style="font-size: 1.7rem; font-weight: 900;">${t.points} <span style="font-size: 0.85rem;">pts</span></div>
+                            </div>
+                        `).join('')}
+                    </div>
+
+                    ${summaryBarHTML}
+                </div>
+
+                <div style="padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.15); display: flex; justify-content: space-between; font-size: 0.85rem; color: #fbcfe8;">
+                    <div>Arts Festival Leaderboard</div><div>${instName}</div>
+                </div>
+            `;
+        }
+
+        // 10. ALIGNMENT 10: Cyber Neon Split
+        if (index === 10) {
+            return `
+                <div>
+                    <div style="text-align: center; margin-bottom: 20px;">
+                        <h1 class="fest-hero-title">${festTitle}</h1>
+                        <div style="font-size: 1.05rem; color: #99f6e4; margin-top: 4px;">${instName} &bull; Standings After ${selectedN} Results</div>
+                    </div>
+                </div>
+
+                <div class="card-body-section">
+                    <table class="summary-table" style="background: rgba(0,0,0,0.3); border-spacing: ${borderSpacing};">
+                        <thead>
+                            <tr><th>Rank</th><th>Team / House Name</th><th>1st</th><th>2nd</th><th>3rd</th><th style="text-align: right;">Total Points</th></tr>
+                        </thead>
+                        <tbody>
+                            ${allTeams.map(t => `
+                                <tr class="${t.pos === 1 ? 'top-3-rank-1' : t.pos === 2 ? 'top-3-rank-2' : t.pos === 3 ? 'top-3-rank-3' : ''}">
+                                    <td style="padding: ${cellPadding};"><strong style="font-size: ${fontSize};">${t.pos === 1 ? '🥇 #1' : t.pos === 2 ? '🥈 #2' : t.pos === 3 ? '🥉 #3' : '#' + t.pos}</strong></td>
+                                    <td style="padding: ${cellPadding};"><strong style="font-size: ${fontSize}; color: #fff;">${t.name}</strong></td>
+                                    <td style="padding: ${cellPadding};">🥇 ${t.c1}</td>
+                                    <td style="padding: ${cellPadding};">🥈 ${t.c2}</td>
+                                    <td style="padding: ${cellPadding};">🥉 ${t.c3}</td>
+                                    <td style="padding: ${cellPadding}; text-align: right;"><strong style="font-size: ${fontSize};">${t.points} pts</strong></td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+
+                    ${summaryBarHTML}
+                </div>
+
+                <div style="padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.15); display: flex; justify-content: space-between; font-size: 0.85rem; color: #99f6e4;">
+                    <div>Stage & Literary Results</div><div>${instName}</div>
+                </div>
+            `;
+        }
+
+        return '';
+    }
+
+    function showOverlay() { document.getElementById('dl-overlay').classList.add('active'); }
+    function hideOverlay() { document.getElementById('dl-overlay').classList.remove('active'); }
+    function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
+
+    async function downloadCurrentCard() {
+        const card = document.getElementById('active-a4-card');
+        showOverlay();
+
+        try {
+            const canvas = await html2canvas(card, {
+                scale: 3.0,
+                useCORS: true,
+                logging: false,
+                allowTaint: true,
+                backgroundColor: null,
+                removeContainer: true
+            });
+            const link = document.createElement('a');
+            link.download = 'official_leaderboard_4x5_alignment_' + currentAlignment + '_card.jpg';
+            link.href = canvas.toDataURL('image/jpeg', 0.95);
+            link.click();
+        } finally {
+            hideOverlay();
+        }
+    }
+
+    async function downloadAllAlignments() {
+        showOverlay();
+        const initialAlignment = currentAlignment;
+
+        for (let i = 1; i <= 10; i++) {
+            switchAlignment(i);
+            await sleep(250);
+
+            const card = document.getElementById('active-a4-card');
+            try {
+                const canvas = await html2canvas(card, {
+                    scale: 3.0,
+                    useCORS: true,
+                    logging: false,
+                    allowTaint: true,
+                    backgroundColor: null,
+                    removeContainer: true
+                });
+                const link = document.createElement('a');
+                link.download = 'official_leaderboard_4x5_alignment_' + i + '_card.jpg';
+                link.href = canvas.toDataURL('image/jpeg', 0.95);
+                link.click();
+                await sleep(350);
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        switchAlignment(initialAlignment);
+        hideOverlay();
+    }
+</script>
+</body>
+</html>

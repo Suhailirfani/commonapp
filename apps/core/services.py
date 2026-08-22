@@ -119,14 +119,33 @@ def calculate_program_results(program):
     recalculate_team_points(institution)
 
 
-def get_team_standings(institution, announced_only=True):
+def get_team_standings(institution, announced_only=True, limit_n_results=None):
     """
     Computes exact team standings, total points, 1st/2nd/3rd win counts, and positions.
     Guarantees 100% mathematical consistency between Admin Portal and Public Leaderboard.
-    Also syncs team.total_points for database persistence.
+    Optionally limits calculation to the first N results announced or marked.
     """
+    from apps.core.models import Program
     teams = list(Team.objects.filter(institution=institution).order_by('name'))
     team_data = []
+
+    allowed_program_ids = None
+    if limit_n_results is not None:
+        try:
+            n_val = int(limit_n_results)
+            if n_val > 0:
+                prog_qs = Program.objects.filter(institution=institution)
+                if announced_only:
+                    prog_qs = prog_qs.filter(is_announced=True)
+                else:
+                    prog_qs = prog_qs.filter(participations__marks__isnull=False).distinct()
+                
+                allowed_program_ids = set(
+                    prog_qs.order_by('announced_at', 'result_number', 'id')
+                    .values_list('id', flat=True)[:n_val]
+                )
+        except (ValueError, TypeError):
+            allowed_program_ids = None
 
     for team in teams:
         calc_points = 0
@@ -139,6 +158,8 @@ def get_team_standings(institution, announced_only=True):
         )
         if announced_only:
             parts = parts.filter(program__is_announced=True)
+        if allowed_program_ids is not None:
+            parts = parts.filter(program_id__in=allowed_program_ids)
 
         for p in parts:
             if p.rank or p.grade:
@@ -152,6 +173,8 @@ def get_team_standings(institution, announced_only=True):
         )
         if announced_only:
             gps = gps.filter(program__is_announced=True)
+        if allowed_program_ids is not None:
+            gps = gps.filter(program_id__in=allowed_program_ids)
 
         for gp in gps:
             if gp.rank or gp.grade:
@@ -165,6 +188,8 @@ def get_team_standings(institution, announced_only=True):
         )
         if announced_only:
             all_parts = all_parts.filter(program__is_announced=True)
+        if allowed_program_ids is not None:
+            all_parts = all_parts.filter(program_id__in=allowed_program_ids)
 
         first_count = all_parts.filter(rank=1).count()
         second_count = all_parts.filter(rank=2).count()
@@ -177,13 +202,15 @@ def get_team_standings(institution, announced_only=True):
         )
         if announced_only:
             all_gps = all_gps.filter(program__is_announced=True)
+        if allowed_program_ids is not None:
+            all_gps = all_gps.filter(program_id__in=allowed_program_ids)
 
         first_count += all_gps.filter(rank=1).count()
         second_count += all_gps.filter(rank=2).count()
         third_count += all_gps.filter(rank=3).count()
 
-        # Sync persistent team.total_points for announced results
-        if announced_only:
+        # Sync persistent team.total_points for announced results when computing full standings
+        if announced_only and allowed_program_ids is None:
             if team.total_points != calc_points:
                 team.total_points = calc_points
                 team.save(update_fields=['total_points'])
@@ -197,7 +224,7 @@ def get_team_standings(institution, announced_only=True):
             'total_wins': first_count + second_count + third_count
         })
 
-    team_data.sort(key=lambda x: x['points'], reverse=True)
+    team_data.sort(key=lambda x: (x['points'], x['first_count'], x['second_count'], x['third_count']), reverse=True)
 
     current_rank = 1
     for i, data in enumerate(team_data):

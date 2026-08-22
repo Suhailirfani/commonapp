@@ -1754,14 +1754,60 @@ def team_standings_view(request, institution_slug):
     view_mode = request.GET.get('view', 'announced')
     announced_only = (view_mode == 'announced')
 
+    n_param = request.GET.get('n_results') or request.GET.get('n')
+    limit_n = None
+    if n_param and n_param.isdigit():
+        limit_n = int(n_param)
+
     from .services import get_team_standings
-    team_data = get_team_standings(institution, announced_only=announced_only)
+    team_data = get_team_standings(institution, announced_only=announced_only, limit_n_results=limit_n)
+
+    total_announced_programs = Program.objects.filter(institution=institution, is_announced=True).count()
+    total_completed_programs = Program.objects.filter(institution=institution, participations__marks__isnull=False).distinct().count()
+    max_results = total_announced_programs if announced_only else total_completed_programs
+
+    n_presets = [opt for opt in [5, 10, 15, 20, 25, 30, 40, 50] if opt < max_results]
 
     return render(request, 'core/team_standings.html', {
         'institution': institution,
         'teams': team_data,
         'top_three': team_data[:3] if len(team_data) >= 3 else team_data,
-        'view_mode': view_mode
+        'view_mode': view_mode,
+        'selected_n': limit_n,
+        'max_results': max_results,
+        'total_announced_programs': total_announced_programs,
+        'total_completed_programs': total_completed_programs,
+        'n_presets': n_presets,
+    })
+
+
+@login_required
+def team_points_cards_view(request, institution_slug):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    n_param = request.GET.get('n_results') or request.GET.get('n')
+    limit_n = None
+    if n_param and n_param.isdigit():
+        limit_n = int(n_param)
+
+    from .services import get_team_standings
+    team_data = get_team_standings(institution, announced_only=True, limit_n_results=limit_n)
+
+    total_announced_programs = Program.objects.filter(institution=institution, is_announced=True).count()
+
+    comp = Competition.objects.filter(institution=institution, is_active=True).first()
+    fest_title = comp.name if comp else institution.name
+
+    n_presets = [opt for opt in [5, 10, 15, 20, 25, 30, 40, 50] if opt < total_announced_programs]
+
+    return render(request, 'core/team_points_cards.html', {
+        'institution': institution,
+        'teams': team_data,
+        'top_three': team_data[:3] if len(team_data) >= 3 else team_data,
+        'remaining_teams': team_data[3:] if len(team_data) > 3 else [],
+        'selected_n': limit_n,
+        'total_announced_programs': total_announced_programs,
+        'fest_title': fest_title,
+        'n_presets': n_presets,
     })
 
 

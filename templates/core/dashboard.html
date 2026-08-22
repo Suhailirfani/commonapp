@@ -298,6 +298,18 @@
         <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Winner ranks, grades & official program results</p>
     </a>
 
+    <a href="{% url 'core:shareable_results' institution.slug %}" class="glass-card" style="text-decoration: none; color: inherit;">
+        <i class="fa-solid fa-palette" style="font-size: 1.8rem; color: #ec4899; margin-bottom: 12px;"></i>
+        <h4 style="font-size: 1.1rem; font-weight: 700;">Winner Graphic Cards</h4>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Generate, customize & download printable winner graphic cards</p>
+    </a>
+
+    <a href="{% url 'core:team_points_cards' institution.slug %}" class="glass-card" style="text-decoration: none; color: inherit;">
+        <i class="fa-solid fa-id-card" style="font-size: 1.8rem; color: #f59e0b; margin-bottom: 12px;"></i>
+        <h4 style="font-size: 1.1rem; font-weight: 700;">Team Points Graphic Cards</h4>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Generate & download team standings & score cards after N results</p>
+    </a>
+
     <a href="{% url 'core:team_standings' institution.slug %}" class="glass-card" style="text-decoration: none; color: inherit;">
         <i class="fa-solid fa-ranking-star" style="font-size: 1.8rem; color: var(--accent-cyan); margin-bottom: 12px;"></i>
         <h4 style="font-size: 1.1rem; font-weight: 700;">Team Standings & Leaderboard</h4>

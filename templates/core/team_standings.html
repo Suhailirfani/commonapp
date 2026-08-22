@@ -8,13 +8,52 @@
         <a href="{% url 'core:dashboard' institution.slug %}" style="color: var(--text-muted); text-decoration: none;"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</a>
         <h2 style="font-size: 1.8rem; font-weight: 800; margin-top: 4px;"><i class="fa-solid fa-ranking-star" style="color: var(--accent-amber);"></i> Team Standings & Leaderboard</h2>
     </div>
-    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-        <a href="?view=announced" class="btn-primary" style="{% if view_mode == 'announced' %}background: linear-gradient(135deg, var(--accent-emerald), #059669);{% else %}background: rgba(255,255,255,0.08); box-shadow: none;{% endif %}">
-            <i class="fa-solid fa-bullhorn"></i> Announced Only (Public)
+    <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+        <a href="{% url 'core:team_points_cards' institution.slug %}{% if selected_n %}?n_results={{ selected_n }}{% endif %}" class="btn-primary" style="background: linear-gradient(135deg, #ec4899, #be185d); box-shadow: 0 4px 14px rgba(236, 72, 153, 0.35);">
+            <i class="fa-solid fa-palette"></i> Download Points Card
         </a>
-        <a href="?view=all" class="btn-primary" style="{% if view_mode == 'all' %}background: linear-gradient(135deg, #0284c7, #0369a1);{% else %}background: rgba(255,255,255,0.08); box-shadow: none;{% endif %}">
-            <i class="fa-solid fa-eye"></i> Overall Scores (Admin)
+        <a href="?view=announced{% if selected_n %}&n_results={{ selected_n }}{% endif %}" class="btn-primary" style="{% if view_mode == 'announced' %}background: linear-gradient(135deg, var(--accent-emerald), #059669);{% else %}background: rgba(255,255,255,0.08); box-shadow: none;{% endif %}">
+            <i class="fa-solid fa-bullhorn"></i> Announced Only
         </a>
+        <a href="?view=all{% if selected_n %}&n_results={{ selected_n }}{% endif %}" class="btn-primary" style="{% if view_mode == 'all' %}background: linear-gradient(135deg, #0284c7, #0369a1);{% else %}background: rgba(255,255,255,0.08); box-shadow: none;{% endif %}">
+            <i class="fa-solid fa-eye"></i> Overall Scores
+        </a>
+    </div>
+</div>
+
+<!-- N-Results Filter & Graphic Card Bar -->
+<div class="glass-card" style="margin-bottom: 24px; padding: 18px 22px; border: 1px solid rgba(245, 158, 11, 0.3); background: linear-gradient(135deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.95));">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+        <div>
+            <div style="font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #fbbf24; display: flex; align-items: center; gap: 6px;">
+                <i class="fa-solid fa-filter"></i> Standings After N Results
+            </div>
+            <div style="font-size: 0.95rem; color: var(--text-muted); margin-top: 2px;">
+                {% if selected_n %}
+                    Showing standings after <strong>{{ selected_n }}</strong> completed/announced programs (out of {{ max_results }} total)
+                {% else %}
+                    Showing standings across <strong>All {{ max_results }}</strong> announced programs
+                {% endif %}
+            </div>
+        </div>
+
+        <form method="get" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+            <input type="hidden" name="view" value="{{ view_mode }}">
+            <span style="font-size: 0.85rem; color: #cbd5e1; font-weight: 600;">Presets:</span>
+            <a href="?view={{ view_mode }}" class="badge" style="padding: 6px 12px; font-size: 0.82rem; text-decoration: none; border-radius: 20px; {% if not selected_n %}background: #f59e0b; color: #000; font-weight: 800;{% else %}background: rgba(255,255,255,0.1); color: #cbd5e1;{% endif %}">
+                All ({{ max_results }})
+            </a>
+            {% for n_opt in n_presets %}
+            <a href="?view={{ view_mode }}&n_results={{ n_opt }}" class="badge" style="padding: 6px 12px; font-size: 0.82rem; text-decoration: none; border-radius: 20px; {% if selected_n == n_opt %}background: #f59e0b; color: #000; font-weight: 800;{% else %}background: rgba(255,255,255,0.1); color: #cbd5e1;{% endif %}">
+                After {{ n_opt }}
+            </a>
+            {% endfor %}
+
+            <div style="display: flex; gap: 4px; align-items: center; margin-left: 6px;">
+                <input type="number" name="n_results" value="{{ selected_n|default:'' }}" min="1" max="{{ max_results }}" placeholder="Custom N..." style="width: 100px; padding: 6px 10px; border-radius: 8px; background: rgba(15, 23, 42, 0.8); border: 1px solid #475569; color: #fff; font-size: 0.85rem; outline: none;">
+                <button type="submit" class="btn-primary" style="padding: 6px 14px; font-size: 0.82rem; background: linear-gradient(135deg, #0284c7, #0369a1);">Apply</button>
+            </div>
+        </form>
     </div>
 </div>
 

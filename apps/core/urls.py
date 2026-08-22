@@ -72,6 +72,7 @@ urlpatterns = [
     path('portal/<slug:institution_slug>/team-results/<int:team_id>/pdf/', views.download_team_results_pdf_view, name='download_team_results_detail_pdf'),
     path('portal/<slug:institution_slug>/results/toppers/', views.toppers_list_view, name='toppers_list'),
     path('portal/<slug:institution_slug>/results/winner-cards/', views.shareable_results_view, name='shareable_results'),
+    path('portal/<slug:institution_slug>/results/team-points-cards/', views.team_points_cards_view, name='team_points_cards'),
     
     # Public Announcement Control & Score Balancer AI
     path('portal/<slug:institution_slug>/announcements/', views.manage_announcements_view, name='manage_announcements'),
