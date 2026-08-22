@@ -323,27 +323,48 @@
         .card-layout-9 { background: linear-gradient(135deg, #831843 0%, #500724 70%, #0f172a 100%); }
         .card-layout-10 { background: linear-gradient(135deg, #134e4a 0%, #042f2e 70%, #020617 100%); }
 
-        /* Responsive Breakpoint for Mobile (< 992px) */
+        /* Responsive Breakpoints for Mobile (< 992px) */
         @media (max-width: 991px) {
             .studio-layout-grid {
                 grid-template-columns: 1fr;
-                gap: 20px;
-                padding: 12px;
+                gap: 16px;
+                padding: 10px;
+            }
+            .preview-stage-col {
+                order: 1; /* Live card preview on top for mobile! */
+            }
+            .controls-sidebar {
+                order: 2; /* Controls below preview on mobile */
             }
             .controls {
                 flex-direction: row;
                 flex-wrap: wrap;
+                gap: 8px;
             }
             .btn {
                 flex: 1 1 auto;
                 justify-content: center;
+                padding: 9px 14px;
+                font-size: 0.84rem;
             }
             .theme-chips-list {
                 flex-direction: row;
-                flex-wrap: wrap;
+                overflow-x: auto;
+                white-space: nowrap;
+                flex-wrap: nowrap;
+                gap: 8px;
+                padding-bottom: 6px;
+                -webkit-overflow-scrolling: touch;
             }
             .theme-chip {
                 border-radius: 30px;
+                flex-shrink: 0;
+                padding: 8px 16px;
+            }
+            .preview-header-bar {
+                justify-content: center;
+                text-align: center;
+                gap: 8px;
             }
         }
     </style>
@@ -509,19 +530,26 @@
 
         const windowWidth = window.innerWidth;
         const windowHeight = window.innerHeight;
+        let scale = 1;
 
-        const stageTop = previewStage.getBoundingClientRect().top;
-        const availableHeight = Math.max(320, windowHeight - stageTop - 20);
-        
-        // On wide screens (>= 992px), stage container is inside right column (~900px wide max)
-        const stageWidth = previewStage.clientWidth || Math.min(800, windowWidth - 380);
-        const availableWidth = Math.min(800, stageWidth - 10);
+        if (windowWidth < 992) {
+            // Mobile screen logic: scale card based on exact screen width so full card width fits on phone display
+            const maxCardWidth = Math.min(800, windowWidth - 20);
+            scale = maxCardWidth / 800;
+            scale = Math.min(0.95, Math.max(0.32, scale));
+        } else {
+            // Wide screen desktop logic: scale based on available height inside right column
+            const stageTop = previewStage.getBoundingClientRect().top;
+            const availableHeight = Math.max(320, windowHeight - stageTop - 20);
+            const stageWidth = previewStage.clientWidth || Math.min(800, windowWidth - 380);
+            const availableWidth = Math.min(800, stageWidth - 10);
 
-        const scaleH = availableHeight / 1000;
-        const scaleW = availableWidth / 800;
+            const scaleH = availableHeight / 1000;
+            const scaleW = availableWidth / 800;
 
-        let scale = Math.min(scaleH, scaleW);
-        scale = Math.min(0.92, Math.max(0.30, scale));
+            scale = Math.min(scaleH, scaleW);
+            scale = Math.min(0.92, Math.max(0.30, scale));
+        }
 
         scaleContainer.style.transform = `scale(${scale})`;
         previewStage.style.height = `${Math.ceil(1000 * scale)}px`;
