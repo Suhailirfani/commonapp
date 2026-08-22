@@ -442,35 +442,25 @@
                 </a>
             </div>
 
-            <!-- N RESULTS SELECTOR BAR -->
+            <!-- N RESULTS SELECTOR BAR (INPUT FIELD & APPLY BUTTON ONLY) -->
             <div class="n-selector-wrap">
-                <div>
-                    <div style="font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #fbbf24; display: flex; align-items: center; gap: 6px;">
-                        <i class="fa-solid fa-filter"></i> Calculated After N Results
-                    </div>
-                    <div style="font-size: 0.85rem; color: #a1a1aa; margin-top: 2px;">
-                        {% if selected_n %}
-                            Showing after <strong>{{ selected_n }}</strong> programs (out of {{ total_announced_programs }})
-                        {% else %}
-                            Showing overall (All {{ total_announced_programs }} programs)
-                        {% endif %}
-                    </div>
+                <div style="font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #fbbf24; display: flex; align-items: center; gap: 6px;">
+                    <i class="fa-solid fa-filter"></i> Calculated After N Results
+                </div>
+                <div style="font-size: 0.82rem; color: #a1a1aa; margin-top: 2px; margin-bottom: 8px;">
+                    {% if selected_n %}
+                        Showing standings after <strong>{{ selected_n }}</strong> programs (out of {{ total_announced_programs }})
+                    {% else %}
+                        Showing overall standings (All {{ total_announced_programs }} programs)
+                    {% endif %}
                 </div>
 
-                <form method="get" style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin-top: 10px;">
-                    <a href="?n_results=" class="theme-chip {% if not selected_n %}active{% endif %}" style="text-decoration: none; padding: 5px 12px; font-size: 0.78rem;">
-                        All ({{ total_announced_programs }})
-                    </a>
-                    {% for n_opt in n_presets %}
-                    <a href="?n_results={{ n_opt }}" class="theme-chip {% if selected_n == n_opt %}active{% endif %}" style="text-decoration: none; padding: 5px 12px; font-size: 0.78rem;">
-                        After {{ n_opt }}
-                    </a>
-                    {% endfor %}
-
-                    <div style="display: flex; gap: 6px; align-items: center; margin-top: 6px; width: 100%;">
-                        <input type="number" name="n_results" value="{{ selected_n|default:'' }}" min="1" max="{{ total_announced_programs }}" placeholder="Custom N..." style="flex: 1; padding: 7px 12px; border-radius: 20px; background: #27272a; border: 1px solid #3f3f46; color: #fff; font-size: 0.85rem; outline: none;">
-                        <button type="submit" class="btn btn-pink" style="padding: 7px 16px; font-size: 0.82rem;">Apply N</button>
-                    </div>
+                <form method="get" style="display: flex; gap: 8px; align-items: center; width: 100%;">
+                    <input type="number" name="n_results" value="{{ selected_n|default:'' }}" min="1" max="{{ total_announced_programs }}" placeholder="Enter N (e.g. 5, 10)..." style="flex: 1; padding: 9px 14px; border-radius: 12px; background: #27272a; border: 1px solid #3f3f46; color: #fff; font-size: 0.88rem; outline: none;">
+                    <button type="submit" class="btn btn-pink" style="padding: 9px 16px; font-size: 0.84rem; border-radius: 12px; white-space: nowrap;">Apply N</button>
+                    {% if selected_n %}
+                    <a href="?n_results=" class="btn btn-outline" style="padding: 9px 14px; font-size: 0.84rem; border-radius: 12px; white-space: nowrap; text-decoration: none;">Reset</a>
+                    {% endif %}
                 </form>
             </div>
 
