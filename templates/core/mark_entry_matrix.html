@@ -1,5 +1,4 @@
 {% extends 'base.html' %}
-{% load custom_filters %}
 
 {% block title %}Mark Entry Matrix - {{ program.name }}{% endblock %}
 
@@ -114,11 +113,9 @@
                         </td>
 
                         <!-- JUDGE SCORE INPUT FIELDS -->
-                        {% for j_num in judge_range %}
+                        {% for j in p.judge_marks_list %}
                         <td style="text-align: center;">
-                            {% with j_num_str=j_num|stringformat:"s" %}
-                            <input type="number" step="0.1" min="0" max="{{ program.max_marks_per_judge }}" name="j_{{ j_num }}_marks_{{ p.id }}" value="{% if p.judge_marks and j_num_str in p.judge_marks and p.judge_marks|get_item:j_num_str is not None %}{{ p.judge_marks|get_item:j_num_str }}{% elif j_num == 1 and p.marks is not None and not p.judge_marks %}{{ p.marks }}{% endif %}" class="form-control matrix-input judge-mark-input" style="width: 95px; text-align: center; font-weight: 700;" placeholder="J{{ j_num }}" data-part-id="{{ p.id }}" oninput="updateConvertedMarks('{{ p.id }}')">
-                            {% endwith %}
+                            <input type="number" step="0.1" min="0" max="{{ program.max_marks_per_judge }}" name="j_{{ j.judge_num }}_marks_{{ p.id }}" value="{{ j.score }}" class="form-control matrix-input judge-mark-input" style="width: 95px; text-align: center; font-weight: 700;" placeholder="J{{ j.judge_num }}" data-part-id="{{ p.id }}" oninput="updateConvertedMarks('{{ p.id }}')">
                         </td>
                         {% endfor %}
 
@@ -188,12 +185,10 @@
 
                 <!-- DYNAMIC MOBILE JUDGE SCORE INPUTS GRID -->
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 8px; background: rgba(0,0,0,0.25); padding: 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08); margin-bottom: 10px;">
-                    {% for j_num in judge_range %}
+                    {% for j in p.judge_marks_list %}
                     <div>
-                        <label class="form-label" style="font-size: 0.75rem; color: var(--accent-cyan); font-weight: 700;">Judge {{ j_num }}</label>
-                        {% with j_num_str=j_num|stringformat:"s" %}
-                        <input type="number" step="0.1" min="0" max="{{ program.max_marks_per_judge }}" name="j_{{ j_num }}_marks_{{ p.id }}" value="{% if p.judge_marks and j_num_str in p.judge_marks and p.judge_marks|get_item:j_num_str is not None %}{{ p.judge_marks|get_item:j_num_str }}{% elif j_num == 1 and p.marks is not None and not p.judge_marks %}{{ p.marks }}{% endif %}" class="form-control" style="text-align: center; font-weight: 700;" placeholder="Max {{ program.max_marks_per_judge }}" data-part-id="{{ p.id }}" oninput="updateConvertedMarks('{{ p.id }}')">
-                        {% endwith %}
+                        <label class="form-label" style="font-size: 0.75rem; color: var(--accent-cyan); font-weight: 700;">Judge {{ j.judge_num }}</label>
+                        <input type="number" step="0.1" min="0" max="{{ program.max_marks_per_judge }}" name="j_{{ j.judge_num }}_marks_{{ p.id }}" value="{{ j.score }}" class="form-control" style="text-align: center; font-weight: 700;" placeholder="Max {{ program.max_marks_per_judge }}" data-part-id="{{ p.id }}" oninput="updateConvertedMarks('{{ p.id }}')">
                     </div>
                     {% endfor %}
                 </div>

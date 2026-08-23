@@ -253,6 +253,18 @@ class Participation(TenantBaseModel):
         return self.judge_marks.get(str(judge_num))
 
     @property
+    def judge_marks_list(self):
+        jc = self.program.judge_count if self.program and self.program.judge_count else 1
+        res = []
+        jm = self.judge_marks or {}
+        for j in range(1, jc + 1):
+            val = jm.get(str(j))
+            if val is None and j == 1 and self.marks is not None and not jm:
+                val = self.marks
+            res.append({'judge_num': j, 'score': val if val is not None else ''})
+        return res
+
+    @property
     def total_points(self):
         config = PointsConfig.objects.filter(institution=self.institution).first()
         r1 = config.single_rank_1_points if config else 5
@@ -300,6 +312,18 @@ class GroupParticipation(TenantBaseModel):
         if not self.judge_marks or not isinstance(self.judge_marks, dict):
             return None
         return self.judge_marks.get(str(judge_num))
+
+    @property
+    def judge_marks_list(self):
+        jc = self.program.judge_count if self.program and self.program.judge_count else 1
+        res = []
+        jm = self.judge_marks or {}
+        for j in range(1, jc + 1):
+            val = jm.get(str(j))
+            if val is None and j == 1 and self.marks is not None and not jm:
+                val = self.marks
+            res.append({'judge_num': j, 'score': val if val is not None else ''})
+        return res
 
     @property
     def display_name(self):
