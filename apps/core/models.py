@@ -159,6 +159,8 @@ class Program(TenantBaseModel):
     is_announced = models.BooleanField(default=False)
     announced_at = models.DateTimeField(null=True, blank=True)
     result_number = models.PositiveIntegerField(null=True, blank=True)
+    judge_count = models.PositiveIntegerField(default=1, help_text="Number of judges evaluating this program")
+    max_marks_per_judge = models.PositiveIntegerField(default=100, help_text="Maximum marks allowed per judge")
 
     class Meta:
         ordering = ['category', 'name']
@@ -232,6 +234,7 @@ class Participation(TenantBaseModel):
     contestant = models.ForeignKey(Contestant, on_delete=models.CASCADE, related_name='participations')
     code_letter = models.CharField(max_length=5, blank=True, null=True)
     marks = models.IntegerField(null=True, blank=True)
+    judge_marks = models.JSONField(default=dict, blank=True, null=True, help_text="Individual marks per judge e.g. {'1': 85, '2': 90}")
     rank = models.PositiveIntegerField(null=True, blank=True)
     grade = models.CharField(max_length=2, null=True, blank=True)
     points_awarded = models.BooleanField(default=False)
@@ -243,6 +246,11 @@ class Participation(TenantBaseModel):
 
     def __str__(self):
         return f"{self.contestant.name} - {self.program.name}"
+
+    def get_judge_mark(self, judge_num):
+        if not self.judge_marks or not isinstance(self.judge_marks, dict):
+            return None
+        return self.judge_marks.get(str(judge_num))
 
     @property
     def total_points(self):
@@ -276,6 +284,7 @@ class GroupParticipation(TenantBaseModel):
     contestants = models.ManyToManyField(Contestant, related_name='group_entries')
     code_letter = models.CharField(max_length=5, blank=True, null=True)
     marks = models.IntegerField(null=True, blank=True)
+    judge_marks = models.JSONField(default=dict, blank=True, null=True, help_text="Individual marks per judge e.g. {'1': 85, '2': 90}")
     rank = models.PositiveIntegerField(null=True, blank=True)
     grade = models.CharField(max_length=2, null=True, blank=True)
     points_awarded = models.BooleanField(default=False)
@@ -286,6 +295,11 @@ class GroupParticipation(TenantBaseModel):
 
     def __str__(self):
         return f"{self.display_name} - {self.program.name}"
+
+    def get_judge_mark(self, judge_num):
+        if not self.judge_marks or not isinstance(self.judge_marks, dict):
+            return None
+        return self.judge_marks.get(str(judge_num))
 
     @property
     def display_name(self):

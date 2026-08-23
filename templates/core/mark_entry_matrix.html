@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load custom_filters %}
 
 {% block title %}Mark Entry Matrix - {{ program.name }}{% endblock %}
 
@@ -6,10 +7,13 @@
 <div class="page-header">
     <div>
         <a href="{% url 'core:scoring_program_list' institution.slug %}" style="color: var(--text-muted); text-decoration: none;"><i class="fa-solid fa-arrow-left"></i> Back to Mark Entry</a>
-        <h2 style="font-size: 1.8rem; font-weight: 800; margin-top: 4px;">Mark Entry: <span style="color: var(--accent-cyan);">{{ program.name }}</span></h2>
-        <div style="margin-top: 4px;">
+        <h2 style="font-size: 1.8rem; font-weight: 800; margin-top: 4px;">Mark Entry Matrix: <span style="color: var(--accent-cyan);">{{ program.name }}</span></h2>
+        <div style="margin-top: 6px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
             <span class="badge badge-approved">{{ program.category.name }}</span>
             <span class="badge badge-pending">{% if program.is_group %}Group Program{% else %}Single Program{% endif %}</span>
+            <span class="badge" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid #f59e0b;">
+                <i class="fa-solid fa-gavel"></i> {{ program.judge_count }} Judge(s) &bull; Max {{ program.max_marks_per_judge }} marks/judge &bull; Scale: Converted to /100
+            </span>
         </div>
     </div>
     <div>
@@ -21,12 +25,47 @@
     </div>
 </div>
 
+{% if not request.user.is_judge or request.user.is_developer or request.user.is_institution_admin %}
+<!-- ADMIN JUDGE CONFIGURATION CONTROL BAR -->
+<div class="glass-card" style="margin-bottom: 20px; padding: 18px 22px; border: 1px solid rgba(56, 189, 248, 0.3); background: linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.8));">
+    <form method="POST" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="update_judge_settings">
+
+        <div>
+            <div style="font-size: 0.95rem; font-weight: 800; color: var(--accent-cyan); display: flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-sliders"></i> Judge Panel Settings for this Program
+            </div>
+            <div style="font-size: 0.84rem; color: var(--text-muted); margin-top: 2px;">
+                Set how many judges evaluate this program. Individual scores will be summed and automatically converted to a <strong>100-point scale</strong>.
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 6px;">
+                <label class="form-label" style="font-size: 0.82rem; margin: 0; color: #cbd5e1;">Number of Judges:</label>
+                <input type="number" name="judge_count" value="{{ program.judge_count }}" min="1" max="10" class="form-control" style="width: 80px; padding: 6px 10px; font-weight: 800; text-align: center;">
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 6px;">
+                <label class="form-label" style="font-size: 0.82rem; margin: 0; color: #cbd5e1;">Max Marks/Judge:</label>
+                <input type="number" name="max_marks_per_judge" value="{{ program.max_marks_per_judge }}" min="10" max="500" class="form-control" style="width: 90px; padding: 6px 10px; font-weight: 800; text-align: center;">
+            </div>
+
+            <button type="submit" class="btn-primary" style="padding: 7px 18px; font-size: 0.85rem; background: linear-gradient(135deg, var(--accent-cyan), #0284c7);">
+                <i class="fa-solid fa-check"></i> Save Judge Settings
+            </button>
+        </div>
+    </form>
+</div>
+{% endif %}
+
 <div class="glass-card">
-    <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 16px;">
-        <i class="fa-solid fa-keyboard" style="color: var(--accent-cyan);"></i> <strong>Keyboard Tip:</strong> Press <kbd>Tab</kbd> or <kbd>Enter</kbd> to jump quickly between inputs.
+    <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <span><i class="fa-solid fa-keyboard" style="color: var(--accent-cyan);"></i> <strong>Keyboard Tip:</strong> Press <kbd>Tab</kbd> to move quickly between judge input fields. Total marks are live-converted out of 100.</span>
     </p>
 
-    <form method="POST">
+    <form method="POST" id="matrix-form">
         {% csrf_token %}
 
         <!-- DESKTOP TABLE VIEW -->
@@ -43,7 +82,13 @@
                         <th>Team</th>
                         {% endif %}
                         <th>Code Letter</th>
-                        <th>Marks</th>
+                        
+                        <!-- DYNAMIC JUDGE COLUMNS -->
+                        {% for j_num in judge_range %}
+                        <th style="text-align: center; background: rgba(56, 189, 248, 0.1); color: var(--accent-cyan);">Judge {{ j_num }} (Max {{ program.max_marks_per_judge }})</th>
+                        {% endfor %}
+
+                        <th style="text-align: center; background: rgba(245, 158, 11, 0.15); color: #fbbf24;">Converted Score (/100)</th>
                         <th>Current Rank</th>
                         <th>Grade</th>
                     </tr>
@@ -65,11 +110,25 @@
                         <td><span class="badge badge-approved">{{ p.contestant.team.name }}</span></td>
                         {% endif %}
                         <td>
-                            <input type="text" name="code_letter_{{ p.id }}" value="{{ p.code_letter|default:'' }}" class="form-control matrix-input" style="width: 100px; text-transform: uppercase;" placeholder="Code">
+                            <input type="text" name="code_letter_{{ p.id }}" value="{{ p.code_letter|default:'' }}" class="form-control matrix-input" style="width: 85px; text-transform: uppercase;" placeholder="Code">
                         </td>
-                        <td>
-                            <input type="number" name="marks_{{ p.id }}" value="{{ p.marks|default:'' }}" class="form-control matrix-input" style="width: 120px;" placeholder="Marks">
+
+                        <!-- JUDGE SCORE INPUT FIELDS -->
+                        {% for j_num in judge_range %}
+                        <td style="text-align: center;">
+                            {% with j_num_str=j_num|stringformat:"s" %}
+                            <input type="number" step="0.1" min="0" max="{{ program.max_marks_per_judge }}" name="j_{{ j_num }}_marks_{{ p.id }}" value="{% if p.judge_marks and j_num_str in p.judge_marks and p.judge_marks|get_item:j_num_str is not None %}{{ p.judge_marks|get_item:j_num_str }}{% elif j_num == 1 and p.marks is not None and not p.judge_marks %}{{ p.marks }}{% endif %}" class="form-control matrix-input judge-mark-input" style="width: 95px; text-align: center; font-weight: 700;" placeholder="J{{ j_num }}" data-part-id="{{ p.id }}" oninput="updateConvertedMarks('{{ p.id }}')">
+                            {% endwith %}
                         </td>
+                        {% endfor %}
+
+                        <!-- LIVE CONVERTED MARKS (/100) COLUMN -->
+                        <td style="text-align: center;">
+                            <span id="total_marks_{{ p.id }}" class="badge badge-approved" style="font-size: 0.95rem; font-weight: 900; background: linear-gradient(135deg, #f59e0b, #d97706); color: #000; padding: 6px 14px;">
+                                {% if p.marks is not None %}{{ p.marks }} / 100{% else %}-{% endif %}
+                            </span>
+                        </td>
+
                         <td>
                             {% if p.rank %}
                             <span class="badge badge-approved">Rank {{ p.rank }}</span>
@@ -87,7 +146,7 @@
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 30px;">
+                        <td colspan="{{ judge_range|length|add:8 }}" style="text-align: center; color: var(--text-muted); padding: 30px;">
                             No participants registered for this program yet.
                         </td>
                     </tr>
@@ -99,7 +158,7 @@
         <!-- MOBILE CARD LIST VIEW -->
         <div class="mobile-card-list-view">
             {% for p in participations %}
-            <div style="background: rgba(255,255,255,0.02); padding: 14px; border-radius: 12px; border: 1px solid var(--border-color); margin-bottom: 12px;">
+            <div style="background: rgba(255,255,255,0.02); padding: 16px; border-radius: 14px; border: 1px solid var(--border-color); margin-bottom: 14px;">
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
                     <div>
                         {% if program.is_group %}
@@ -122,15 +181,29 @@
                     </div>
                 </div>
 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; border-top: 1px solid var(--border-color); padding-top: 10px;">
+                <div style="margin-bottom: 10px;">
+                    <label class="form-label" style="font-size: 0.75rem; color: var(--text-muted);">Code Letter</label>
+                    <input type="text" name="code_letter_{{ p.id }}" value="{{ p.code_letter|default:'' }}" class="form-control" style="text-transform: uppercase; width: 100px;" placeholder="CODE">
+                </div>
+
+                <!-- DYNAMIC MOBILE JUDGE SCORE INPUTS GRID -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 8px; background: rgba(0,0,0,0.25); padding: 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08); margin-bottom: 10px;">
+                    {% for j_num in judge_range %}
                     <div>
-                        <label class="form-label" style="font-size: 0.75rem; color: var(--text-muted);">Code Letter</label>
-                        <input type="text" name="code_letter_{{ p.id }}" value="{{ p.code_letter|default:'' }}" class="form-control" style="text-transform: uppercase;" placeholder="CODE">
+                        <label class="form-label" style="font-size: 0.75rem; color: var(--accent-cyan); font-weight: 700;">Judge {{ j_num }}</label>
+                        {% with j_num_str=j_num|stringformat:"s" %}
+                        <input type="number" step="0.1" min="0" max="{{ program.max_marks_per_judge }}" name="j_{{ j_num }}_marks_{{ p.id }}" value="{% if p.judge_marks and j_num_str in p.judge_marks and p.judge_marks|get_item:j_num_str is not None %}{{ p.judge_marks|get_item:j_num_str }}{% elif j_num == 1 and p.marks is not None and not p.judge_marks %}{{ p.marks }}{% endif %}" class="form-control" style="text-align: center; font-weight: 700;" placeholder="Max {{ program.max_marks_per_judge }}" data-part-id="{{ p.id }}" oninput="updateConvertedMarks('{{ p.id }}')">
+                        {% endwith %}
                     </div>
-                    <div>
-                        <label class="form-label" style="font-size: 0.75rem; color: var(--text-muted);">Marks</label>
-                        <input type="number" name="marks_{{ p.id }}" value="{{ p.marks|default:'' }}" class="form-control" placeholder="MARKS">
-                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- MOBILE CONVERTED SCORE DISPLAY -->
+                <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(245, 158, 11, 0.15); padding: 10px 14px; border-radius: 10px; border: 1px solid rgba(245, 158, 11, 0.3);">
+                    <span style="font-size: 0.82rem; font-weight: 800; color: #fbbf24; text-transform: uppercase;">Converted Score (/100):</span>
+                    <span id="mobile_total_marks_{{ p.id }}" style="font-size: 1.1rem; font-weight: 900; color: #fbbf24;">
+                        {% if p.marks is not None %}{{ p.marks }} / 100{% else %}-{% endif %}
+                    </span>
                 </div>
             </div>
             {% empty %}
@@ -143,10 +216,50 @@
         {% if participations %}
         <div style="margin-top: 24px; text-align: right;">
             <button type="submit" class="btn-primary" style="font-size: 1.05rem; padding: 12px 28px; width: 100%; justify-content: center; background: linear-gradient(135deg, var(--accent-emerald), #059669);">
-                <i class="fa-solid fa-floppy-disk"></i> Save Marks & Auto Calculate
+                <i class="fa-solid fa-floppy-disk"></i> Save All Marks & Auto-Calculate Results
             </button>
         </div>
         {% endif %}
     </form>
 </div>
+
+<!-- CLIENT-SIDE LIVE CONVERTED MARKS SCRIPT -->
+<script>
+    const judgeCount = {{ program.judge_count|default:1 }};
+    const maxPerJudge = {{ program.max_marks_per_judge|default:100 }};
+
+    function updateConvertedMarks(partId) {
+        let rawSum = 0;
+        let hasValue = false;
+
+        for (let j = 1; j <= judgeCount; j++) {
+            const inputs = document.querySelectorAll(`input[name="j_${j}_marks_${partId}"]`);
+            inputs.forEach(input => {
+                const valStr = input.value.trim();
+                if (valStr !== '') {
+                    const num = parseFloat(valStr);
+                    if (!isNaN(num)) {
+                        rawSum += num;
+                        hasValue = true;
+                    }
+                }
+            });
+        }
+
+        const totalBadge = document.getElementById(`total_marks_${partId}`);
+        const mobileTotalBadge = document.getElementById(`mobile_total_marks_${partId}`);
+
+        if (hasValue) {
+            const totalMax = judgeCount * maxPerJudge;
+            const converted100 = Math.round((rawSum / totalMax) * 100);
+            const label = `${converted100} / 100`;
+
+            if (totalBadge) totalBadge.innerText = label;
+            if (mobileTotalBadge) mobileTotalBadge.innerText = label;
+        } else {
+            if (totalBadge) totalBadge.innerText = '-';
+            if (mobileTotalBadge) mobileTotalBadge.innerText = '-';
+        }
+    }
+</script>
 {% endblock %}

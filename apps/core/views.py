@@ -726,28 +726,73 @@ def mark_entry_matrix_view(request, institution_slug, program_id):
         participations = Participation.objects.filter(program=program).select_related('contestant', 'contestant__team')
 
     if request.method == 'POST':
+        # Action 1: Update Judge Settings (Count & Max Marks per judge)
+        if 'action' in request.POST and request.POST.get('action') == 'update_judge_settings':
+            try:
+                new_jc = int(request.POST.get('judge_count', 1))
+                new_max = int(request.POST.get('max_marks_per_judge', 100))
+                if new_jc > 0 and new_max > 0:
+                    program.judge_count = new_jc
+                    program.max_marks_per_judge = new_max
+                    program.save()
+                    messages.success(request, f"Updated judge configuration: {new_jc} judge(s), Max {new_max} marks per judge.")
+                else:
+                    messages.error(request, "Judge count and max marks per judge must be greater than 0.")
+            except ValueError:
+                messages.error(request, "Invalid judge configuration values.")
+            return redirect('core:mark_entry_matrix', institution_slug=institution.slug, program_id=program.id)
+
+        # Action 2: Save Marks Entry Matrix
         part_ids = set()
         for key in request.POST.keys():
             if key.startswith('code_letter_'):
                 part_ids.add(key.replace('code_letter_', ''))
             elif key.startswith('marks_'):
                 part_ids.add(key.replace('marks_', ''))
+            elif key.startswith('j_') and '_marks_' in key:
+                parts = key.split('_marks_')
+                if len(parts) == 2:
+                    part_ids.add(parts[1])
+
+        jc = program.judge_count or 1
+        max_per_judge = program.max_marks_per_judge or 100
 
         for part_id in part_ids:
             code_vals = [v.strip() for v in request.POST.getlist(f'code_letter_{part_id}') if v.strip() != '']
             code = code_vals[0] if code_vals else ''
 
-            marks_vals = [v.strip() for v in request.POST.getlist(f'marks_{part_id}') if v.strip() != '']
-            marks = None
-            if marks_vals:
-                m_str = marks_vals[0]
-                try:
-                    marks = int(m_str)
-                except ValueError:
+            j_dict = {}
+            raw_sum = 0
+            has_judge_entry = False
+
+            for j_num in range(1, jc + 1):
+                j_vals = [v.strip() for v in request.POST.getlist(f'j_{j_num}_marks_{part_id}') if v.strip() != '']
+                if j_vals:
                     try:
-                        marks = int(float(m_str))
+                        val = float(j_vals[0])
+                        j_dict[str(j_num)] = val
+                        raw_sum += val
+                        has_judge_entry = True
                     except ValueError:
-                        marks = None
+                        j_dict[str(j_num)] = None
+
+            if not has_judge_entry:
+                marks_vals = [v.strip() for v in request.POST.getlist(f'marks_{part_id}') if v.strip() != '']
+                if marks_vals:
+                    try:
+                        val = float(marks_vals[0])
+                        j_dict['1'] = val
+                        raw_sum = val
+                        has_judge_entry = True
+                    except ValueError:
+                        pass
+
+            converted_marks_100 = None
+            if has_judge_entry:
+                total_max_possible = jc * max_per_judge
+                if total_max_possible > 0:
+                    converted_score = (raw_sum / total_max_possible) * 100.0
+                    converted_marks_100 = int(round(converted_score))
 
             if program.is_group:
                 p = GroupParticipation.objects.filter(id=part_id, program=program).first()
@@ -756,19 +801,23 @@ def mark_entry_matrix_view(request, institution_slug, program_id):
 
             if p:
                 p.code_letter = code
-                p.marks = marks
+                p.marks = converted_marks_100
+                p.judge_marks = j_dict
                 p.save()
 
         from .services import calculate_program_results
         calculate_program_results(program)
 
-        messages.success(request, f"Marks saved and calculated for '{program.name}'!")
+        messages.success(request, f"Marks saved and converted to /100 scale for '{program.name}'!")
         return redirect('core:mark_entry_matrix', institution_slug=institution.slug, program_id=program.id)
+
+    judge_range = list(range(1, (program.judge_count or 1) + 1))
 
     return render(request, 'core/mark_entry_matrix.html', {
         'institution': institution,
         'program': program,
-        'participations': participations
+        'participations': participations,
+        'judge_range': judge_range,
     })
 
 
