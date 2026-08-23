@@ -44,7 +44,6 @@
                         <a href="{% url 'core:help_guide' request.user.institution.slug %}" class="nav-link" style="color: var(--accent-cyan);"><i class="fa-solid fa-book-open"></i> User Guide</a>
                     {% else %}
                         <a href="{% url 'core:dashboard' request.user.institution.slug %}" class="nav-link"><i class="fa-solid fa-gauge"></i> Dashboard</a>
-                        <a href="{% url 'core:judge_management' request.user.institution.slug %}" class="nav-link" style="color: var(--accent-cyan); font-weight: 700;"><i class="fa-solid fa-gavel"></i> Judge Management</a>
                         {% if request.user.institution.is_demo %}
                         <a href="{% url 'tenants:demo_pay_now' request.user.institution.slug %}" class="btn-primary" style="background: linear-gradient(135deg, var(--accent-emerald), #059669); font-size: 0.85rem; padding: 6px 12px; font-weight: 700; text-decoration: none;"><i class="fa-solid fa-credit-card"></i> Pay Now</a>
                         {% endif %}

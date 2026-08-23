@@ -5,14 +5,14 @@
 {% block content %}
 <div class="page-header">
     <div>
-        <a href="{% url 'core:scoring_program_list' institution.slug %}" style="color: var(--text-muted); text-decoration: none;">
-            <i class="fa-solid fa-arrow-left"></i> Back to Mark Entry List
+        <a href="{% url 'core:manage_results' institution.slug %}" style="color: var(--text-muted); text-decoration: none;">
+            <i class="fa-solid fa-arrow-left"></i> Back to Manage Results Hub
         </a>
         <h2 style="font-size: 1.8rem; font-weight: 800; margin-top: 4px;">
             <i class="fa-solid fa-gavel" style="color: var(--accent-cyan);"></i> Judge Management Panel
         </h2>
         <div style="color: var(--text-muted); font-size: 0.88rem; margin-top: 2px;">
-            Manage judges, judge counts, and assigned programs for {{ institution.name }}.
+            Manage judges, judge counts, entry modes, and assigned programs for {{ institution.name }}.
         </div>
     </div>
     <div style="display: flex; gap: 10px; flex-wrap: wrap;">
@@ -102,8 +102,9 @@
                     <thead>
                         <tr>
                             <th style="width: 50px;">#</th>
-                            <th style="width: 250px;">Program Name</th>
-                            <th style="width: 140px; text-align: center;">Judges Count</th>
+                            <th style="width: 220px;">Program Name</th>
+                            <th style="width: 110px; text-align: center;">Judges Count</th>
+                            <th style="width: 180px; text-align: center;">Mark Added By</th>
                             <th>Select Judges (Dropdown per Judge)</th>
                         </tr>
                     </thead>
@@ -120,7 +121,13 @@
                                 </div>
                             </td>
                             <td style="text-align: center;">
-                                <input type="number" id="judge_count_input_{{ p.id }}" name="judge_count_{{ p.id }}" value="{{ p.judge_count|default:1 }}" min="1" max="10" class="form-control" style="width: 85px; margin: 0 auto; text-align: center; font-weight: 800;" onchange="updateJudgeDropdownSlots('{{ p.id }}', this.value)">
+                                <input type="number" id="judge_count_input_{{ p.id }}" name="judge_count_{{ p.id }}" value="{{ p.judge_count|default:1 }}" min="1" max="10" class="form-control" style="width: 80px; margin: 0 auto; text-align: center; font-weight: 800;" onchange="updateJudgeDropdownSlots('{{ p.id }}', this.value)">
+                            </td>
+                            <td style="text-align: center;">
+                                <select name="mark_entry_mode_{{ p.id }}" class="form-control" style="width: 165px; font-weight: 700; font-size: 0.8rem; text-align: center;">
+                                    <option value="OFFICIALS" {% if p.mark_entry_mode == 'OFFICIALS' %}selected{% endif %}>👤 By Officials (Default)</option>
+                                    <option value="JUDGES" {% if p.mark_entry_mode == 'JUDGES' %}selected{% endif %}>⚖️ Directly by Judges</option>
+                                </select>
                             </td>
                             <td>
                                 <div id="judge_dropdowns_container_{{ p.id }}" style="display: flex; flex-direction: column; gap: 8px;">
@@ -158,9 +165,18 @@
                         </div>
                     </div>
 
-                    <div style="margin-bottom: 12px; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
-                        <label class="form-label" style="font-size: 0.78rem; color: #cbd5e1; font-weight: 700; display: block; margin-bottom: 4px;">Judges Count (Fixed by Admin):</label>
-                        <input type="number" id="mobile_judge_count_input_{{ p.id }}" name="judge_count_{{ p.id }}" value="{{ p.judge_count|default:1 }}" min="1" max="10" class="form-control" style="width: 100%; font-weight: 800; text-align: center;" onchange="updateJudgeDropdownSlots('{{ p.id }}', this.value)">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+                        <div>
+                            <label class="form-label" style="font-size: 0.75rem; color: #cbd5e1; font-weight: 700; display: block; margin-bottom: 4px;">Judges Count:</label>
+                            <input type="number" id="mobile_judge_count_input_{{ p.id }}" name="judge_count_{{ p.id }}" value="{{ p.judge_count|default:1 }}" min="1" max="10" class="form-control" style="width: 100%; font-weight: 800; text-align: center;" onchange="updateJudgeDropdownSlots('{{ p.id }}', this.value)">
+                        </div>
+                        <div>
+                            <label class="form-label" style="font-size: 0.75rem; color: #cbd5e1; font-weight: 700; display: block; margin-bottom: 4px;">Mark Added By:</label>
+                            <select name="mark_entry_mode_{{ p.id }}" class="form-control" style="width: 100%; font-size: 0.78rem;">
+                                <option value="OFFICIALS" {% if p.mark_entry_mode == 'OFFICIALS' %}selected{% endif %}>👤 By Officials</option>
+                                <option value="JUDGES" {% if p.mark_entry_mode == 'JUDGES' %}selected{% endif %}>⚖️ By Judges</option>
+                            </select>
+                        </div>
                     </div>
 
                     <div>
@@ -194,7 +210,7 @@
         {% if category_program_groups %}
         <div style="margin-top: 20px; text-align: right;">
             <button type="submit" class="btn-primary" style="font-size: 1.05rem; padding: 14px 32px; width: 100%; justify-content: center; background: linear-gradient(135deg, var(--accent-emerald), #059669);">
-                <i class="fa-solid fa-floppy-disk"></i> Save All Judge Assignments & Counts
+                <i class="fa-solid fa-floppy-disk"></i> Save All Judge Assignments & Modes
             </button>
         </div>
         {% endif %}
@@ -205,7 +221,7 @@
 <!-- TAB 2: JUDGES LIST & ASSIGNED PROGRAMS -->
 <div id="tab-content-judges" style="display: none;">
     <div class="glass-card">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
             <div>
                 <h3 style="font-size: 1.2rem; font-weight: 800; color: var(--accent-cyan); margin: 0;">
                     <i class="fa-solid fa-id-card"></i> Registered Judges List & Assigned Programs
@@ -214,8 +230,8 @@
                     View all created judges and check/edit their assigned programs directly.
                 </p>
             </div>
-            <button type="button" class="btn-secondary" onclick="toggleCreateJudgeForm()" style="padding: 8px 16px; font-size: 0.85rem;">
-                <i class="fa-solid fa-plus"></i> Add New Judge
+            <button type="button" class="btn-secondary" onclick="toggleCreateJudgeForm()" style="padding: 9px 18px; font-size: 0.88rem;">
+                <i class="fa-solid fa-user-plus" style="color: var(--accent-cyan);"></i> + Create New Judge User
             </button>
         </div>
 
@@ -335,7 +351,7 @@
 </div>
 
 
-<!-- EDIT SPECIFIC JUDGE ASSIGNED PROGRAMS MODAL / CARDS -->
+<!-- EDIT SPECIFIC JUDGE ASSIGNED PROGRAMS MODAL -->
 {% for j in judges %}
 <div id="edit-judge-modal-{{ j.id }}" class="glass-card" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 92%; max-width: 650px; max-height: 85vh; overflow-y: auto; z-index: 10000; border: 1px solid rgba(56, 189, 248, 0.4); background: #0f172a; box-shadow: 0 20px 50px rgba(0,0,0,0.8); padding: 24px; border-radius: 16px;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">
@@ -391,6 +407,16 @@
         { id: "{{ j.id }}", name: "{% if j.first_name %}{{ j.first_name|escapejs }} ({{ j.username|escapejs }}){% else %}{{ j.username|escapejs }}{% endif %}" },
         {% endfor %}
     ];
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const tab = urlParams.get('tab');
+        if (tab === 'judges') {
+            switchJudgeTab('judges');
+        } else {
+            switchJudgeTab('panels');
+        }
+    });
 
     function switchJudgeTab(tabName) {
         const btnPanels = document.getElementById('tab-btn-panels');

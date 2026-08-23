@@ -270,10 +270,10 @@
         <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Category-wise, team-wise, program-wise & student lists</p>
     </a>
 
-    <a href="{% url 'core:scoring_program_list' institution.slug %}" class="glass-card" style="text-decoration: none; color: inherit;">
-        <i class="fa-solid fa-keyboard" style="font-size: 1.8rem; color: var(--accent-amber); margin-bottom: 12px;"></i>
-        <h4 style="font-size: 1.1rem; font-weight: 700;">Mark Entry</h4>
-        <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Rapid code letter & mark entry interface</p>
+    <a href="{% url 'core:manage_results' institution.slug %}" class="glass-card" style="text-decoration: none; color: inherit;">
+        <i class="fa-solid fa-sliders" style="font-size: 1.8rem; color: var(--accent-amber); margin-bottom: 12px;"></i>
+        <h4 style="font-size: 1.1rem; font-weight: 700;">Manage Results</h4>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Mark entry, judges & panels, and judges list hub</p>
     </a>
 
     <a href="{% url 'users:user_list' institution.slug %}" class="glass-card" style="text-decoration: none; color: inherit;">

@@ -59,6 +59,7 @@ urlpatterns = [
     path('portal/<slug:institution_slug>/contestants/<int:contestant_id>/delete/', views.contestant_delete_view, name='contestant_delete'),
     
     # Fast Mark Entry Matrix & Scoring
+    path('portal/<slug:institution_slug>/manage-results/', views.manage_results_view, name='manage_results'),
     path('portal/<slug:institution_slug>/scoring/', views.scoring_program_list_view, name='scoring_program_list'),
     path('portal/<slug:institution_slug>/scoring/<int:program_id>/matrix/', views.mark_entry_matrix_view, name='mark_entry_matrix'),
     path('portal/<slug:institution_slug>/scoring/<int:program_id>/announce/', views.announce_results_view, name='announce_results'),

@@ -158,9 +158,18 @@ class Program(TenantBaseModel):
     preferred_stage = models.ForeignKey(Stage, on_delete=models.SET_NULL, null=True, blank=True, related_name='preferred_programs')
     is_announced = models.BooleanField(default=False)
     announced_at = models.DateTimeField(null=True, blank=True)
-    result_number = models.PositiveIntegerField(null=True, blank=True)
+    MARK_ENTRY_MODES = (
+        ('OFFICIALS', 'By Officials (Default)'),
+        ('JUDGES', 'Directly by Judges'),
+    )
     judge_count = models.PositiveIntegerField(default=1, help_text="Number of judges evaluating this program")
     max_marks_per_judge = models.PositiveIntegerField(default=100, help_text="Maximum marks allowed per judge")
+    mark_entry_mode = models.CharField(
+        max_length=15,
+        choices=MARK_ENTRY_MODES,
+        default='OFFICIALS',
+        help_text="Who inputs marks for this program: Officials or Judges"
+    )
 
     class Meta:
         ordering = ['category', 'name']

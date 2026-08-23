@@ -822,6 +822,14 @@ def mark_entry_matrix_view(request, institution_slug, program_id):
 
 
 @login_required
+def manage_results_view(request, institution_slug):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    return render(request, 'core/manage_results.html', {
+        'institution': institution,
+    })
+
+
+@login_required
 def judge_management_view(request, institution_slug):
     institution = get_object_or_404(Institution, slug=institution_slug)
 
@@ -882,7 +890,7 @@ def judge_management_view(request, institution_slug):
                 messages.success(request, f"Successfully updated assigned programs for Judge '{j_user.first_name or j_user.username}'!")
             return redirect('core:judge_management', institution_slug=institution.slug)
 
-        # Action C: Save Judge Counts and Assigned Judges per Program
+        # Action C: Save Judge Counts, Mark Entry Mode, and Assigned Judges per Program
         updated_count = 0
         program_ids = set()
         for key in request.POST.keys():
@@ -890,6 +898,8 @@ def judge_management_view(request, institution_slug):
                 program_ids.add(key.replace('judge_count_', ''))
             elif key.startswith('assigned_judges_'):
                 program_ids.add(key.replace('assigned_judges_', ''))
+            elif key.startswith('mark_entry_mode_'):
+                program_ids.add(key.replace('mark_entry_mode_', ''))
 
         for p_id in program_ids:
             prog = Program.objects.filter(id=p_id, institution=institution).first()
@@ -903,6 +913,11 @@ def judge_management_view(request, institution_slug):
                             prog.save(update_fields=['judge_count'])
                     except ValueError:
                         pass
+
+                mode_val = request.POST.get(f'mark_entry_mode_{p_id}')
+                if mode_val in ['OFFICIALS', 'JUDGES']:
+                    prog.mark_entry_mode = mode_val
+                    prog.save(update_fields=['mark_entry_mode'])
 
                 raw_judge_ids = request.POST.getlist(f'assigned_judges_{p_id}')
                 clean_judge_ids = []
