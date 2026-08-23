@@ -891,8 +891,15 @@ def judge_management_view(request, institution_slug):
                     except ValueError:
                         pass
 
-                selected_judge_ids = request.POST.getlist(f'assigned_judges_{p_id}')
-                valid_judges = list(User.objects.filter(id__in=selected_judge_ids))
+                raw_judge_ids = request.POST.getlist(f'assigned_judges_{p_id}')
+                clean_judge_ids = []
+                for v in raw_judge_ids:
+                    if v and v.strip().isdigit():
+                        val = int(v.strip())
+                        if val not in clean_judge_ids:
+                            clean_judge_ids.append(val)
+
+                valid_judges = list(User.objects.filter(id__in=clean_judge_ids))
                 prog.assigned_judges.set(valid_judges)
 
                 updated_count += 1
