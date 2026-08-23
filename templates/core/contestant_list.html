@@ -1,155 +1,477 @@
 {% extends 'base.html' %}
+{% load static %}
 
-{% block title %}Contestants - {{ institution.name }}{% endblock %}
+{% block title %}Contestants & Chest Numbers - {{ institution.name }}{% endblock %}
 
 {% block content %}
-<div class="page-header">
+<!-- PAGE HEADER -->
+<div class="page-header" style="margin-bottom: 20px;">
     <div>
-        <a href="{% url 'core:dashboard' institution.slug %}" style="color: var(--text-muted); text-decoration: none;"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</a>
-        <h2 style="font-size: 1.8rem; font-weight: 800; margin-top: 4px;">
-            Contestants Directory {% if managed_team %}<span style="color: var(--accent-cyan); font-size: 1.2rem;">(Team: {{ managed_team.name }})</span>{% endif %}
+        <a href="{% url 'core:dashboard' institution.slug %}" style="color: var(--text-muted); text-decoration: none; font-size: 0.88rem; display: inline-flex; align-items: center; gap: 6px; margin-bottom: 6px;">
+            <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
+        </a>
+        <h2 style="font-size: 1.85rem; font-weight: 800; color: #f8fafc; margin: 0; display: flex; align-items: center; gap: 10px;">
+            <i class="fa-solid fa-id-card-clip" style="color: var(--accent-cyan);"></i> Contestants & Chest Numbers Directory
+            {% if managed_team %}<span style="color: var(--accent-cyan); font-size: 1.1rem; font-weight: 600;">(Team: {{ managed_team.name }})</span>{% endif %}
         </h2>
-    </div>
-    <div>
-        <a href="{% url 'core:contestant_create' institution.slug %}" class="btn-primary" style="background: rgba(255,255,255,0.08); box-shadow: none;">
-            <i class="fa-solid fa-user-plus"></i> Single Contestant
-        </a>
-        <a href="{% url 'core:contestant_batch_create' institution.slug %}" class="btn-primary" style="background: linear-gradient(135deg, var(--accent-emerald), #059669);">
-            <i class="fa-solid fa-users"></i> Multi-Contestant Grid
-        </a>
-        <a href="{% url 'core:download_contestants_teamwise_pdf' institution.slug %}" download class="btn-primary" style="background: linear-gradient(135deg, var(--accent-emerald), #047857);">
-            <i class="fa-solid fa-file-pdf"></i> {% if request.user.is_team_leader and managed_team %}{{ managed_team.name }} Contestants PDF{% else %}Team-Wise PDF{% endif %}
-        </a>
-        <a href="{% url 'core:contestant_download_template' institution.slug %}" class="btn-success" style="background: linear-gradient(135deg, #0284c7, var(--accent-cyan));">
-            <i class="fa-solid fa-download"></i> Excel Template
-        </a>
-        {% if not request.user.is_team_leader %}
-        <a href="{% url 'core:generate_contestant_credentials' institution.slug %}" class="btn-primary" style="background: linear-gradient(135deg, var(--accent-amber), #d97706);">
-            <i class="fa-solid fa-key"></i> Generate Contestant Credentials
-        </a>
-        {% endif %}
+        <div style="color: var(--text-muted); font-size: 0.88rem; margin-top: 4px;">
+            മത്സരാർത്ഥികളുടെ വിവരങ്ങൾ ചേർക്കാനും, ചെസ്റ്റ് നമ്പറുകൾ നൽകാനും, റിപ്പോർട്ടുകൾ ഡൗൺലോഡ് ചെയ്യാനും.
+        </div>
     </div>
 </div>
 
-<!-- Excel Bulk Upload Box -->
-<div class="glass-card" style="margin-bottom: 24px; padding: 16px 20px;">
-    <form method="POST" action="{% url 'core:contestant_bulk_upload' institution.slug %}" enctype="multipart/form-data" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
-        {% csrf_token %}
-        <div style="display: flex; align-items: center; gap: 10px;">
-            <i class="fa-solid fa-file-excel" style="font-size: 1.6rem; color: var(--accent-emerald);"></i>
+<!-- MALAYALAM DIRECTION BANNER CARDS -->
+<div class="glass-card" style="margin-bottom: 24px; padding: 20px; border: 1px solid rgba(56, 189, 248, 0.35); background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9)); border-radius: 16px;">
+    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 14px;">
+        <div style="width: 38px; height: 38px; border-radius: 10px; background: rgba(56, 189, 248, 0.2); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; color: var(--accent-cyan);">
+            <i class="fa-solid fa-lightbulb"></i>
+        </div>
+        <h4 style="font-size: 1.05rem; font-weight: 800; color: var(--accent-cyan); margin: 0;">
+            💡 മത്സരാർത്ഥികളെ (Contestants Hub) ക്രമീകരിക്കുന്നതിനുള്ള നിർദ്ദേശങ്ങൾ:
+        </h4>
+    </div>
+    
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px;">
+        <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); padding: 12px 16px; border-radius: 10px; display: flex; align-items: center; gap: 10px;">
+            <i class="fa-solid fa-user-plus" style="color: var(--accent-emerald); font-size: 1.1rem;"></i>
+            <span style="color: #cbd5e1; font-size: 0.84rem; line-height: 1.4;">
+                <strong style="color: #f8fafc;">Add Contestants:</strong> സിംഗിൾ ആയോ, ഗ്രിഡ് വഴി ഒന്നിച്ച് ടേബിളിൽ ആയോ, എക്സൽ വഴി ആയോ ആളുകളെ ചേർക്കാം.
+            </span>
+        </div>
+
+        <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); padding: 12px 16px; border-radius: 10px; display: flex; align-items: center; gap: 10px;">
+            <i class="fa-solid fa-hashtag" style="color: var(--accent-cyan); font-size: 1.1rem;"></i>
+            <span style="color: #cbd5e1; font-size: 0.84rem; line-height: 1.4;">
+                <strong style="color: #f8fafc;">Chest Numbers:</strong> എല്ലാ മത്സരാർത്ഥികൾക്കും കാറ്റഗറി അടിസ്ഥാനത്തിൽ സിസ്റ്റം ചെസ്റ്റ് നമ്പർ ഓട്ടോ-അസൈൻ ചെയ്യും.
+            </span>
+        </div>
+
+        <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); padding: 12px 16px; border-radius: 10px; display: flex; align-items: center; gap: 10px;">
+            <i class="fa-solid fa-file-excel" style="color: #fbbf24; font-size: 1.1rem;"></i>
+            <span style="color: #cbd5e1; font-size: 0.84rem; line-height: 1.4;">
+                <strong style="color: #f8fafc;">Excel Download:</strong> എക്സൽ വഴി അപ്‍ലോഡ് ചെയ്യുന്നതിന് ആവശ്യമായ `.xlsx` ടെംപ്ലേറ്റ് നേരിട്ട് ഡൗൺലോഡ് ചെയ്യുക.
+            </span>
+        </div>
+    </div>
+</div>
+
+<!-- TOP NAV TAB BUTTON CARDS -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-bottom: 24px;">
+    <!-- TAB 1: ADD CONTESTANTS HUB -->
+    <div id="tab-btn-add" onclick="switchContestantTab('add')" class="glass-card" style="cursor: pointer; padding: 18px; border: 1px solid rgba(16, 185, 129, 0.4); background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(15, 23, 42, 0.9)); transition: all 0.25s ease;">
+        <div style="display: flex; align-items: center; gap: 14px;">
+            <div style="width: 46px; height: 46px; border-radius: 12px; background: rgba(16, 185, 129, 0.2); display: flex; align-items: center; justify-content: center; font-size: 1.4rem; color: var(--accent-emerald); flex-shrink: 0;">
+                <i class="fa-solid fa-user-plus"></i>
+            </div>
             <div>
-                <strong style="font-size: 0.95rem;">Bulk Register Contestants via Excel</strong>
-                <p style="color: var(--text-muted); font-size: 0.8rem;">Upload your filled Excel template to register all contestants, teams, and auto-assign chest numbers.</p>
+                <h4 style="font-size: 1.05rem; font-weight: 800; color: #f8fafc; margin: 0;">1. Add Contestants</h4>
+                <div style="color: var(--text-muted); font-size: 0.78rem; margin-top: 2px;">ആളുകളെ ചേർക്കുക (3 രീതിയിൽ)</div>
             </div>
         </div>
-        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; width: 100%; max-width: 400px;">
-            <input type="file" name="excel_file" accept=".xlsx, .xls" required class="form-control" style="flex: 1; min-height: 40px; padding: 8px 12px; font-size: 0.85rem;">
-            <button type="submit" class="btn-success" style="padding: 8px 18px; background: linear-gradient(135deg, var(--accent-emerald), #059669);">
-                <i class="fa-solid fa-upload"></i> Upload
-            </button>
+    </div>
+
+    <!-- TAB 2: CONTESTANTS LIST -->
+    <div id="tab-btn-list" onclick="switchContestantTab('list')" class="glass-card" style="cursor: pointer; padding: 18px; border: 1px solid rgba(56, 189, 248, 0.3); background: rgba(15, 23, 42, 0.6); transition: all 0.25s ease;">
+        <div style="display: flex; align-items: center; gap: 14px;">
+            <div style="width: 46px; height: 46px; border-radius: 12px; background: rgba(56, 189, 248, 0.2); display: flex; align-items: center; justify-content: center; font-size: 1.4rem; color: var(--accent-cyan); flex-shrink: 0;">
+                <i class="fa-solid fa-users"></i>
+            </div>
+            <div>
+                <h4 style="font-size: 1.05rem; font-weight: 800; color: #f8fafc; margin: 0;">2. Contestants List</h4>
+                <div style="color: var(--text-muted); font-size: 0.78rem; margin-top: 2px;">നിലവിലുള്ളവർ ({{ contestants|length }})</div>
+            </div>
         </div>
-    </form>
+    </div>
+
+    <!-- TAB 3: DOWNLOADS & CREDENTIALS -->
+    <div id="tab-btn-downloads" onclick="switchContestantTab('downloads')" class="glass-card" style="cursor: pointer; padding: 18px; border: 1px solid rgba(245, 158, 11, 0.3); background: rgba(15, 23, 42, 0.6); transition: all 0.25s ease;">
+        <div style="display: flex; align-items: center; gap: 14px;">
+            <div style="width: 46px; height: 46px; border-radius: 12px; background: rgba(245, 158, 11, 0.2); display: flex; align-items: center; justify-content: center; font-size: 1.4rem; color: #fbbf24; flex-shrink: 0;">
+                <i class="fa-solid fa-file-pdf"></i>
+            </div>
+            <div>
+                <h4 style="font-size: 1.05rem; font-weight: 800; color: #f8fafc; margin: 0;">3. Reports & Downloads</h4>
+                <div style="color: var(--text-muted); font-size: 0.78rem; margin-top: 2px;">PDF റിപ്പോർട്ട് & ടെംപ്ലേറ്റ്</div>
+            </div>
+        </div>
+    </div>
 </div>
 
-<!-- DESKTOP TABLE VIEW -->
-<div class="glass-card desktop-table-view">
-    <div class="table-responsive">
-        <table class="custom-table">
-        <thead>
-            <tr>
-                <th>Chest No</th>
-                <th>Contestant Name</th>
-                {% if not request.user.is_team_leader %}<th>Team</th>{% endif %}
-                <th>Category</th>
-                <th>Total Points</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
+
+<!-- ==========================================
+     SECTION 1: ADD CONTESTANTS HUB (3 ACTION CARDS)
+     ========================================== -->
+<div id="tab-content-add" style="display: block;">
+    <div class="glass-card" style="margin-bottom: 24px; border: 1px solid rgba(16, 185, 129, 0.3); padding: 24px;">
+        <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--accent-emerald); margin: 0 0 6px 0; display: flex; align-items: center; gap: 10px;">
+            <i class="fa-solid fa-user-plus"></i> Add Contestants Options (ആളുകളെ ചേർക്കാനുള്ള വഴികൾ)
+        </h3>
+        <p style="color: var(--text-muted); font-size: 0.88rem; margin: 0 0 20px 0;">
+            താഴെ നൽകിയിരിക്കുന്ന 3 രീതികളിൽ നിന്ന് നിങ്ങൾക്ക് സൗകര്യപ്രദമായ വഴി തിരഞ്ഞെടുക്കുക:
+        </p>
+
+        <!-- 3 ACTION CARDS GRID -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 24px;">
+            <!-- CARD 1: SINGLE CONTESTANT ADD -->
+            <a href="{% url 'core:contestant_create' institution.slug %}" class="glass-card" style="text-decoration: none; color: inherit; text-align: left; padding: 20px; border: 1px solid rgba(56, 189, 248, 0.4); background: linear-gradient(135deg, rgba(56, 189, 248, 0.12), rgba(15, 23, 42, 0.9)); transition: all 0.2s ease;">
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                    <i class="fa-solid fa-user-plus" style="font-size: 1.6rem; color: var(--accent-cyan);"></i>
+                    <h4 style="font-size: 1.05rem; font-weight: 800; color: #f8fafc; margin: 0;">1. Single Contestant</h4>
+                </div>
+                <p style="color: var(--text-muted); font-size: 0.82rem; margin: 0; line-height: 1.4;">
+                    ഒരു മത്സരാർത്ഥിയെ ഫോം പൂരിപ്പിച്ച് നേരിട്ട് ചേർക്കാൻ.
+                </p>
+            </a>
+
+            <!-- CARD 2: MULTI CONTESTANT GRID -->
+            <a href="{% url 'core:contestant_batch_create' institution.slug %}" class="glass-card" style="text-decoration: none; color: inherit; text-align: left; padding: 20px; border: 1px solid rgba(168, 85, 247, 0.4); background: linear-gradient(135deg, rgba(168, 85, 247, 0.12), rgba(15, 23, 42, 0.9)); transition: all 0.2s ease;">
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                    <i class="fa-solid fa-table-cells" style="font-size: 1.6rem; color: #c084fc;"></i>
+                    <h4 style="font-size: 1.05rem; font-weight: 800; color: #f8fafc; margin: 0;">2. Multi-Contestant Grid</h4>
+                </div>
+                <p style="color: var(--text-muted); font-size: 0.82rem; margin: 0; line-height: 1.4;">
+                    ഒന്നിലധികം പേരെ ഒരേ പേജിൽ ടേബിളിൽ ചേർക്കാൻ.
+                </p>
+            </a>
+
+            <!-- CARD 3: BULK EXCEL UPLOAD LINK -->
+            <div class="glass-card" style="text-align: left; padding: 20px; border: 1px solid rgba(16, 185, 129, 0.4); background: linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(15, 23, 42, 0.9)); transition: all 0.2s ease;">
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                    <i class="fa-solid fa-file-excel" style="font-size: 1.6rem; color: var(--accent-emerald);"></i>
+                    <h4 style="font-size: 1.05rem; font-weight: 800; color: #f8fafc; margin: 0;">3. Bulk Excel Upload</h4>
+                </div>
+                <p style="color: var(--text-muted); font-size: 0.82rem; margin: 0; line-height: 1.4;">
+                    എക്സൽ ഫയൽ വഴി ഒന്നിച്ച് മത്സരാർത്ഥികളെ അപ്‌ലോഡ് ചെയ്യാൻ.
+                </p>
+            </div>
+        </div>
+
+        <!-- EXCEL BULK UPLOAD SUB-SECTION WITH EXCEL TEMPLATE DOWNLOAD -->
+        <div class="glass-card" style="background: rgba(15, 23, 42, 0.7); padding: 22px; border-radius: 14px; border: 1px solid rgba(16, 185, 129, 0.3);">
+            <div style="display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 14px; margin-bottom: 16px;">
+                <div>
+                    <h4 style="font-size: 1.1rem; font-weight: 800; color: var(--accent-emerald); margin: 0 0 4px 0; display: flex; align-items: center; gap: 8px;">
+                        <i class="fa-solid fa-file-excel"></i> Bulk Register Contestants via Excel File
+                    </h4>
+                    <p style="color: var(--text-muted); font-size: 0.84rem; margin: 0;">
+                        നിങ്ങൾ തയ്യാറാക്കിയ എക്സൽ ഫയൽ തിരഞ്ഞെടുത്ത് ആളുകളെയും ചെസ്റ്റ് നമ്പറുകളെയും ഒന്നിച്ച് ചേർക്കുക.
+                    </p>
+                </div>
+
+                <!-- EXCEL TEMPLATE DOWNLOAD BUTTON LINK -->
+                <a href="{% url 'core:contestant_download_template' institution.slug %}" class="btn-primary" style="padding: 10px 18px; font-size: 0.85rem; font-weight: 700; text-decoration: none; background: linear-gradient(135deg, #0284c7, var(--accent-cyan)); display: inline-flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-download"></i> Download Excel Template (.xlsx)
+                </a>
+            </div>
+
+            <form method="POST" action="{% url 'core:contestant_bulk_upload' institution.slug %}" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+                    <input type="file" name="excel_file" accept=".xlsx, .xls, .csv" required class="form-control" style="flex: 1; min-height: 42px; padding: 10px; background: rgba(0,0,0,0.3); color: #fff;">
+                    <button type="submit" class="btn-primary" style="padding: 10px 24px; font-size: 0.9rem; background: linear-gradient(135deg, var(--accent-emerald), #059669);">
+                        <i class="fa-solid fa-upload"></i> Upload Excel File
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+<!-- ==========================================
+     SECTION 2: CONTESTANTS LIST & TABLE VIEW
+     ========================================== -->
+<div id="tab-content-list" style="display: none;">
+    <div class="glass-card" style="padding: 24px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 14px;">
+            <div>
+                <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--accent-cyan); margin: 0; display: flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-users"></i> Registered Contestants Directory ({{ contestants|length }})
+                </h3>
+                <div style="color: var(--text-muted); font-size: 0.84rem; margin-top: 2px;">
+                    മത്സരാർത്ഥികളുടെ ചെസ്റ്റ് നമ്പർ, ടീം, കാറ്റഗറി, പോയിന്റുകൾ.
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <div style="position: relative;">
+                    <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 0.85rem;"></i>
+                    <input type="text" id="contestantSearchInput" onkeyup="filterContestantsList()" placeholder="Search contestants..." class="form-control" style="padding-left: 34px; width: 220px; font-size: 0.85rem; background: rgba(0,0,0,0.3); color: #fff;">
+                </div>
+                <a href="{% url 'core:contestant_create' institution.slug %}" class="btn-primary" style="padding: 9px 18px; font-size: 0.85rem; background: linear-gradient(135deg, var(--accent-emerald), #059669); text-decoration: none;">
+                    <i class="fa-solid fa-user-plus"></i> Add Single Contestant
+                </a>
+            </div>
+        </div>
+
+        <!-- DESKTOP TABLE VIEW -->
+        <div class="table-responsive desktop-table-view">
+            <table class="custom-table" id="contestantsTable" style="width: 100%; border-collapse: separate; border-spacing: 0;">
+                <thead>
+                    <tr style="background: rgba(15, 23, 42, 0.9);">
+                        <th style="padding: 12px 14px; width: 100px;">Chest No</th>
+                        <th style="padding: 12px 14px;">Contestant Name</th>
+                        {% if not request.user.is_team_leader %}<th style="padding: 12px 14px;">Team</th>{% endif %}
+                        <th style="padding: 12px 14px;">Category</th>
+                        <th style="text-align: center; padding: 12px 14px;">Total Points</th>
+                        <th style="text-align: right; padding: 12px 14px; width: 200px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for contestant in contestants %}
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                        <td style="padding: 12px 14px;">
+                            <strong style="color: var(--accent-cyan); font-size: 1.05rem;">#{{ contestant.chest_no }}</strong>
+                        </td>
+                        <td style="padding: 12px 14px;">
+                            <strong style="font-size: 1.02rem; color: #f8fafc;">{{ contestant.name }}</strong>
+                            {% if contestant.whatsapp_number %}
+                            <br>
+                            <a href="https://wa.me/{{ contestant.whatsapp_number }}" target="_blank" style="font-size: 0.8rem; color: var(--accent-emerald); text-decoration: none;">
+                                <i class="fa-brands fa-whatsapp"></i> {{ contestant.whatsapp_number }}
+                            </a>
+                            {% endif %}
+                        </td>
+                        {% if not request.user.is_team_leader %}
+                        <td style="padding: 12px 14px;">
+                            <span class="badge badge-approved" style="font-size: 0.82rem; padding: 4px 10px;">
+                                {{ contestant.team.name }}
+                            </span>
+                        </td>
+                        {% endif %}
+                        <td style="padding: 12px 14px;">
+                            <span class="badge" style="background: rgba(168, 85, 247, 0.2); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); font-size: 0.82rem; padding: 4px 10px;">
+                                {{ contestant.category.name }}
+                            </span>
+                        </td>
+                        <td style="text-align: center; padding: 12px 14px;">
+                            <strong style="color: var(--accent-cyan); font-size: 0.92rem;">{{ contestant.calculated_total_points }} pts</strong>
+                        </td>
+                        <td style="text-align: right; padding: 12px 14px; white-space: nowrap;">
+                            <div style="display: flex; gap: 6px; justify-content: flex-end;">
+                                <a href="{% url 'core:contestant_assign_programs' institution.slug contestant.id %}" class="btn-primary" style="padding: 5px 10px; font-size: 0.78rem; border-radius: 6px; text-decoration: none;" title="Assign Programs">
+                                    <i class="fa-solid fa-list-check"></i> Assign
+                                </a>
+                                <a href="{% url 'core:contestant_edit' institution.slug contestant.id %}" class="btn-secondary" style="padding: 5px 10px; font-size: 0.78rem; border-radius: 6px; text-decoration: none;" title="Edit Contestant">
+                                    <i class="fa-solid fa-pen-to-square" style="color: var(--accent-cyan);"></i> Edit
+                                </a>
+                                <a href="{% url 'core:contestant_delete' institution.slug contestant.id %}" class="btn-secondary" style="padding: 5px 10px; font-size: 0.78rem; border-radius: 6px; text-decoration: none; color: #f87171; border-color: rgba(248, 113, 113, 0.3); background: rgba(248, 113, 113, 0.1);" onclick="return confirm('Are you sure you want to delete contestant #{{ contestant.chest_no }} \'{{ contestant.name|escapejs }}\'?');" title="Delete Contestant">
+                                    <i class="fa-solid fa-trash-can"></i> Delete
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="{% if not request.user.is_team_leader %}6{% else %}5{% endif %}" style="text-align: center; color: var(--text-muted); padding: 40px;">
+                            No contestants registered yet. Click 'Add Contestants' button above to create entries.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- MOBILE CARD LIST VIEW -->
+        <div class="mobile-card-list-view">
             {% for contestant in contestants %}
-            <tr>
-                <td><strong style="color: var(--accent-cyan);">#{{ contestant.chest_no }}</strong></td>
-                <td>
-                    <strong>{{ contestant.name }}</strong>
-                    {% if contestant.whatsapp_number %}
-                    <br><a href="https://wa.me/{{ contestant.whatsapp_number }}" target="_blank" style="font-size: 0.8rem; color: var(--accent-emerald); text-decoration: none;">
-                        <i class="fa-brands fa-whatsapp"></i> {{ contestant.whatsapp_number }}
-                    </a>
-                    {% endif %}
-                </td>
-                {% if not request.user.is_team_leader %}<td><span class="badge badge-approved">{{ contestant.team.name }}</span></td>{% endif %}
-                <td>{{ contestant.category.name }}</td>
-                <td><strong style="color: var(--accent-cyan);">{{ contestant.calculated_total_points }} pts</strong></td>
-                <td>
-                    <div style="display: flex; gap: 6px; align-items: center;">
-                        <a href="{% url 'core:contestant_assign_programs' institution.slug contestant.id %}" class="btn-primary" style="padding: 6px 12px; font-size: 0.85rem;">
-                            <i class="fa-solid fa-list-check"></i> Assign
-                        </a>
-                        <a href="{% url 'core:contestant_edit' institution.slug contestant.id %}" class="btn-primary" style="padding: 6px 10px; font-size: 0.8rem; background: rgba(255,255,255,0.08); box-shadow: none;" title="Edit Contestant">
-                            <i class="fa-solid fa-pen-to-square"></i>
-                        </a>
-                        <a href="{% url 'core:contestant_delete' institution.slug contestant.id %}" class="btn-primary" style="padding: 6px 10px; font-size: 0.8rem; background: rgba(225, 29, 72, 0.2); border: 1px solid #e11d48; color: #f43f5e;" onclick="return confirm('Are you sure you want to delete contestant #{{ contestant.chest_no }} \'{{ contestant.name }}\'?');" title="Delete Contestant">
-                            <i class="fa-solid fa-trash"></i>
-                        </a>
+            <div class="contestant-mobile-card" style="background: rgba(255,255,255,0.02); padding: 16px; border-radius: 14px; border: 1px solid var(--border-color); margin-bottom: 12px;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;">
+                    <div>
+                        <strong style="color: var(--accent-cyan); font-size: 1.08rem; display: block; font-weight: 800; margin-bottom: 4px;">
+                            #{{ contestant.chest_no }} {{ contestant.name }}
+                        </strong>
+                        {% if contestant.whatsapp_number %}
+                        <div style="margin-bottom: 6px;">
+                            <a href="https://wa.me/{{ contestant.whatsapp_number }}" target="_blank" style="font-size: 0.8rem; color: var(--accent-emerald); text-decoration: none;">
+                                <i class="fa-brands fa-whatsapp"></i> {{ contestant.whatsapp_number }}
+                            </a>
+                        </div>
+                        {% endif %}
+                        <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                            <span class="badge" style="background: rgba(168, 85, 247, 0.2); color: #c084fc; font-size: 0.75rem; padding: 2px 8px;">{{ contestant.category.name }}</span>
+                            {% if not request.user.is_team_leader %}
+                            <span class="badge badge-approved" style="font-size: 0.75rem; padding: 2px 8px;">{{ contestant.team.name }}</span>
+                            {% endif %}
+                        </div>
                     </div>
-                </td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="{% if not request.user.is_team_leader %}6{% else %}5{% endif %}" style="text-align: center; color: var(--text-muted); padding: 30px;">
-                    No contestants registered yet.
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    </div>
-</div>
+                    <div style="text-align: right;">
+                        <span class="badge badge-pending" style="background: rgba(6, 182, 212, 0.15); color: var(--accent-cyan); font-weight: 800; font-size: 0.82rem; border: 1px solid rgba(6, 182, 212, 0.3); padding: 4px 8px;">
+                            {{ contestant.calculated_total_points }} pts
+                        </span>
+                    </div>
+                </div>
 
-<!-- MOBILE CARD LIST VIEW -->
-<div class="mobile-card-list-view">
-    {% for contestant in contestants %}
-    <div class="glass-card" style="margin-bottom: 12px; padding: 14px; border-radius: 14px; border: 1px solid var(--border-color);">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 8px;">
-            <div>
-                <strong style="color: var(--accent-cyan); font-size: 1.1rem; display: block; font-weight: 800;">#{{ contestant.chest_no }} {{ contestant.name }}</strong>
-                {% if contestant.whatsapp_number %}
-                <div style="margin-top: 4px;">
-                    <a href="https://wa.me/{{ contestant.whatsapp_number }}" target="_blank" style="font-size: 0.8rem; color: var(--accent-emerald); text-decoration: none;">
-                        <i class="fa-brands fa-whatsapp"></i> {{ contestant.whatsapp_number }}
+                <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px; justify-content: flex-end;">
+                    <a href="{% url 'core:contestant_assign_programs' institution.slug contestant.id %}" class="btn-primary" style="padding: 5px 12px; font-size: 0.76rem; border-radius: 6px; text-decoration: none;">
+                        <i class="fa-solid fa-list-check"></i> Assign Programs
+                    </a>
+                    <a href="{% url 'core:contestant_edit' institution.slug contestant.id %}" class="btn-secondary" style="padding: 5px 10px; font-size: 0.76rem; border-radius: 6px; text-decoration: none;">
+                        <i class="fa-solid fa-pen-to-square" style="color: var(--accent-cyan);"></i> Edit
+                    </a>
+                    <a href="{% url 'core:contestant_delete' institution.slug contestant.id %}" class="btn-secondary" style="padding: 5px 10px; font-size: 0.76rem; border-radius: 6px; text-decoration: none; color: #f87171; border-color: rgba(248, 113, 113, 0.3); background: rgba(248, 113, 113, 0.1);" onclick="return confirm('Are you sure you want to delete contestant #{{ contestant.chest_no }} \'{{ contestant.name|escapejs }}\'?');">
+                        <i class="fa-solid fa-trash-can"></i> Delete
                     </a>
                 </div>
-                {% endif %}
-                <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px;">
-                    <span class="badge badge-approved" style="font-size: 0.75rem;">{{ contestant.category.name }}</span>
-                    {% if not request.user.is_team_leader %}
-                    <span class="badge badge-approved" style="font-size: 0.75rem;">{{ contestant.team.name }}</span>
-                    {% endif %}
-                </div>
             </div>
-            <div style="text-align: right;">
-                <span class="badge badge-pending" style="background: rgba(6, 182, 212, 0.15); color: var(--accent-cyan); font-weight: 800; font-size: 0.85rem; border: 1px solid rgba(6, 182, 212, 0.3);">
-                    {{ contestant.calculated_total_points }} pts
-                </span>
+            {% empty %}
+            <div style="text-align: center; color: var(--text-muted); padding: 30px;">
+                No contestants registered yet.
             </div>
-        </div>
-
-        <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; border-top: 1px solid var(--border-color); padding-top: 10px;">
-            <a href="{% url 'core:contestant_assign_programs' institution.slug contestant.id %}" class="btn-primary" style="padding: 6px 12px; font-size: 0.8rem;">
-                <i class="fa-solid fa-list-check"></i> Assign Programs
-            </a>
-            <a href="{% url 'core:contestant_edit' institution.slug contestant.id %}" class="btn-primary" style="padding: 6px 10px; font-size: 0.8rem; background: rgba(255,255,255,0.08); box-shadow: none;" title="Edit Contestant">
-                <i class="fa-solid fa-pen-to-square"></i>
-            </a>
-            <a href="{% url 'core:contestant_delete' institution.slug contestant.id %}" class="btn-primary" style="padding: 6px 10px; font-size: 0.8rem; background: rgba(225, 29, 72, 0.2); border: 1px solid #e11d48; color: #f43f5e;" onclick="return confirm('Are you sure you want to delete contestant #{{ contestant.chest_no }} \'{{ contestant.name }}\'?');" title="Delete Contestant">
-                <i class="fa-solid fa-trash"></i>
-            </a>
+            {% endfor %}
         </div>
     </div>
-    {% empty %}
-    <div class="glass-card" style="text-align: center; color: var(--text-muted); padding: 30px;">
-        No contestants registered yet.
-    </div>
-    {% endfor %}
 </div>
+
+
+<!-- ==========================================
+     SECTION 3: DOWNLOADS & CREDENTIALS VIEW
+     ========================================== -->
+<div id="tab-content-downloads" style="display: none;">
+    <div class="glass-card" style="padding: 24px;">
+        <h3 style="font-size: 1.25rem; font-weight: 800; color: #fbbf24; margin: 0 0 6px 0; display: flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-file-pdf"></i> Contestants Reports & Template Downloads
+        </h3>
+        <p style="color: var(--text-muted); font-size: 0.88rem; margin: 0 0 22px 0;">
+            ടീം അടിസ്ഥാനത്തിലുള്ള മത്സരാർത്ഥികളുടെ വിവരങ്ങൾ പി.ഡി.എഫ് ആയും, എക്സൽ അപ്‌ലോഡ് ടെംപ്ലേറ്റുകളും ഡൗൺലോഡ് ചെയ്യുക.
+        </p>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 18px;">
+            <!-- CARD 1: TEAM-WISE CONTESTANTS PDF -->
+            <div class="glass-card" style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(16, 185, 129, 0.4); padding: 20px; border-radius: 14px; display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                        <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(16, 185, 129, 0.2); display: flex; align-items: center; justify-content: center; font-size: 1.3rem; color: var(--accent-emerald);">
+                            <i class="fa-solid fa-file-pdf"></i>
+                        </div>
+                        <h4 style="font-size: 1.08rem; font-weight: 800; color: #f8fafc; margin: 0;">Team-Wise Contestants PDF</h4>
+                    </div>
+                    <p style="color: var(--text-muted); font-size: 0.84rem; line-height: 1.5; margin-bottom: 16px;">
+                        എല്ലാ ടീമുകളിലെയും മത്സരാർത്ഥികളുടെ ചെസ്റ്റ് നമ്പർ വിവിരങ്ങൾ അടങ്ങിയ ഒഫീഷ്യൽ PDF റിപോർട്ട്.
+                    </p>
+                </div>
+                <a href="{% url 'core:download_contestants_teamwise_pdf' institution.slug %}" onclick="triggerPdfDownload(event, this)" class="btn-primary" style="padding: 10px; font-size: 0.88rem; justify-content: center; background: linear-gradient(135deg, var(--accent-emerald), #059669); text-decoration: none;">
+                    <i class="fa-solid fa-file-arrow-down"></i> Download Contestants PDF
+                </a>
+            </div>
+
+            <!-- CARD 2: EXCEL TEMPLATE DOWNLOAD -->
+            <div class="glass-card" style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(56, 189, 248, 0.4); padding: 20px; border-radius: 14px; display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                        <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(56, 189, 248, 0.2); display: flex; align-items: center; justify-content: center; font-size: 1.3rem; color: var(--accent-cyan);">
+                            <i class="fa-solid fa-file-excel"></i>
+                        </div>
+                        <h4 style="font-size: 1.08rem; font-weight: 800; color: #f8fafc; margin: 0;">Contestants Excel Template</h4>
+                    </div>
+                    <p style="color: var(--text-muted); font-size: 0.84rem; line-height: 1.5; margin-bottom: 16px;">
+                        മത്സരാർത്ഥികളെ ഒന്നിച്ച് ചേർക്കാൻ ശൂന്യമായ എക്സൽ ടെംപ്ലേറ്റ് `.xlsx` ഡൗൺലോഡ് ചെയ്യുക.
+                    </p>
+                </div>
+                <a href="{% url 'core:contestant_download_template' institution.slug %}" class="btn-primary" style="padding: 10px; font-size: 0.88rem; justify-content: center; background: linear-gradient(135deg, #0284c7, var(--accent-cyan)); text-decoration: none;">
+                    <i class="fa-solid fa-download"></i> Download Excel Template
+                </a>
+            </div>
+
+            {% if not request.user.is_team_leader %}
+            <!-- CARD 3: GENERATE CONTESTANT CREDENTIALS -->
+            <div class="glass-card" style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(245, 158, 11, 0.4); padding: 20px; border-radius: 14px; display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                        <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(245, 158, 11, 0.2); display: flex; align-items: center; justify-content: center; font-size: 1.3rem; color: #fbbf24;">
+                            <i class="fa-solid fa-key"></i>
+                        </div>
+                        <h4 style="font-size: 1.08rem; font-weight: 800; color: #f8fafc; margin: 0;">Contestant Login Credentials</h4>
+                    </div>
+                    <p style="color: var(--text-muted); font-size: 0.84rem; line-height: 1.5; margin-bottom: 16px;">
+                        മത്സരാർത്ഥികൾക്ക് ലോഗിൻ ചെയ്യാനുള്ള പാസ്‌വേഡുകൾ ക്രിയേറ്റ് ചെയ്യുക.
+                    </p>
+                </div>
+                <a href="{% url 'core:generate_contestant_credentials' institution.slug %}" class="btn-primary" style="padding: 10px; font-size: 0.88rem; justify-content: center; background: linear-gradient(135deg, #f59e0b, #d97706); color: #000; font-weight: 800; text-decoration: none;">
+                    <i class="fa-solid fa-key"></i> Generate Credentials
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+
+<!-- JAVASCRIPT HELPERS & TAB SWITCHING -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        let tab = urlParams.get('tab') || window.location.hash.replace('#', '');
+        
+        // Fallback to localStorage if tab parameter isn't in URL
+        if (!tab || !['add', 'list', 'downloads'].includes(tab)) {
+            tab = localStorage.getItem('activeContestantTab_{{ institution.slug }}') || 'add';
+        }
+        
+        switchContestantTab(tab, false);
+    });
+
+    // Support browser Back & Forward button clicks
+    window.addEventListener('popstate', function(event) {
+        const urlParams = new URLSearchParams(window.location.search);
+        let tab = urlParams.get('tab') || (event.state && event.state.tab);
+        if (tab && ['add', 'list', 'downloads'].includes(tab)) {
+            switchContestantTab(tab, false);
+        }
+    });
+
+    function switchContestantTab(tabName, pushState = true) {
+        const tabs = ['add', 'list', 'downloads'];
+        if (!tabs.includes(tabName)) return;
+
+        tabs.forEach(t => {
+            const btn = document.getElementById(`tab-btn-${t}`);
+            const content = document.getElementById(`tab-content-${t}`);
+            if (btn && content) {
+                if (t === tabName) {
+                    btn.style.background = 'linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(15, 23, 42, 0.95))';
+                    btn.style.borderColor = 'var(--accent-cyan)';
+                    content.style.display = 'block';
+                } else {
+                    btn.style.background = 'rgba(15, 23, 42, 0.6)';
+                    btn.style.borderColor = 'rgba(255, 255, 255, 0.08)';
+                    content.style.display = 'none';
+                }
+            }
+        });
+
+        // Store current active tab in localStorage
+        localStorage.setItem('activeContestantTab_{{ institution.slug }}', tabName);
+
+        // Update URL query parameter so refresh & back buttons maintain exact tab
+        if (pushState) {
+            const newUrl = new URL(window.location.href);
+            newUrl.searchParams.set('tab', tabName);
+            history.pushState({ tab: tabName }, '', newUrl.toString());
+        }
+    }
+
+    function filterContestantsList() {
+        const input = document.getElementById('contestantSearchInput');
+        const filter = input.value.toLowerCase();
+        const table = document.getElementById('contestantsTable');
+        if (table) {
+            const tr = table.getElementsByTagName('tr');
+            for (let i = 1; i < tr.length; i++) {
+                const nameTd = tr[i].getElementsByTagName('td')[1];
+                const chestTd = tr[i].getElementsByTagName('td')[0];
+                if (nameTd || chestTd) {
+                    const txtValue = ((chestTd ? chestTd.textContent : '') + ' ' + (nameTd ? nameTd.textContent : '')).toLowerCase();
+                    tr[i].style.display = txtValue.indexOf(filter) > -1 ? '' : 'none';
+                }
+            }
+        }
+
+        const cards = document.querySelectorAll('.contestant-mobile-card');
+        cards.forEach(card => {
+            const text = card.innerText.toLowerCase();
+            card.style.display = text.indexOf(filter) > -1 ? '' : 'none';
+        });
+    }
+</script>
 {% endblock %}

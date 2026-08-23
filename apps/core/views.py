@@ -151,8 +151,118 @@ def category_list_view(request, institution_slug):
 @login_required
 def program_list_view(request, institution_slug):
     institution = get_object_or_404(Institution, slug=institution_slug)
-    programs = Program.objects.filter(institution=institution).select_related('category', 'competition')
-    return render(request, 'core/program_list.html', {'institution': institution, 'programs': programs})
+    competitions = list(Competition.objects.filter(institution=institution))
+    categories = list(Category.objects.filter(institution=institution))
+
+    if request.method == 'POST':
+        action = request.POST.get('action', '')
+
+        # Action 1: Create Single Program
+        if action == 'create_single_program':
+            comp_id = request.POST.get('competition_id')
+            cat_id = request.POST.get('category_id')
+            name = request.POST.get('name', '').strip()
+            is_group = request.POST.get('is_group') in ['on', '1', 'true']
+            p_type = request.POST.get('program_type', 'STAGE')
+            p_mode = request.POST.get('presentation_mode', 'SEQUENTIAL')
+            duration = request.POST.get('duration_per_participant', 5)
+
+            comp = Competition.objects.filter(id=comp_id, institution=institution).first()
+            if not comp and competitions:
+                comp = competitions[0]
+            cat = Category.objects.filter(id=cat_id, institution=institution).first()
+
+            if comp and cat and name:
+                Program.objects.create(
+                    institution=institution,
+                    competition=comp,
+                    category=cat,
+                    name=name,
+                    is_group=is_group,
+                    program_type=p_type,
+                    presentation_mode=p_mode,
+                    duration_per_participant=int(duration) if str(duration).isdigit() else 5
+                )
+                messages.success(request, f"Program '{name}' created successfully!")
+                return redirect(f"{reverse('core:program_list', kwargs={'institution_slug': institution.slug})}?tab=list")
+            else:
+                messages.error(request, "Failed to create program. Program Name, Fest and Category are required.")
+
+        # Action 2: WhatsApp Text Bulk Import
+        elif action == 'whatsapp_import':
+            wa_text = request.POST.get('whatsapp_text', '').strip()
+            default_cat_id = request.POST.get('default_category_id')
+            comp_id = request.POST.get('competition_id')
+
+            comp = Competition.objects.filter(id=comp_id, institution=institution).first()
+            if not comp and competitions:
+                comp = competitions[0]
+
+            default_cat = Category.objects.filter(id=default_cat_id, institution=institution).first()
+            current_cat = default_cat
+
+            import re
+            created_count = 0
+            for line in wa_text.splitlines():
+                line_str = line.strip()
+                if not line_str:
+                    continue
+
+                # Skip titles/headers
+                clean_upper = line_str.upper().strip('*#=- ')
+                if clean_upper in ['PROGRAM LIST', 'PROGRAMS LIST', 'PROGRAMS', 'ITEMS LIST', 'EVENT LIST', 'SCHEDULE']:
+                    continue
+
+                if 'category' in line_str.lower() or line_str.lower().startswith('cat:'):
+                    cat_name = re.sub(r'^(category|cat)[\s\:\-]*', '', line_str, flags=re.IGNORECASE).strip('* ').strip()
+                    if cat_name:
+                        cat_obj = Category.objects.filter(institution=institution, name__iexact=cat_name).first()
+                        if not cat_obj and comp:
+                            cat_obj = Category.objects.create(institution=institution, competition=comp, name=cat_name)
+                        if cat_obj:
+                            current_cat = cat_obj
+                    continue
+
+                clean_line = re.sub(r'^\d+[\.\)\-]*\s*', '', line_str).strip('* ').strip()
+                if not clean_line or len(clean_line) < 2:
+                    continue
+
+                parts = [p.strip() for p in clean_line.split('-') if p.strip()]
+                prog_name = parts[0]
+
+                is_group = bool(re.search(r'\b(GROUP|TEAM)\b', clean_line, re.IGNORECASE))
+                is_offstage = bool(re.search(r'\b(OFF\s*STAGE|OFFSTAGE|WRITTEN|ART)\b', clean_line, re.IGNORECASE))
+                p_type = 'OFF_STAGE' if is_offstage else 'STAGE'
+
+                if not current_cat:
+                    current_cat = Category.objects.filter(institution=institution).first()
+                    if not current_cat and comp:
+                        current_cat = Category.objects.create(institution=institution, competition=comp, name='General Category')
+
+                if comp and current_cat and prog_name:
+                    Program.objects.create(
+                        institution=institution,
+                        competition=comp,
+                        category=current_cat,
+                        name=prog_name,
+                        is_group=is_group,
+                        program_type=p_type
+                    )
+                    created_count += 1
+
+            if created_count > 0:
+                messages.success(request, f"Successfully imported {created_count} program(s) from WhatsApp text!")
+                return redirect(f"{reverse('core:program_list', kwargs={'institution_slug': institution.slug})}?tab=list")
+            else:
+                messages.error(request, "Could not parse any valid programs from the provided WhatsApp text. Please check format.")
+
+    programs = Program.objects.filter(institution=institution).select_related('category', 'competition').order_by('category__name', 'name')
+    return render(request, 'core/program_list.html', {
+        'institution': institution,
+        'programs': programs,
+        'competitions': competitions,
+        'categories': categories,
+    })
 
 
 @login_required

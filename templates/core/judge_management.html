@@ -410,15 +410,22 @@
 
     document.addEventListener('DOMContentLoaded', function() {
         const urlParams = new URLSearchParams(window.location.search);
-        const tab = urlParams.get('tab');
-        if (tab === 'judges') {
-            switchJudgeTab('judges');
-        } else {
-            switchJudgeTab('panels');
+        let tab = urlParams.get('tab') || window.location.hash.replace('#', '');
+        if (!tab || !['panels', 'judges'].includes(tab)) {
+            tab = localStorage.getItem('activeJudgeTab_{{ institution.slug }}') || 'panels';
+        }
+        switchJudgeTab(tab, false);
+    });
+
+    window.addEventListener('popstate', function(event) {
+        const urlParams = new URLSearchParams(window.location.search);
+        let tab = urlParams.get('tab') || (event.state && event.state.tab);
+        if (tab && ['panels', 'judges'].includes(tab)) {
+            switchJudgeTab(tab, false);
         }
     });
 
-    function switchJudgeTab(tabName) {
+    function switchJudgeTab(tabName, pushState = true) {
         const btnPanels = document.getElementById('tab-btn-panels');
         const btnJudges = document.getElementById('tab-btn-judges');
         const contentPanels = document.getElementById('tab-content-panels');
@@ -441,6 +448,14 @@
             contentPanels.style.display = 'none';
             contentJudges.style.display = 'block';
             if (savePanelsBtn) savePanelsBtn.style.display = 'none';
+        }
+
+        localStorage.setItem('activeJudgeTab_{{ institution.slug }}', tabName);
+
+        if (pushState) {
+            const newUrl = new URL(window.location.href);
+            newUrl.searchParams.set('tab', tabName);
+            history.pushState({ tab: tabName }, '', newUrl.toString());
         }
     }
 

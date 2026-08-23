@@ -1,254 +1,678 @@
 {% extends 'base.html' %}
+{% load static %}
 
-{% block title %}Programs - {{ institution.name }}{% endblock %}
+{% block title %}Programs Directory & Hub - {{ institution.name }}{% endblock %}
 
 {% block content %}
-<div class="page-header">
+<!-- PAGE HEADER -->
+<div class="page-header" style="margin-bottom: 20px;">
     <div>
-        <a href="{% url 'core:dashboard' institution.slug %}" style="color: var(--text-muted); text-decoration: none;"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</a>
-        <h2 style="font-size: 1.8rem; font-weight: 800; margin-top: 4px;">Programs Directory</h2>
-    </div>
-    {% if not request.user.is_team_leader %}
-    <div>
-        <a href="{% url 'core:program_create' institution.slug %}" class="btn-primary" style="background: rgba(255,255,255,0.08); box-shadow: none;">
-            <i class="fa-solid fa-plus"></i> Single Program
+        <a href="{% url 'core:dashboard' institution.slug %}" style="color: var(--text-muted); text-decoration: none; font-size: 0.88rem; display: inline-flex; align-items: center; gap: 6px; margin-bottom: 6px;">
+            <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
         </a>
-        <a href="{% url 'core:program_batch_create' institution.slug %}" class="btn-primary">
-            <i class="fa-solid fa-layer-group"></i> Multi-Program Grid
-        </a>
-        <a href="{% url 'core:download_programs_pdf' institution.slug %}" download class="btn-primary" style="background: linear-gradient(135deg, #0284c7, #0369a1);">
-            <i class="fa-solid fa-file-pdf"></i> Download PDF Report
-        </a>
-        <a href="{% url 'core:program_download_template' institution.slug %}" class="btn-success" style="background: linear-gradient(135deg, #0284c7, var(--accent-cyan));">
-            <i class="fa-solid fa-download"></i> Excel Template
-        </a>
-    </div>
-    {% else %}
-    <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-        <a href="{% url 'core:download_programs_pdf' institution.slug %}" download class="btn-primary" style="background: linear-gradient(135deg, #0284c7, #0369a1);">
-            <i class="fa-solid fa-file-pdf"></i> Download PDF Report
-        </a>
-        <span class="badge badge-approved" style="font-size: 0.9rem; padding: 8px 14px;"><i class="fa-solid fa-eye"></i> Read-Only Events Directory</span>
-    </div>
-    {% endif %}
-</div>
-
-<!-- Bulk Program Forms Bar -->
-<div class="glass-card" style="margin-bottom: 20px; padding: 14px 20px; background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-color);">
-    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
-        <div style="display: flex; align-items: center; gap: 8px;">
-            <i class="fa-solid fa-print" style="color: var(--accent-cyan); font-size: 1.2rem;"></i>
-            <strong style="font-size: 0.95rem;">Bulk Print Forms for All Programs:</strong>
-        </div>
-        <div style="display: flex; gap: 8px; flex-wrap: wrap;" class="page-header-actions">
-            <a href="{% url 'core:download_bulk_green_room_pdf' institution.slug %}" download class="btn-primary" style="padding: 8px 14px; font-size: 0.85rem; background: rgba(21, 128, 61, 0.4); border: 1px solid #15803d; color: #4ade80;">
-                <i class="fa-solid fa-file-pdf"></i> Green Room Sheets
-            </a>
-            <a href="{% url 'core:download_bulk_call_list_pdf' institution.slug %}" download class="btn-primary" style="padding: 8px 14px; font-size: 0.85rem; background: rgba(3, 105, 161, 0.4); border: 1px solid #0369a1; color: #38bdf8;">
-                <i class="fa-solid fa-file-pdf"></i> Call Lists
-            </a>
-            <a href="{% url 'core:download_bulk_valuation_form_pdf' institution.slug %}" download class="btn-primary" style="padding: 8px 14px; font-size: 0.85rem; background: rgba(217, 119, 6, 0.4); border: 1px solid #d97706; color: #fbbf24;">
-                <i class="fa-solid fa-file-pdf"></i> Valuation Forms
-            </a>
+        <h2 style="font-size: 1.85rem; font-weight: 800; color: #f8fafc; margin: 0; display: flex; align-items: center; gap: 10px;">
+            <i class="fa-solid fa-folder-tree" style="color: var(--accent-indigo);"></i> Programs Directory & Hub
+        </h2>
+        <div style="color: var(--text-muted); font-size: 0.88rem; margin-top: 4px;">
+            മത്സര ഇനങ്ങൾ ചേർക്കാനും, നിലവിലുള്ള മത്സരങ്ങൾ കാണാനും, റിപ്പോർട്ടുകൾ ഡൗൺലോഡ് ചെയ്യാനും.
         </div>
     </div>
 </div>
 
-<!-- Excel Bulk Upload Box -->
-{% if not request.user.is_team_leader %}
-<div class="glass-card" style="margin-bottom: 24px; padding: 16px 20px;">
-    <form method="POST" action="{% url 'core:program_bulk_upload' institution.slug %}" enctype="multipart/form-data" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
-        {% csrf_token %}
-        <div style="display: flex; align-items: center; gap: 10px;">
-            <i class="fa-solid fa-file-excel" style="font-size: 1.6rem; color: var(--accent-emerald);"></i>
+<!-- MALAYALAM DIRECTION BANNER CARDS -->
+<div class="glass-card" style="margin-bottom: 24px; padding: 20px; border: 1px solid rgba(99, 102, 241, 0.35); background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9)); border-radius: 16px;">
+    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 14px;">
+        <div style="width: 38px; height: 38px; border-radius: 10px; background: rgba(99, 102, 241, 0.2); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; color: #a5b4fc;">
+            <i class="fa-solid fa-lightbulb"></i>
+        </div>
+        <h4 style="font-size: 1.05rem; font-weight: 800; color: #a5b4fc; margin: 0;">
+            💡 മത്സര ഇനങ്ങൾ (Programs Hub) ക്രമീകരിക്കുന്നതിനുള്ള നിർദ്ദേശങ്ങൾ:
+        </h4>
+    </div>
+    
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px;">
+        <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); padding: 12px 16px; border-radius: 10px; display: flex; align-items: center; gap: 10px;">
+            <i class="fa-solid fa-square-plus" style="color: var(--accent-emerald); font-size: 1.1rem;"></i>
+            <span style="color: #cbd5e1; font-size: 0.84rem; line-height: 1.4;">
+                <strong style="color: #f8fafc;">Add Programs:</strong> സിംഗിൾ ഇനങ്ങൾ നേരിട്ടോ, എക്സൽ വഴി ഒന്നിച്ച് അപ്‌ലോഡ് ചെയ്തോ, വാട്ട്സാപ്പ് പേസ്റ്റ് ചെയ്തോ ചേർക്കാം.
+            </span>
+        </div>
+
+        <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); padding: 12px 16px; border-radius: 10px; display: flex; align-items: center; gap: 10px;">
+            <i class="fa-solid fa-list-check" style="color: var(--accent-cyan); font-size: 1.1rem;"></i>
+            <span style="color: #cbd5e1; font-size: 0.84rem; line-height: 1.4;">
+                <strong style="color: #f8fafc;">Programs List:</strong> നിലവിൽ ചേർത്ത എല്ലാ മത്സരങ്ങളുടെയും വിവരങ്ങൾ പരിശോധിക്കാനും തിരുത്താനും.
+            </span>
+        </div>
+
+        <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); padding: 12px 16px; border-radius: 10px; display: flex; align-items: center; gap: 10px;">
+            <i class="fa-solid fa-file-pdf" style="color: #fbbf24; font-size: 1.1rem;"></i>
+            <span style="color: #cbd5e1; font-size: 0.84rem; line-height: 1.4;">
+                <strong style="color: #f8fafc;">Downloads & Reports:</strong> മത്സര ക്രമീകരണങ്ങളും പി.ഡി.എഫ് റിപ്പോർട്ടുകളും ഡൗൺലോഡ് ചെയ്യുക.
+            </span>
+        </div>
+    </div>
+</div>
+
+<!-- TOP NAV TAB BUTTON CARDS -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-bottom: 24px;">
+    <!-- TAB 1: ADD PROGRAM HUB -->
+    <div id="tab-btn-add" onclick="switchProgramTab('add')" class="glass-card" style="cursor: pointer; padding: 18px; border: 1px solid rgba(16, 185, 129, 0.4); background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(15, 23, 42, 0.9)); transition: all 0.25s ease;">
+        <div style="display: flex; align-items: center; gap: 14px;">
+            <div style="width: 46px; height: 46px; border-radius: 12px; background: rgba(16, 185, 129, 0.2); display: flex; align-items: center; justify-content: center; font-size: 1.4rem; color: var(--accent-emerald); flex-shrink: 0;">
+                <i class="fa-solid fa-square-plus"></i>
+            </div>
             <div>
-                <strong style="font-size: 0.95rem;">Bulk Upload Programs via Excel</strong>
-                <p style="color: var(--text-muted); font-size: 0.8rem;">Upload your filled Excel template file to import all categories and programs automatically.</p>
+                <h4 style="font-size: 1.05rem; font-weight: 800; color: #f8fafc; margin: 0;">1. Add Programs</h4>
+                <div style="color: var(--text-muted); font-size: 0.78rem; margin-top: 2px;">ഇനങ്ങൾ ചേർക്കുക (4 രീതിയിൽ)</div>
             </div>
         </div>
-        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; width: 100%; max-width: 400px;">
-            <input type="file" name="excel_file" accept=".xlsx, .xls" required class="form-control" style="flex: 1; min-height: 40px; padding: 8px 12px; font-size: 0.85rem;">
-            <button type="submit" class="btn-success" style="padding: 8px 18px;">
-                <i class="fa-solid fa-upload"></i> Upload
+    </div>
+
+    <!-- TAB 2: PROGRAMS LIST -->
+    <div id="tab-btn-list" onclick="switchProgramTab('list')" class="glass-card" style="cursor: pointer; padding: 18px; border: 1px solid rgba(56, 189, 248, 0.3); background: rgba(15, 23, 42, 0.6); transition: all 0.25s ease;">
+        <div style="display: flex; align-items: center; gap: 14px;">
+            <div style="width: 46px; height: 46px; border-radius: 12px; background: rgba(56, 189, 248, 0.2); display: flex; align-items: center; justify-content: center; font-size: 1.4rem; color: var(--accent-cyan); flex-shrink: 0;">
+                <i class="fa-solid fa-list-check"></i>
+            </div>
+            <div>
+                <h4 style="font-size: 1.05rem; font-weight: 800; color: #f8fafc; margin: 0;">2. Programs List</h4>
+                <div style="color: var(--text-muted); font-size: 0.78rem; margin-top: 2px;">നിലവിലുള്ള ഇനങ്ങൾ ({{ programs|length }})</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 3: DOWNLOADS -->
+    <div id="tab-btn-downloads" onclick="switchProgramTab('downloads')" class="glass-card" style="cursor: pointer; padding: 18px; border: 1px solid rgba(245, 158, 11, 0.3); background: rgba(15, 23, 42, 0.6); transition: all 0.25s ease;">
+        <div style="display: flex; align-items: center; gap: 14px;">
+            <div style="width: 46px; height: 46px; border-radius: 12px; background: rgba(245, 158, 11, 0.2); display: flex; align-items: center; justify-content: center; font-size: 1.4rem; color: #fbbf24; flex-shrink: 0;">
+                <i class="fa-solid fa-file-pdf"></i>
+            </div>
+            <div>
+                <h4 style="font-size: 1.05rem; font-weight: 800; color: #f8fafc; margin: 0;">3. Downloads & Reports</h4>
+                <div style="color: var(--text-muted); font-size: 0.78rem; margin-top: 2px;">റിപ്പോർട്ടുകൾ & ടെംപ്ലേറ്റ്</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- ==========================================
+     SECTION 1: ADD PROGRAMS HUB (4 BUTTON CARDS)
+     ========================================== -->
+<div id="tab-content-add" style="display: block;">
+    <div class="glass-card" style="margin-bottom: 24px; border: 1px solid rgba(16, 185, 129, 0.3); padding: 24px;">
+        <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--accent-emerald); margin: 0 0 6px 0; display: flex; align-items: center; gap: 10px;">
+            <i class="fa-solid fa-circle-plus"></i> Add Programs Options (ഇനങ്ങൾ ചേർക്കാനുള്ള വഴികൾ)
+        </h3>
+        <p style="color: var(--text-muted); font-size: 0.88rem; margin: 0 0 20px 0;">
+            താഴെ നൽകിയിരിക്കുന്ന 4 രീതികളിൽ നിന്ന് നിങ്ങൾക്ക് സൗകര്യപ്രദമായ വഴി തിരഞ്ഞെടുത്ത് മത്സരങ്ങൾ ചേർക്കുക:
+        </p>
+
+        <!-- 4 ACTION BUTTON CARDS GRID -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px;">
+            <!-- ACTION CARD 1: SINGLE PROGRAM -->
+            <button type="button" onclick="showAddSection('single')" id="btn-mode-single" class="glass-card" style="text-align: left; padding: 18px; border: 1px solid rgba(56, 189, 248, 0.4); background: linear-gradient(135deg, rgba(56, 189, 248, 0.15), rgba(15, 23, 42, 0.9)); cursor: pointer; transition: all 0.2s ease;">
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                    <i class="fa-solid fa-pen-to-square" style="font-size: 1.5rem; color: var(--accent-cyan);"></i>
+                    <h4 style="font-size: 1.05rem; font-weight: 800; color: #f8fafc; margin: 0;">1. Single Program</h4>
+                </div>
+                <p style="color: var(--text-muted); font-size: 0.82rem; margin: 0; line-height: 1.4;">
+                    ഒരു മത്സരം ഫോം പൂരിപ്പിച്ച് നേരിട്ട് ചേർക്കാൻ.
+                </p>
+            </button>
+
+            <!-- ACTION CARD 2: MULTI-ROW GRID ENTRY -->
+            <a href="{% url 'core:program_batch_create' institution.slug %}" class="glass-card" style="text-decoration: none; color: inherit; text-align: left; padding: 18px; border: 1px solid rgba(168, 85, 247, 0.4); background: rgba(15, 23, 42, 0.6); cursor: pointer; transition: all 0.2s ease;">
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                    <i class="fa-solid fa-table-cells" style="font-size: 1.5rem; color: #c084fc;"></i>
+                    <h4 style="font-size: 1.05rem; font-weight: 800; color: #f8fafc; margin: 0;">2. Multi-Row Grid</h4>
+                </div>
+                <p style="color: var(--text-muted); font-size: 0.82rem; margin: 0; line-height: 1.4;">
+                    ഒന്നിലധികം ഇനങ്ങൾ ഒരേ പേജിൽ ടേബിളിൽ ചേർക്കാൻ.
+                </p>
+            </a>
+
+            <!-- ACTION CARD 3: BULK EXCEL -->
+            <button type="button" onclick="showAddSection('excel')" id="btn-mode-excel" class="glass-card" style="text-align: left; padding: 18px; border: 1px solid rgba(16, 185, 129, 0.4); background: rgba(15, 23, 42, 0.6); cursor: pointer; transition: all 0.2s ease;">
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                    <i class="fa-solid fa-file-excel" style="font-size: 1.5rem; color: var(--accent-emerald);"></i>
+                    <h4 style="font-size: 1.05rem; font-weight: 800; color: #f8fafc; margin: 0;">3. Bulk Excel Upload</h4>
+                </div>
+                <p style="color: var(--text-muted); font-size: 0.82rem; margin: 0; line-height: 1.4;">
+                    എക്സൽ ഫയൽ വഴി ഒന്നിച്ച് മത്സരങ്ങൾ അപ്‌ലോഡ് ചെയ്യാൻ.
+                </p>
+            </button>
+
+            <!-- ACTION CARD 4: BULK WHATSAPP -->
+            <button type="button" onclick="showAddSection('whatsapp')" id="btn-mode-whatsapp" class="glass-card" style="text-align: left; padding: 18px; border: 1px solid rgba(34, 197, 94, 0.4); background: rgba(15, 23, 42, 0.6); cursor: pointer; transition: all 0.2s ease;">
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                    <i class="fa-brands fa-whatsapp" style="font-size: 1.6rem; color: #22c55e;"></i>
+                    <h4 style="font-size: 1.05rem; font-weight: 800; color: #f8fafc; margin: 0;">4. WhatsApp Bulk Paste</h4>
+                </div>
+                <p style="color: var(--text-muted); font-size: 0.82rem; margin: 0; line-height: 1.4;">
+                    വാട്ട്സാപ്പ് സന്ദേശം പേസ്റ്റ് ചെയ്ത് ഒന്നിച്ച് ചേർക്കാൻ.
+                </p>
             </button>
         </div>
-    </form>
+
+
+        <!-- SUB-FORM 1: SINGLE PROGRAM ENTRY -->
+        <div id="add-section-single" style="display: block; background: rgba(15, 23, 42, 0.6); padding: 22px; border-radius: 14px; border: 1px solid var(--border-color);">
+            <h4 style="font-size: 1.1rem; font-weight: 800; color: var(--accent-cyan); margin: 0 0 16px 0; display: flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-pen"></i> Add Single Program Form
+            </h4>
+            <form method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="create_single_program">
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 18px;">
+                    <div>
+                        <label class="form-label" style="font-size: 0.82rem; font-weight: 700; color: #cbd5e1;">Fest *</label>
+                        <select name="competition_id" class="form-control" required style="background: rgba(0,0,0,0.3); color: #fff;">
+                            {% for comp in competitions %}
+                            <option value="{{ comp.id }}">{{ comp.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="form-label" style="font-size: 0.82rem; font-weight: 700; color: #cbd5e1;">Category *</label>
+                        <select name="category_id" class="form-control" required style="background: rgba(0,0,0,0.3); color: #fff;">
+                            <option value="">-- Select Category --</option>
+                            {% for cat in categories %}
+                            <option value="{{ cat.id }}">{{ cat.name }} {% if cat.is_common %}(Combined){% endif %}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="form-label" style="font-size: 0.82rem; font-weight: 700; color: #cbd5e1;">Program Name *</label>
+                        <input type="text" name="name" class="form-control" placeholder="e.g. Quran Recitation, Elocution" required style="background: rgba(0,0,0,0.3); color: #fff;">
+                    </div>
+
+                    <div>
+                        <label class="form-label" style="font-size: 0.82rem; font-weight: 700; color: #cbd5e1;">Format Type *</label>
+                        <select name="is_group" class="form-control" required style="background: rgba(0,0,0,0.3); color: #fff;">
+                            <option value="0">Single Participant Event</option>
+                            <option value="1">Group / Team Event</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="form-label" style="font-size: 0.82rem; font-weight: 700; color: #cbd5e1;">Stage Category *</label>
+                        <select name="program_type" class="form-control" required style="background: rgba(0,0,0,0.3); color: #fff;">
+                            <option value="STAGE">Stage Event</option>
+                            <option value="OFF_STAGE">Off-Stage Event / Written</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="form-label" style="font-size: 0.82rem; font-weight: 700; color: #cbd5e1;">Duration per Participant (Mins)</label>
+                        <input type="number" name="duration_per_participant" class="form-control" value="5" min="1" max="120" style="background: rgba(0,0,0,0.3); color: #fff;">
+                    </div>
+                </div>
+
+                <div style="text-align: right;">
+                    <button type="submit" class="btn-primary" style="padding: 10px 26px; font-size: 0.9rem; background: linear-gradient(135deg, var(--accent-cyan), #0284c7);">
+                        <i class="fa-solid fa-plus"></i> Save Program
+                    </button>
+                </div>
+            </form>
+        </div>
+
+
+        <!-- SUB-FORM 2: BULK EXCEL UPLOAD -->
+        <div id="add-section-excel" style="display: none; background: rgba(15, 23, 42, 0.6); padding: 22px; border-radius: 14px; border: 1px solid var(--border-color);">
+            <h4 style="font-size: 1.1rem; font-weight: 800; color: var(--accent-emerald); margin: 0 0 10px 0; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+                <span><i class="fa-solid fa-file-excel"></i> Bulk Excel File Upload</span>
+                <a href="{% url 'core:program_download_template' institution.slug %}" class="btn-secondary" style="padding: 8px 16px; font-size: 0.82rem; font-weight: 700; text-decoration: none;">
+                    <i class="fa-solid fa-download" style="color: var(--accent-emerald);"></i> Download Excel Template
+                </a>
+            </h4>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 16px;">
+                നിങ്ങൾ തയ്യാറാക്കിയ Excel (`.xlsx` / `.csv`) ഫയൽ തിരഞ്ഞെടൂത്ത് ഇവിടെ അപ്‌ലോഡ് ചെയ്യുക.
+            </p>
+
+            <form method="POST" action="{% url 'core:program_bulk_upload' institution.slug %}" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="form-group" style="margin-bottom: 18px;">
+                    <label class="form-label" style="font-size: 0.85rem; font-weight: 700; color: #cbd5e1;">Select Excel File (.xlsx)</label>
+                    <input type="file" name="excel_file" accept=".xlsx, .xls, .csv" class="form-control" style="padding: 10px; background: rgba(0,0,0,0.3); color: #fff;" required>
+                </div>
+
+                <div style="text-align: right;">
+                    <button type="submit" class="btn-primary" style="padding: 10px 26px; font-size: 0.9rem; background: linear-gradient(135deg, var(--accent-emerald), #059669);">
+                        <i class="fa-solid fa-upload"></i> Upload & Import Excel Programs
+                    </button>
+                </div>
+            </form>
+        </div>
+
+
+        <!-- SUB-FORM 3: BULK WHATSAPP PASTE WITH TEMPLATE PREVIEW -->
+        <div id="add-section-whatsapp" style="display: none; background: rgba(15, 23, 42, 0.6); padding: 22px; border-radius: 14px; border: 1px solid rgba(34, 197, 94, 0.3);">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+                <div>
+                    <h4 style="font-size: 1.1rem; font-weight: 800; color: #22c55e; margin: 0; display: flex; align-items: center; gap: 8px;">
+                        <i class="fa-brands fa-whatsapp"></i> Bulk WhatsApp Message Template & Paste
+                    </h4>
+                    <p style="color: var(--text-muted); font-size: 0.84rem; margin-top: 4px;">
+                        വാട്ട്സാപ്പ് സന്ദേശങ്ങൾ നേരിട്ട് കോപ്പി ചെയ്ത് താഴെ ബോക്സിൽ പേസ്റ്റ് ചെയ്താൽ സിസ്റ്റം തനിയെ മത്സരങ്ങളാക്കി മാറ്റും!
+                    </p>
+                </div>
+                <button type="button" onclick="copyWhatsAppTemplate()" class="btn-secondary" style="padding: 8px 16px; font-size: 0.84rem; font-weight: 700; background: rgba(34, 197, 94, 0.15); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.4); cursor: pointer;">
+                    <i class="fa-regular fa-copy"></i> Copy WhatsApp Template
+                </button>
+            </div>
+
+            <!-- TEMPLATE PREVIEW BOX -->
+            <div style="background: #022c22; border: 1px solid rgba(34, 197, 94, 0.35); border-radius: 12px; padding: 16px; margin-bottom: 18px;">
+                <div style="font-size: 0.78rem; font-weight: 800; color: #4ade80; text-transform: uppercase; margin-bottom: 8px;">
+                    📋 WhatsApp Standard Format Template Preview:
+                </div>
+                <pre id="wa-template-preview" style="font-family: monospace; font-size: 0.86rem; color: #e2e8f0; margin: 0; white-space: pre-wrap; line-height: 1.55;">*PROGRAM LIST*
+Category: Senior Category
+1. Quran Recitation - Single - Stage
+2. Elocution Malayalam - Single - Stage
+3. Group Song - Group - Stage
+
+Category: Junior Category
+4. Pencil Drawing - Single - Off Stage
+5. Essay Writing - Single - Off Stage</pre>
+            </div>
+
+            <form method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="whatsapp_import">
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 16px;">
+                    <div>
+                        <label class="form-label" style="font-size: 0.82rem; font-weight: 700; color: #cbd5e1;">Fest *</label>
+                        <select name="competition_id" class="form-control" style="background: rgba(0,0,0,0.3); color: #fff;">
+                            {% for comp in competitions %}
+                            <option value="{{ comp.id }}">{{ comp.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="form-label" style="font-size: 0.82rem; font-weight: 700; color: #cbd5e1;">Default Category (Fallback)</label>
+                        <select name="default_category_id" class="form-control" style="background: rgba(0,0,0,0.3); color: #fff;">
+                            <option value="">-- Auto-detect from WhatsApp Text --</option>
+                            {% for cat in categories %}
+                            <option value="{{ cat.id }}">{{ cat.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 18px;">
+                    <label class="form-label" style="font-size: 0.85rem; font-weight: 700; color: #22c55e;">
+                        Paste WhatsApp Message Here *
+                    </label>
+                    <textarea name="whatsapp_text" class="form-control" rows="7" placeholder="Paste your WhatsApp message list here..." required style="font-family: monospace; font-size: 0.9rem; background: rgba(0,0,0,0.4); color: #fff; border: 1px solid rgba(34, 197, 94, 0.3);"></textarea>
+                </div>
+
+                <div style="text-align: right;">
+                    <button type="submit" class="btn-primary" style="padding: 10px 26px; font-size: 0.92rem; background: linear-gradient(135deg, #22c55e, #16a34a); color: #000; font-weight: 800;">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> Parse & Import WhatsApp Programs
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
-{% endif %}
 
-<!-- DESKTOP TABLE VIEW -->
-<div class="glass-card desktop-table-view">
-    <div class="table-responsive">
-        <table class="custom-table">
-        <thead>
-            <tr>
-                <th>Program Name</th>
-                <th>Category</th>
-                <th>Type</th>
-                <th>G / S</th>
-                <th>Mode</th>
-                <th>Public Status</th>
-                <th style="min-width: 250px;">Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for prog in programs %}
-            <tr>
-                <td><strong>{{ prog.name }}</strong></td>
-                <td><span class="badge badge-approved">{{ prog.category.name }}</span></td>
-                <td>{{ prog.get_program_type_display }}</td>
-                <td>
-                    {% if prog.is_group %}
-                    <span class="badge badge-pending" style="font-weight: 800; padding: 4px 10px;" title="Group Event">G</span>
-                    {% else %}
-                    <span class="badge badge-approved" style="font-weight: 800; padding: 4px 10px;" title="Single Event">S</span>
-                    {% endif %}
-                </td>
-                <td>
-                    {% if prog.presentation_mode == 'SIMULTANEOUS' %}
-                    <span class="badge" style="background: rgba(168, 85, 247, 0.15); color: #c084fc; font-weight: 800; padding: 4px 8px; border: 1px solid rgba(168, 85, 247, 0.3);" title="Simultaneous (All-at-Once / Written)">SIM</span>
-                    {% else %}
-                    <span class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; font-weight: 800; padding: 4px 8px; border: 1px solid rgba(56, 189, 248, 0.3);" title="Sequential (Per Participant)">SEQ</span>
-                    {% endif %}
-                </td>
-                <td>
-                    {% if prog.is_announced %}
-                    <span class="badge badge-approved"><i class="fa-solid fa-check"></i> Published</span>
-                    {% else %}
-                    <span class="badge badge-pending">Draft</span>
-                    {% endif %}
-                </td>
-                <td>
-                    <div style="display: flex; gap: 6px; align-items: center;">
-                        <a href="{% url 'core:program_assign_contestants' institution.slug prog.id %}" class="btn-primary" style="padding: 6px 10px; font-size: 0.8rem; background: linear-gradient(135deg, var(--accent-emerald), #059669);" title="Assign Contestants">
-                            <i class="fa-solid fa-user-plus"></i> Assign
-                        </a>
 
-                        <!-- Forms Dropdown -->
-                        <div class="forms-dropdown" style="position: relative; display: inline-block;">
-                            <button type="button" class="btn-primary forms-dropdown-btn" style="padding: 6px 10px; font-size: 0.8rem; background: rgba(255,255,255,0.08); box-shadow: none; border: 1px solid var(--border-color);" onclick="toggleFormsDropdown(this, event)">
-                                <i class="fa-solid fa-file-pdf" style="color: var(--accent-amber);"></i> Forms <i class="fa-solid fa-chevron-down" style="font-size: 0.7rem; margin-left: 2px;"></i>
-                            </button>
-                            <div class="forms-dropdown-menu" style="display: none; position: absolute; right: 0; top: 100%; margin-top: 4px; background: #0f172a; border: 1px solid var(--border-color); border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); z-index: 999; min-width: 175px; padding: 6px 0;">
-                                <a href="{% url 'core:download_green_room_pdf' institution.slug prog.id %}" download style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; color: #4ade80; text-decoration: none; font-size: 0.82rem;">
-                                    <i class="fa-solid fa-circle-stop"></i> Green Room Sheet
-                                </a>
-                                <a href="{% url 'core:download_call_list_pdf' institution.slug prog.id %}" download style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; color: #38bdf8; text-decoration: none; font-size: 0.82rem;">
-                                    <i class="fa-solid fa-bullhorn"></i> Call List
-                                </a>
-                                <a href="{% url 'core:download_valuation_form_pdf' institution.slug prog.id %}" download style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; color: #fbbf24; text-decoration: none; font-size: 0.82rem;">
-                                    <i class="fa-solid fa-clipboard-check"></i> Valuation Form
-                                </a>
-                            </div>
-                        </div>
+<!-- ==========================================
+     SECTION 2: PROGRAMS LIST & TABLE VIEW
+     ========================================== -->
+<div id="tab-content-list" style="display: none;">
+    <div class="glass-card" style="padding: 24px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 14px;">
+            <div>
+                <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--accent-cyan); margin: 0; display: flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-list-check"></i> Registered Programs List ({{ programs|length }})
+                </h3>
+                <div style="color: var(--text-muted); font-size: 0.84rem; margin-top: 2px;">
+                    മത്സര ഇനങ്ങളുടെ കാറ്റഗറി, സിംഗിൾ/ഗ്രൂപ്പ്, സ്‌റ്റേജ് വിവരങ്ങൾ.
+                </div>
+            </div>
 
-                        {% if not request.user.is_team_leader %}
-                        <a href="{% url 'core:program_edit' institution.slug prog.id %}" class="btn-primary" style="padding: 6px 10px; font-size: 0.8rem; background: rgba(255,255,255,0.08); box-shadow: none;" title="Edit Program">
-                            <i class="fa-solid fa-pen-to-square"></i>
-                        </a>
-                        <a href="{% url 'core:program_delete' institution.slug prog.id %}" class="btn-primary" style="padding: 6px 10px; font-size: 0.8rem; background: rgba(225, 29, 72, 0.2); border: 1px solid #e11d48; color: #f43f5e;" onclick="return confirm('Are you sure you want to delete program \'{{ prog.name }}\'?');" title="Delete Program">
-                            <i class="fa-solid fa-trash"></i>
-                        </a>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <div style="position: relative;">
+                    <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 0.85rem;"></i>
+                    <input type="text" id="programSearchInput" onkeyup="filterProgramsList()" placeholder="Search programs..." class="form-control" style="padding-left: 34px; width: 220px; font-size: 0.85rem; background: rgba(0,0,0,0.3); color: #fff;">
+                </div>
+                <button type="button" onclick="switchProgramTab('add')" class="btn-primary" style="padding: 9px 18px; font-size: 0.85rem; background: linear-gradient(135deg, var(--accent-emerald), #059669);">
+                    <i class="fa-solid fa-plus"></i> Add New Program
+                </button>
+            </div>
+        </div>
+
+        <!-- DESKTOP TABLE VIEW -->
+        <div class="table-responsive desktop-table-view">
+            <table class="custom-table" id="programsTable" style="width: 100%; border-collapse: separate; border-spacing: 0;">
+                <thead>
+                    <tr style="background: rgba(15, 23, 42, 0.9);">
+                        <th style="width: 50px; padding: 12px 14px;">#</th>
+                        <th style="padding: 12px 14px;">Program Name</th>
+                        <th style="padding: 12px 14px;">Category</th>
+                        <th style="text-align: center; padding: 12px 14px;">Format</th>
+                        <th style="text-align: center; padding: 12px 14px;">Stage Type</th>
+                        <th style="text-align: center; padding: 12px 14px;">Duration</th>
+                        <th style="text-align: right; padding: 12px 14px; width: 140px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in programs %}
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                        <td style="padding: 12px 14px;"><strong>{{ forloop.counter }}</strong></td>
+                        <td style="padding: 12px 14px;">
+                            <strong style="font-size: 1.02rem; color: #f8fafc;">{{ p.name }}</strong>
+                        </td>
+                        <td style="padding: 12px 14px;">
+                            <span class="badge badge-approved" style="font-size: 0.82rem; padding: 4px 10px;">
+                                {{ p.category.name }}
+                            </span>
+                        </td>
+                        <td style="text-align: center; padding: 12px 14px;">
+                            {% if p.is_group %}
+                            <span class="badge" style="background: rgba(168, 85, 247, 0.2); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.4); font-size: 0.78rem; padding: 4px 10px;">
+                                👥 Group Event
+                            </span>
+                            {% else %}
+                            <span class="badge badge-pending" style="font-size: 0.78rem; padding: 4px 10px;">
+                                👤 Single Event
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center; padding: 12px 14px;">
+                            {% if p.program_type == 'OFF_STAGE' %}
+                            <span class="badge" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); font-size: 0.78rem; padding: 4px 10px;">
+                                📝 Off-Stage
+                            </span>
+                            {% else %}
+                            <span class="badge" style="background: rgba(56, 189, 248, 0.15); color: var(--accent-cyan); border: 1px solid rgba(56, 189, 248, 0.3); font-size: 0.78rem; padding: 4px 10px;">
+                                🎭 Stage Event
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center; font-weight: 700; color: #cbd5e1; font-size: 0.88rem; padding: 12px 14px;">
+                            {{ p.duration_per_participant|default:5 }} mins
+                        </td>
+                        <td style="text-align: right; padding: 12px 14px; white-space: nowrap;">
+                            <a href="{% url 'core:program_edit' institution.slug p.id %}" class="btn-secondary" style="padding: 5px 10px; font-size: 0.78rem; border-radius: 6px; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;" title="Edit Program">
+                                <i class="fa-solid fa-pen-to-square" style="color: var(--accent-cyan);"></i> Edit
+                            </a>
+                            <a href="{% url 'core:program_delete' institution.slug p.id %}" onclick="return confirm('Are you sure you want to delete program \'{{ p.name|escapejs }}\'?');" class="btn-secondary" style="padding: 5px 10px; font-size: 0.78rem; border-radius: 6px; text-decoration: none; color: #f87171; border-color: rgba(248, 113, 113, 0.3); background: rgba(248, 113, 113, 0.1); display: inline-flex; align-items: center; gap: 4px;" title="Delete Program">
+                                <i class="fa-solid fa-trash-can"></i> Delete
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 40px;">
+                            No programs added yet. Click 'Add Programs' button above to create items.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- MOBILE CARD LIST -->
+        <div class="mobile-card-list-view">
+            {% for p in programs %}
+            <div class="program-mobile-card" style="background: rgba(255,255,255,0.02); padding: 16px; border-radius: 14px; border: 1px solid var(--border-color); margin-bottom: 12px;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;">
+                    <div>
+                        <strong style="font-size: 1.05rem; color: var(--accent-cyan); display: block; margin-bottom: 4px;">
+                            #{{ forloop.counter }} {{ p.name }}
+                        </strong>
+                        <span class="badge badge-approved" style="font-size: 0.76rem; padding: 3px 8px;">
+                            {{ p.category.name }}
+                        </span>
+                    </div>
+                    <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
+                        {% if p.is_group %}
+                        <span class="badge" style="background: rgba(168, 85, 247, 0.2); color: #c084fc; font-size: 0.72rem; padding: 2px 8px;">👥 Group</span>
+                        {% else %}
+                        <span class="badge badge-pending" style="font-size: 0.72rem; padding: 2px 8px;">👤 Single</span>
+                        {% endif %}
+
+                        {% if p.program_type == 'OFF_STAGE' %}
+                        <span class="badge" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24; font-size: 0.72rem; padding: 2px 8px;">📝 Off-Stage</span>
+                        {% else %}
+                        <span class="badge" style="background: rgba(56, 189, 248, 0.15); color: var(--accent-cyan); font-size: 0.72rem; padding: 2px 8px;">🎭 Stage</span>
                         {% endif %}
                     </div>
-                </td>
-            </tr>
+                </div>
+                <div style="display: flex; gap: 8px; margin-top: 12px; justify-content: flex-end; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px;">
+                    <a href="{% url 'core:program_edit' institution.slug p.id %}" class="btn-secondary" style="padding: 5px 12px; font-size: 0.76rem; border-radius: 6px; text-decoration: none;">
+                        <i class="fa-solid fa-pen-to-square" style="color: var(--accent-cyan);"></i> Edit
+                    </a>
+                    <a href="{% url 'core:program_delete' institution.slug p.id %}" onclick="return confirm('Are you sure you want to delete program \'{{ p.name|escapejs }}\'?');" class="btn-secondary" style="padding: 5px 12px; font-size: 0.76rem; border-radius: 6px; text-decoration: none; color: #f87171; border-color: rgba(248, 113, 113, 0.3); background: rgba(248, 113, 113, 0.1);">
+                        <i class="fa-solid fa-trash-can"></i> Delete
+                    </a>
+                </div>
+            </div>
             {% empty %}
-            <tr>
-                <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 30px;">
-                    No programs added yet.
-                </td>
-            </tr>
+            <div style="text-align: center; color: var(--text-muted); padding: 30px;">
+                No programs added yet.
+            </div>
             {% endfor %}
-        </tbody>
-    </table>
+        </div>
     </div>
 </div>
 
-<!-- MOBILE CARD LIST VIEW -->
-<div class="mobile-card-list-view">
-    {% for prog in programs %}
-    <div class="glass-card" style="margin-bottom: 12px; padding: 14px; border-radius: 14px; border: 1px solid var(--border-color);">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 8px;">
-            <div>
-                <strong style="font-size: 1.05rem; display: block; color: var(--text-main);">{{ prog.name }}</strong>
-                <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px;">
-                    <span class="badge badge-approved" style="font-size: 0.75rem;">{{ prog.category.name }}</span>
-                    {% if prog.is_group %}
-                    <span class="badge badge-pending" style="font-size: 0.75rem;">Group (G)</span>
-                    {% else %}
-                    <span class="badge badge-approved" style="font-size: 0.75rem;">Single (S)</span>
-                    {% endif %}
-                    {% if prog.is_announced %}
-                    <span class="badge badge-approved" style="font-size: 0.75rem;"><i class="fa-solid fa-check"></i> Published</span>
-                    {% else %}
-                    <span class="badge badge-pending" style="font-size: 0.75rem;">Draft</span>
-                    {% endif %}
+
+<!-- ==========================================
+     SECTION 3: DOWNLOADS & REPORTS VIEW
+     ========================================== -->
+<div id="tab-content-downloads" style="display: none;">
+    <div class="glass-card" style="padding: 24px;">
+        <h3 style="font-size: 1.25rem; font-weight: 800; color: #fbbf24; margin: 0 0 6px 0; display: flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-file-pdf"></i> Downloads & Official PDF Sheet Reports
+        </h3>
+        <p style="color: var(--text-muted); font-size: 0.88rem; margin: 0 0 22px 0;">
+            ഓരോ മത്സരത്തിനുമുള്ള ഗ്രീൻ റൂം സൈൻ ഷീറ്റ്, വാല്യുവേഷൻ ഷീറ്റ്, കോൾ ലിസ്റ്റ് പി.ഡി.എഫുകൾ ഡൗൺലോഡ് ചെയ്യുക.
+        </p>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 18px; margin-bottom: 24px;">
+            <!-- CARD 1: GREEN ROOM SIGN SHEET PDF -->
+            <div class="glass-card" style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(16, 185, 129, 0.4); padding: 20px; border-radius: 14px; display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                        <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(16, 185, 129, 0.2); display: flex; align-items: center; justify-content: center; font-size: 1.3rem; color: var(--accent-emerald);">
+                            <i class="fa-solid fa-clipboard-user"></i>
+                        </div>
+                        <h4 style="font-size: 1.08rem; font-weight: 800; color: #f8fafc; margin: 0;">Green Room Sign Sheet PDF</h4>
+                    </div>
+                    <p style="color: var(--text-muted); font-size: 0.84rem; line-height: 1.5; margin-bottom: 16px;">
+                        ഗ്രീൻ റൂം ഒഫീഷ്യലുകൾക്ക് മത്സരാർത്ഥികളുടെ ഹാജർ ബോധ്യപ്പെടാനും ഒപ്പ് വാങ്ങാനുമുള്ള സൈൻ ഷീറ്റ്.
+                    </p>
                 </div>
+                <a href="{% url 'core:download_bulk_green_room_pdf' institution.slug %}" onclick="triggerPdfDownload(event, this)" class="btn-primary" style="padding: 10px; font-size: 0.88rem; justify-content: center; background: linear-gradient(135deg, var(--accent-emerald), #059669); text-decoration: none;">
+                    <i class="fa-solid fa-file-arrow-down"></i> All Green Room Sheets (PDF)
+                </a>
             </div>
-            <div>
-                <span class="badge" style="background: rgba(255,255,255,0.06); font-size: 0.75rem;">{{ prog.get_program_type_display }}</span>
+
+            <!-- CARD 2: VALUATION SHEET PDF -->
+            <div class="glass-card" style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(245, 158, 11, 0.4); padding: 20px; border-radius: 14px; display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                        <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(245, 158, 11, 0.2); display: flex; align-items: center; justify-content: center; font-size: 1.3rem; color: #fbbf24;">
+                            <i class="fa-solid fa-gavel"></i>
+                        </div>
+                        <h4 style="font-size: 1.08rem; font-weight: 800; color: #f8fafc; margin: 0;">Valuation Sheet PDF</h4>
+                    </div>
+                    <p style="color: var(--text-muted); font-size: 0.84rem; line-height: 1.5; margin-bottom: 16px;">
+                        വിധികർത്താക്കൾക്ക് (Judges) കോഡ് ലെറ്റർ അടിസ്ഥാനത്തിൽ മാർക്കുകൾ രേഖപ്പെടുത്താനുള്ള മാർക്ക് ഷീറ്റ്.
+                    </p>
+                </div>
+                <a href="{% url 'core:download_bulk_valuation_form_pdf' institution.slug %}" onclick="triggerPdfDownload(event, this)" class="btn-primary" style="padding: 10px; font-size: 0.88rem; justify-content: center; background: linear-gradient(135deg, #f59e0b, #d97706); color: #000; font-weight: 800; text-decoration: none;">
+                    <i class="fa-solid fa-file-arrow-down"></i> All Valuation Sheets (PDF)
+                </a>
+            </div>
+
+            <!-- CARD 3: CALL LIST SHEET PDF -->
+            <div class="glass-card" style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(56, 189, 248, 0.4); padding: 20px; border-radius: 14px; display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                        <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(56, 189, 248, 0.2); display: flex; align-items: center; justify-content: center; font-size: 1.3rem; color: var(--accent-cyan);">
+                            <i class="fa-solid fa-bullhorn"></i>
+                        </div>
+                        <h4 style="font-size: 1.08rem; font-weight: 800; color: #f8fafc; margin: 0;">Call List Sheet PDF</h4>
+                    </div>
+                    <p style="color: var(--text-muted); font-size: 0.84rem; line-height: 1.5; margin-bottom: 16px;">
+                        സ്റ്റേജ് അനൗൺസർമാർക്ക് മത്സരാർത്ഥികളെ വേദിയിലേക്ക് ക്ഷണിക്കാനുള്ള ചെസ്റ്റ് നമ്പർ കോൾ ലിസ്റ്റ്.
+                    </p>
+                </div>
+                <a href="{% url 'core:download_bulk_call_list_pdf' institution.slug %}" onclick="triggerPdfDownload(event, this)" class="btn-primary" style="padding: 10px; font-size: 0.88rem; justify-content: center; background: linear-gradient(135deg, var(--accent-cyan), #0284c7); text-decoration: none;">
+                    <i class="fa-solid fa-file-arrow-down"></i> All Call List Sheets (PDF)
+                </a>
             </div>
         </div>
 
-        <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 12px; border-top: 1px solid var(--border-color); padding-top: 10px;">
-            <a href="{% url 'core:program_assign_contestants' institution.slug prog.id %}" class="btn-primary" style="padding: 6px 10px; font-size: 0.8rem; background: linear-gradient(135deg, var(--accent-emerald), #059669);">
-                <i class="fa-solid fa-user-plus"></i> Assign
-            </a>
-
-            <!-- Forms Dropdown -->
-            <div class="forms-dropdown" style="position: relative; display: inline-block;">
-                <button type="button" class="btn-primary forms-dropdown-btn" style="padding: 6px 10px; font-size: 0.8rem; background: rgba(255,255,255,0.08); box-shadow: none; border: 1px solid var(--border-color);" onclick="toggleFormsDropdown(this, event)">
-                    <i class="fa-solid fa-file-pdf" style="color: var(--accent-amber);"></i> Forms <i class="fa-solid fa-chevron-down" style="font-size: 0.7rem; margin-left: 2px;"></i>
-                </button>
-                <div class="forms-dropdown-menu" style="display: none; position: absolute; left: 0; top: 100%; margin-top: 4px; background: #0f172a; border: 1px solid var(--border-color); border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); z-index: 999; min-width: 175px; padding: 6px 0;">
-                    <a href="{% url 'core:download_green_room_pdf' institution.slug prog.id %}" download style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; color: #4ade80; text-decoration: none; font-size: 0.82rem;">
-                        <i class="fa-solid fa-circle-stop"></i> Green Room Sheet
-                    </a>
-                    <a href="{% url 'core:download_call_list_pdf' institution.slug prog.id %}" download style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; color: #38bdf8; text-decoration: none; font-size: 0.82rem;">
-                        <i class="fa-solid fa-bullhorn"></i> Call List
-                    </a>
-                    <a href="{% url 'core:download_valuation_form_pdf' institution.slug prog.id %}" download style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; color: #fbbf24; text-decoration: none; font-size: 0.82rem;">
-                        <i class="fa-solid fa-clipboard-check"></i> Valuation Form
-                    </a>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px;">
+            <!-- DOWNLOAD EXCEL TEMPLATE -->
+            <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); padding: 20px; border-radius: 14px; display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
+                    <h4 style="font-size: 1.05rem; font-weight: 800; color: #f8fafc; margin-bottom: 6px; display: flex; align-items: center; gap: 8px;">
+                        <i class="fa-solid fa-file-excel" style="color: var(--accent-emerald);"></i> Programs Excel Template
+                    </h4>
+                    <p style="color: var(--text-muted); font-size: 0.82rem; margin-bottom: 16px; line-height: 1.5;">
+                        മത്സരങ്ങൾ ഒന്നിച്ച് തയ്യാറാക്കാൻ ശൂന്യമായ Excel Template `.xlsx` ഡൗൺലോഡ് ചെയ്യുക.
+                    </p>
                 </div>
+                <a href="{% url 'core:program_download_template' institution.slug %}" class="btn-primary" style="padding: 10px; font-size: 0.85rem; justify-content: center; background: linear-gradient(135deg, var(--accent-emerald), #059669); text-decoration: none;">
+                    <i class="fa-solid fa-download"></i> Download Excel Template
+                </a>
             </div>
 
-            {% if not request.user.is_team_leader %}
-            <a href="{% url 'core:program_edit' institution.slug prog.id %}" class="btn-primary" style="padding: 6px 10px; font-size: 0.8rem; background: rgba(255,255,255,0.08); box-shadow: none;" title="Edit Program">
-                <i class="fa-solid fa-pen-to-square"></i>
-            </a>
-            <a href="{% url 'core:program_delete' institution.slug prog.id %}" class="btn-primary" style="padding: 6px 10px; font-size: 0.8rem; background: rgba(225, 29, 72, 0.2); border: 1px solid #e11d48; color: #f43f5e;" onclick="return confirm('Are you sure you want to delete program \'{{ prog.name }}\'?');" title="Delete Program">
-                <i class="fa-solid fa-trash"></i>
-            </a>
-            {% endif %}
+            <!-- DOWNLOAD WHOLE PROGRAMS PDF REPORT -->
+            <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); padding: 20px; border-radius: 14px; display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
+                    <h4 style="font-size: 1.05rem; font-weight: 800; color: #f8fafc; margin-bottom: 6px; display: flex; align-items: center; gap: 8px;">
+                        <i class="fa-solid fa-file-pdf" style="color: var(--accent-indigo);"></i> Whole Programs List PDF Report
+                    </h4>
+                    <p style="color: var(--text-muted); font-size: 0.82rem; margin-bottom: 16px; line-height: 1.5;">
+                        എല്ലാ മത്സരങ്ങളുടെയും വിവരങ്ങൾ അടങ്ങിയ ഒഫീഷ്യൽ PDF റിപോർട്ട് ഡൗൺലോഡ് ചെയ്യുക.
+                    </p>
+                </div>
+                <a href="{% url 'core:download_programs_pdf' institution.slug %}" onclick="triggerPdfDownload(event, this)" class="btn-primary" style="padding: 10px; font-size: 0.85rem; justify-content: center; background: linear-gradient(135deg, var(--accent-indigo), #4f46e5); text-decoration: none;">
+                    <i class="fa-solid fa-file-pdf"></i> Download Whole Programs PDF
+                </a>
+            </div>
         </div>
     </div>
-    {% empty %}
-    <div class="glass-card" style="text-align: center; color: var(--text-muted); padding: 30px;">
-        No programs added yet.
-    </div>
-    {% endfor %}
 </div>
-{% endblock %}
 
-{% block extra_js %}
+
+<!-- JAVASCRIPT HELPERS & TAB SWITCHING -->
 <script>
-function toggleFormsDropdown(btn, event) {
-    event.stopPropagation();
-    var menu = btn.nextElementSibling;
-    var allMenus = document.querySelectorAll('.forms-dropdown-menu');
-    allMenus.forEach(function(m) {
-        if (m !== menu) m.style.display = 'none';
+    document.addEventListener('DOMContentLoaded', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        let tab = urlParams.get('tab') || window.location.hash.replace('#', '');
+        
+        // Fallback to localStorage if tab parameter isn't in URL
+        if (!tab || !['add', 'list', 'downloads'].includes(tab)) {
+            tab = localStorage.getItem('activeProgramTab_{{ institution.slug }}') || 'add';
+        }
+        
+        switchProgramTab(tab, false);
     });
-    menu.style.display = (menu.style.display === 'none' || menu.style.display === '') ? 'block' : 'none';
-}
 
-document.addEventListener('click', function() {
-    var allMenus = document.querySelectorAll('.forms-dropdown-menu');
-    allMenus.forEach(function(m) {
-        m.style.display = 'none';
+    // Support browser Back & Forward button clicks
+    window.addEventListener('popstate', function(event) {
+        const urlParams = new URLSearchParams(window.location.search);
+        let tab = urlParams.get('tab') || (event.state && event.state.tab);
+        if (tab && ['add', 'list', 'downloads'].includes(tab)) {
+            switchProgramTab(tab, false);
+        }
     });
-});
+
+    function switchProgramTab(tabName, pushState = true) {
+        const tabs = ['add', 'list', 'downloads'];
+        if (!tabs.includes(tabName)) return;
+
+        tabs.forEach(t => {
+            const btn = document.getElementById(`tab-btn-${t}`);
+            const content = document.getElementById(`tab-content-${t}`);
+            if (btn && content) {
+                if (t === tabName) {
+                    btn.style.background = 'linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(15, 23, 42, 0.95))';
+                    btn.style.borderColor = 'var(--accent-cyan)';
+                    content.style.display = 'block';
+                } else {
+                    btn.style.background = 'rgba(15, 23, 42, 0.6)';
+                    btn.style.borderColor = 'rgba(255, 255, 255, 0.08)';
+                    content.style.display = 'none';
+                }
+            }
+        });
+
+        // Store current active tab in localStorage
+        localStorage.setItem('activeProgramTab_{{ institution.slug }}', tabName);
+
+        // Update URL query parameter so refresh & back buttons maintain exact tab
+        if (pushState) {
+            const newUrl = new URL(window.location.href);
+            newUrl.searchParams.set('tab', tabName);
+            history.pushState({ tab: tabName }, '', newUrl.toString());
+        }
+    }
+
+    function showAddSection(mode) {
+        const modes = ['single', 'excel', 'whatsapp'];
+        modes.forEach(m => {
+            const sec = document.getElementById(`add-section-${m}`);
+            const btn = document.getElementById(`btn-mode-${m}`);
+            if (sec && btn) {
+                if (m === mode) {
+                    sec.style.display = 'block';
+                    btn.style.background = 'linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(15, 23, 42, 0.95))';
+                    btn.style.borderColor = 'var(--accent-cyan)';
+                } else {
+                    sec.style.display = 'none';
+                    btn.style.background = 'rgba(15, 23, 42, 0.6)';
+                    btn.style.borderColor = 'rgba(255, 255, 255, 0.08)';
+                }
+            }
+        });
+    }
+
+    function copyWhatsAppTemplate() {
+        const text = document.getElementById('wa-template-preview').innerText;
+        navigator.clipboard.writeText(text).then(() => {
+            alert('WhatsApp Template copied to clipboard! Paste it into WhatsApp or the text area below.');
+        }).catch(err => {
+            console.error('Failed to copy: ', err);
+        });
+    }
+
+    function filterProgramsList() {
+        const input = document.getElementById('programSearchInput');
+        const filter = input.value.toLowerCase();
+        const table = document.getElementById('programsTable');
+        if (table) {
+            const tr = table.getElementsByTagName('tr');
+            for (let i = 1; i < tr.length; i++) {
+                const td = tr[i].getElementsByTagName('td')[1];
+                if (td) {
+                    const txtValue = td.textContent || td.innerText;
+                    tr[i].style.display = txtValue.toLowerCase().indexOf(filter) > -1 ? '' : 'none';
+                }
+            }
+        }
+
+        const cards = document.querySelectorAll('.program-mobile-card');
+        cards.forEach(card => {
+            const text = card.innerText.toLowerCase();
+            card.style.display = text.indexOf(filter) > -1 ? '' : 'none';
+        });
+    }
 </script>
 {% endblock %}

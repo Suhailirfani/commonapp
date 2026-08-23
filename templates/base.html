@@ -184,6 +184,81 @@
         });
     })();
     </script>
+    <!-- GLOBAL PDF DOWNLOAD BUFFERING MODAL OVERLAY -->
+    <div id="pdfDownloadOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.78); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 999999; justify-content: center; align-items: center; padding: 20px;">
+        <div style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.98), rgba(15, 23, 42, 0.98)); border: 1px solid rgba(56, 189, 248, 0.4); padding: 30px 34px; border-radius: 20px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8); max-width: 440px; width: 92%; text-align: center; position: relative; animation: modalPop 0.25s ease-out;">
+            <div style="position: absolute; top: -40px; left: 50%; transform: translateX(-50%); width: 140px; height: 140px; background: rgba(56, 189, 248, 0.15); filter: blur(35px); border-radius: 50%; pointer-events: none;"></div>
+
+            <!-- BUFFER SPINNER -->
+            <div style="display: inline-block; position: relative; width: 64px; height: 64px; margin-bottom: 20px;">
+                <div style="box-sizing: border-box; display: block; position: absolute; width: 64px; height: 64px; border: 5px solid rgba(56, 189, 248, 0.18); border-radius: 50%;"></div>
+                <div style="box-sizing: border-box; display: block; position: absolute; width: 64px; height: 64px; border: 5px solid var(--accent-cyan); border-radius: 50%; animation: pdfSpinner 0.9s linear infinite; border-color: var(--accent-cyan) transparent transparent transparent;"></div>
+                <i class="fa-solid fa-file-pdf" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 1.4rem; color: #ef4444;"></i>
+            </div>
+
+            <h3 style="font-size: 1.2rem; font-weight: 800; color: #f8fafc; margin: 0 0 10px 0;">
+                ⏳ നിങ്ങളുടെ ഡൗൺലോഡിംഗ് പ്രൊസസിംഗിലാണ്...
+            </h3>
+
+            <p style="color: #cbd5e1; font-size: 0.9rem; line-height: 1.6; margin: 0 0 16px 0; font-weight: 500;">
+                അല്പം സെക്കൻഡുകൾക്കുള്ളിൽ ഡൗൺലോഡ് ആവുന്നതാണ്. ദയവായി കാത്തിരിക്കുക!
+            </p>
+
+            <div style="display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 0.76rem; color: var(--text-muted); background: rgba(255,255,255,0.04); padding: 8px 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06);">
+                <i class="fa-solid fa-spinner fa-spin" style="color: var(--accent-cyan);"></i>
+                <span>Generating PDF report... Download starting in background</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- HIDDEN IFRAME FOR IN-PAGE PDF FILE DOWNLOADS -->
+    <iframe id="pdfDownloadHiddenFrame" style="display: none; width: 0; height: 0; border: none;"></iframe>
+
+    <style>
+    @keyframes pdfSpinner {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    @keyframes modalPop {
+      0% { transform: scale(0.92); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    </style>
+
+    <script>
+    window.triggerPdfDownload = function(event, btnElement) {
+        if (event) {
+            event.preventDefault();
+        }
+
+        const overlay = document.getElementById('pdfDownloadOverlay');
+        if (overlay) {
+            overlay.style.display = 'flex';
+        }
+
+        if (btnElement) {
+            btnElement.style.pointerEvents = 'none';
+            btnElement.style.opacity = '0.6';
+
+            const targetUrl = btnElement.getAttribute('href') || btnElement.dataset.url;
+            if (targetUrl && targetUrl !== '#') {
+                const hiddenFrame = document.getElementById('pdfDownloadHiddenFrame');
+                if (hiddenFrame) {
+                    hiddenFrame.src = targetUrl;
+                } else {
+                    window.location.href = targetUrl;
+                }
+            }
+
+            setTimeout(() => {
+                btnElement.style.pointerEvents = 'auto';
+                btnElement.style.opacity = '1';
+                if (overlay) overlay.style.display = 'none';
+            }, 6000);
+        }
+    };
+    </script>
+
     {% block extra_js %}{% endblock %}
 </body>
 </html>
