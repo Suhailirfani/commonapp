@@ -225,26 +225,38 @@
 
     function updateConvertedMarks(partId) {
         let rawSum = 0;
-        let hasValue = false;
+        let activeJudgeCount = 0;
 
         for (let j = 1; j <= judgeCount; j++) {
-            const inputs = document.querySelectorAll(`input[name="j_${j}_marks_${partId}"]`);
-            inputs.forEach(input => {
-                const valStr = input.value.trim();
-                if (valStr !== '') {
-                    const num = parseFloat(valStr);
-                    if (!isNaN(num)) {
-                        rawSum += num;
-                        hasValue = true;
-                    }
+            const inputs = Array.from(document.querySelectorAll(`input[name="j_${j}_marks_${partId}"]`));
+            let valStr = '';
+            for (let input of inputs) {
+                if (input.value.trim() !== '') {
+                    valStr = input.value.trim();
+                    break;
                 }
-            });
+            }
+
+            if (valStr !== '') {
+                // Sync values between desktop & mobile views
+                inputs.forEach(input => {
+                    if (document.activeElement !== input && input.value !== valStr) {
+                        input.value = valStr;
+                    }
+                });
+
+                const num = parseFloat(valStr);
+                if (!isNaN(num)) {
+                    rawSum += num;
+                    activeJudgeCount++;
+                }
+            }
         }
 
         const totalBadge = document.getElementById(`total_marks_${partId}`);
         const mobileTotalBadge = document.getElementById(`mobile_total_marks_${partId}`);
 
-        if (hasValue) {
+        if (activeJudgeCount > 0) {
             const totalMax = judgeCount * maxPerJudge;
             const converted100 = Math.round((rawSum / totalMax) * 100);
             const label = `${converted100} / 100`;
