@@ -12,7 +12,7 @@
             <i class="fa-solid fa-gavel" style="color: var(--accent-cyan);"></i> Judge Management Panel
         </h2>
         <div style="color: var(--text-muted); font-size: 0.88rem; margin-top: 2px;">
-            Assign judges and fix judge counts per program category-wise for {{ institution.name }}.
+            Set judge counts and select individual judges per program dropdown-wise for {{ institution.name }}.
         </div>
     </div>
     <div style="display: flex; gap: 10px; flex-wrap: wrap;">
@@ -90,9 +90,9 @@
                 <thead>
                     <tr>
                         <th style="width: 50px;">#</th>
-                        <th>Program Name</th>
+                        <th style="width: 250px;">Program Name</th>
                         <th style="width: 140px; text-align: center;">Judges Count</th>
-                        <th>Assigned Judges</th>
+                        <th>Select Judges (Dropdown per Judge)</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -108,17 +108,22 @@
                             </div>
                         </td>
                         <td style="text-align: center;">
-                            <input type="number" name="judge_count_{{ p.id }}" value="{{ p.judge_count|default:1 }}" min="1" max="10" class="form-control" style="width: 90px; margin: 0 auto; text-align: center; font-weight: 800;">
+                            <input type="number" id="judge_count_input_{{ p.id }}" name="judge_count_{{ p.id }}" value="{{ p.judge_count|default:1 }}" min="1" max="10" class="form-control" style="width: 85px; margin: 0 auto; text-align: center; font-weight: 800;" onchange="updateJudgeDropdownSlots('{{ p.id }}', this.value)">
                         </td>
                         <td>
-                            <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
-                                {% for j in judges %}
-                                <label style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 8px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); cursor: pointer; font-size: 0.84rem;">
-                                    <input type="checkbox" name="assigned_judges_{{ p.id }}" value="{{ j.id }}" {% if j in p.assigned_judges.all %}checked{% endif %} style="accent-color: var(--accent-cyan); width: 16px; height: 16px;">
-                                    <span>{% if j.first_name %}{{ j.first_name }}{% else %}{{ j.username }}{% endif %}</span>
-                                </label>
-                                {% empty %}
-                                <span style="color: var(--text-muted); font-size: 0.82rem;">No Judge accounts created yet. Use the '+ Create New Judge User' button above.</span>
+                            <div id="judge_dropdowns_container_{{ p.id }}" style="display: flex; flex-direction: column; gap: 8px;">
+                                {% for slot in p.judge_slots %}
+                                <div class="judge-slot-row" style="display: flex; align-items: center; gap: 8px;">
+                                    <span style="font-size: 0.82rem; font-weight: 700; color: var(--accent-cyan); min-width: 65px;">Judge {{ slot.slot_num }}:</span>
+                                    <select name="assigned_judges_{{ p.id }}" class="form-control" style="flex: 1; padding: 6px 10px; font-size: 0.85rem;">
+                                        <option value="">-- Select Judge {{ slot.slot_num }} --</option>
+                                        {% for j in judges %}
+                                        <option value="{{ j.id }}" {% if j.id == slot.selected_judge_id %}selected{% endif %}>
+                                            {% if j.first_name %}{{ j.first_name }} ({{ j.username }}){% else %}{{ j.username }}{% endif %}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
                                 {% endfor %}
                             </div>
                         </td>
@@ -143,19 +148,24 @@
 
                 <div style="margin-bottom: 12px; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
                     <label class="form-label" style="font-size: 0.78rem; color: #cbd5e1; font-weight: 700; display: block; margin-bottom: 4px;">Judges Count (Fixed by Admin):</label>
-                    <input type="number" name="judge_count_{{ p.id }}" value="{{ p.judge_count|default:1 }}" min="1" max="10" class="form-control" style="width: 100%; font-weight: 800; text-align: center;">
+                    <input type="number" id="mobile_judge_count_input_{{ p.id }}" name="judge_count_{{ p.id }}" value="{{ p.judge_count|default:1 }}" min="1" max="10" class="form-control" style="width: 100%; font-weight: 800; text-align: center;" onchange="updateJudgeDropdownSlots('{{ p.id }}', this.value)">
                 </div>
 
                 <div>
                     <label class="form-label" style="font-size: 0.78rem; color: var(--text-muted); font-weight: 700; display: block; margin-bottom: 6px;">Select Assigned Judges:</label>
-                    <div style="display: flex; flex-direction: column; gap: 6px;">
-                        {% for j in judges %}
-                        <label style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 8px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); cursor: pointer; font-size: 0.85rem;">
-                            <input type="checkbox" name="assigned_judges_{{ p.id }}" value="{{ j.id }}" {% if j in p.assigned_judges.all %}checked{% endif %} style="accent-color: var(--accent-cyan); width: 18px; height: 18px;">
-                            <span>{% if j.first_name %}{{ j.first_name }}{% else %}{{ j.username }}{% endif %}</span>
-                        </label>
-                        {% empty %}
-                        <span style="color: var(--text-muted); font-size: 0.8rem;">No Judge accounts created yet.</span>
+                    <div id="mobile_judge_dropdowns_container_{{ p.id }}" style="display: flex; flex-direction: column; gap: 8px;">
+                        {% for slot in p.judge_slots %}
+                        <div class="judge-slot-row" style="display: flex; flex-direction: column; gap: 4px;">
+                            <span style="font-size: 0.78rem; font-weight: 700; color: var(--accent-cyan);">Judge {{ slot.slot_num }}:</span>
+                            <select name="assigned_judges_{{ p.id }}" class="form-control" style="width: 100%; padding: 8px 10px; font-size: 0.85rem;">
+                                <option value="">-- Select Judge {{ slot.slot_num }} --</option>
+                                {% for j in judges %}
+                                <option value="{{ j.id }}" {% if j.id == slot.selected_judge_id %}selected{% endif %}>
+                                    {% if j.first_name %}{{ j.first_name }} ({{ j.username }}){% else %}{{ j.username }}{% endif %}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
                         {% endfor %}
                     </div>
                 </div>
@@ -179,6 +189,12 @@
 </form>
 
 <script>
+    const judgesList = [
+        {% for j in judges %}
+        { id: "{{ j.id }}", name: "{% if j.first_name %}{{ j.first_name|escapejs }} ({{ j.username|escapejs }}){% else %}{{ j.username|escapejs }}{% endif %}" },
+        {% endfor %}
+    ];
+
     function toggleCreateJudgeForm() {
         const card = document.getElementById('create-judge-card');
         if (card.style.display === 'none' || card.style.display === '') {
@@ -187,6 +203,65 @@
         } else {
             card.style.display = 'none';
         }
+    }
+
+    function updateJudgeDropdownSlots(programId, newCount) {
+        const count = parseInt(newCount) || 1;
+
+        // Sync Desktop and Mobile count inputs
+        const dInput = document.getElementById(`judge_count_input_${programId}`);
+        const mInput = document.getElementById(`mobile_judge_count_input_${programId}`);
+        if (dInput && dInput.value != count) dInput.value = count;
+        if (mInput && mInput.value != count) mInput.value = count;
+
+        [ `judge_dropdowns_container_${programId}`, `mobile_judge_dropdowns_container_${programId}` ].forEach(containerId => {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+
+            const isMobile = containerId.startsWith('mobile_');
+            const existingSelects = container.querySelectorAll('select');
+            const currentSelectedValues = [];
+            existingSelects.forEach(sel => currentSelectedValues.push(sel.value));
+
+            container.innerHTML = '';
+            for (let i = 1; i <= count; i++) {
+                const selectedVal = currentSelectedValues[i - 1] || '';
+                const wrapper = document.createElement('div');
+                wrapper.className = 'judge-slot-row';
+                if (isMobile) {
+                    wrapper.style.display = 'flex';
+                    wrapper.style.flexDirection = 'column';
+                    wrapper.style.gap = '4px';
+                } else {
+                    wrapper.style.display = 'flex';
+                    wrapper.style.alignItems = 'center';
+                    wrapper.style.gap = '8px';
+                }
+
+                let optionsHtml = `<option value="">-- Select Judge ${i} --</option>`;
+                judgesList.forEach(j => {
+                    const selAttr = j.id === selectedVal ? 'selected' : '';
+                    optionsHtml += `<option value="${j.id}" ${selAttr}>${j.name}</option>`;
+                });
+
+                if (isMobile) {
+                    wrapper.innerHTML = `
+                        <span style="font-size: 0.78rem; font-weight: 700; color: var(--accent-cyan);">Judge ${i}:</span>
+                        <select name="assigned_judges_${programId}" class="form-control" style="width: 100%; padding: 8px 10px; font-size: 0.85rem;">
+                            ${optionsHtml}
+                        </select>
+                    `;
+                } else {
+                    wrapper.innerHTML = `
+                        <span style="font-size: 0.82rem; font-weight: 700; color: var(--accent-cyan); min-width: 65px;">Judge ${i}:</span>
+                        <select name="assigned_judges_${programId}" class="form-control" style="flex: 1; padding: 6px 10px; font-size: 0.85rem;">
+                            ${optionsHtml}
+                        </select>
+                    `;
+                }
+                container.appendChild(wrapper);
+            }
+        });
     }
 </script>
 {% endblock %}

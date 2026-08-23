@@ -169,6 +169,19 @@ class Program(TenantBaseModel):
         group_str = "Group" if self.is_group else "Single"
         return f"{self.name} ({self.category.name}) [{group_str}]"
 
+    @property
+    def judge_slots(self):
+        jc = self.judge_count if self.judge_count else 1
+        assigned = list(self.assigned_judges.all())
+        slots = []
+        for i in range(jc):
+            j_obj = assigned[i] if i < len(assigned) else None
+            slots.append({
+                'slot_num': i + 1,
+                'selected_judge_id': j_obj.id if j_obj else None,
+            })
+        return slots
+
 
 # ----------------- Program Schedule -----------------
 class ProgramSchedule(TenantBaseModel):
