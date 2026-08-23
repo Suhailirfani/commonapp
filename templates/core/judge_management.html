@@ -12,17 +12,27 @@
             <i class="fa-solid fa-gavel" style="color: var(--accent-cyan);"></i> Judge Management Panel
         </h2>
         <div style="color: var(--text-muted); font-size: 0.88rem; margin-top: 2px;">
-            Set judge counts and select individual judges per program dropdown-wise for {{ institution.name }}.
+            Manage judges, judge counts, and assigned programs for {{ institution.name }}.
         </div>
     </div>
     <div style="display: flex; gap: 10px; flex-wrap: wrap;">
         <button type="button" class="btn-secondary" onclick="toggleCreateJudgeForm()" style="padding: 10px 18px; font-size: 0.9rem;">
             <i class="fa-solid fa-user-plus" style="color: var(--accent-cyan);"></i> + Create New Judge User
         </button>
-        <button type="submit" form="judge-management-form" class="btn-primary" style="padding: 10px 24px; font-size: 0.95rem; background: linear-gradient(135deg, var(--accent-emerald), #059669);">
+        <button type="submit" form="judge-management-form" id="save-panels-btn" class="btn-primary" style="padding: 10px 24px; font-size: 0.95rem; background: linear-gradient(135deg, var(--accent-emerald), #059669);">
             <i class="fa-solid fa-floppy-disk"></i> Save All Judge Assignments
         </button>
     </div>
+</div>
+
+<!-- VIEW TOGGLE TABS -->
+<div style="display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">
+    <button type="button" id="tab-btn-panels" class="btn-primary" onclick="switchJudgeTab('panels')" style="padding: 10px 20px; font-size: 0.92rem; background: linear-gradient(135deg, var(--accent-cyan), #0284c7);">
+        <i class="fa-solid fa-layer-group"></i> 1. Program Panels (Category-wise)
+    </button>
+    <button type="button" id="tab-btn-judges" class="btn-secondary" onclick="switchJudgeTab('judges')" style="padding: 10px 20px; font-size: 0.92rem;">
+        <i class="fa-solid fa-users-rectangle"></i> 2. Judges List & Assigned Programs ({{ judges|length }})
+    </button>
 </div>
 
 <!-- QUICK CREATE NEW JUDGE ACCOUNT FORM (COLLAPSIBLE) -->
@@ -67,65 +77,207 @@
     </form>
 </div>
 
-<!-- MAIN JUDGE MANAGEMENT FORM -->
-<form method="POST" id="judge-management-form">
-    {% csrf_token %}
 
-    {% for group in category_program_groups %}
-    <div class="glass-card" style="margin-bottom: 24px; padding: 20px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px;">
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <span class="badge badge-approved" style="font-size: 0.9rem; padding: 6px 14px; background: rgba(56, 189, 248, 0.15); color: var(--accent-cyan); border: 1px solid rgba(56, 189, 248, 0.3);">
-                    <i class="fa-solid fa-layer-group"></i> {{ group.category.name }}
-                </span>
-                <span style="font-size: 0.85rem; color: var(--text-muted);">
-                    ({{ group.programs|length }} Program{% if group.programs|length > 1 %}s{% endif %})
-                </span>
+<!-- TAB 1: PROGRAM PANELS (CATEGORY-WISE) -->
+<div id="tab-content-panels">
+    <form method="POST" id="judge-management-form">
+        {% csrf_token %}
+
+        {% for group in category_program_groups %}
+        <div class="glass-card" style="margin-bottom: 24px; padding: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span class="badge badge-approved" style="font-size: 0.9rem; padding: 6px 14px; background: rgba(56, 189, 248, 0.15); color: var(--accent-cyan); border: 1px solid rgba(56, 189, 248, 0.3);">
+                        <i class="fa-solid fa-layer-group"></i> {{ group.category.name }}
+                    </span>
+                    <span style="font-size: 0.85rem; color: var(--text-muted);">
+                        ({{ group.programs|length }} Program{% if group.programs|length > 1 %}s{% endif %})
+                    </span>
+                </div>
+            </div>
+
+            <!-- DESKTOP TABLE VIEW -->
+            <div class="table-responsive desktop-table-view">
+                <table class="custom-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 50px;">#</th>
+                            <th style="width: 250px;">Program Name</th>
+                            <th style="width: 140px; text-align: center;">Judges Count</th>
+                            <th>Select Judges (Dropdown per Judge)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in group.programs %}
+                        <tr>
+                            <td><strong>{{ forloop.counter }}</strong></td>
+                            <td>
+                                <strong style="font-size: 1rem; color: #f8fafc;">{{ p.name }}</strong>
+                                <div style="margin-top: 2px;">
+                                    <span class="badge badge-pending" style="font-size: 0.72rem;">
+                                        {% if p.is_group %}Group Program{% else %}Single Program{% endif %}
+                                    </span>
+                                </div>
+                            </td>
+                            <td style="text-align: center;">
+                                <input type="number" id="judge_count_input_{{ p.id }}" name="judge_count_{{ p.id }}" value="{{ p.judge_count|default:1 }}" min="1" max="10" class="form-control" style="width: 85px; margin: 0 auto; text-align: center; font-weight: 800;" onchange="updateJudgeDropdownSlots('{{ p.id }}', this.value)">
+                            </td>
+                            <td>
+                                <div id="judge_dropdowns_container_{{ p.id }}" style="display: flex; flex-direction: column; gap: 8px;">
+                                    {% for slot in p.judge_slots %}
+                                    <div class="judge-slot-row" style="display: flex; align-items: center; gap: 8px;">
+                                        <span style="font-size: 0.82rem; font-weight: 700; color: var(--accent-cyan); min-width: 65px;">Judge {{ slot.slot_num }}:</span>
+                                        <select name="assigned_judges_{{ p.id }}" class="form-control" style="flex: 1; padding: 6px 10px; font-size: 0.85rem;">
+                                            <option value="">-- Select Judge {{ slot.slot_num }} --</option>
+                                            {% for j in judges %}
+                                            <option value="{{ j.id }}" {% if j.id == slot.selected_judge_id %}selected{% endif %}>
+                                                {% if j.first_name %}{{ j.first_name }} ({{ j.username }}){% else %}{{ j.username }}{% endif %}
+                                            </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- MOBILE CARD LIST VIEW -->
+            <div class="mobile-card-list-view">
+                {% for p in group.programs %}
+                <div style="background: rgba(255,255,255,0.02); padding: 14px; border-radius: 12px; border: 1px solid var(--border-color); margin-bottom: 12px;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+                        <div>
+                            <strong style="font-size: 1.05rem; color: var(--accent-cyan); display: block;">#{{ forloop.counter }} {{ p.name }}</strong>
+                            <span class="badge badge-pending" style="font-size: 0.72rem; margin-top: 4px; display: inline-block;">
+                                {% if p.is_group %}Group Program{% else %}Single Program{% endif %}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom: 12px; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+                        <label class="form-label" style="font-size: 0.78rem; color: #cbd5e1; font-weight: 700; display: block; margin-bottom: 4px;">Judges Count (Fixed by Admin):</label>
+                        <input type="number" id="mobile_judge_count_input_{{ p.id }}" name="judge_count_{{ p.id }}" value="{{ p.judge_count|default:1 }}" min="1" max="10" class="form-control" style="width: 100%; font-weight: 800; text-align: center;" onchange="updateJudgeDropdownSlots('{{ p.id }}', this.value)">
+                    </div>
+
+                    <div>
+                        <label class="form-label" style="font-size: 0.78rem; color: var(--text-muted); font-weight: 700; display: block; margin-bottom: 6px;">Select Assigned Judges:</label>
+                        <div id="mobile_judge_dropdowns_container_{{ p.id }}" style="display: flex; flex-direction: column; gap: 8px;">
+                            {% for slot in p.judge_slots %}
+                            <div class="judge-slot-row" style="display: flex; flex-direction: column; gap: 4px;">
+                                <span style="font-size: 0.78rem; font-weight: 700; color: var(--accent-cyan);">Judge {{ slot.slot_num }}:</span>
+                                <select name="assigned_judges_{{ p.id }}" class="form-control" style="width: 100%; padding: 8px 10px; font-size: 0.85rem;">
+                                    <option value="">-- Select Judge {{ slot.slot_num }} --</option>
+                                    {% for j in judges %}
+                                    <option value="{{ j.id }}" {% if j.id == slot.selected_judge_id %}selected{% endif %}>
+                                        {% if j.first_name %}{{ j.first_name }} ({{ j.username }}){% else %}{{ j.username }}{% endif %}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
             </div>
         </div>
+        {% empty %}
+        <div class="glass-card" style="text-align: center; padding: 40px; color: var(--text-muted);">
+            No categories or programs configured for {{ institution.name }}.
+        </div>
+        {% endfor %}
 
-        <!-- DESKTOP TABLE VIEW -->
+        {% if category_program_groups %}
+        <div style="margin-top: 20px; text-align: right;">
+            <button type="submit" class="btn-primary" style="font-size: 1.05rem; padding: 14px 32px; width: 100%; justify-content: center; background: linear-gradient(135deg, var(--accent-emerald), #059669);">
+                <i class="fa-solid fa-floppy-disk"></i> Save All Judge Assignments & Counts
+            </button>
+        </div>
+        {% endif %}
+    </form>
+</div>
+
+
+<!-- TAB 2: JUDGES LIST & ASSIGNED PROGRAMS -->
+<div id="tab-content-judges" style="display: none;">
+    <div class="glass-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <div>
+                <h3 style="font-size: 1.2rem; font-weight: 800; color: var(--accent-cyan); margin: 0;">
+                    <i class="fa-solid fa-id-card"></i> Registered Judges List & Assigned Programs
+                </h3>
+                <p style="font-size: 0.84rem; color: var(--text-muted); margin-top: 2px;">
+                    View all created judges and check/edit their assigned programs directly.
+                </p>
+            </div>
+            <button type="button" class="btn-secondary" onclick="toggleCreateJudgeForm()" style="padding: 8px 16px; font-size: 0.85rem;">
+                <i class="fa-solid fa-plus"></i> Add New Judge
+            </button>
+        </div>
+
+        <!-- DESKTOP JUDGES TABLE -->
         <div class="table-responsive desktop-table-view">
             <table class="custom-table">
                 <thead>
                     <tr>
                         <th style="width: 50px;">#</th>
-                        <th style="width: 250px;">Program Name</th>
-                        <th style="width: 140px; text-align: center;">Judges Count</th>
-                        <th>Select Judges (Dropdown per Judge)</th>
+                        <th>Judge Name</th>
+                        <th>Username / Contact</th>
+                        <th style="text-align: center;">Programs Count</th>
+                        <th>Assigned Programs List</th>
+                        <th style="text-align: center; width: 130px;">Action</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for p in group.programs %}
+                    {% for j in judges %}
                     <tr>
                         <td><strong>{{ forloop.counter }}</strong></td>
                         <td>
-                            <strong style="font-size: 1rem; color: #f8fafc;">{{ p.name }}</strong>
-                            <div style="margin-top: 2px;">
-                                <span class="badge badge-pending" style="font-size: 0.72rem;">
-                                    {% if p.is_group %}Group Program{% else %}Single Program{% endif %}
+                            <strong style="font-size: 1.05rem; color: #f8fafc;">
+                                {% if j.first_name %}{{ j.first_name }}{% else %}{{ j.username }}{% endif %}
+                            </strong>
+                            <div style="font-size: 0.76rem; color: var(--accent-cyan); margin-top: 2px;">
+                                <i class="fa-solid fa-gavel"></i> Judge Evaluator
+                            </div>
+                        </td>
+                        <td>
+                            <code style="font-weight: 700; color: #fbbf24;">@{{ j.username }}</code>
+                            {% if j.phone %}
+                            <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">
+                                <i class="fa-solid fa-phone"></i> {{ j.phone }}
+                            </div>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center;">
+                            <span class="badge badge-approved" style="font-size: 0.9rem; padding: 6px 12px;">
+                                {{ j.assigned_programs.all|length }} Program{% if j.assigned_programs.all|length != 1 %}s{% endif %}
+                            </span>
+                        </td>
+                        <td>
+                            <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                                {% for prog in j.assigned_programs.all %}
+                                <span class="badge" style="background: rgba(56, 189, 248, 0.15); color: var(--accent-cyan); border: 1px solid rgba(56, 189, 248, 0.3); font-size: 0.78rem;">
+                                    [{{ prog.category.name }}] {{ prog.name }}
                                 </span>
+                                {% empty %}
+                                <span style="color: var(--text-muted); font-size: 0.8rem; font-style: italic;">No programs assigned yet</span>
+                                {% endfor %}
                             </div>
                         </td>
                         <td style="text-align: center;">
-                            <input type="number" id="judge_count_input_{{ p.id }}" name="judge_count_{{ p.id }}" value="{{ p.judge_count|default:1 }}" min="1" max="10" class="form-control" style="width: 85px; margin: 0 auto; text-align: center; font-weight: 800;" onchange="updateJudgeDropdownSlots('{{ p.id }}', this.value)">
+                            <button type="button" class="btn-primary" onclick="toggleEditJudgeModal('{{ j.id }}')" style="padding: 6px 12px; font-size: 0.8rem; background: linear-gradient(135deg, var(--accent-cyan), #0284c7);">
+                                <i class="fa-solid fa-pen-to-square"></i> Edit Programs
+                            </button>
                         </td>
-                        <td>
-                            <div id="judge_dropdowns_container_{{ p.id }}" style="display: flex; flex-direction: column; gap: 8px;">
-                                {% for slot in p.judge_slots %}
-                                <div class="judge-slot-row" style="display: flex; align-items: center; gap: 8px;">
-                                    <span style="font-size: 0.82rem; font-weight: 700; color: var(--accent-cyan); min-width: 65px;">Judge {{ slot.slot_num }}:</span>
-                                    <select name="assigned_judges_{{ p.id }}" class="form-control" style="flex: 1; padding: 6px 10px; font-size: 0.85rem;">
-                                        <option value="">-- Select Judge {{ slot.slot_num }} --</option>
-                                        {% for j in judges %}
-                                        <option value="{{ j.id }}" {% if j.id == slot.selected_judge_id %}selected{% endif %}>
-                                            {% if j.first_name %}{{ j.first_name }} ({{ j.username }}){% else %}{{ j.username }}{% endif %}
-                                        </option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
-                                {% endfor %}
-                            </div>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 30px;">
+                            No judge accounts registered yet. Use '+ Create New Judge User' button above to create judge logins.
                         </td>
                     </tr>
                     {% endfor %}
@@ -133,60 +285,105 @@
             </table>
         </div>
 
-        <!-- MOBILE CARD LIST VIEW -->
+        <!-- MOBILE JUDGES CARD LIST -->
         <div class="mobile-card-list-view">
-            {% for p in group.programs %}
-            <div style="background: rgba(255,255,255,0.02); padding: 14px; border-radius: 12px; border: 1px solid var(--border-color); margin-bottom: 12px;">
+            {% for j in judges %}
+            <div style="background: rgba(255,255,255,0.02); padding: 16px; border-radius: 12px; border: 1px solid var(--border-color); margin-bottom: 14px;">
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
                     <div>
-                        <strong style="font-size: 1.05rem; color: var(--accent-cyan); display: block;">#{{ forloop.counter }} {{ p.name }}</strong>
-                        <span class="badge badge-pending" style="font-size: 0.72rem; margin-top: 4px; display: inline-block;">
-                            {% if p.is_group %}Group Program{% else %}Single Program{% endif %}
+                        <strong style="font-size: 1.1rem; color: var(--accent-cyan); display: block;">
+                            #{{ forloop.counter }} {% if j.first_name %}{{ j.first_name }}{% else %}{{ j.username }}{% endif %}
+                        </strong>
+                        <code style="font-size: 0.8rem; color: #fbbf24;">@{{ j.username }}</code>
+                        {% if j.phone %}
+                        <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">
+                            <i class="fa-solid fa-phone"></i> {{ j.phone }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <span class="badge badge-approved" style="font-size: 0.8rem;">
+                            {{ j.assigned_programs.all|length }} Assigned
                         </span>
                     </div>
                 </div>
 
-                <div style="margin-bottom: 12px; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
-                    <label class="form-label" style="font-size: 0.78rem; color: #cbd5e1; font-weight: 700; display: block; margin-bottom: 4px;">Judges Count (Fixed by Admin):</label>
-                    <input type="number" id="mobile_judge_count_input_{{ p.id }}" name="judge_count_{{ p.id }}" value="{{ p.judge_count|default:1 }}" min="1" max="10" class="form-control" style="width: 100%; font-weight: 800; text-align: center;" onchange="updateJudgeDropdownSlots('{{ p.id }}', this.value)">
-                </div>
-
-                <div>
-                    <label class="form-label" style="font-size: 0.78rem; color: var(--text-muted); font-weight: 700; display: block; margin-bottom: 6px;">Select Assigned Judges:</label>
-                    <div id="mobile_judge_dropdowns_container_{{ p.id }}" style="display: flex; flex-direction: column; gap: 8px;">
-                        {% for slot in p.judge_slots %}
-                        <div class="judge-slot-row" style="display: flex; flex-direction: column; gap: 4px;">
-                            <span style="font-size: 0.78rem; font-weight: 700; color: var(--accent-cyan);">Judge {{ slot.slot_num }}:</span>
-                            <select name="assigned_judges_{{ p.id }}" class="form-control" style="width: 100%; padding: 8px 10px; font-size: 0.85rem;">
-                                <option value="">-- Select Judge {{ slot.slot_num }} --</option>
-                                {% for j in judges %}
-                                <option value="{{ j.id }}" {% if j.id == slot.selected_judge_id %}selected{% endif %}>
-                                    {% if j.first_name %}{{ j.first_name }} ({{ j.username }}){% else %}{{ j.username }}{% endif %}
-                                </option>
-                                {% endfor %}
-                            </select>
-                        </div>
+                <div style="margin-bottom: 12px;">
+                    <label style="font-size: 0.78rem; color: var(--text-muted); font-weight: 700; display: block; margin-bottom: 6px;">Assigned Programs:</label>
+                    <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                        {% for prog in j.assigned_programs.all %}
+                        <span class="badge" style="background: rgba(56, 189, 248, 0.15); color: var(--accent-cyan); border: 1px solid rgba(56, 189, 248, 0.3); font-size: 0.75rem;">
+                            [{{ prog.category.name }}] {{ prog.name }}
+                        </span>
+                        {% empty %}
+                        <span style="color: var(--text-muted); font-size: 0.8rem; font-style: italic;">No programs assigned yet</span>
                         {% endfor %}
                     </div>
                 </div>
+
+                <button type="button" class="btn-primary" onclick="toggleEditJudgeModal('{{ j.id }}')" style="width: 100%; justify-content: center; padding: 8px 14px; font-size: 0.85rem; background: linear-gradient(135deg, var(--accent-cyan), #0284c7);">
+                    <i class="fa-solid fa-pen-to-square"></i> Manage Assigned Programs
+                </button>
+            </div>
+            {% empty %}
+            <div style="text-align: center; color: var(--text-muted); padding: 30px;">
+                No judge accounts registered yet.
             </div>
             {% endfor %}
         </div>
     </div>
-    {% empty %}
-    <div class="glass-card" style="text-align: center; padding: 40px; color: var(--text-muted);">
-        No categories or programs configured for {{ institution.name }}.
-    </div>
-    {% endfor %}
+</div>
 
-    {% if category_program_groups %}
-    <div style="margin-top: 20px; text-align: right;">
-        <button type="submit" class="btn-primary" style="font-size: 1.05rem; padding: 14px 32px; width: 100%; justify-content: center; background: linear-gradient(135deg, var(--accent-emerald), #059669);">
-            <i class="fa-solid fa-floppy-disk"></i> Save All Judge Assignments & Counts
+
+<!-- EDIT SPECIFIC JUDGE ASSIGNED PROGRAMS MODAL / CARDS -->
+{% for j in judges %}
+<div id="edit-judge-modal-{{ j.id }}" class="glass-card" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 92%; max-width: 650px; max-height: 85vh; overflow-y: auto; z-index: 10000; border: 1px solid rgba(56, 189, 248, 0.4); background: #0f172a; box-shadow: 0 20px 50px rgba(0,0,0,0.8); padding: 24px; border-radius: 16px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">
+        <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--accent-cyan); margin: 0; display: flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-user-pen"></i> Assign Programs for {% if j.first_name %}{{ j.first_name }}{% else %}{{ j.username }}{% endif %} (@{{ j.username }})
+        </h3>
+        <button type="button" onclick="toggleEditJudgeModal('{{ j.id }}')" style="background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 1.3rem;">
+            <i class="fa-solid fa-xmark"></i>
         </button>
     </div>
-    {% endif %}
-</form>
+
+    <form method="POST">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="update_judge_programs">
+        <input type="hidden" name="judge_user_id" value="{{ j.id }}">
+
+        <div style="margin-bottom: 16px; max-height: 50vh; overflow-y: auto; padding-right: 8px;">
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                {% for prog in all_programs %}
+                <label style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-radius: 10px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); cursor: pointer;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <input type="checkbox" name="judge_assigned_programs" value="{{ prog.id }}" {% if prog in j.assigned_programs.all %}checked{% endif %} style="accent-color: var(--accent-cyan); width: 18px; height: 18px;">
+                        <div>
+                            <strong style="font-size: 0.92rem; color: #f8fafc;">{{ prog.name }}</strong>
+                            <span class="badge badge-approved" style="font-size: 0.72rem; margin-left: 6px;">{{ prog.category.name }}</span>
+                        </div>
+                    </div>
+                    <span style="font-size: 0.78rem; color: var(--text-muted);">
+                        {% if prog.is_group %}Group{% else %}Single{% endif %}
+                    </span>
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid var(--border-color); padding-top: 14px;">
+            <button type="button" onclick="toggleEditJudgeModal('{{ j.id }}')" class="btn-secondary" style="padding: 8px 18px; font-size: 0.88rem;">
+                Cancel
+            </button>
+            <button type="submit" class="btn-primary" style="padding: 8px 22px; font-size: 0.88rem; background: linear-gradient(135deg, var(--accent-emerald), #059669);">
+                <i class="fa-solid fa-check"></i> Save Assigned Programs
+            </button>
+        </div>
+    </form>
+</div>
+<div id="modal-backdrop-{{ j.id }}" onclick="toggleEditJudgeModal('{{ j.id }}')" style="display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.7); z-index: 9999; backdrop-filter: blur(4px);"></div>
+{% endfor %}
+
 
 <script>
     const judgesList = [
@@ -194,6 +391,32 @@
         { id: "{{ j.id }}", name: "{% if j.first_name %}{{ j.first_name|escapejs }} ({{ j.username|escapejs }}){% else %}{{ j.username|escapejs }}{% endif %}" },
         {% endfor %}
     ];
+
+    function switchJudgeTab(tabName) {
+        const btnPanels = document.getElementById('tab-btn-panels');
+        const btnJudges = document.getElementById('tab-btn-judges');
+        const contentPanels = document.getElementById('tab-content-panels');
+        const contentJudges = document.getElementById('tab-content-judges');
+        const savePanelsBtn = document.getElementById('save-panels-btn');
+
+        if (tabName === 'panels') {
+            btnPanels.className = 'btn-primary';
+            btnPanels.style.background = 'linear-gradient(135deg, var(--accent-cyan), #0284c7)';
+            btnJudges.className = 'btn-secondary';
+            btnJudges.style.background = '';
+            contentPanels.style.display = 'block';
+            contentJudges.style.display = 'none';
+            if (savePanelsBtn) savePanelsBtn.style.display = 'inline-flex';
+        } else {
+            btnJudges.className = 'btn-primary';
+            btnJudges.style.background = 'linear-gradient(135deg, var(--accent-cyan), #0284c7)';
+            btnPanels.className = 'btn-secondary';
+            btnPanels.style.background = '';
+            contentPanels.style.display = 'none';
+            contentJudges.style.display = 'block';
+            if (savePanelsBtn) savePanelsBtn.style.display = 'none';
+        }
+    }
 
     function toggleCreateJudgeForm() {
         const card = document.getElementById('create-judge-card');
@@ -205,10 +428,19 @@
         }
     }
 
+    function toggleEditJudgeModal(judgeId) {
+        const modal = document.getElementById(`edit-judge-modal-${judgeId}`);
+        const backdrop = document.getElementById(`modal-backdrop-${judgeId}`);
+        if (modal && backdrop) {
+            const isHidden = modal.style.display === 'none' || modal.style.display === '';
+            modal.style.display = isHidden ? 'block' : 'none';
+            backdrop.style.display = isHidden ? 'block' : 'none';
+        }
+    }
+
     function updateJudgeDropdownSlots(programId, newCount) {
         const count = parseInt(newCount) || 1;
 
-        // Sync Desktop and Mobile count inputs
         const dInput = document.getElementById(`judge_count_input_${programId}`);
         const mInput = document.getElementById(`mobile_judge_count_input_${programId}`);
         if (dInput && dInput.value != count) dInput.value = count;

@@ -833,13 +833,14 @@ def judge_management_view(request, institution_slug):
     judges = User.objects.filter(
         Q(institution=institution) | Q(role='JUDGE'),
         role__in=['JUDGE', 'TABULATOR', 'SUB_ADMIN']
-    ).distinct().order_by('first_name', 'username')
+    ).distinct().prefetch_related('assigned_programs', 'assigned_programs__category').order_by('first_name', 'username')
 
     comp = Competition.objects.filter(institution=institution, is_active=True).first()
     if not comp:
         comp = Competition.objects.filter(institution=institution).first()
 
     categories = list(Category.objects.filter(institution=institution).order_by('id'))
+    all_programs = list(Program.objects.filter(institution=institution).select_related('category').order_by('category__name', 'name'))
 
     if request.method == 'POST':
         action = request.POST.get('action', '')
@@ -869,7 +870,19 @@ def judge_management_view(request, institution_slug):
                 messages.error(request, "Username and Password are required to create a Judge account.")
             return redirect('core:judge_management', institution_slug=institution.slug)
 
-        # Action B: Save Judge Counts and Assigned Judges per Program
+        # Action B: Save Assigned Programs for a Specific Judge
+        if action == 'update_judge_programs':
+            judge_user_id = request.POST.get('judge_user_id')
+            j_user = User.objects.filter(id=judge_user_id, institution=institution).first()
+            if j_user:
+                prog_ids = request.POST.getlist('judge_assigned_programs')
+                clean_prog_ids = [int(p) for p in prog_ids if p and p.strip().isdigit()]
+                valid_progs = Program.objects.filter(id__in=clean_prog_ids, institution=institution)
+                j_user.assigned_programs.set(valid_progs)
+                messages.success(request, f"Successfully updated assigned programs for Judge '{j_user.first_name or j_user.username}'!")
+            return redirect('core:judge_management', institution_slug=institution.slug)
+
+        # Action C: Save Judge Counts and Assigned Judges per Program
         updated_count = 0
         program_ids = set()
         for key in request.POST.keys():
@@ -921,6 +934,7 @@ def judge_management_view(request, institution_slug):
         'competition': comp,
         'category_program_groups': category_program_groups,
         'judges': judges,
+        'all_programs': all_programs,
     })
 
 
