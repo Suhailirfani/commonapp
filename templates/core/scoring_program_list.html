@@ -8,6 +8,13 @@
         <a href="{% url 'core:dashboard' institution.slug %}" style="color: var(--text-muted); text-decoration: none;"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</a>
         <h2 style="font-size: 1.8rem; font-weight: 800; margin-top: 4px;"><i class="fa-solid fa-pen-to-square" style="color: var(--accent-cyan);"></i> Mark Entry</h2>
     </div>
+    <div>
+        {% if not request.user.is_judge %}
+        <a href="{% url 'core:judge_management' institution.slug %}" class="btn-primary" style="padding: 10px 18px; font-size: 0.9rem; background: linear-gradient(135deg, var(--accent-cyan), #0284c7);">
+            <i class="fa-solid fa-gavel"></i> Manage Judges & Panels
+        </a>
+        {% endif %}
+    </div>
 </div>
 
 <!-- Search & Filter Controls -->

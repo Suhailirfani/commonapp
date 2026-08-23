@@ -822,6 +822,102 @@ def mark_entry_matrix_view(request, institution_slug, program_id):
 
 
 @login_required
+def judge_management_view(request, institution_slug):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+
+    if not (request.user.is_developer or request.user.is_institution_admin or request.user.role in ['SUB_ADMIN', 'INSTITUTION_ADMIN']):
+        messages.error(request, "Access Restricted: Only Institution Admins can manage judge assignments.")
+        return redirect('core:dashboard', institution_slug=institution.slug)
+
+    from apps.users.models import User
+    judges = User.objects.filter(
+        Q(institution=institution) | Q(role='JUDGE'),
+        role__in=['JUDGE', 'TABULATOR', 'SUB_ADMIN']
+    ).distinct().order_by('first_name', 'username')
+
+    comp = Competition.objects.filter(institution=institution, is_active=True).first()
+    if not comp:
+        comp = Competition.objects.filter(institution=institution).first()
+
+    categories = list(Category.objects.filter(institution=institution).order_by('id'))
+
+    if request.method == 'POST':
+        action = request.POST.get('action', '')
+
+        # Action A: Quick Create New Judge User Account
+        if action == 'create_judge_user':
+            username = request.POST.get('username', '').strip()
+            password = request.POST.get('password', '').strip()
+            name = request.POST.get('name', '').strip()
+            phone = request.POST.get('phone', '').strip()
+
+            if username and password:
+                if User.objects.filter(username=username).exists():
+                    messages.error(request, f"Username '{username}' already exists. Please choose another username.")
+                else:
+                    User.objects.create_user(
+                        username=username,
+                        password=password,
+                        first_name=name,
+                        phone=phone,
+                        role='JUDGE',
+                        institution=institution,
+                        is_approved=True
+                    )
+                    messages.success(request, f"Successfully created Judge User '{username}' ({name or username})!")
+            else:
+                messages.error(request, "Username and Password are required to create a Judge account.")
+            return redirect('core:judge_management', institution_slug=institution.slug)
+
+        # Action B: Save Judge Counts and Assigned Judges per Program
+        updated_count = 0
+        program_ids = set()
+        for key in request.POST.keys():
+            if key.startswith('judge_count_'):
+                program_ids.add(key.replace('judge_count_', ''))
+            elif key.startswith('assigned_judges_'):
+                program_ids.add(key.replace('assigned_judges_', ''))
+
+        for p_id in program_ids:
+            prog = Program.objects.filter(id=p_id, institution=institution).first()
+            if prog:
+                jc_val = request.POST.get(f'judge_count_{p_id}')
+                if jc_val:
+                    try:
+                        jc = int(jc_val)
+                        if jc > 0:
+                            prog.judge_count = jc
+                            prog.save(update_fields=['judge_count'])
+                    except ValueError:
+                        pass
+
+                selected_judge_ids = request.POST.getlist(f'assigned_judges_{p_id}')
+                valid_judges = list(User.objects.filter(id__in=selected_judge_ids))
+                prog.assigned_judges.set(valid_judges)
+
+                updated_count += 1
+
+        messages.success(request, f"Successfully updated judge counts and assignments for {updated_count} program(s)!")
+        return redirect('core:judge_management', institution_slug=institution.slug)
+
+    category_program_groups = []
+    for cat in categories:
+        progs = list(Program.objects.filter(category=cat, institution=institution).prefetch_related('assigned_judges').order_by('name'))
+        if progs:
+            category_program_groups.append({
+                'category': cat,
+                'programs': progs,
+            })
+
+    return render(request, 'core/judge_management.html', {
+        'institution': institution,
+        'competition': comp,
+        'category_program_groups': category_program_groups,
+        'judges': judges,
+    })
+
+
+@login_required
 def announce_results_view(request, institution_slug, program_id):
     institution = get_object_or_404(Institution, slug=institution_slug)
     program = get_object_or_404(Program, id=program_id, institution=institution)

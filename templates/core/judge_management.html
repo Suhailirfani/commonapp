@@ -1,0 +1,192 @@
+{% extends 'base.html' %}
+
+{% block title %}Judge Management - {{ institution.name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <a href="{% url 'core:scoring_program_list' institution.slug %}" style="color: var(--text-muted); text-decoration: none;">
+            <i class="fa-solid fa-arrow-left"></i> Back to Mark Entry List
+        </a>
+        <h2 style="font-size: 1.8rem; font-weight: 800; margin-top: 4px;">
+            <i class="fa-solid fa-gavel" style="color: var(--accent-cyan);"></i> Judge Management Panel
+        </h2>
+        <div style="color: var(--text-muted); font-size: 0.88rem; margin-top: 2px;">
+            Assign judges and fix judge counts per program category-wise for {{ institution.name }}.
+        </div>
+    </div>
+    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <button type="button" class="btn-secondary" onclick="toggleCreateJudgeForm()" style="padding: 10px 18px; font-size: 0.9rem;">
+            <i class="fa-solid fa-user-plus" style="color: var(--accent-cyan);"></i> + Create New Judge User
+        </button>
+        <button type="submit" form="judge-management-form" class="btn-primary" style="padding: 10px 24px; font-size: 0.95rem; background: linear-gradient(135deg, var(--accent-emerald), #059669);">
+            <i class="fa-solid fa-floppy-disk"></i> Save All Judge Assignments
+        </button>
+    </div>
+</div>
+
+<!-- QUICK CREATE NEW JUDGE ACCOUNT FORM (COLLAPSIBLE) -->
+<div id="create-judge-card" class="glass-card" style="display: none; margin-bottom: 24px; border: 1px solid rgba(56, 189, 248, 0.3); background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9));">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+        <h3 style="font-size: 1.1rem; font-weight: 800; color: var(--accent-cyan); margin: 0; display: flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-user-shield"></i> Create New Judge Account
+        </h3>
+        <button type="button" onclick="toggleCreateJudgeForm()" style="background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 1.2rem;">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+    </div>
+
+    <form method="POST">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="create_judge_user">
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 14px;">
+            <div>
+                <label class="form-label" style="font-size: 0.82rem; font-weight: 700;">Username *</label>
+                <input type="text" name="username" class="form-control" placeholder="e.g. judge1_senior" required>
+            </div>
+            <div>
+                <label class="form-label" style="font-size: 0.82rem; font-weight: 700;">Password *</label>
+                <input type="password" name="password" class="form-control" placeholder="Set password" required>
+            </div>
+            <div>
+                <label class="form-label" style="font-size: 0.82rem; font-weight: 700;">Judge Full Name</label>
+                <input type="text" name="name" class="form-control" placeholder="e.g. Dr. Ahmed Ali">
+            </div>
+            <div>
+                <label class="form-label" style="font-size: 0.82rem; font-weight: 700;">Phone / WhatsApp</label>
+                <input type="text" name="phone" class="form-control" placeholder="Optional phone number">
+            </div>
+        </div>
+
+        <div style="text-align: right;">
+            <button type="submit" class="btn-primary" style="padding: 8px 22px; font-size: 0.88rem; background: linear-gradient(135deg, var(--accent-cyan), #0284c7);">
+                <i class="fa-solid fa-check"></i> Create Judge Account
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- MAIN JUDGE MANAGEMENT FORM -->
+<form method="POST" id="judge-management-form">
+    {% csrf_token %}
+
+    {% for group in category_program_groups %}
+    <div class="glass-card" style="margin-bottom: 24px; padding: 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span class="badge badge-approved" style="font-size: 0.9rem; padding: 6px 14px; background: rgba(56, 189, 248, 0.15); color: var(--accent-cyan); border: 1px solid rgba(56, 189, 248, 0.3);">
+                    <i class="fa-solid fa-layer-group"></i> {{ group.category.name }}
+                </span>
+                <span style="font-size: 0.85rem; color: var(--text-muted);">
+                    ({{ group.programs|length }} Program{% if group.programs|length > 1 %}s{% endif %})
+                </span>
+            </div>
+        </div>
+
+        <!-- DESKTOP TABLE VIEW -->
+        <div class="table-responsive desktop-table-view">
+            <table class="custom-table">
+                <thead>
+                    <tr>
+                        <th style="width: 50px;">#</th>
+                        <th>Program Name</th>
+                        <th style="width: 140px; text-align: center;">Judges Count</th>
+                        <th>Assigned Judges</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in group.programs %}
+                    <tr>
+                        <td><strong>{{ forloop.counter }}</strong></td>
+                        <td>
+                            <strong style="font-size: 1rem; color: #f8fafc;">{{ p.name }}</strong>
+                            <div style="margin-top: 2px;">
+                                <span class="badge badge-pending" style="font-size: 0.72rem;">
+                                    {% if p.is_group %}Group Program{% else %}Single Program{% endif %}
+                                </span>
+                            </div>
+                        </td>
+                        <td style="text-align: center;">
+                            <input type="number" name="judge_count_{{ p.id }}" value="{{ p.judge_count|default:1 }}" min="1" max="10" class="form-control" style="width: 90px; margin: 0 auto; text-align: center; font-weight: 800;">
+                        </td>
+                        <td>
+                            <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
+                                {% for j in judges %}
+                                <label style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 8px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); cursor: pointer; font-size: 0.84rem;">
+                                    <input type="checkbox" name="assigned_judges_{{ p.id }}" value="{{ j.id }}" {% if j in p.assigned_judges.all %}checked{% endif %} style="accent-color: var(--accent-cyan); width: 16px; height: 16px;">
+                                    <span>{% if j.first_name %}{{ j.first_name }}{% else %}{{ j.username }}{% endif %}</span>
+                                </label>
+                                {% empty %}
+                                <span style="color: var(--text-muted); font-size: 0.82rem;">No Judge accounts created yet. Use the '+ Create New Judge User' button above.</span>
+                                {% endfor %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- MOBILE CARD LIST VIEW -->
+        <div class="mobile-card-list-view">
+            {% for p in group.programs %}
+            <div style="background: rgba(255,255,255,0.02); padding: 14px; border-radius: 12px; border: 1px solid var(--border-color); margin-bottom: 12px;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+                    <div>
+                        <strong style="font-size: 1.05rem; color: var(--accent-cyan); display: block;">#{{ forloop.counter }} {{ p.name }}</strong>
+                        <span class="badge badge-pending" style="font-size: 0.72rem; margin-top: 4px; display: inline-block;">
+                            {% if p.is_group %}Group Program{% else %}Single Program{% endif %}
+                        </span>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 12px; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+                    <label class="form-label" style="font-size: 0.78rem; color: #cbd5e1; font-weight: 700; display: block; margin-bottom: 4px;">Judges Count (Fixed by Admin):</label>
+                    <input type="number" name="judge_count_{{ p.id }}" value="{{ p.judge_count|default:1 }}" min="1" max="10" class="form-control" style="width: 100%; font-weight: 800; text-align: center;">
+                </div>
+
+                <div>
+                    <label class="form-label" style="font-size: 0.78rem; color: var(--text-muted); font-weight: 700; display: block; margin-bottom: 6px;">Select Assigned Judges:</label>
+                    <div style="display: flex; flex-direction: column; gap: 6px;">
+                        {% for j in judges %}
+                        <label style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 8px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); cursor: pointer; font-size: 0.85rem;">
+                            <input type="checkbox" name="assigned_judges_{{ p.id }}" value="{{ j.id }}" {% if j in p.assigned_judges.all %}checked{% endif %} style="accent-color: var(--accent-cyan); width: 18px; height: 18px;">
+                            <span>{% if j.first_name %}{{ j.first_name }}{% else %}{{ j.username }}{% endif %}</span>
+                        </label>
+                        {% empty %}
+                        <span style="color: var(--text-muted); font-size: 0.8rem;">No Judge accounts created yet.</span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% empty %}
+    <div class="glass-card" style="text-align: center; padding: 40px; color: var(--text-muted);">
+        No categories or programs configured for {{ institution.name }}.
+    </div>
+    {% endfor %}
+
+    {% if category_program_groups %}
+    <div style="margin-top: 20px; text-align: right;">
+        <button type="submit" class="btn-primary" style="font-size: 1.05rem; padding: 14px 32px; width: 100%; justify-content: center; background: linear-gradient(135deg, var(--accent-emerald), #059669);">
+            <i class="fa-solid fa-floppy-disk"></i> Save All Judge Assignments & Counts
+        </button>
+    </div>
+    {% endif %}
+</form>
+
+<script>
+    function toggleCreateJudgeForm() {
+        const card = document.getElementById('create-judge-card');
+        if (card.style.display === 'none' || card.style.display === '') {
+            card.style.display = 'block';
+            card.scrollIntoView({ behavior: 'smooth' });
+        } else {
+            card.style.display = 'none';
+        }
+    }
+</script>
+{% endblock %}

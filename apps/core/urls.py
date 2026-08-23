@@ -62,6 +62,7 @@ urlpatterns = [
     path('portal/<slug:institution_slug>/scoring/', views.scoring_program_list_view, name='scoring_program_list'),
     path('portal/<slug:institution_slug>/scoring/<int:program_id>/matrix/', views.mark_entry_matrix_view, name='mark_entry_matrix'),
     path('portal/<slug:institution_slug>/scoring/<int:program_id>/announce/', views.announce_results_view, name='announce_results'),
+    path('portal/<slug:institution_slug>/judge-management/', views.judge_management_view, name='judge_management'),
     
     # Results & Leaderboards
     path('portal/<slug:institution_slug>/results/programs/', views.program_results_view, name='program_results'),
