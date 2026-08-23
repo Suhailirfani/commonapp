@@ -2054,7 +2054,9 @@ def team_standings_view(request, institution_slug):
     team_data = get_team_standings(institution, announced_only=announced_only, limit_n_results=limit_n)
 
     total_announced_programs = Program.objects.filter(institution=institution, is_announced=True).count()
-    total_completed_programs = Program.objects.filter(institution=institution, participations__marks__isnull=False).distinct().count()
+    total_completed_programs = Program.objects.filter(institution=institution).filter(
+        Q(single_participations__marks__isnull=False) | Q(group_participations__marks__isnull=False)
+    ).distinct().count()
     max_results = total_announced_programs if announced_only else total_completed_programs
 
     n_presets = [opt for opt in [5, 10, 15, 20, 25, 30, 40, 50] if opt < max_results]
