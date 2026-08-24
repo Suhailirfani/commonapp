@@ -234,12 +234,8 @@ def get_team_standings(institution, announced_only=True, limit_n_results=None):
 
     current_rank = 1
     for i, data in enumerate(team_data):
-        if i > 0:
-            prev = team_data[i-1]
-            curr_tuple = (data['points'], data['first_count'], data['second_count'], data['third_count'])
-            prev_tuple = (prev['points'], prev['first_count'], prev['second_count'], prev['third_count'])
-            if curr_tuple < prev_tuple:
-                current_rank = i + 1
+        if i > 0 and data['points'] < team_data[i-1]['points']:
+            current_rank = i + 1
         data['position'] = current_rank
 
     return team_data
