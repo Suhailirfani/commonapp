@@ -97,3 +97,6 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 LOGIN_URL = '/auth/login/'
 LOGIN_REDIRECT_URL = '/dashboard/'
 LOGOUT_REDIRECT_URL = '/'
+
+CSRF_FAILURE_VIEW = 'apps.core.views.custom_csrf_failure_view'
+

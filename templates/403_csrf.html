@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Session Expired - CSRF Token Verification{% endblock %}
+
+{% block content %}
+<div style="max-width: 680px; margin: 40px auto; text-align: center; padding: 0 15px;">
+    <div class="glass-card" style="padding: 36px 24px; border-top: 4px solid var(--accent-amber); box-shadow: 0 15px 35px rgba(0,0,0,0.4); text-align: left;">
+        
+        <!-- Icon & Header -->
+        <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 20px;">
+            <div style="width: 64px; height: 64px; border-radius: 16px; background: rgba(245, 158, 11, 0.15); border: 2px solid #f59e0b; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; color: #fbbf24; flex-shrink: 0;">
+                <i class="fa-solid fa-shield-halved"></i>
+            </div>
+            <div>
+                <h2 style="font-size: 1.5rem; font-weight: 800; color: var(--text-main); margin: 0 0 4px 0;">
+                    Security Session Expired
+                </h2>
+                <div style="color: var(--accent-amber); font-size: 0.95rem; font-weight: 700;">
+                    സുരക്ഷാ സെഷൻ തിരുത്തൽ ആവശ്യമാണ് (CSRF Verification)
+                </div>
+            </div>
+        </div>
+
+        <!-- Problem Explanation -->
+        <div style="background: rgba(245, 158, 11, 0.08); border-left: 4px solid #f59e0b; padding: 14px 16px; border-radius: 8px; margin-bottom: 24px;">
+            <p style="margin: 0 0 6px 0; color: var(--text-main); font-size: 0.92rem; line-height: 1.5;">
+                <strong>Why did this happen?</strong> You left the form open for a long time, or your session token refreshed in another browser tab.
+            </p>
+            <p style="margin: 0; color: var(--text-muted); font-size: 0.88rem; line-height: 1.5;">
+                <strong>എന്തുകൊണ്ട് ഇത് സംഭവിച്ചു?</strong> കുറെ സമയമായി ഈ പേജ് തുറന്നു വെച്ചിരുന്നതിനാലോ മറ്റൊരു ടാബിൽ ലോഗിൻ ചെയ്തതിനാലോ നിങ്ങളുടെ സെക്യൂരിറ്റി ടോക്കൺ കാലാവധി കഴിഞ്ഞു.
+            </p>
+        </div>
+
+        <!-- What to do options box -->
+        <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid var(--border-color); border-radius: 14px; padding: 20px; margin-bottom: 28px;">
+            <h4 style="font-size: 1.05rem; font-weight: 800; color: var(--accent-cyan); margin: 0 0 14px 0; display: flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-circle-check"></i> What You Can Do Now / നിങ്ങൾ ഇപ്പോൾ ചെയ്യേണ്ടത്:
+            </h4>
+            
+            <div style="display: grid; gap: 14px;">
+                <div style="display: flex; gap: 12px; align-items: flex-start;">
+                    <span style="background: rgba(56, 189, 248, 0.15); color: var(--accent-cyan); width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.85rem; flex-shrink: 0; margin-top: 2px;">1</span>
+                    <div>
+                        <strong style="color: var(--text-main); font-size: 0.92rem; display: block;">Refresh & Try Again / പേജ് പുതുക്കി വീണ്ടും ശ്രമിക്കുക</strong>
+                        <span style="color: var(--text-muted); font-size: 0.84rem;">Click the <strong>"Refresh Page"</strong> button below to reload a fresh security token, then re-submit your form.</span>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 12px; align-items: flex-start;">
+                    <span style="background: rgba(56, 189, 248, 0.15); color: var(--accent-cyan); width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.85rem; flex-shrink: 0; margin-top: 2px;">2</span>
+                    <div>
+                        <strong style="color: var(--text-main); font-size: 0.92rem; display: block;">Go Back to Preserve Entered Data / മുൻപത്തെ പേജിലേക്ക് പോവുക</strong>
+                        <span style="color: var(--text-muted); font-size: 0.84rem;">Click <strong>"Go Back"</strong> to retain your typed text/marks, then refresh that page before clicking Save.</span>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 12px; align-items: flex-start;">
+                    <span style="background: rgba(56, 189, 248, 0.15); color: var(--accent-cyan); width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.85rem; flex-shrink: 0; margin-top: 2px;">3</span>
+                    <div>
+                        <strong style="color: var(--text-main); font-size: 0.92rem; display: block;">Log In Again / വീണ്ടും ലോഗിൻ ചെയ്യുക</strong>
+                        <span style="color: var(--text-muted); font-size: 0.84rem;">If your login session has expired completely, please log in again to continue safely.</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+            <button onclick="window.history.back();" class="btn-primary" style="background: linear-gradient(135deg, var(--accent-cyan), #0284c7); padding: 12px 22px; font-weight: 700; cursor: pointer; border: none; border-radius: 10px;">
+                <i class="fa-solid fa-rotate-left"></i> Go Back & Refresh (പുറകോട്ട് പോകുക)
+            </button>
+
+            {% if request.user.is_authenticated and request.user.institution %}
+            <a href="{% url 'core:dashboard' request.user.institution.slug %}" class="btn-primary" style="background: rgba(255,255,255,0.08); border: 1px solid var(--border-color); color: var(--text-main); padding: 12px 20px; border-radius: 10px; text-decoration: none;">
+                <i class="fa-solid fa-house"></i> Dashboard (ഡാഷ്‌ബോർഡ്)
+            </a>
+            {% else %}
+            <a href="{% url 'users:login' %}" class="btn-primary" style="background: linear-gradient(135deg, var(--accent-emerald), #059669); padding: 12px 22px; font-weight: 700; border-radius: 10px; text-decoration: none;">
+                <i class="fa-solid fa-right-to-bracket"></i> Log In Again (ലോഗിൻ ചെയ്യുക)
+            </a>
+            {% endif %}
+        </div>
+
+    </div>
+</div>
+{% endblock %}

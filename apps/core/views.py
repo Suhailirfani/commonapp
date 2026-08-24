@@ -3322,6 +3322,11 @@ def custom_403_view(request, exception=None):
     return render(request, '403.html', status=403)
 
 
+def custom_csrf_failure_view(request, reason=""):
+    from django.shortcuts import render
+    return render(request, '403_csrf.html', {'reason': reason}, status=403)
+
+
 
 
 
