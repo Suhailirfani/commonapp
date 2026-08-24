@@ -15,13 +15,6 @@
             </span>
         </div>
     </div>
-    <div>
-        {% if not request.user.is_judge %}
-        <a href="{% url 'core:announce_results' institution.slug program.id %}" class="btn-success" onclick="return confirm('Publish results for {{ program.name }} to the public live result portal?');">
-            <i class="fa-solid fa-bullhorn"></i> Publish Results Publicly
-        </a>
-        {% endif %}
-    </div>
 </div>
 
 {% if not request.user.is_judge or request.user.is_developer or request.user.is_institution_admin %}
@@ -36,7 +29,7 @@
                 <i class="fa-solid fa-sliders"></i> Judge Panel Settings for this Program
             </div>
             <div style="font-size: 0.84rem; color: var(--text-muted); margin-top: 2px;">
-                Set how many judges evaluate this program. Individual scores will be summed and automatically converted to a <strong>100-point scale</strong>.
+                ഈ പ്രോഗ്രാം വിലയിരുത്തുന്ന ജഡ്ജുമാരുടെ എണ്ണം ക്രമീകരിക്കുക. മാർക്ക് രേഖപ്പെടുത്തിയ ജഡ്ജുമാരുടെ സ്കോറുകളുടെ ശരാശരി കണക്കാക്കി സ്വയം <strong>100 പോയിന്റ് സ്കെയിലിലേക്ക്</strong> മാറ്റുന്നതാണ് (മാർക്ക് രേഖപ്പെടുത്താത്ത ഫീൽഡുകൾ ജഡ്ജുമാരുടെ എണ്ണത്തിൽ ഉൾപ്പെടുത്തില്ല).
             </div>
         </div>
 
@@ -257,7 +250,7 @@
         const mobileTotalBadge = document.getElementById(`mobile_total_marks_${partId}`);
 
         if (activeJudgeCount > 0) {
-            const totalMax = judgeCount * maxPerJudge;
+            const totalMax = activeJudgeCount * maxPerJudge;
             const converted100 = Math.round((rawSum / totalMax) * 100);
             const label = `${converted100} / 100`;
 

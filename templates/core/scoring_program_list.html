@@ -17,6 +17,14 @@
     </div>
 </div>
 
+<!-- MALAYALAM DIRECTION BANNER -->
+<div class="glass-card" style="margin-bottom: 16px; padding: 12px 18px; border: 1px solid rgba(56, 189, 248, 0.3); background: rgba(56, 189, 248, 0.08); display: flex; align-items: center; gap: 12px;">
+    <i class="fa-solid fa-circle-info" style="font-size: 1.3rem; color: var(--accent-cyan);"></i>
+    <div style="font-size: 0.92rem; color: var(--text-main); font-weight: 600;">
+        <strong style="color: var(--accent-cyan);">നിർദ്ദേശം:</strong> മാർക്കുകൾ രേഖപ്പെടുത്തുന്നതിനായി ഓരോ പ്രോഗ്രാമിന് നേരെയുമുള്ള <strong>'Open Matrix'</strong> ബട്ടണിൽ ക്ലിക്ക് ചെയ്യുക.
+    </div>
+</div>
+
 <!-- Search & Filter Controls -->
 <div class="glass-card" style="margin-bottom: 20px; padding: 14px 18px;">
     <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center; justify-content: space-between;">
@@ -72,9 +80,15 @@
                                 <i class="fa-solid fa-keyboard"></i> Open Matrix
                             </a>
                             {% if not p.is_announced %}
-                            <a href="{% url 'core:announce_results' institution.slug p.id %}" class="btn-success" onclick="return confirm('Publish results for {{ p.name }} live?');" style="padding: 8px 14px;">
-                                <i class="fa-solid fa-share"></i> Publish
-                            </a>
+                                {% if p.has_marks %}
+                                <a href="{% url 'core:announce_results' institution.slug p.id %}" class="btn-success" onclick="return confirm('Publish results for {{ p.name }} live?');" style="padding: 8px 14px;">
+                                    <i class="fa-solid fa-share"></i> Publish
+                                </a>
+                                {% else %}
+                                <button class="btn-secondary" disabled title="Enter marks first to publish" style="opacity: 0.4; cursor: not-allowed; padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border-color); background: rgba(255,255,255,0.05); color: var(--text-muted); font-size: 0.85rem;">
+                                    <i class="fa-solid fa-share"></i> Publish
+                                </button>
+                                {% endif %}
                             {% endif %}
                         </div>
                     </td>
@@ -121,9 +135,15 @@
                 <i class="fa-solid fa-keyboard"></i> Open Matrix
             </a>
             {% if not p.is_announced %}
-            <a href="{% url 'core:announce_results' institution.slug p.id %}" class="btn-success" onclick="return confirm('Publish results for {{ p.name }} live?');" style="padding: 8px 12px; font-size: 0.85rem;">
-                <i class="fa-solid fa-share"></i> Publish
-            </a>
+                {% if p.has_marks %}
+                <a href="{% url 'core:announce_results' institution.slug p.id %}" class="btn-success" onclick="return confirm('Publish results for {{ p.name }} live?');" style="padding: 8px 12px; font-size: 0.85rem;">
+                    <i class="fa-solid fa-share"></i> Publish
+                </a>
+                {% else %}
+                <button class="btn-secondary" disabled title="Enter marks first to publish" style="opacity: 0.4; cursor: not-allowed; padding: 8px 12px; font-size: 0.85rem; border-radius: 8px; border: 1px solid var(--border-color); background: rgba(255,255,255,0.05); color: var(--text-muted);">
+                    <i class="fa-solid fa-share"></i> Publish
+                </button>
+                {% endif %}
             {% endif %}
         </div>
     </div>

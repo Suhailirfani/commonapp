@@ -809,6 +809,12 @@ def scoring_program_list_view(request, institution_slug):
         else:
             programs = Program.objects.none()
 
+    for p in programs:
+        if p.is_group:
+            p.has_marks = GroupParticipation.objects.filter(program=p, marks__isnull=False).exists()
+        else:
+            p.has_marks = Participation.objects.filter(program=p, marks__isnull=False).exists()
+
     return render(request, 'core/scoring_program_list.html', {
         'institution': institution,
         'programs': programs,
@@ -832,8 +838,10 @@ def mark_entry_matrix_view(request, institution_slug, program_id):
 
     if program.is_group:
         participations = GroupParticipation.objects.filter(program=program).select_related('team')
+        has_marks = GroupParticipation.objects.filter(program=program, marks__isnull=False).exists()
     else:
         participations = Participation.objects.filter(program=program).select_related('contestant', 'contestant__team')
+        has_marks = Participation.objects.filter(program=program, marks__isnull=False).exists()
 
     if request.method == 'POST':
         # Action 1: Update Judge Settings (Count & Max Marks per judge)
@@ -874,6 +882,7 @@ def mark_entry_matrix_view(request, institution_slug, program_id):
             j_dict = {}
             raw_sum = 0
             has_judge_entry = False
+            active_judge_count = 0
 
             for j_num in range(1, jc + 1):
                 j_vals = [v.strip() for v in request.POST.getlist(f'j_{j_num}_marks_{part_id}') if v.strip() != '']
@@ -883,6 +892,7 @@ def mark_entry_matrix_view(request, institution_slug, program_id):
                         j_dict[str(j_num)] = val
                         raw_sum += val
                         has_judge_entry = True
+                        active_judge_count += 1
                     except ValueError:
                         j_dict[str(j_num)] = None
 
@@ -894,12 +904,13 @@ def mark_entry_matrix_view(request, institution_slug, program_id):
                         j_dict['1'] = val
                         raw_sum = val
                         has_judge_entry = True
+                        active_judge_count = 1
                     except ValueError:
                         pass
 
             converted_marks_100 = None
-            if has_judge_entry:
-                total_max_possible = jc * max_per_judge
+            if has_judge_entry and active_judge_count > 0:
+                total_max_possible = active_judge_count * max_per_judge
                 if total_max_possible > 0:
                     converted_score = (raw_sum / total_max_possible) * 100.0
                     converted_marks_100 = int(round(converted_score))
@@ -928,6 +939,7 @@ def mark_entry_matrix_view(request, institution_slug, program_id):
         'program': program,
         'participations': participations,
         'judge_range': judge_range,
+        'has_marks': has_marks,
     })
 
 
@@ -1072,6 +1084,15 @@ def announce_results_view(request, institution_slug, program_id):
         messages.error(request, "Permission Denied: Judges cannot publish public results.")
         return redirect('core:scoring_program_list', institution_slug=institution.slug)
     
+    if program.is_group:
+        has_marks = GroupParticipation.objects.filter(program=program, marks__isnull=False).exists()
+    else:
+        has_marks = Participation.objects.filter(program=program, marks__isnull=False).exists()
+
+    if not has_marks:
+        messages.error(request, f"Cannot publish results for '{program.name}': No marks have been entered for this program yet.")
+        return redirect('core:scoring_program_list', institution_slug=institution.slug)
+
     # Toggle announcement status
     program.is_announced = True
     program.announced_at = timezone.now()
@@ -2206,6 +2227,17 @@ def toggle_program_announcement_view(request, institution_slug, program_id):
     if request.user.is_judge:
         messages.error(request, "Permission Denied: Judges cannot publish public results.")
         return redirect('core:scoring_program_list', institution_slug=institution.slug)
+
+    if not program.is_announced:
+        if program.is_group:
+            has_marks = GroupParticipation.objects.filter(program=program, marks__isnull=False).exists()
+        else:
+            has_marks = Participation.objects.filter(program=program, marks__isnull=False).exists()
+
+        if not has_marks:
+            messages.error(request, f"Cannot publish results for '{program.name}': No marks have been entered for this program yet.")
+            next_url = request.META.get('HTTP_REFERER') or redirect('core:manage_announcements', institution_slug=institution.slug)
+            return redirect(next_url)
 
     program.is_announced = not program.is_announced
     if program.is_announced:

@@ -12,7 +12,7 @@
             <i class="fa-solid fa-sliders" style="color: var(--accent-amber);"></i> Manage Results Hub
         </h2>
         <div style="color: var(--text-muted); font-size: 0.9rem; margin-top: 2px;">
-            Select an action below to enter marks, manage judge panels, or view judge account assignments for {{ institution.name }}.
+            {{ institution.name }} - മാർക്കുകൾ രേഖപ്പെടുത്തുന്നതിനും, ജഡ്ജ് പാനലുകൾ നിർണ്ണയിക്കുന്നതിനും, ജഡ്ജ് അക്കൗണ്ടുകൾ കൈകാര്യം ചെയ്യുന്നതിനുമായി താഴെ നൽകിയിട്ടുള്ള ഓപ്ഷനുകളിൽ നിന്നും ആവശ്യമായവ തിരഞ്ഞെടുക്കുക.
         </div>
     </div>
 </div>
@@ -26,7 +26,7 @@
             </div>
             <h3 style="font-size: 1.25rem; font-weight: 800; color: #f8fafc; margin-bottom: 8px;">Mark Entry</h3>
             <p style="color: var(--text-muted); font-size: 0.88rem; line-height: 1.5; margin-bottom: 20px;">
-                Rapid code letter and mark entry matrix for all stage and off-stage competition programs.
+                എല്ലാ സ്റ്റേജ്, ഓഫ്-സ്റ്റേജ് മത്സരങ്ങളുടെയും കോഡ് ലെറ്ററുകളും മാർക്കുകളും വേഗത്തിൽ രേഖപ്പെടുത്തുന്നതിനുള്ള എൻട്രി മാട്രിക്സ്.
             </p>
         </div>
         <a href="{% url 'core:scoring_program_list' institution.slug %}" class="btn-primary" style="padding: 12px 20px; font-size: 0.95rem; justify-content: center; background: linear-gradient(135deg, #f59e0b, #d97706); color: #000; font-weight: 800; text-decoration: none;">
@@ -42,7 +42,7 @@
             </div>
             <h3 style="font-size: 1.25rem; font-weight: 800; color: #f8fafc; margin-bottom: 8px;">Manage Judges & Panels</h3>
             <p style="color: var(--text-muted); font-size: 0.88rem; line-height: 1.5; margin-bottom: 20px;">
-                Fix judge counts, toggle entry mode (Officials vs Judges), and set per-judge dropdown panels category-wise.
+                ജഡ്ജുമാരുടെ എണ്ണം ക്രമീകരിക്കുക, മാർക്ക് എൻട്രി രീതി മാറ്റുക (ഓഫീഷ്യലുകൾ വഴി / ജഡ്ജുമാർ വഴി), ജഡ്ജ് പാനലുകൾ അസൈൻ ചെയ്യുക.
             </p>
         </div>
         <a href="{% url 'core:judge_management' institution.slug %}?tab=panels" class="btn-primary" style="padding: 12px 20px; font-size: 0.95rem; justify-content: center; background: linear-gradient(135deg, var(--accent-cyan), #0284c7); text-decoration: none;">
@@ -58,7 +58,7 @@
             </div>
             <h3 style="font-size: 1.25rem; font-weight: 800; color: #f8fafc; margin-bottom: 8px;">Judges List</h3>
             <p style="color: var(--text-muted); font-size: 0.88rem; line-height: 1.5; margin-bottom: 20px;">
-                View registered judge accounts, check assigned programs list, and create new judge user credentials.
+                രജിസ്റ്റർ ചെയ്ത ജഡ്ജ് അക്കൗണ്ടുകൾ പരിശോധിക്കുക, അസൈൻ ചെയ്ത മത്സരങ്ങൾ കാണുക, പുതിയ ജഡ്ജ് യൂസർ അക്കൗണ്ടുകൾ സൃഷ്ടിക്കുക.
             </p>
         </div>
         <a href="{% url 'core:judge_management' institution.slug %}?tab=judges" class="btn-primary" style="padding: 12px 20px; font-size: 0.95rem; justify-content: center; background: linear-gradient(135deg, #a855f7, #7e22ce); text-decoration: none;">

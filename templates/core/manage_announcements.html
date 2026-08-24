@@ -113,10 +113,14 @@
                         <a href="{% url 'core:toggle_program_announcement' institution.slug prog.id %}" class="btn-primary" style="padding: 6px 12px; font-size: 0.8rem; background: rgba(225, 29, 72, 0.2); border: 1px solid #e11d48; color: #f43f5e;">
                             <i class="fa-solid fa-eye-slash"></i> Hide Results
                         </a>
-                        {% else %}
+                        {% elif prog.has_marks %}
                         <a href="{% url 'core:toggle_program_announcement' institution.slug prog.id %}" class="btn-primary" style="padding: 6px 12px; font-size: 0.8rem; background: linear-gradient(135deg, var(--accent-emerald), #059669);">
                             <i class="fa-solid fa-bullhorn"></i> Announce
                         </a>
+                        {% else %}
+                        <button class="btn-secondary" disabled title="Enter marks first to announce" style="opacity: 0.4; cursor: not-allowed; padding: 6px 12px; font-size: 0.8rem; border-radius: 8px; border: 1px solid var(--border-color); background: rgba(255,255,255,0.05); color: var(--text-muted);">
+                            <i class="fa-solid fa-bullhorn"></i> Announce
+                        </button>
                         {% endif %}
                     </td>
                 </tr>
@@ -170,10 +174,14 @@
                 <a href="{% url 'core:toggle_program_announcement' institution.slug prog.id %}" class="btn-primary" style="padding: 6px 12px; font-size: 0.8rem; background: rgba(225, 29, 72, 0.2); border: 1px solid #e11d48; color: #f43f5e;">
                     <i class="fa-solid fa-eye-slash"></i> Hide Results
                 </a>
-                {% else %}
+                {% elif prog.has_marks %}
                 <a href="{% url 'core:toggle_program_announcement' institution.slug prog.id %}" class="btn-primary" style="padding: 6px 12px; font-size: 0.8rem; background: linear-gradient(135deg, var(--accent-emerald), #059669);">
                     <i class="fa-solid fa-bullhorn"></i> Announce
                 </a>
+                {% else %}
+                <button class="btn-secondary" disabled title="Enter marks first to announce" style="opacity: 0.4; cursor: not-allowed; padding: 6px 12px; font-size: 0.8rem; border-radius: 8px; border: 1px solid var(--border-color); background: rgba(255,255,255,0.05); color: var(--text-muted);">
+                    <i class="fa-solid fa-bullhorn"></i> Announce
+                </button>
                 {% endif %}
             </div>
         </div>
