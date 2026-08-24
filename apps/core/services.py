@@ -88,11 +88,14 @@ def calculate_program_results(program):
         config = PointsConfig.objects.create(institution=institution)
 
     if program.is_group:
+        GroupParticipation.objects.filter(program=program, marks__isnull=True).update(rank=None, grade=None)
         participations = list(GroupParticipation.objects.filter(program=program, marks__isnull=False).order_by('-marks'))
     else:
+        Participation.objects.filter(program=program, marks__isnull=True).update(rank=None, grade=None)
         participations = list(Participation.objects.filter(program=program, marks__isnull=False).order_by('-marks'))
 
     if not participations:
+        recalculate_team_points(institution)
         return
 
     # Calculate Ranks & Grades
@@ -125,6 +128,7 @@ def get_team_standings(institution, announced_only=True, limit_n_results=None):
     Guarantees 100% mathematical consistency between Admin Portal and Public Leaderboard.
     Optionally limits calculation to the first N results announced or marked.
     """
+    from django.db.models import Q
     from apps.core.models import Program
     teams = list(Team.objects.filter(institution=institution).order_by('name'))
     team_data = []
@@ -138,10 +142,12 @@ def get_team_standings(institution, announced_only=True, limit_n_results=None):
                 if announced_only:
                     prog_qs = prog_qs.filter(is_announced=True)
                 else:
-                    prog_qs = prog_qs.filter(participations__marks__isnull=False).distinct()
+                    prog_qs = prog_qs.filter(
+                        Q(single_participations__marks__isnull=False) | Q(group_participations__marks__isnull=False)
+                    ).distinct()
                 
                 allowed_program_ids = set(
-                    prog_qs.order_by('announced_at', 'result_number', 'id')
+                    prog_qs.order_by('announced_at', 'id')
                     .values_list('id', flat=True)[:n_val]
                 )
         except (ValueError, TypeError):
@@ -228,9 +234,15 @@ def get_team_standings(institution, announced_only=True, limit_n_results=None):
 
     current_rank = 1
     for i, data in enumerate(team_data):
-        if i > 0 and data['points'] < team_data[i-1]['points']:
-            current_rank = i + 1
+        if i > 0:
+            prev = team_data[i-1]
+            curr_tuple = (data['points'], data['first_count'], data['second_count'], data['third_count'])
+            prev_tuple = (prev['points'], prev['first_count'], prev['second_count'], prev['third_count'])
+            if curr_tuple < prev_tuple:
+                current_rank = i + 1
         data['position'] = current_rank
+
+    return team_data
 
     return team_data
 

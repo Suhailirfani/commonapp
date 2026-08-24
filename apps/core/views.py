@@ -2334,18 +2334,7 @@ def announcement_balancer_view(request, institution_slug):
 
     suggested_announcements = get_top_5_balancing_announcement_suggestions(institution)
 
-    teams = list(Team.objects.filter(institution=institution))
-    public_team_scores = []
-    for t in teams:
-        pts = 0
-        for c in Contestant.objects.filter(institution=institution, team=t):
-            parts = Participation.objects.filter(contestant=c, marks__isnull=False, program__is_announced=True)
-            pts += sum(p.total_points for p in parts if p.rank or p.grade)
-        for gp in GroupParticipation.objects.filter(team=t, marks__isnull=False, program__is_announced=True):
-            pts += gp.total_points
-        public_team_scores.append({'team': t, 'points': pts})
-
-    public_team_scores.sort(key=lambda x: x['points'], reverse=True)
+    public_team_scores = get_team_standings(institution, announced_only=True)
 
     return render(request, 'core/announcement_balancer.html', {
         'institution': institution,
