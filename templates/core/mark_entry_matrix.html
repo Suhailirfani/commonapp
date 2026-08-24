@@ -216,6 +216,20 @@
     const judgeCount = {{ program.judge_count|default:1 }};
     const maxPerJudge = {{ program.max_marks_per_judge|default:100 }};
 
+    function syncResponsiveInputs() {
+        const isMobile = window.innerWidth <= 768;
+        const desktopInputs = document.querySelectorAll('.desktop-table-view input, .desktop-table-view select');
+        const mobileInputs = document.querySelectorAll('.mobile-card-list-view input, .mobile-card-list-view select');
+
+        if (isMobile) {
+            desktopInputs.forEach(el => el.disabled = true);
+            mobileInputs.forEach(el => el.disabled = false);
+        } else {
+            mobileInputs.forEach(el => el.disabled = true);
+            desktopInputs.forEach(el => el.disabled = false);
+        }
+    }
+
     function updateConvertedMarks(partId) {
         let rawSum = 0;
         let activeJudgeCount = 0;
@@ -223,15 +237,22 @@
         for (let j = 1; j <= judgeCount; j++) {
             const inputs = Array.from(document.querySelectorAll(`input[name="j_${j}_marks_${partId}"]`));
             let valStr = '';
-            for (let input of inputs) {
-                if (input.value.trim() !== '') {
-                    valStr = input.value.trim();
-                    break;
+
+            // Prioritize input currently being focused/edited by user
+            const activeInput = inputs.find(input => document.activeElement === input);
+            if (activeInput && activeInput.value.trim() !== '') {
+                valStr = activeInput.value.trim();
+            } else {
+                for (let input of inputs) {
+                    if (input.value.trim() !== '') {
+                        valStr = input.value.trim();
+                        break;
+                    }
                 }
             }
 
             if (valStr !== '') {
-                // Sync values between desktop & mobile views
+                // Sync value to non-active inputs
                 inputs.forEach(input => {
                     if (document.activeElement !== input && input.value !== valStr) {
                         input.value = valStr;
@@ -261,5 +282,14 @@
             if (mobileTotalBadge) mobileTotalBadge.innerText = '-';
         }
     }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        syncResponsiveInputs();
+    });
+    window.addEventListener('resize', syncResponsiveInputs);
+    document.getElementById('matrix-form')?.addEventListener('submit', () => {
+        // Ensure only active responsive inputs are submitted
+        syncResponsiveInputs();
+    });
 </script>
 {% endblock %}
