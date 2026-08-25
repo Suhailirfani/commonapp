@@ -35,17 +35,25 @@
                 <thead>
                     <tr>
                         <th>ID</th>
+                        <th>Fest Emblem</th>
                         <th>Fest Name</th>
                         <th>Type</th>
                         <th>Year</th>
                         <th>Status</th>
-                        <th>Created At</th>
+                        <th style="text-align: right;">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for comp in competitions %}
                     <tr>
                         <td>#{{ comp.id }}</td>
+                        <td>
+                            {% if comp.logo %}
+                            <img src="{{ comp.logo.url }}" alt="{{ comp.name }}" style="width: 36px; height: 36px; object-fit: contain; border-radius: 6px; background: rgba(255,255,255,0.06); padding: 2px; border: 1px solid var(--border-color);">
+                            {% else %}
+                            <span style="color: var(--text-muted); font-size: 0.82rem;"><i class="fa-solid fa-trophy"></i> No Logo</span>
+                            {% endif %}
+                        </td>
                         <td><strong>{{ comp.name }}</strong></td>
                         <td><span class="badge badge-approved">{{ comp.get_type_display }}</span></td>
                         <td>{{ comp.year }}</td>
@@ -56,11 +64,18 @@
                             <span class="badge badge-rejected">Archived</span>
                             {% endif %}
                         </td>
-                        <td>{{ comp.created_at|date:"d M Y" }}</td>
+                        <td style="text-align: right; white-space: nowrap;">
+                            <a href="{% url 'core:competition_edit' institution.slug comp.id %}" class="btn-secondary" style="padding: 5px 10px; font-size: 0.78rem; border-radius: 6px; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;" title="Edit Fest">
+                                <i class="fa-solid fa-pen-to-square" style="color: var(--accent-cyan);"></i> Edit
+                            </a>
+                            <a href="{% url 'core:competition_delete' institution.slug comp.id %}" class="btn-secondary" style="padding: 5px 10px; font-size: 0.78rem; border-radius: 6px; text-decoration: none; color: #f87171; border-color: rgba(248, 113, 113, 0.3); background: rgba(248, 113, 113, 0.1); display: inline-flex; align-items: center; gap: 4px;" title="Delete Fest">
+                                <i class="fa-solid fa-trash-can"></i> Delete
+                            </a>
+                        </td>
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 24px;">
+                        <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 24px;">
                             No fests configured yet. Click "Create New Fest" above to start.
                         </td>
                     </tr>
