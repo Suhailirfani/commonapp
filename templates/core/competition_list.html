@@ -48,9 +48,12 @@
                     <span class="badge badge-rejected">Archived</span>
                     {% endif %}
                 </td>
-                <td style="text-align: right;">
-                    <a href="{% url 'core:competition_edit' institution.slug comp.id %}" class="btn-secondary" style="padding: 5px 12px; font-size: 0.8rem; border-radius: 6px; text-decoration: none;">
+                <td style="text-align: right; white-space: nowrap;">
+                    <a href="{% url 'core:competition_edit' institution.slug comp.id %}" class="btn-secondary" style="padding: 5px 12px; font-size: 0.8rem; border-radius: 6px; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;" title="Edit Fest">
                         <i class="fa-solid fa-pen-to-square" style="color: var(--accent-cyan);"></i> Edit
+                    </a>
+                    <a href="{% url 'core:competition_delete' institution.slug comp.id %}" class="btn-secondary" style="padding: 5px 12px; font-size: 0.8rem; border-radius: 6px; text-decoration: none; color: #f87171; border-color: rgba(248, 113, 113, 0.3); background: rgba(248, 113, 113, 0.1); display: inline-flex; align-items: center; gap: 4px;" title="Delete Fest">
+                        <i class="fa-solid fa-trash-can"></i> Delete
                     </a>
                 </td>
             </tr>

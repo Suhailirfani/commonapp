@@ -127,9 +127,34 @@ def competition_edit_view(request, institution_slug, comp_id):
 
         comp.save()
         messages.success(request, f"Fest '{name}' updated successfully!")
+    return render(request, 'core/competition_edit.html', {'institution': institution, 'comp': comp})
+
+
+@login_required
+def competition_delete_view(request, institution_slug, comp_id):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    comp = get_object_or_404(Competition, id=comp_id, institution=institution)
+
+    programs_count = comp.programs.count()
+    contestants_count = comp.contestants.count()
+    categories_count = comp.categories.count()
+    teams_count = comp.teams.count()
+
+    if request.method == 'POST':
+        name = comp.name
+        comp.delete()
+        messages.success(request, f"Fest '{name}' and all associated programs, contestants, categories & teams have been permanently deleted.")
         return redirect('core:competition_list', institution_slug=institution.slug)
 
-    return render(request, 'core/competition_edit.html', {'institution': institution, 'comp': comp})
+    context = {
+        'institution': institution,
+        'comp': comp,
+        'programs_count': programs_count,
+        'contestants_count': contestants_count,
+        'categories_count': categories_count,
+        'teams_count': teams_count,
+    }
+    return render(request, 'core/competition_delete_confirm.html', context)
 
 
 @login_required

@@ -11,6 +11,7 @@ urlpatterns = [
     path('portal/<slug:institution_slug>/competitions/', views.competition_list_view, name='competition_list'),
     path('portal/<slug:institution_slug>/competitions/create/', views.competition_create_view, name='competition_create'),
     path('portal/<slug:institution_slug>/competitions/<int:comp_id>/edit/', views.competition_edit_view, name='competition_edit'),
+    path('portal/<slug:institution_slug>/competitions/<int:comp_id>/delete/', views.competition_delete_view, name='competition_delete'),
     
     # Categories & Programs
     path('portal/<slug:institution_slug>/categories/', views.category_list_view, name='category_list'),
