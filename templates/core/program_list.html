@@ -403,10 +403,10 @@ Category: Junior Category
                             {{ p.duration_per_participant|default:5 }} mins
                         </td>
                         <td style="text-align: right; padding: 12px 14px; white-space: nowrap;">
-                            <a href="{% url 'core:program_edit' institution.slug p.id %}" class="btn-secondary" style="padding: 5px 10px; font-size: 0.78rem; border-radius: 6px; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;" title="Edit Program">
-                                <i class="fa-solid fa-pen-to-square" style="color: var(--accent-cyan);"></i> Edit
+                            <a href="{% url 'core:program_edit' institution.slug p.id %}" style="padding: 5px 12px; font-size: 0.8rem; font-weight: 700; border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; background: linear-gradient(135deg, rgba(56, 189, 248, 0.22), rgba(14, 165, 233, 0.4)); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.5); box-shadow: 0 4px 12px rgba(56, 189, 248, 0.15); transition: all 0.2s;" title="Edit Program">
+                                <i class="fa-solid fa-pen-to-square"></i> Edit
                             </a>
-                            <a href="{% url 'core:program_delete' institution.slug p.id %}" onclick="return confirm('Are you sure you want to delete program \'{{ p.name|escapejs }}\'?');" class="btn-secondary" style="padding: 5px 10px; font-size: 0.78rem; border-radius: 6px; text-decoration: none; color: #f87171; border-color: rgba(248, 113, 113, 0.3); background: rgba(248, 113, 113, 0.1); display: inline-flex; align-items: center; gap: 4px;" title="Delete Program">
+                            <a href="{% url 'core:program_delete' institution.slug p.id %}" onclick="return confirm('Are you sure you want to delete program \'{{ p.name|escapejs }}\'?');" style="padding: 5px 12px; font-size: 0.8rem; font-weight: 700; border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; background: linear-gradient(135deg, rgba(244, 63, 94, 0.2), rgba(225, 29, 72, 0.35)); color: #fb7185; border: 1px solid rgba(244, 63, 94, 0.45); box-shadow: 0 4px 12px rgba(244, 63, 94, 0.12); transition: all 0.2s;" title="Delete Program">
                                 <i class="fa-solid fa-trash-can"></i> Delete
                             </a>
                         </td>
@@ -450,10 +450,10 @@ Category: Junior Category
                     </div>
                 </div>
                 <div style="display: flex; gap: 8px; margin-top: 12px; justify-content: flex-end; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px;">
-                    <a href="{% url 'core:program_edit' institution.slug p.id %}" class="btn-secondary" style="padding: 5px 12px; font-size: 0.76rem; border-radius: 6px; text-decoration: none;">
-                        <i class="fa-solid fa-pen-to-square" style="color: var(--accent-cyan);"></i> Edit
+                    <a href="{% url 'core:program_edit' institution.slug p.id %}" style="padding: 5px 12px; font-size: 0.78rem; font-weight: 700; border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; background: linear-gradient(135deg, rgba(56, 189, 248, 0.22), rgba(14, 165, 233, 0.4)); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.5);">
+                        <i class="fa-solid fa-pen-to-square"></i> Edit
                     </a>
-                    <a href="{% url 'core:program_delete' institution.slug p.id %}" onclick="return confirm('Are you sure you want to delete program \'{{ p.name|escapejs }}\'?');" class="btn-secondary" style="padding: 5px 12px; font-size: 0.76rem; border-radius: 6px; text-decoration: none; color: #f87171; border-color: rgba(248, 113, 113, 0.3); background: rgba(248, 113, 113, 0.1);">
+                    <a href="{% url 'core:program_delete' institution.slug p.id %}" onclick="return confirm('Are you sure you want to delete program \'{{ p.name|escapejs }}\'?');" style="padding: 5px 12px; font-size: 0.78rem; font-weight: 700; border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; background: linear-gradient(135deg, rgba(244, 63, 94, 0.2), rgba(225, 29, 72, 0.35)); color: #fb7185; border: 1px solid rgba(244, 63, 94, 0.45);">
                         <i class="fa-solid fa-trash-can"></i> Delete
                     </a>
                 </div>
