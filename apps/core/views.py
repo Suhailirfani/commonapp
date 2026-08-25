@@ -305,6 +305,7 @@ def program_create_view(request, institution_slug):
         is_group = request.POST.get('is_group') == 'on'
         p_type = request.POST.get('program_type', 'STAGE')
         p_mode = request.POST.get('presentation_mode', 'SEQUENTIAL')
+        duration = request.POST.get('duration_per_participant', 5)
         comp = get_object_or_404(Competition, id=comp_id, institution=institution)
         cat = get_object_or_404(Category, id=cat_id, institution=institution)
 
