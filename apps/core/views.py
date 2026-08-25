@@ -94,15 +94,42 @@ def competition_create_view(request, institution_slug):
         name = request.POST.get('name')
         comp_type = request.POST.get('type')
         year = request.POST.get('year', 2026)
+        logo = request.FILES.get('logo')
         Competition.objects.create(
             institution=institution,
             name=name,
             type=comp_type,
-            year=year
+            year=year,
+            logo=logo
         )
-        messages.success(request, f"Competition '{name}' created successfully!")
+        messages.success(request, f"Fest '{name}' created successfully!")
         return redirect('core:competition_list', institution_slug=institution.slug)
     return render(request, 'core/competition_create.html', {'institution': institution})
+
+
+@login_required
+def competition_edit_view(request, institution_slug, comp_id):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    comp = get_object_or_404(Competition, id=comp_id, institution=institution)
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        comp_type = request.POST.get('type')
+        year = request.POST.get('year', 2026)
+
+        comp.name = name
+        comp.type = comp_type
+        comp.year = year
+
+        if request.POST.get('clear_logo') == '1':
+            comp.logo = None
+        elif 'logo' in request.FILES:
+            comp.logo = request.FILES['logo']
+
+        comp.save()
+        messages.success(request, f"Fest '{name}' updated successfully!")
+        return redirect('core:competition_list', institution_slug=institution.slug)
+
+    return render(request, 'core/competition_edit.html', {'institution': institution, 'comp': comp})
 
 
 @login_required

@@ -24,6 +24,7 @@ class Competition(TenantBaseModel):
         ("BOTH", "Combined On & Off-Campus"),
     ]
     name = models.CharField(max_length=150)
+    logo = models.ImageField(upload_to='fest_logos/', null=True, blank=True, help_text="Optional Fest / Competition Logo")
     type = models.CharField(max_length=10, choices=COMPETITION_TYPES, default="ON")
     year = models.PositiveIntegerField(default=2026)
     start_date = models.DateField(null=True, blank=True)

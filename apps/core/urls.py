@@ -10,6 +10,7 @@ urlpatterns = [
     path('portal/<slug:institution_slug>/help/', views.help_guide_view, name='help_guide'),
     path('portal/<slug:institution_slug>/competitions/', views.competition_list_view, name='competition_list'),
     path('portal/<slug:institution_slug>/competitions/create/', views.competition_create_view, name='competition_create'),
+    path('portal/<slug:institution_slug>/competitions/<int:comp_id>/edit/', views.competition_edit_view, name='competition_edit'),
     
     # Categories & Programs
     path('portal/<slug:institution_slug>/categories/', views.category_list_view, name='category_list'),

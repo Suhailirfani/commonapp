@@ -19,18 +19,26 @@
         <thead>
             <tr>
                 <th>ID</th>
+                <th>Fest Emblem / Logo</th>
                 <th>Fest Name</th>
                 <th>Type</th>
                 <th>Year</th>
                 <th>Status</th>
-                <th>Created At</th>
+                <th style="text-align: right;">Action</th>
             </tr>
         </thead>
         <tbody>
             {% for comp in competitions %}
             <tr>
                 <td>#{{ comp.id }}</td>
-                <td><strong>{{ comp.name }}</strong></td>
+                <td>
+                    {% if comp.logo %}
+                    <img src="{{ comp.logo.url }}" alt="{{ comp.name }}" style="width: 40px; height: 40px; object-fit: contain; border-radius: 8px; background: rgba(255,255,255,0.06); padding: 3px; border: 1px solid var(--border-color);">
+                    {% else %}
+                    <span style="color: var(--text-muted); font-size: 0.85rem;"><i class="fa-solid fa-trophy"></i> No Logo</span>
+                    {% endif %}
+                </td>
+                <td><strong style="font-size: 1.05rem;">{{ comp.name }}</strong></td>
                 <td><span class="badge badge-approved">{{ comp.get_type_display }}</span></td>
                 <td>{{ comp.year }}</td>
                 <td>
@@ -40,11 +48,15 @@
                     <span class="badge badge-rejected">Archived</span>
                     {% endif %}
                 </td>
-                <td>{{ comp.created_at|date:"d M Y" }}</td>
+                <td style="text-align: right;">
+                    <a href="{% url 'core:competition_edit' institution.slug comp.id %}" class="btn-secondary" style="padding: 5px 12px; font-size: 0.8rem; border-radius: 6px; text-decoration: none;">
+                        <i class="fa-solid fa-pen-to-square" style="color: var(--accent-cyan);"></i> Edit
+                    </a>
+                </td>
             </tr>
             {% empty %}
             <tr>
-                <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 30px;">
+                <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 30px;">
                     No fests created yet. Click "Create New Fest" above to start!
                 </td>
             </tr>

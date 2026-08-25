@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit Fest - {{ institution.name }}{% endblock %}
+
+{% block content %}
+<div style="max-width: 580px; margin: 20px auto; width: 100%;">
+    <div class="glass-card">
+        <a href="{% url 'core:competition_list' institution.slug %}" style="color: var(--text-muted); text-decoration: none;"><i class="fa-solid fa-arrow-left"></i> Back to Fest Setup</a>
+        <h2 style="font-size: 1.6rem; font-weight: 700; margin: 12px 0 20px 0;"><i class="fa-solid fa-trophy" style="color: var(--accent-amber);"></i> Edit Fest: {{ comp.name }}</h2>
+
+        <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="form-group">
+                <label class="form-label">Fest Name</label>
+                <input type="text" name="name" class="form-control" value="{{ comp.name }}" required>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Fest Logo / Emblem (Optional)</label>
+                {% if comp.logo %}
+                <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 10px; background: rgba(0,0,0,0.25); padding: 10px 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.08);">
+                    <img src="{{ comp.logo.url }}" alt="{{ comp.name }}" style="width: 52px; height: 52px; object-fit: contain; border-radius: 8px; background: rgba(255,255,255,0.05); padding: 4px; border: 1px solid var(--border-color);">
+                    <div>
+                        <span style="font-size: 0.88rem; color: var(--text-main); font-weight: 700; display: block;">Current Fest Emblem</span>
+                        <label style="font-size: 0.8rem; color: #f43f5e; cursor: pointer; display: flex; align-items: center; gap: 6px; margin-top: 4px;">
+                            <input type="checkbox" name="clear_logo" value="1"> Remove current Fest logo
+                        </label>
+                    </div>
+                </div>
+                {% endif %}
+                <input type="file" name="logo" accept="image/*" class="form-control" style="padding: 8px;">
+                <small style="color: var(--text-muted); font-size: 0.78rem; display: block; margin-top: 4px;">
+                    Upload/Replace the official Fest Emblem/Logo (PNG, JPG, SVG).
+                </small>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Fest Type</label>
+                <select name="type" class="form-control" required>
+                    <option value="ON" {% if comp.type == 'ON' %}selected{% endif %}>On-Campus</option>
+                    <option value="OFF" {% if comp.type == 'OFF' %}selected{% endif %}>Off-Campus</option>
+                    <option value="BOTH" {% if comp.type == 'BOTH' %}selected{% endif %}>Combined On & Off-Campus</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Year</label>
+                <input type="number" name="year" class="form-control" value="{{ comp.year }}" required>
+            </div>
+
+            <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 24px;">
+                <a href="{% url 'core:competition_list' institution.slug %}" class="btn-primary" style="background: rgba(255,255,255,0.08); box-shadow: none;">Cancel</a>
+                <button type="submit" class="btn-success">
+                    <i class="fa-solid fa-save"></i> Save Changes
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
