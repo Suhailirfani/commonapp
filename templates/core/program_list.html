@@ -370,7 +370,12 @@ Category: Junior Category
                     <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
                         <td style="padding: 12px 14px;"><strong>{{ forloop.counter }}</strong></td>
                         <td style="padding: 12px 14px;">
-                            <strong style="font-size: 1.02rem; color: #f8fafc;">{{ p.name }}</strong>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                {% if p.logo %}
+                                <img src="{{ p.logo.url }}" alt="{{ p.name }}" style="width: 34px; height: 34px; object-fit: contain; border-radius: 6px; background: rgba(255,255,255,0.06); padding: 2px; border: 1px solid var(--border-color); flex-shrink: 0;">
+                                {% endif %}
+                                <strong style="font-size: 1.02rem; color: #f8fafc;">{{ p.name }}</strong>
+                            </div>
                         </td>
                         <td style="padding: 12px 14px;">
                             <span class="badge badge-approved" style="font-size: 0.82rem; padding: 4px 10px;">
@@ -427,13 +432,18 @@ Category: Junior Category
             {% for p in programs %}
             <div class="program-mobile-card" style="background: rgba(255,255,255,0.02); padding: 16px; border-radius: 14px; border: 1px solid var(--border-color); margin-bottom: 12px;">
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;">
-                    <div>
-                        <strong style="font-size: 1.05rem; color: var(--accent-cyan); display: block; margin-bottom: 4px;">
-                            #{{ forloop.counter }} {{ p.name }}
-                        </strong>
-                        <span class="badge badge-approved" style="font-size: 0.76rem; padding: 3px 8px;">
-                            {{ p.category.name }}
-                        </span>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        {% if p.logo %}
+                        <img src="{{ p.logo.url }}" alt="{{ p.name }}" style="width: 36px; height: 36px; object-fit: contain; border-radius: 8px; background: rgba(255,255,255,0.06); padding: 2px; border: 1px solid var(--border-color); flex-shrink: 0;">
+                        {% endif %}
+                        <div>
+                            <strong style="font-size: 1.05rem; color: var(--accent-cyan); display: block; margin-bottom: 4px;">
+                                #{{ forloop.counter }} {{ p.name }}
+                            </strong>
+                            <span class="badge badge-approved" style="font-size: 0.76rem; padding: 3px 8px;">
+                                {{ p.category.name }}
+                            </span>
+                        </div>
                     </div>
                     <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
                         {% if p.is_group %}

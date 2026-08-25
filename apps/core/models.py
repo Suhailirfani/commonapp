@@ -170,6 +170,7 @@ class Program(TenantBaseModel):
         default='OFFICIALS',
         help_text="Who inputs marks for this program: Officials or Judges"
     )
+    logo = models.ImageField(upload_to='program_logos/', null=True, blank=True, help_text="Optional program logo or icon image")
 
     class Meta:
         ordering = ['category', 'name']

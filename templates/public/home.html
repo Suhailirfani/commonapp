@@ -44,9 +44,14 @@
     {% for program in announced_programs %}
     <a href="{% url 'public:program_detail' institution.slug program.id %}" class="glass-card" style="text-decoration: none; color: inherit;">
         <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-            <div>
-                <span class="badge badge-approved" style="font-size: 0.7rem;">{{ program.category.name }}</span>
-                <h4 style="font-size: 1.15rem; font-weight: 700; margin-top: 6px;">{{ program.name }}</h4>
+            <div style="display: flex; align-items: center; gap: 12px;">
+                {% if program.logo %}
+                <img src="{{ program.logo.url }}" alt="{{ program.name }}" style="width: 40px; height: 40px; object-fit: contain; border-radius: 8px; background: rgba(255,255,255,0.06); padding: 3px; border: 1px solid var(--border-color); flex-shrink: 0;">
+                {% endif %}
+                <div>
+                    <span class="badge badge-approved" style="font-size: 0.7rem;">{{ program.category.name }}</span>
+                    <h4 style="font-size: 1.15rem; font-weight: 700; margin-top: 4px;">{{ program.name }}</h4>
+                </div>
             </div>
             <i class="fa-solid fa-angle-right" style="color: var(--text-muted);"></i>
         </div>

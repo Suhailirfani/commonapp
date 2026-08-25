@@ -8,7 +8,7 @@
         <a href="{% url 'core:program_list' institution.slug %}" style="color: var(--text-muted); text-decoration: none;"><i class="fa-solid fa-arrow-left"></i> Back to Programs</a>
         <h2 style="font-size: 1.6rem; font-weight: 700; margin: 12px 0 20px 0;"><i class="fa-solid fa-plus"></i> Add New Program / Event</h2>
 
-        <form method="POST">
+        <form method="POST" enctype="multipart/form-data">
             {% csrf_token %}
             <div class="form-group">
                 <label class="form-label">Fest</label>
@@ -31,6 +31,14 @@
             <div class="form-group">
                 <label class="form-label">Program Name</label>
                 <input type="text" name="name" class="form-control" placeholder="e.g. Light Music (Male)" required>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Program Logo / Icon (Optional)</label>
+                <input type="file" name="logo" accept="image/*" class="form-control" style="padding: 8px;">
+                <small style="color: var(--text-muted); font-size: 0.78rem; display: block; margin-top: 4px;">
+                    Upload a custom logo/icon (PNG, JPG, SVG) to display next to the program name on posters and public results.
+                </small>
             </div>
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
