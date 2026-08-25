@@ -38,12 +38,8 @@
     {% for item in program_results %}
     <div class="glass-card" style="padding: 16px;">
         <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 14px; flex-wrap: wrap; gap: 8px;">
-            <div style="display: flex; align-items: center; gap: 10px;">
-                {% if item.program.logo %}
-                <img src="{{ item.program.logo.url }}" alt="{{ item.program.name }}" style="width: 36px; height: 36px; object-fit: contain; border-radius: 8px; background: rgba(255,255,255,0.06); padding: 2px; border: 1px solid var(--border-color); flex-shrink: 0;">
-                {% endif %}
-                <div>
-                    <strong style="font-size: 1.15rem; color: var(--text-main); display: block;">{{ item.program.name }}</strong>
+            <div>
+                <strong style="font-size: 1.15rem; color: var(--text-main); display: block;">{{ item.program.name }}</strong>
                 <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px;">
                     <span class="badge badge-approved" style="font-size: 0.75rem;">{{ item.program.category.name }}</span>
                     {% if item.program.is_group %}

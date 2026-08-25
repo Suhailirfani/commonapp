@@ -6,12 +6,7 @@
 <div class="page-header">
     <div>
         <a href="{% url 'core:scoring_program_list' institution.slug %}" style="color: var(--text-muted); text-decoration: none;"><i class="fa-solid fa-arrow-left"></i> Back to Mark Entry</a>
-        <h2 style="font-size: 1.8rem; font-weight: 800; margin-top: 4px; display: flex; align-items: center; gap: 12px;">
-            {% if program.logo %}
-            <img src="{{ program.logo.url }}" alt="{{ program.name }}" style="width: 42px; height: 42px; object-fit: contain; border-radius: 8px; background: rgba(255,255,255,0.06); padding: 3px; border: 1px solid var(--border-color); flex-shrink: 0;">
-            {% endif %}
-            <span>Mark Entry Matrix: <span style="color: var(--accent-cyan);">{{ program.name }}</span></span>
-        </h2>
+        <h2 style="font-size: 1.8rem; font-weight: 800; margin-top: 4px;">Mark Entry Matrix: <span style="color: var(--accent-cyan);">{{ program.name }}</span></h2>
         <div style="margin-top: 6px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
             <span class="badge badge-approved">{{ program.category.name }}</span>
             <span class="badge badge-pending">{% if program.is_group %}Group Program{% else %}Single Program{% endif %}</span>

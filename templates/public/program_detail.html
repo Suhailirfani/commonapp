@@ -10,14 +10,7 @@
         <span class="badge badge-approved" style="font-size: 0.85rem;">{{ program.category.name }}</span>
         <span class="badge badge-pending">{% if program.is_group %}Group Event{% else %}Single Event{% endif %}</span>
     </div>
-    <h1 style="font-size: 2.4rem; font-weight: 800; margin-top: 8px; display: flex; align-items: center; gap: 14px;">
-        {% if program.logo %}
-        <img src="{{ program.logo.url }}" alt="{{ program.name }}" style="width: 52px; height: 52px; object-fit: contain; border-radius: 10px; background: rgba(255,255,255,0.06); padding: 4px; border: 1px solid var(--border-color); flex-shrink: 0;">
-        {% else %}
-        <span>🏆</span>
-        {% endif %}
-        <span>{{ program.name }} - Official Results</span>
-    </h1>
+    <h1 style="font-size: 2.4rem; font-weight: 800; margin-top: 8px;">🏆 {{ program.name }} - Official Results</h1>
     <p style="color: var(--text-muted); font-size: 0.95rem;">Published: {{ program.announced_at|date:"d M Y, h:i A" }}</p>
 </div>
 

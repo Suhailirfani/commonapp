@@ -25,14 +25,7 @@
         <tbody>
             {% for p in programs %}
             <tr>
-                <td>
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        {% if p.logo %}
-                        <img src="{{ p.logo.url }}" alt="{{ p.name }}" style="width: 32px; height: 32px; object-fit: contain; border-radius: 6px; background: rgba(255,255,255,0.06); padding: 2px; border: 1px solid var(--border-color); flex-shrink: 0;">
-                        {% endif %}
-                        <strong>{{ p.name }}</strong>
-                    </div>
-                </td>
+                <td><strong>{{ p.name }}</strong></td>
                 <td><span class="badge badge-approved">{{ p.category.name }}</span></td>
                 <td>{% if p.is_group %}<span class="badge badge-pending">Group Event</span>{% else %}Single Event{% endif %}</td>
                 <td>{{ p.announced_at|date:"d M Y, h:i A" }}</td>

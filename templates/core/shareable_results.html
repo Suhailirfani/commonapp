@@ -551,9 +551,6 @@
         <div class="card-inner">
             <div class="prog-header-top">
                 <div class="result-number-huge">{{ forloop.counter }}</div>
-                {% if prog.logo %}
-                <img src="{{ prog.logo.url }}" alt="{{ prog.name }}" style="width: 44px; height: 44px; object-fit: contain; border-radius: 8px; background: rgba(255,255,255,0.18); padding: 3px; border: 1px solid rgba(255,255,255,0.25); flex-shrink: 0;">
-                {% endif %}
                 <div class="prog-title-wrap">
                     <div class="prog-name">{{ prog.name }}</div>
                     <div class="cat-subtitle">{{ prog.category.name }} • {% if prog.is_group %}Group{% else %}Solo{% endif %}</div>

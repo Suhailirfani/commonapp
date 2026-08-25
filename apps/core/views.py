@@ -305,9 +305,6 @@ def program_create_view(request, institution_slug):
         is_group = request.POST.get('is_group') == 'on'
         p_type = request.POST.get('program_type', 'STAGE')
         p_mode = request.POST.get('presentation_mode', 'SEQUENTIAL')
-        duration = request.POST.get('duration_per_participant', 5)
-        logo = request.FILES.get('logo')
-
         comp = get_object_or_404(Competition, id=comp_id, institution=institution)
         cat = get_object_or_404(Category, id=cat_id, institution=institution)
 
@@ -319,8 +316,7 @@ def program_create_view(request, institution_slug):
             is_group=is_group,
             program_type=p_type,
             presentation_mode=p_mode,
-            duration_per_participant=duration,
-            logo=logo
+            duration_per_participant=duration
         )
         messages.success(request, f"Program '{name}' created successfully!")
         return redirect('core:program_list', institution_slug=institution.slug)
@@ -1964,11 +1960,6 @@ def program_edit_view(request, institution_slug, program_id):
         program.is_group = is_group
         program.program_type = p_type
         program.duration_per_participant = duration
-
-        if request.POST.get('clear_logo') == '1':
-            program.logo = None
-        elif 'logo' in request.FILES:
-            program.logo = request.FILES['logo']
 
         program.save()
 
