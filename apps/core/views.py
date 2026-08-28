@@ -132,6 +132,11 @@ def competition_edit_view(request, institution_slug, comp_id):
         elif 'name_image' in request.FILES:
             comp.name_image = request.FILES['name_image']
 
+        if request.POST.get('clear_custom_result_template') == '1':
+            comp.custom_result_template = None
+        elif 'custom_result_template' in request.FILES:
+            comp.custom_result_template = request.FILES['custom_result_template']
+
         comp.save()
         messages.success(request, f"Fest '{name}' updated successfully!")
         return redirect('core:competition_list', institution_slug=institution.slug)
@@ -2535,6 +2540,15 @@ def announcement_balancer_view(request, institution_slug):
 @login_required
 def shareable_results_view(request, institution_slug):
     institution = get_object_or_404(Institution, slug=institution_slug)
+    comp = Competition.objects.filter(institution=institution, is_active=True).first() or Competition.objects.filter(institution=institution).first()
+
+    if request.method == 'POST' and request.FILES.get('custom_result_template'):
+        if comp:
+            comp.custom_result_template = request.FILES['custom_result_template']
+            comp.save()
+            messages.success(request, "Official Custom Result Poster Template saved successfully as default for all users!")
+            return redirect('core:shareable_results', institution_slug=institution.slug)
+
     programs = Program.objects.filter(institution=institution, is_announced=True).select_related('category', 'competition').distinct()
 
     cards_data = []
@@ -2582,7 +2596,8 @@ def shareable_results_view(request, institution_slug):
 
     return render(request, 'core/shareable_results.html', {
         'institution': institution,
-        'cards_data': cards_data
+        'cards_data': cards_data,
+        'competition': comp
     })
 
 

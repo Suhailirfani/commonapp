@@ -470,6 +470,18 @@
 
 <div class="controls-wrapper">
     <div class="controls">
+        <!-- LIVE CUSTOM POSTER FILE UPLOAD BUTTON -->
+        <label class="btn btn-outline" style="background: linear-gradient(135deg, #8b5cf6, #6d28d9); border: none; color: #fff; cursor: pointer;">
+            <i class="fas fa-image"></i> Pick Custom Poster Template
+            <input type="file" id="live-poster-upload" accept="image/*" style="display: none;" onchange="handleCustomPosterUpload(this)">
+        </label>
+
+        {% if user.is_staff or user.role == 'INSTITUTION_ADMIN' or user.role == 'CHIEF_CONTROLLER' %}
+        <button class="btn btn-outline" style="background: linear-gradient(135deg, #ec4899, #be185d); border: none; color: #fff;" onclick="openSaveTemplateModal()">
+            <i class="fas fa-cloud-arrow-up"></i> Save Poster Default for All
+        </button>
+        {% endif %}
+
         <button class="btn btn-dl-all" onclick="downloadAll()">
             <i class="fas fa-download"></i> Download All Visible Cards (JPEG)
         </button>
@@ -481,12 +493,48 @@
         </a>
     </div>
 
+    <!-- CUSTOM POSTER FINE TUNING CONTROLS BAR -->
+    <div id="custom-poster-controls" style="background: #18181b; border: 1px solid #8b5cf6; border-radius: 16px; padding: 16px 20px; margin-bottom: 25px; display: {% if competition and competition.custom_result_template %}flex{% else %}none{% endif %}; flex-wrap: wrap; gap: 16px; align-items: center; justify-content: space-between;">
+        <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
+            <strong style="color: #c4b5fd; font-size: 0.9rem; display: flex; align-items: center; gap: 6px;">
+                <i class="fas fa-sliders"></i> Custom Poster Controls:
+            </strong>
+            
+            <label style="font-size: 0.85rem; color: #a1a1aa; display: flex; align-items: center; gap: 6px;">
+                Text Color:
+                <select id="poster-text-color" onchange="updateCustomPosterStyle()" style="background: #27272a; border: 1px solid #3f3f46; color: #fff; padding: 5px 10px; border-radius: 6px; font-weight: 700; outline: none;">
+                    <option value="#ffffff" selected>White (#FFF)</option>
+                    <option value="#000000">Dark Black (#000)</option>
+                    <option value="#fbbf24">Gold Yellow (#FBBF24)</option>
+                    <option value="#38bdf8">Cyan Blue (#38BDF8)</option>
+                </select>
+            </label>
+
+            <label style="font-size: 0.85rem; color: #a1a1aa; display: flex; align-items: center; gap: 8px;">
+                Box Opacity:
+                <input type="range" id="poster-box-opacity" min="0" max="90" value="40" step="5" oninput="updateCustomPosterStyle()" style="vertical-align: middle; accent-color: #8b5cf6;">
+                <span id="opacity-val-label" style="font-weight: 700; color: #fff; min-width: 35px;">40%</span>
+            </label>
+        </div>
+
+        <div style="display: flex; gap: 8px;">
+            <button class="btn btn-outline" style="padding: 6px 14px; font-size: 0.8rem; background: #27272a;" onclick="document.getElementById('live-poster-upload').click()">
+                <i class="fas fa-upload"></i> Change Image
+            </button>
+        </div>
+    </div>
+
     <div class="theme-selector-wrap">
         <div class="theme-selector-title">
             <i class="fas fa-palette"></i> Select Festival Graphic Theme:
         </div>
         <div class="theme-chips">
-            <div class="theme-chip active" onclick="setGlobalTheme('theme-1', this, 'fa-house-chimney')">
+            <!-- CUSTOM TEMPLATE CHIP -->
+            <div id="custom-theme-chip" class="theme-chip {% if competition and competition.custom_result_template %}active{% endif %}" onclick="activateCustomPosterTheme(this)" style="background: linear-gradient(135deg, #8b5cf6, #6d28d9); color: #fff; border-color: #a78bfa;">
+                <i class="fas fa-file-image"></i> 🎨 {% if competition and competition.custom_result_template %}Official Saved Poster{% else %}Custom Poster Template{% endif %}
+            </div>
+
+            <div class="theme-chip {% if not competition or not competition.custom_result_template %}active{% endif %}" onclick="setGlobalTheme('theme-1', this, 'fa-house-chimney')">
                 <i class="fas fa-house-chimney text-danger"></i> 1. Heritage Cottage Watercolor
             </div>
             <div class="theme-chip" onclick="setGlobalTheme('theme-2', this, 'fa-paint-roller')">
@@ -647,9 +695,157 @@
         card.classList.add(chosenTheme);
 
         const motif = card.querySelector('.card-texture-motif i');
-        if (motif) {
-            motif.className = 'fas ' + iconClass;
+<!-- SAVE POSTER MODAL -->
+<div id="save-poster-modal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(6px); z-index: 99999; display: none; align-items: center; justify-content: center;">
+    <div style="background: #18181b; border: 1px solid #3f3f46; padding: 26px; border-radius: 18px; max-width: 480px; width: 92%; color: #fff; box-shadow: 0 25px 50px rgba(0,0,0,0.5);">
+        <h3 style="margin-bottom: 10px; color: #fbbf24; display: flex; align-items: center; gap: 10px; font-size: 1.25rem;">
+            <i class="fas fa-cloud-arrow-up"></i> Save Official Fest Poster
+        </h3>
+        <p style="font-size: 0.88rem; color: #a1a1aa; margin-bottom: 18px; line-height: 1.5;">
+            Upload your official festival background poster. Once saved, all team leaders & sub-users will see this poster template by default in Winner Cards Studio.
+        </p>
+        <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div style="margin-bottom: 20px;">
+                <label style="font-size: 0.85rem; font-weight: 700; color: #e4e4e7; margin-bottom: 6px; display: block;">Select Background Poster Image (JPG / PNG):</label>
+                <input type="file" name="custom_result_template" accept="image/*" required style="display: block; width: 100%; background: #27272a; padding: 10px; border-radius: 8px; border: 1px solid #3f3f46; color: #fff; font-size: 0.85rem;">
+            </div>
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button type="button" class="btn btn-outline" onclick="closeSaveTemplateModal()">Cancel</button>
+                <button type="submit" class="btn btn-gold"><i class="fas fa-save"></i> Save for All Users</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    let customPosterDataUrl = "{% if competition and competition.custom_result_template %}{{ competition.custom_result_template.url }}{% endif %}";
+
+    function openSaveTemplateModal() {
+        document.getElementById('save-poster-modal').style.display = 'flex';
+    }
+
+    function closeSaveTemplateModal() {
+        document.getElementById('save-poster-modal').style.display = 'none';
+    }
+
+    function handleCustomPosterUpload(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                customPosterDataUrl = e.target.result;
+                activateCustomPosterTheme(document.getElementById('custom-theme-chip'));
+            };
+            reader.readAsDataURL(input.files[0]);
         }
+    }
+
+    function activateCustomPosterTheme(chip) {
+        if (!customPosterDataUrl) {
+            document.getElementById('live-poster-upload').click();
+            return;
+        }
+
+        document.querySelectorAll('.theme-chip').forEach(c => c.classList.remove('active'));
+        if (chip) chip.classList.add('active');
+
+        document.getElementById('custom-poster-controls').style.display = 'flex';
+        updateCustomPosterStyle();
+    }
+
+    function updateCustomPosterStyle() {
+        if (!customPosterDataUrl) return;
+
+        const textColor = document.getElementById('poster-text-color').value;
+        const opacityVal = document.getElementById('poster-box-opacity').value;
+        document.getElementById('opacity-val-label').innerText = opacityVal + '%';
+
+        const bgRgba = `rgba(0, 0, 0, ${opacityVal / 100})`;
+
+        document.querySelectorAll('.winner-card').forEach(card => {
+            // Remove standard theme classes
+            for (let i = 1; i <= 15; i++) {
+                card.classList.remove('theme-' + i);
+            }
+
+            card.style.backgroundImage = `url('${customPosterDataUrl}')`;
+            card.style.backgroundSize = '100% 100%';
+            card.style.backgroundPosition = 'center';
+            card.style.color = textColor;
+
+            const inner = card.querySelector('.card-inner');
+            if (inner) {
+                inner.style.background = bgRgba;
+                inner.style.color = textColor;
+                inner.style.backdropFilter = 'blur(4px)';
+
+                inner.querySelectorAll('.prog-name, .winner-name, .fest-art-title, .result-number-huge, .cat-subtitle, .team-loc').forEach(el => {
+                    el.style.color = textColor;
+                });
+            }
+        });
+    }
+
+    {% if competition and competition.custom_result_template %}
+    window.addEventListener('DOMContentLoaded', () => {
+        activateCustomPosterTheme(document.getElementById('custom-theme-chip'));
+    });
+    {% endif %}
+
+    function setGlobalTheme(themeClass, chip, iconClass) {
+        document.getElementById('custom-poster-controls').style.display = 'none';
+
+        document.querySelectorAll('.theme-chip').forEach(c => c.classList.remove('active'));
+        if (chip) chip.classList.add('active');
+
+        document.querySelectorAll('.winner-card').forEach(card => {
+            card.style.backgroundImage = '';
+            card.style.color = '';
+            const inner = card.querySelector('.card-inner');
+            if (inner) {
+                inner.style.background = '';
+                inner.style.color = '';
+                inner.style.backdropFilter = '';
+                inner.querySelectorAll('.prog-name, .winner-name, .fest-art-title, .result-number-huge, .cat-subtitle, .team-loc').forEach(el => {
+                    el.style.color = '';
+                });
+            }
+
+            for (let i = 1; i <= 15; i++) {
+                card.classList.remove('theme-' + i);
+            }
+            card.classList.add(themeClass);
+
+            const select = card.querySelector('.card-theme-select');
+            if (select) select.value = themeClass;
+
+            const motif = card.querySelector('.card-texture-motif i');
+            if (motif && iconClass) {
+                motif.className = 'fas ' + iconClass;
+            }
+        });
+    }
+
+    function setCardTheme(select) {
+        const card = select.closest('.winner-card');
+        const selectedTheme = select.value;
+
+        card.style.backgroundImage = '';
+        card.style.color = '';
+        const inner = card.querySelector('.card-inner');
+        if (inner) {
+            inner.style.background = '';
+            inner.style.color = '';
+            inner.style.backdropFilter = '';
+            inner.querySelectorAll('.prog-name, .winner-name, .fest-art-title, .result-number-huge, .cat-subtitle, .team-loc').forEach(el => {
+                el.style.color = '';
+            });
+        }
+
+        for (let i = 1; i <= 15; i++) {
+            card.classList.remove('theme-' + i);
+        }
+        card.classList.add(selectedTheme);
     }
 
     function filterCards() {
