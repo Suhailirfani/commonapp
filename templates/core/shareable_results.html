@@ -800,9 +800,14 @@
         });
     }
 
-    function setCardTheme(select) {
-        const card = select.closest('.winner-card');
-        const selectedTheme = select.value;
+    function changeSingleCardTheme(selectEl) {
+        const card = selectEl.closest('.winner-card');
+        if (!card) return;
+
+        const val = selectEl.value;
+        const parts = val.split('|');
+        const themeClass = parts[0];
+        const iconClass = parts[1] || '';
 
         card.style.backgroundImage = '';
         card.style.color = '';
@@ -817,11 +822,12 @@
         }
 
         card.className = card.className.replace(/\btheme-\d+\b/g, '').trim();
-        card.classList.add(selectedTheme);
-    }
+        card.classList.add(themeClass);
 
-    function changeSingleCardTheme(selectEl) {
-        setCardTheme(selectEl);
+        const motif = card.querySelector('.card-texture-motif i');
+        if (motif && iconClass) {
+            motif.className = 'fas ' + iconClass;
+        }
     }
 
     function filterCards() {
