@@ -494,9 +494,14 @@ Category: Junior Category
                         ഗ്രീൻ റൂം ഒഫീഷ്യലുകൾക്ക് മത്സരാർത്ഥികളുടെ ഹാജർ ബോധ്യപ്പെടാനും ഒപ്പ് വാങ്ങാനുമുള്ള സൈൻ ഷീറ്റ്.
                     </p>
                 </div>
-                <a href="{% url 'core:download_bulk_green_room_pdf' institution.slug %}" onclick="triggerPdfDownload(event, this)" class="btn-primary" style="padding: 10px; font-size: 0.88rem; justify-content: center; background: linear-gradient(135deg, var(--accent-emerald), #059669); text-decoration: none;">
-                    <i class="fa-solid fa-file-arrow-down"></i> All Green Room Sheets (PDF)
-                </a>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <a href="{% url 'core:download_bulk_green_room_pdf' institution.slug %}" onclick="triggerPdfDownload(event, this)" class="btn-primary" style="flex: 1; padding: 10px; font-size: 0.88rem; justify-content: center; background: linear-gradient(135deg, var(--accent-emerald), #059669); text-decoration: none;">
+                        <i class="fa-solid fa-file-arrow-down"></i> All Green Room Sheets
+                    </a>
+                    <a href="{% url 'core:download_bulk_green_room_pdf' institution.slug %}?preview=1" target="_blank" class="btn-primary" style="padding: 10px 14px; font-size: 0.85rem; justify-content: center; background: rgba(255,255,255,0.12); color: #fff; text-decoration: none; border: 1px solid rgba(255,255,255,0.25);" title="Preview Green Room Sheet">
+                        <i class="fa-solid fa-eye"></i> Preview
+                    </a>
+                </div>
             </div>
 
             <!-- CARD 2: VALUATION SHEET PDF -->
@@ -512,9 +517,14 @@ Category: Junior Category
                         വിധികർത്താക്കൾക്ക് (Judges) കോഡ് ലെറ്റർ അടിസ്ഥാനത്തിൽ മാർക്കുകൾ രേഖപ്പെടുത്താനുള്ള മാർക്ക് ഷീറ്റ്.
                     </p>
                 </div>
-                <a href="{% url 'core:download_bulk_valuation_form_pdf' institution.slug %}" onclick="triggerPdfDownload(event, this)" class="btn-primary" style="padding: 10px; font-size: 0.88rem; justify-content: center; background: linear-gradient(135deg, #f59e0b, #d97706); color: #000; font-weight: 800; text-decoration: none;">
-                    <i class="fa-solid fa-file-arrow-down"></i> All Valuation Sheets (PDF)
-                </a>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <a href="{% url 'core:download_bulk_valuation_form_pdf' institution.slug %}" onclick="triggerPdfDownload(event, this)" class="btn-primary" style="flex: 1; padding: 10px; font-size: 0.88rem; justify-content: center; background: linear-gradient(135deg, #f59e0b, #d97706); color: #000; font-weight: 800; text-decoration: none;">
+                        <i class="fa-solid fa-file-arrow-down"></i> All Valuation Sheets
+                    </a>
+                    <a href="{% url 'core:download_bulk_valuation_form_pdf' institution.slug %}?preview=1" target="_blank" class="btn-primary" style="padding: 10px 14px; font-size: 0.85rem; justify-content: center; background: rgba(255,255,255,0.12); color: #fff; text-decoration: none; border: 1px solid rgba(255,255,255,0.25);" title="Preview Valuation Sheet">
+                        <i class="fa-solid fa-eye"></i> Preview
+                    </a>
+                </div>
             </div>
 
             <!-- CARD 3: CALL LIST SHEET PDF -->
@@ -530,9 +540,14 @@ Category: Junior Category
                         സ്റ്റേജ് അനൗൺസർമാർക്ക് മത്സരാർത്ഥികളെ വേദിയിലേക്ക് ക്ഷണിക്കാനുള്ള ചെസ്റ്റ് നമ്പർ കോൾ ലിസ്റ്റ്.
                     </p>
                 </div>
-                <a href="{% url 'core:download_bulk_call_list_pdf' institution.slug %}" onclick="triggerPdfDownload(event, this)" class="btn-primary" style="padding: 10px; font-size: 0.88rem; justify-content: center; background: linear-gradient(135deg, var(--accent-cyan), #0284c7); text-decoration: none;">
-                    <i class="fa-solid fa-file-arrow-down"></i> All Call List Sheets (PDF)
-                </a>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <a href="{% url 'core:download_bulk_call_list_pdf' institution.slug %}" onclick="triggerPdfDownload(event, this)" class="btn-primary" style="flex: 1; padding: 10px; font-size: 0.88rem; justify-content: center; background: linear-gradient(135deg, var(--accent-cyan), #0284c7); text-decoration: none;">
+                        <i class="fa-solid fa-file-arrow-down"></i> All Call List Sheets
+                    </a>
+                    <a href="{% url 'core:download_bulk_call_list_pdf' institution.slug %}?preview=1" target="_blank" class="btn-primary" style="padding: 10px 14px; font-size: 0.85rem; justify-content: center; background: rgba(255,255,255,0.12); color: #fff; text-decoration: none; border: 1px solid rgba(255,255,255,0.25);" title="Preview Call List Sheet">
+                        <i class="fa-solid fa-eye"></i> Preview
+                    </a>
+                </div>
             </div>
         </div>
 
@@ -562,9 +577,14 @@ Category: Junior Category
                         എല്ലാ മത്സരങ്ങളുടെയും വിവരങ്ങൾ അടങ്ങിയ ഒഫീഷ്യൽ PDF റിപോർട്ട് ഡൗൺലോഡ് ചെയ്യുക.
                     </p>
                 </div>
-                <a href="{% url 'core:download_programs_pdf' institution.slug %}" onclick="triggerPdfDownload(event, this)" class="btn-primary" style="padding: 10px; font-size: 0.85rem; justify-content: center; background: linear-gradient(135deg, var(--accent-indigo), #4f46e5); text-decoration: none;">
-                    <i class="fa-solid fa-file-pdf"></i> Download Whole Programs PDF
-                </a>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <a href="{% url 'core:download_programs_pdf' institution.slug %}" onclick="triggerPdfDownload(event, this)" class="btn-primary" style="flex: 1; padding: 10px; font-size: 0.85rem; justify-content: center; background: linear-gradient(135deg, var(--accent-indigo), #4f46e5); text-decoration: none;">
+                        <i class="fa-solid fa-file-pdf"></i> Download Whole Programs PDF
+                    </a>
+                    <a href="{% url 'core:download_programs_pdf' institution.slug %}?preview=1" target="_blank" class="btn-primary" style="padding: 10px 14px; font-size: 0.85rem; justify-content: center; background: rgba(255,255,255,0.12); color: #fff; text-decoration: none; border: 1px solid rgba(255,255,255,0.25);" title="Preview Whole Programs PDF">
+                        <i class="fa-solid fa-eye"></i> Preview
+                    </a>
+                </div>
             </div>
         </div>
     </div>
