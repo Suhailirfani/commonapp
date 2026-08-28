@@ -2543,17 +2543,40 @@ def announcement_balancer_view(request, institution_slug):
 
 @login_required
 def shareable_results_view(request, institution_slug):
+    from .models import CustomResultTemplate
+
     institution = get_object_or_404(Institution, slug=institution_slug)
     comp = Competition.objects.filter(institution=institution, is_active=True).first() or Competition.objects.filter(institution=institution).first()
 
-    if request.method == 'POST' and request.FILES.get('custom_result_template'):
-        if comp:
-            if comp.custom_result_template:
-                comp.custom_result_template.delete(save=False)
-            comp.custom_result_template = request.FILES['custom_result_template']
-            comp.save()
-            messages.success(request, "Official Custom Result Poster Template saved successfully as default for all users!")
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        if action == 'upload_custom_template' and request.FILES.get('template_image'):
+            if comp:
+                current_count = CustomResultTemplate.objects.filter(competition=comp).count()
+                if current_count >= 10:
+                    messages.error(request, "Maximum limit of 10 custom poster templates reached. Please delete an existing template to add a new one.")
+                else:
+                    template_name = request.POST.get('template_name', '').strip() or f"Custom Poster {current_count + 1}"
+                    CustomResultTemplate.objects.create(
+                        institution=institution,
+                        competition=comp,
+                        name=template_name,
+                        image=request.FILES['template_image']
+                    )
+                    messages.success(request, f"Custom Template '{template_name}' uploaded successfully!")
             return redirect('core:shareable_results', institution_slug=institution.slug)
+
+        elif action == 'delete_custom_template':
+            template_id = request.POST.get('template_id')
+            tmpl = CustomResultTemplate.objects.filter(id=template_id, competition=comp).first()
+            if tmpl:
+                t_name = tmpl.name
+                tmpl.image.delete(save=False)
+                tmpl.delete()
+                messages.success(request, f"Custom Template '{t_name}' deleted successfully!")
+            return redirect('core:shareable_results', institution_slug=institution.slug)
+
+    custom_templates = list(CustomResultTemplate.objects.filter(competition=comp)) if comp else []
 
     programs = Program.objects.filter(institution=institution, is_announced=True).select_related('category', 'competition').distinct()
 
@@ -2603,7 +2626,8 @@ def shareable_results_view(request, institution_slug):
     return render(request, 'core/shareable_results.html', {
         'institution': institution,
         'cards_data': cards_data,
-        'competition': comp
+        'competition': comp,
+        'custom_templates': custom_templates
     })
 
 

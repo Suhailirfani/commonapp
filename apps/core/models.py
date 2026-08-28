@@ -41,6 +41,19 @@ class Competition(TenantBaseModel):
         return f"{self.name} ({self.get_type_display()}) - {self.institution.name}"
 
 
+class CustomResultTemplate(TenantBaseModel):
+    competition = models.ForeignKey(Competition, on_delete=models.CASCADE, related_name='custom_poster_templates')
+    name = models.CharField(max_length=100, default="Custom Poster")
+    image = models.ImageField(upload_to='result_templates/')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f"{self.name} - {self.competition.name}"
+
+
 # ----------------- Category -----------------
 class Category(TenantBaseModel):
     competition = models.ForeignKey(Competition, on_delete=models.CASCADE, related_name='categories')
