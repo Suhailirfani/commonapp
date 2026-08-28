@@ -8,7 +8,13 @@
         <a href="{% url 'core:dashboard' institution.slug %}" style="color: var(--text-muted); text-decoration: none;"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</a>
         <h2 style="font-size: 1.8rem; font-weight: 800; margin-top: 4px;"><i class="fa-solid fa-trophy" style="color: var(--accent-amber);"></i> Program-Wise Results</h2>
     </div>
-    <div>
+    <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+        <a href="{% url 'core:download_all_results_pdf' institution.slug %}{% if selected_category_id %}?category={{ selected_category_id }}{% endif %}" class="btn-primary" style="background: linear-gradient(135deg, var(--accent-indigo), #4f46e5);">
+            <i class="fa-solid fa-file-pdf"></i> All Results PDF
+        </a>
+        <a href="{% url 'core:download_all_results_pdf' institution.slug %}?preview=1{% if selected_category_id %}&category={{ selected_category_id }}{% endif %}" target="_blank" class="btn-primary" style="background: rgba(255,255,255,0.12); color: #fff; border: 1px solid rgba(255,255,255,0.25);" title="Preview All Results PDF">
+            <i class="fa-solid fa-eye"></i> Preview PDF
+        </a>
         <a href="{% url 'core:shareable_results' institution.slug %}" class="btn-primary" style="background: linear-gradient(135deg, #f59e0b, #b45309);">
             <i class="fa-solid fa-wand-magic-sparkles"></i> Winner Cards Studio
         </a>
@@ -49,12 +55,19 @@
                     {% endif %}
                 </div>
             </div>
-            <div>
+            <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
                 {% if item.program.is_announced %}
                 <span class="badge badge-approved" style="font-size: 0.75rem;"><i class="fa-solid fa-bullhorn"></i> Announced</span>
                 {% else %}
                 <span class="badge badge-pending" style="font-size: 0.75rem;"><i class="fa-solid fa-lock"></i> Hidden Draft</span>
                 {% endif %}
+
+                <a href="{% url 'core:download_single_result_pdf' institution.slug item.program.id %}" class="btn-primary" style="padding: 4px 10px; font-size: 0.78rem; background: linear-gradient(135deg, #f59e0b, #d97706); color: #000; font-weight: 800; text-decoration: none;" title="Download Result PDF">
+                    <i class="fa-solid fa-file-pdf"></i> Result PDF
+                </a>
+                <a href="{% url 'core:download_single_result_pdf' institution.slug item.program.id %}?preview=1" target="_blank" class="btn-primary" style="padding: 4px 8px; font-size: 0.78rem; background: rgba(255,255,255,0.12); color: #fff; text-decoration: none; border: 1px solid rgba(255,255,255,0.25);" title="Preview Result PDF">
+                    <i class="fa-solid fa-eye"></i> Preview
+                </a>
             </div>
         </div>
 

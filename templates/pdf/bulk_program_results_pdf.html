@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>All Official Program Results - {{ institution.name }}</title>
+    <style>
+        @page {
+            size: A4 portrait;
+            margin: 0.8cm;
+        }
+        body {
+            font-family: Helvetica, Arial, sans-serif;
+            font-size: 8.5pt;
+            line-height: 1.15;
+            color: #000000;
+            background: #ffffff;
+        }
+        .program-page {
+            page-break-after: always;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 8px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid #000000;
+        }
+        .header h1 {
+            margin: 0;
+            color: #000000;
+            font-size: 15pt;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+        .header .program-name {
+            color: #000000;
+            font-size: 11pt;
+            margin: 2px 0;
+            font-weight: bold;
+        }
+        .header .subtitle {
+            color: #000000;
+            font-size: 8.5pt;
+        }
+        .info-section {
+            background-color: #ffffff;
+            padding: 6px 8px;
+            margin-bottom: 8px;
+            border: 1px solid #000000;
+            font-size: 8pt;
+            color: #000000;
+        }
+        .section-title {
+            font-size: 9.5pt;
+            font-weight: bold;
+            margin-top: 8px;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            border-bottom: 1px solid #000000;
+            padding-bottom: 2px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 4px;
+            margin-bottom: 8px;
+        }
+        table th {
+            border: 1px solid #000000;
+            padding: 4px 2px;
+            text-align: center;
+            background-color: #ffffff;
+            color: #000000;
+            font-weight: bold;
+            font-size: 8pt;
+        }
+        table td {
+            border: 1px solid #000000;
+            padding: 4px 3px;
+            text-align: center;
+            font-size: 8pt;
+            color: #000000;
+        }
+        .left-align {
+            text-align: left !important;
+        }
+        .rank-col {
+            width: 15%;
+            font-weight: bold;
+        }
+        .chest-col {
+            width: 12%;
+            font-weight: bold;
+        }
+        .name-col {
+            width: 38%;
+            font-weight: bold;
+        }
+        .team-col {
+            width: 18%;
+        }
+        .grade-col {
+            width: 9%;
+            font-weight: bold;
+        }
+        .points-col {
+            width: 8%;
+            font-weight: bold;
+        }
+        .footer {
+            margin-top: 10px;
+            text-align: center;
+            font-size: 7.5pt;
+            color: #000000;
+        }
+        .signature-section {
+            margin-top: 15px;
+            border-top: 1px solid #000000;
+            padding-top: 8px;
+        }
+    </style>
+</head>
+<body>
+    {% for rdata in results_data %}
+    <div class="{% if not forloop.last %}program-page{% endif %}">
+        <div class="header">
+            <h1>OFFICIAL PROGRAM RESULT</h1>
+            <div class="program-name">{{ rdata.program.name|upper }}</div>
+            <div class="subtitle">
+                Category: {{ rdata.program.category.name }} &nbsp;|&nbsp; Institution: {{ institution.name }}
+            </div>
+        </div>
+
+        <div class="info-section">
+            Program: <strong>{{ rdata.program.name|upper }}</strong> &nbsp;|&nbsp; 
+            Category: <strong>{{ rdata.program.category.name }}</strong> &nbsp;|&nbsp; 
+            Type: <strong>{% if rdata.program.is_group %}Group Event{% else %}Single Event{% endif %}</strong> &nbsp;|&nbsp; 
+            Date: <strong>{% now "F d, Y" %}</strong>
+        </div>
+
+        <!-- WINNERS SECTION (1st, 2nd, 3rd Ranks) -->
+        <div class="section-title">🏆 WINNERS & TOP RANKS</div>
+        {% if rdata.winners %}
+        <table>
+            <thead>
+                <tr>
+                    <th class="rank-col">Place / Rank</th>
+                    <th class="chest-col">Chest No</th>
+                    <th class="name-col">Winner Name</th>
+                    <th class="team-col">Team / House</th>
+                    <th class="grade-col">Grade</th>
+                    <th class="points-col">Points</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in rdata.winners %}
+                <tr>
+                    <td class="rank-col">
+                        {% if p.rank == 1 %}1st Place
+                        {% elif p.rank == 2 %}2nd Place
+                        {% elif p.rank == 3 %}3rd Place
+                        {% else %}-{% endif %}
+                    </td>
+                    <td class="chest-col">
+                        {% if not rdata.program.is_group %}
+                            #{{ p.contestant.chest_no }}
+                        {% else %}
+                            {% if p.captain %}#{{ p.captain.chest_no }}{% else %}-{% endif %}
+                        {% endif %}
+                    </td>
+                    <td class="name-col left-align">
+                        {% if rdata.program.is_group %}
+                            {{ p.team.name }}{% if p.captain %} (Capt: {{ p.captain.name }}){% endif %}
+                        {% else %}
+                            {{ p.contestant.name }}
+                        {% endif %}
+                    </td>
+                    <td class="team-col">
+                        {% if rdata.program.is_group %}{{ p.team.name }}{% else %}{{ p.contestant.team.name }}{% endif %}
+                    </td>
+                    <td class="grade-col">
+                        {{ p.grade|default:"-" }}
+                    </td>
+                    <td class="points-col">
+                        {{ p.total_points }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div style="font-size: 8pt; font-style: italic; margin-bottom: 8px;">No rank winners awarded for this program.</div>
+        {% endif %}
+
+        <!-- OTHER GRADE HOLDERS SECTION -->
+        <div class="section-title">⭐ OTHER GRADE HOLDERS</div>
+        {% if rdata.other_grade_holders %}
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 8%;">S.No</th>
+                    <th class="chest-col">Chest No</th>
+                    <th class="name-col">Participant / Team Name</th>
+                    <th class="team-col">Team / House</th>
+                    <th class="grade-col">Grade</th>
+                    <th class="points-col">Points</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in rdata.other_grade_holders %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td class="chest-col">
+                        {% if not rdata.program.is_group %}
+                            #{{ p.contestant.chest_no }}
+                        {% else %}
+                            {% if p.captain %}#{{ p.captain.chest_no }}{% else %}-{% endif %}
+                        {% endif %}
+                    </td>
+                    <td class="name-col left-align">
+                        {% if rdata.program.is_group %}
+                            {{ p.team.name }}{% if p.captain %} (Capt: {{ p.captain.name }}){% endif %}
+                        {% else %}
+                            {{ p.contestant.name }}
+                        {% endif %}
+                    </td>
+                    <td class="team-col">
+                        {% if rdata.program.is_group %}{{ p.team.name }}{% else %}{{ p.contestant.team.name }}{% endif %}
+                    </td>
+                    <td class="grade-col">
+                        {{ p.grade }}
+                    </td>
+                    <td class="points-col">
+                        {{ p.total_points }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div style="font-size: 8pt; font-style: italic; margin-bottom: 8px;">No additional grade holders recorded.</div>
+        {% endif %}
+
+        <div class="signature-section">
+            <table style="border: none; margin-top: 0;">
+                <tr style="background: none;">
+                    <td style="border: none; text-align: left; width: 33%;">Result Convener: ________________</td>
+                    <td style="border: none; text-align: center; width: 33%;">Chief Controller: ________________</td>
+                    <td style="border: none; text-align: right; width: 33%;">General Convener: ________________</td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="footer">
+            Generated on {% now 'F d, Y H:i A' %} &nbsp;|&nbsp; {{ rdata.program.name }} Official Result Sheet
+        </div>
+    </div>
+    {% endfor %}
+</body>
+</html>

@@ -46,9 +46,11 @@ urlpatterns = [
     path('portal/<slug:institution_slug>/programs/<int:program_id>/pdf/green-room/', views.download_green_room_pdf_view, name='download_green_room_pdf'),
     path('portal/<slug:institution_slug>/programs/<int:program_id>/pdf/call-list/', views.download_call_list_pdf_view, name='download_call_list_pdf'),
     path('portal/<slug:institution_slug>/programs/<int:program_id>/pdf/valuation-form/', views.download_valuation_form_pdf_view, name='download_valuation_form_pdf'),
+    path('portal/<slug:institution_slug>/programs/<int:program_id>/pdf/result/', views.download_single_result_pdf_view, name='download_single_result_pdf'),
     path('portal/<slug:institution_slug>/reports/pdf/bulk-green-room/', views.download_bulk_green_room_pdf_view, name='download_bulk_green_room_pdf'),
     path('portal/<slug:institution_slug>/reports/pdf/bulk-call-list/', views.download_bulk_call_list_pdf_view, name='download_bulk_call_list_pdf'),
     path('portal/<slug:institution_slug>/reports/pdf/bulk-valuation-form/', views.download_bulk_valuation_form_pdf_view, name='download_bulk_valuation_form_pdf'),
+    path('portal/<slug:institution_slug>/reports/pdf/all-results/', views.download_all_results_pdf_view, name='download_all_results_pdf'),
     
     # Edit & Delete CRUD
     path('portal/<slug:institution_slug>/teams/<int:team_id>/edit/', views.team_edit_view, name='team_edit'),

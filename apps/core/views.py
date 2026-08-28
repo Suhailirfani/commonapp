@@ -1924,6 +1924,74 @@ def download_bulk_valuation_form_pdf_view(request, institution_slug):
     return render_to_pdf('pdf/bulk_valuation_form_pdf.html', context, filename, request=request)
 
 
+@login_required
+def download_single_result_pdf_view(request, institution_slug, program_id):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    program = get_object_or_404(Program, id=program_id, institution=institution)
+
+    if program.is_group:
+        all_parts = list(GroupParticipation.objects.filter(
+            program=program, marks__isnull=False
+        ).select_related('team', 'captain').prefetch_related('contestants').order_by('rank', '-marks'))
+    else:
+        all_parts = list(Participation.objects.filter(
+            program=program, marks__isnull=False
+        ).select_related('contestant', 'contestant__team').order_by('rank', '-marks'))
+
+    winners = [p for p in all_parts if p.rank in [1, 2, 3]]
+    other_grade_holders = [p for p in all_parts if (not p.rank or p.rank > 3) and p.grade]
+
+    context = {
+        'institution': institution,
+        'program': program,
+        'winners': winners,
+        'other_grade_holders': other_grade_holders,
+        'generated_at': timezone.now()
+    }
+    filename = f"{program.name}_official_result.pdf"
+    return render_to_pdf('pdf/program_result_pdf.html', context, filename, request=request)
+
+
+@login_required
+def download_all_results_pdf_view(request, institution_slug):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    category_id = request.GET.get('category_id') or request.GET.get('category')
+
+    programs = Program.objects.filter(institution=institution, is_announced=True).select_related('category')
+    if category_id and str(category_id).isdigit():
+        programs = programs.filter(category_id=int(category_id))
+    programs = programs.order_by('category__name', 'name')
+
+    results_data = []
+    for prog in programs:
+        if prog.is_group:
+            all_parts = list(GroupParticipation.objects.filter(
+                program=prog, marks__isnull=False
+            ).select_related('team', 'captain').prefetch_related('contestants').order_by('rank', '-marks'))
+        else:
+            all_parts = list(Participation.objects.filter(
+                program=prog, marks__isnull=False
+            ).select_related('contestant', 'contestant__team').order_by('rank', '-marks'))
+
+        winners = [p for p in all_parts if p.rank in [1, 2, 3]]
+        other_grade_holders = [p for p in all_parts if (not p.rank or p.rank > 3) and p.grade]
+
+        if winners or other_grade_holders:
+            results_data.append({
+                'program': prog,
+                'winners': winners,
+                'other_grade_holders': other_grade_holders
+            })
+
+    context = {
+        'institution': institution,
+        'results_data': results_data,
+        'generated_at': timezone.now()
+    }
+    filename = f"{institution.slug}_all_announced_results.pdf"
+    return render_to_pdf('pdf/bulk_program_results_pdf.html', context, filename, request=request)
+
+
 # ---------------- Category Edit & Delete ----------------
 @login_required
 def category_edit_view(request, institution_slug, category_id):
