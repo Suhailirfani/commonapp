@@ -95,12 +95,14 @@ def competition_create_view(request, institution_slug):
         comp_type = request.POST.get('type')
         year = request.POST.get('year', 2026)
         logo = request.FILES.get('logo')
+        name_image = request.FILES.get('name_image')
         Competition.objects.create(
             institution=institution,
             name=name,
             type=comp_type,
             year=year,
-            logo=logo
+            logo=logo,
+            name_image=name_image
         )
         messages.success(request, f"Fest '{name}' created successfully!")
         return redirect('core:competition_list', institution_slug=institution.slug)
@@ -125,8 +127,14 @@ def competition_edit_view(request, institution_slug, comp_id):
         elif 'logo' in request.FILES:
             comp.logo = request.FILES['logo']
 
+        if request.POST.get('clear_name_image') == '1':
+            comp.name_image = None
+        elif 'name_image' in request.FILES:
+            comp.name_image = request.FILES['name_image']
+
         comp.save()
         messages.success(request, f"Fest '{name}' updated successfully!")
+        return redirect('core:competition_list', institution_slug=institution.slug)
     return render(request, 'core/competition_edit.html', {'institution': institution, 'comp': comp})
 
 
@@ -1975,6 +1983,7 @@ def program_edit_view(request, institution_slug, program_id):
         name = request.POST.get('name')
         is_group = request.POST.get('is_group') == 'on'
         p_type = request.POST.get('program_type', 'STAGE')
+        p_mode = request.POST.get('presentation_mode', 'SEQUENTIAL')
         duration = request.POST.get('duration_per_participant', 5)
 
         comp = get_object_or_404(Competition, id=comp_id, institution=institution)
@@ -1985,7 +1994,8 @@ def program_edit_view(request, institution_slug, program_id):
         program.name = name
         program.is_group = is_group
         program.program_type = p_type
-        program.duration_per_participant = duration
+        program.presentation_mode = p_mode
+        program.duration_per_participant = int(duration) if str(duration).isdigit() else 5
 
         program.save()
 

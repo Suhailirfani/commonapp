@@ -14,7 +14,16 @@
         {{ institution.name }}
     </h1>
     {% if competition %}
+    {% if competition.name_image %}
+    <div style="margin-top: 10px; display: flex; align-items: center; justify-content: center; gap: 10px;">
+        {% if competition.logo %}
+        <img src="{{ competition.logo.url }}" alt="{{ competition.name }}" style="max-height: 54px; width: auto; object-fit: contain;">
+        {% endif %}
+        <img src="{{ competition.name_image.url }}" alt="{{ competition.name }}" style="max-height: 60px; width: auto; object-fit: contain; filter: drop-shadow(0 4px 12px rgba(56, 189, 248, 0.3));">
+    </div>
+    {% else %}
     <p style="font-size: 1.2rem; color: var(--text-muted);">{{ competition.name }} ({{ competition.year }})</p>
+    {% endif %}
     {% endif %}
 </div>
 

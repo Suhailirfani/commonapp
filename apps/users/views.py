@@ -87,7 +87,7 @@ def user_create_view(request, institution_slug):
 
     if request.method == 'POST':
         username = request.POST.get('username')
-        email = request.POST.get('email')
+        email = request.POST.get('email') or f"{username}@{institution.slug}.local"
         password = request.POST.get('password')
         role = request.POST.get('role')
         designation = request.POST.get('designation', '')
@@ -152,7 +152,6 @@ def user_edit_view(request, institution_slug, user_id):
     programs = Program.objects.filter(institution=institution).select_related('category')
 
     if request.method == 'POST':
-        email = request.POST.get('email')
         password = request.POST.get('password')
         role = request.POST.get('role')
         designation = request.POST.get('designation', '')
@@ -161,7 +160,8 @@ def user_edit_view(request, institution_slug, user_id):
         prog_ids = request.POST.getlist('assigned_program_ids[]')
         is_approved = request.POST.get('is_approved') == 'on'
 
-        target_user.email = email
+        if 'email' in request.POST:
+            target_user.email = request.POST.get('email', '')
         target_user.role = role
         target_user.designation = designation
         target_user.is_approved = is_approved

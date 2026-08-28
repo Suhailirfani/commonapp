@@ -575,7 +575,11 @@
                     <img src="{{ prog.competition.logo.url }}" alt="{{ prog.competition.name }}" style="width: 42px; height: 42px; object-fit: contain; border-radius: 6px; background: rgba(255,255,255,0.15); padding: 2px; border: 1px solid rgba(255,255,255,0.25); flex-shrink: 0;">
                     {% endif %}
                     <div>
+                        {% if prog.competition.name_image %}
+                        <img src="{{ prog.competition.name_image.url }}" alt="{{ prog.competition.name }}" style="max-height: 42px; width: auto; object-fit: contain; display: block; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
+                        {% else %}
                         <div class="fest-art-title">{{ prog.competition.name|default:"Festival" }}</div>
+                        {% endif %}
                         <div class="inst-sub">{{ institution.name }}</div>
                     </div>
                 </div>

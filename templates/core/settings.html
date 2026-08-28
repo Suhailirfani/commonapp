@@ -54,7 +54,14 @@
                             <span style="color: var(--text-muted); font-size: 0.82rem;"><i class="fa-solid fa-trophy"></i> No Logo</span>
                             {% endif %}
                         </td>
-                        <td><strong>{{ comp.name }}</strong></td>
+                        <td>
+                            <div style="display: flex; flex-direction: column; gap: 4px;">
+                                <strong>{{ comp.name }}</strong>
+                                {% if comp.name_image %}
+                                <img src="{{ comp.name_image.url }}" alt="{{ comp.name }}" style="max-height: 28px; width: auto; object-fit: contain;">
+                                {% endif %}
+                            </div>
+                        </td>
                         <td><span class="badge badge-approved">{{ comp.get_type_display }}</span></td>
                         <td>{{ comp.year }}</td>
                         <td>
