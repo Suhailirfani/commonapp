@@ -130,8 +130,8 @@
                 {% for participant in participants %}
                     <tr>
                         <td class="row-number">{{ forloop.counter }}</td>
-                        <td class="chest-no">{% if program.is_group %}-{% else %}{{ participant.chest_no }}{% endif %}</td>
-                        <td class="participant-name">{% if program.is_group %}{{ participant.team.name }}{% else %}{{ participant.name|upper }}{% endif %}</td>
+                        <td class="chest-no">{% if program.is_group %}{% if participant.captain %}#{{ participant.captain.chest_no }}{% else %}-{% endif %}{% else %}{{ participant.chest_no }}{% endif %}</td>
+                        <td class="participant-name">{% if program.is_group %}{{ participant.team.name }}{% if participant.captain %} (Capt: {{ participant.captain.name|upper }}){% endif %}{% else %}{{ participant.name|upper }}{% endif %}</td>
                         <td class="code-letter"></td>
                         <td class="signature"></td>
                     </tr>

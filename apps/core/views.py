@@ -1727,7 +1727,7 @@ def download_green_room_pdf_view(request, institution_slug, program_id):
     program = get_object_or_404(Program, id=program_id, institution=institution)
     
     if program.is_group:
-        participants = GroupParticipation.objects.filter(program=program).select_related('team')
+        participants = GroupParticipation.objects.filter(program=program).select_related('team', 'captain')
     else:
         participants = Contestant.objects.filter(
             participations__program=program
@@ -1749,7 +1749,7 @@ def download_call_list_pdf_view(request, institution_slug, program_id):
     program = get_object_or_404(Program, id=program_id, institution=institution)
 
     if program.is_group:
-        participants = GroupParticipation.objects.filter(program=program).select_related('team')
+        participants = GroupParticipation.objects.filter(program=program).select_related('team', 'captain')
     else:
         participants = Contestant.objects.filter(
             participations__program=program
@@ -1771,7 +1771,7 @@ def download_valuation_form_pdf_view(request, institution_slug, program_id):
     program = get_object_or_404(Program, id=program_id, institution=institution)
 
     if program.is_group:
-        participants = GroupParticipation.objects.filter(program=program).select_related('team')
+        participants = GroupParticipation.objects.filter(program=program).select_related('team', 'captain')
     else:
         participants = Participation.objects.filter(program=program).select_related('contestant', 'contestant__team')
 
@@ -1793,7 +1793,7 @@ def download_bulk_green_room_pdf_view(request, institution_slug):
     programs_data = []
     for prog in programs:
         if prog.is_group:
-            participants = GroupParticipation.objects.filter(program=prog).select_related('team')
+            participants = GroupParticipation.objects.filter(program=prog).select_related('team', 'captain')
         else:
             participants = Contestant.objects.filter(participations__program=prog).select_related('team', 'category').order_by('chest_no')
         
@@ -1819,7 +1819,7 @@ def download_bulk_call_list_pdf_view(request, institution_slug):
     programs_data = []
     for prog in programs:
         if prog.is_group:
-            participants = GroupParticipation.objects.filter(program=prog).select_related('team')
+            participants = GroupParticipation.objects.filter(program=prog).select_related('team', 'captain')
         else:
             participants = Contestant.objects.filter(participations__program=prog).select_related('team', 'category').order_by('chest_no')
         
@@ -1845,7 +1845,7 @@ def download_bulk_valuation_form_pdf_view(request, institution_slug):
     programs_data = []
     for prog in programs:
         if prog.is_group:
-            participants = GroupParticipation.objects.filter(program=prog).select_related('team')
+            participants = GroupParticipation.objects.filter(program=prog).select_related('team', 'captain')
         else:
             participants = Participation.objects.filter(program=prog).select_related('contestant', 'contestant__team')
         
