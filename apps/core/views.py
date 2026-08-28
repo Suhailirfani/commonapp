@@ -1788,15 +1788,36 @@ def download_valuation_form_pdf_view(request, institution_slug, program_id):
 @login_required
 def download_bulk_green_room_pdf_view(request, institution_slug):
     institution = get_object_or_404(Institution, slug=institution_slug)
-    programs = Program.objects.filter(institution=institution).select_related('category').order_by('category__name', 'name')
+    category_id = request.GET.get('category_id')
+
+    programs = Program.objects.filter(institution=institution).select_related('category')
+    if category_id and str(category_id).isdigit():
+        programs = programs.filter(category_id=int(category_id))
+    programs = programs.order_by('category__name', 'name')
+
+    # Bulk Query 1: Single contestants with participations
+    single_parts = Contestant.objects.filter(
+        institution=institution,
+        participations__isnull=False
+    ).select_related('team', 'category').prefetch_related('participations').order_by('chest_no').distinct()
+
+    single_by_program = {}
+    for c in single_parts:
+        for p in c.participations.all():
+            single_by_program.setdefault(p.id, []).append(c)
+
+    # Bulk Query 2: Group participations
+    group_parts = GroupParticipation.objects.filter(
+        institution=institution
+    ).select_related('team', 'captain')
+
+    group_by_program = {}
+    for gp in group_parts:
+        group_by_program.setdefault(gp.program_id, []).append(gp)
 
     programs_data = []
     for prog in programs:
-        if prog.is_group:
-            participants = GroupParticipation.objects.filter(program=prog).select_related('team', 'captain')
-        else:
-            participants = Contestant.objects.filter(participations__program=prog).select_related('team', 'category').order_by('chest_no')
-        
+        participants = group_by_program.get(prog.id, []) if prog.is_group else single_by_program.get(prog.id, [])
         programs_data.append({
             'program': prog,
             'participants': participants
@@ -1814,15 +1835,36 @@ def download_bulk_green_room_pdf_view(request, institution_slug):
 @login_required
 def download_bulk_call_list_pdf_view(request, institution_slug):
     institution = get_object_or_404(Institution, slug=institution_slug)
-    programs = Program.objects.filter(institution=institution).select_related('category').order_by('category__name', 'name')
+    category_id = request.GET.get('category_id')
+
+    programs = Program.objects.filter(institution=institution).select_related('category')
+    if category_id and str(category_id).isdigit():
+        programs = programs.filter(category_id=int(category_id))
+    programs = programs.order_by('category__name', 'name')
+
+    # Bulk Query 1: Single contestants with participations
+    single_parts = Contestant.objects.filter(
+        institution=institution,
+        participations__isnull=False
+    ).select_related('team', 'category').prefetch_related('participations').order_by('chest_no').distinct()
+
+    single_by_program = {}
+    for c in single_parts:
+        for p in c.participations.all():
+            single_by_program.setdefault(p.id, []).append(c)
+
+    # Bulk Query 2: Group participations
+    group_parts = GroupParticipation.objects.filter(
+        institution=institution
+    ).select_related('team', 'captain')
+
+    group_by_program = {}
+    for gp in group_parts:
+        group_by_program.setdefault(gp.program_id, []).append(gp)
 
     programs_data = []
     for prog in programs:
-        if prog.is_group:
-            participants = GroupParticipation.objects.filter(program=prog).select_related('team', 'captain')
-        else:
-            participants = Contestant.objects.filter(participations__program=prog).select_related('team', 'category').order_by('chest_no')
-        
+        participants = group_by_program.get(prog.id, []) if prog.is_group else single_by_program.get(prog.id, [])
         programs_data.append({
             'program': prog,
             'participants': participants
@@ -1840,15 +1882,34 @@ def download_bulk_call_list_pdf_view(request, institution_slug):
 @login_required
 def download_bulk_valuation_form_pdf_view(request, institution_slug):
     institution = get_object_or_404(Institution, slug=institution_slug)
-    programs = Program.objects.filter(institution=institution).select_related('category').order_by('category__name', 'name')
+    category_id = request.GET.get('category_id')
+
+    programs = Program.objects.filter(institution=institution).select_related('category')
+    if category_id and str(category_id).isdigit():
+        programs = programs.filter(category_id=int(category_id))
+    programs = programs.order_by('category__name', 'name')
+
+    # Bulk Query 1: Single participations
+    single_parts = Participation.objects.filter(
+        institution=institution
+    ).select_related('program', 'contestant', 'contestant__team').order_by('contestant__chest_no')
+
+    single_by_program = {}
+    for p in single_parts:
+        single_by_program.setdefault(p.program_id, []).append(p)
+
+    # Bulk Query 2: Group participations
+    group_parts = GroupParticipation.objects.filter(
+        institution=institution
+    ).select_related('team', 'captain')
+
+    group_by_program = {}
+    for gp in group_parts:
+        group_by_program.setdefault(gp.program_id, []).append(gp)
 
     programs_data = []
     for prog in programs:
-        if prog.is_group:
-            participants = GroupParticipation.objects.filter(program=prog).select_related('team', 'captain')
-        else:
-            participants = Participation.objects.filter(program=prog).select_related('contestant', 'contestant__team')
-        
+        participants = group_by_program.get(prog.id, []) if prog.is_group else single_by_program.get(prog.id, [])
         programs_data.append({
             'program': prog,
             'participants': participants
