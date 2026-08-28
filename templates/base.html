@@ -1,6 +1,7 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,9 +9,10 @@
     <link rel="icon" type="image/png" href="{% static 'img/favicon.png' %}">
     <link rel="stylesheet" href="{% static 'css/main.css' %}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+
     <!-- PWA Manifest & Web App Headers -->
-    <link rel="manifest" href="{% if institution %}{% url 'core:pwa_manifest_institution' institution.slug %}{% else %}{% url 'core:pwa_manifest' %}{% endif %}">
+    <link rel="manifest"
+        href="{% if institution %}{% url 'core:pwa_manifest_institution' institution.slug %}{% else %}{% url 'core:pwa_manifest' %}{% endif %}">
     <meta name="theme-color" content="#0f172a">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -19,11 +21,13 @@
     <link rel="apple-touch-icon" href="{% static 'img/gofest_icon.png' %}">
     {% block extra_head %}{% endblock %}
 </head>
+
 <body>
     <!-- Navbar -->
     <nav class="navbar">
         <a href="{% url 'landing_page' %}" class="navbar-brand">
-            <img src="{% static 'img/gf_emblem.png' %}" alt="GO FEST Logo" style="height: 36px; width: auto; vertical-align: middle;">
+            <img src="{% static 'img/gf_emblem.png' %}" alt="GO FEST Logo"
+                style="height: 36px; width: auto; vertical-align: middle;">
             <span>GO FEST</span>
         </a>
         <button class="nav-toggle" onclick="toggleNav()" aria-label="Toggle navigation menu">
@@ -31,33 +35,51 @@
         </button>
         <div class="nav-links" id="navLinks">
             {% if request.user.is_authenticated %}
-                {% if request.user.is_developer %}
-                    <a href="{% url 'tenants:developer_dashboard' %}" class="nav-link"><i class="fa-solid fa-code-commit"></i> Dev Portal</a>
-                    <a href="/admin/" target="_blank" class="nav-link" style="color: var(--accent-amber); font-weight: 700;"><i class="fa-solid fa-screwdriver-wrench"></i> Django Admin</a>
-                {% elif request.user.institution %}
-                    {% if request.user.is_contestant %}
-                        <a href="{% url 'core:contestant_personal_dashboard' request.user.institution.slug %}" class="nav-link" style="color: var(--accent-cyan); font-weight: 700;"><i class="fa-solid fa-graduation-cap"></i> My Contestant Dashboard</a>
-                        <a href="{% url 'public:home' request.user.institution.slug %}" target="_blank" class="nav-link"><i class="fa-solid fa-globe"></i> Public Live Result</a>
-                    {% elif request.user.is_judge %}
-                        <a href="{% url 'core:judge_dashboard' request.user.institution.slug %}" class="nav-link" style="color: var(--accent-amber); font-weight: 700;"><i class="fa-solid fa-gavel"></i> Judge Dashboard</a>
-                        <a href="{% url 'core:scoring_program_list' request.user.institution.slug %}" class="nav-link"><i class="fa-solid fa-list-check"></i> Mark Entry</a>
-                        <a href="{% url 'core:help_guide' request.user.institution.slug %}" class="nav-link" style="color: var(--accent-cyan);"><i class="fa-solid fa-book-open"></i> User Guide</a>
-                    {% else %}
-                        <a href="{% url 'core:dashboard' request.user.institution.slug %}" class="nav-link"><i class="fa-solid fa-gauge"></i> Dashboard</a>
-                        {% if request.user.institution.is_demo %}
-                        <a href="{% url 'tenants:demo_pay_now' request.user.institution.slug %}" class="btn-primary" style="background: linear-gradient(135deg, var(--accent-emerald), #059669); font-size: 0.85rem; padding: 6px 12px; font-weight: 700; text-decoration: none;"><i class="fa-solid fa-credit-card"></i> Pay Now</a>
-                        {% endif %}
-                        <a href="{% url 'core:help_guide' request.user.institution.slug %}" class="nav-link" style="color: var(--accent-cyan); font-weight: 700;"><i class="fa-solid fa-book-open"></i> User Guide</a>
-                        <a href="{% url 'public:home' request.user.institution.slug %}" target="_blank" class="nav-link"><i class="fa-solid fa-globe"></i> Public Live Result</a>
-                        <a href="{% url 'core:settings' request.user.institution.slug %}" class="nav-link"><i class="fa-solid fa-gear"></i> Settings</a>
-                    {% endif %}
-                {% endif %}
-                <span class="badge badge-approved"><i class="fa-solid fa-user"></i> {{ request.user.username }}</span>
-                <a href="{% url 'users:logout' %}" class="btn-danger"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+            {% if request.user.is_developer %}
+            <a href="{% url 'tenants:developer_dashboard' %}" class="nav-link"><i class="fa-solid fa-code-commit"></i>
+                Dev Portal</a>
+            <a href="/admin/" target="_blank" class="nav-link" style="color: var(--accent-amber); font-weight: 700;"><i
+                    class="fa-solid fa-screwdriver-wrench"></i> Django Admin</a>
+            {% elif request.user.institution %}
+            {% if request.user.is_contestant %}
+            <a href="{% url 'core:contestant_personal_dashboard' request.user.institution.slug %}" class="nav-link"
+                style="color: var(--accent-cyan); font-weight: 700;"><i class="fa-solid fa-graduation-cap"></i> My
+                Contestant Dashboard</a>
+            <a href="{% url 'public:home' request.user.institution.slug %}" target="_blank" class="nav-link"><i
+                    class="fa-solid fa-globe"></i> Public Live Result</a>
+            {% elif request.user.is_judge %}
+            <a href="{% url 'core:judge_dashboard' request.user.institution.slug %}" class="nav-link"
+                style="color: var(--accent-amber); font-weight: 700;"><i class="fa-solid fa-gavel"></i> Judge
+                Dashboard</a>
+            <a href="{% url 'core:scoring_program_list' request.user.institution.slug %}" class="nav-link"><i
+                    class="fa-solid fa-list-check"></i> Mark Entry</a>
+            <a href="{% url 'core:help_guide' request.user.institution.slug %}" class="nav-link"
+                style="color: var(--accent-cyan);"><i class="fa-solid fa-book-open"></i> User Guide</a>
             {% else %}
-                <a href="{% url 'landing_page' %}" class="nav-link">Plans & Features</a>
-                <a href="{% url 'tenants:apply' %}" class="btn-primary"><i class="fa-solid fa-paper-plane"></i> Apply / Subscribe</a>
-                <a href="{% url 'users:login' %}" class="nav-link"><i class="fa-solid fa-lock"></i> Login</a>
+            <a href="{% url 'core:dashboard' request.user.institution.slug %}" class="nav-link"><i
+                    class="fa-solid fa-gauge"></i> Dashboard</a>
+            {% if request.user.institution.is_demo %}
+            <a href="{% url 'tenants:demo_pay_now' request.user.institution.slug %}" class="btn-primary"
+                style="background: linear-gradient(135deg, var(--accent-emerald), #059669); font-size: 0.85rem; padding: 6px 12px; font-weight: 700; text-decoration: none;"><i
+                    class="fa-solid fa-credit-card"></i> Pay Now</a>
+            {% endif %}
+            <a href="{% url 'core:help_guide' request.user.institution.slug %}" class="nav-link"
+                style="color: var(--accent-cyan); font-weight: 700;"><i class="fa-solid fa-book-open"></i> User
+                Guide</a>
+            <a href="{% url 'public:home' request.user.institution.slug %}" target="_blank" class="nav-link"><i
+                    class="fa-solid fa-globe"></i> Public Live Result</a>
+            <a href="{% url 'core:settings' request.user.institution.slug %}" class="nav-link"><i
+                    class="fa-solid fa-gear"></i> Settings</a>
+            {% endif %}
+            {% endif %}
+            <span class="badge badge-approved"><i class="fa-solid fa-user"></i> {{ request.user.username }}</span>
+            <a href="{% url 'users:logout' %}" class="btn-danger"><i class="fa-solid fa-right-from-bracket"></i>
+                Logout</a>
+            {% else %}
+            <a href="{% url 'landing_page' %}" class="nav-link">Plans & Features</a>
+            <a href="{% url 'tenants:apply' %}" class="btn-primary"><i class="fa-solid fa-paper-plane"></i> Apply /
+                Subscribe</a>
+            <a href="{% url 'users:login' %}" class="nav-link"><i class="fa-solid fa-lock"></i> Login</a>
             {% endif %}
         </div>
     </nav>
@@ -80,120 +102,130 @@
 
     <!-- Footer -->
     <footer>
-        <p>&copy; 2026 <strong>GO FEST</strong> | Developed by <strong>BYTOLA WEBSOLUTIONS</strong> | Support Contact: <a href="tel:9947924613" style="color: var(--accent-cyan); text-decoration: none;">+91 9947924613</a></p>
+        <p>&copy; 2026 <strong>GO FEST</strong> | Developed by <strong>BYTOLA WEBSOLUTIONS</strong> | Support Contact:
+            <a href="tel:9947924613" style="color: var(--accent-cyan); text-decoration: none;">+91 9947924613</a></p>
     </footer>
 
     <script>
-    function toggleNav() {
-        var links = document.getElementById('navLinks');
-        links.classList.toggle('active');
-    }
-
-    // Auto-disappear flash alerts after 5 seconds
-    document.addEventListener('DOMContentLoaded', function() {
-        var alerts = document.querySelectorAll('.alert-container > div, .alert');
-        if (alerts.length > 0) {
-            setTimeout(function() {
-                alerts.forEach(function(alertElem) {
-                    alertElem.style.transition = 'opacity 0.6s ease, transform 0.6s ease, max-height 0.6s ease, margin 0.6s ease, padding 0.6s ease';
-                    alertElem.style.opacity = '0';
-                    alertElem.style.transform = 'translateY(-10px)';
-                    alertElem.style.maxHeight = '0px';
-                    alertElem.style.marginTop = '0px';
-                    alertElem.style.marginBottom = '0px';
-                    alertElem.style.paddingTop = '0px';
-                    alertElem.style.paddingBottom = '0px';
-                    alertElem.style.overflow = 'hidden';
-                    setTimeout(function() {
-                        if (alertElem.parentNode) {
-                            alertElem.parentNode.removeChild(alertElem);
-                        }
-                    }, 600);
-                });
-            }, 5000);
+        function toggleNav() {
+            var links = document.getElementById('navLinks');
+            links.classList.toggle('active');
         }
-    });
+
+        // Auto-disappear flash alerts after 5 seconds
+        document.addEventListener('DOMContentLoaded', function () {
+            var alerts = document.querySelectorAll('.alert-container > div, .alert');
+            if (alerts.length > 0) {
+                setTimeout(function () {
+                    alerts.forEach(function (alertElem) {
+                        alertElem.style.transition = 'opacity 0.6s ease, transform 0.6s ease, max-height 0.6s ease, margin 0.6s ease, padding 0.6s ease';
+                        alertElem.style.opacity = '0';
+                        alertElem.style.transform = 'translateY(-10px)';
+                        alertElem.style.maxHeight = '0px';
+                        alertElem.style.marginTop = '0px';
+                        alertElem.style.marginBottom = '0px';
+                        alertElem.style.paddingTop = '0px';
+                        alertElem.style.paddingBottom = '0px';
+                        alertElem.style.overflow = 'hidden';
+                        setTimeout(function () {
+                            if (alertElem.parentNode) {
+                                alertElem.parentNode.removeChild(alertElem);
+                            }
+                        }, 600);
+                    });
+                }, 5000);
+            }
+        });
     </script>
     <script>
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', function() {
-            navigator.serviceWorker.register('/serviceworker.js').catch(function(err) {
-                console.log('ServiceWorker registration error: ', err);
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function () {
+                navigator.serviceWorker.register('/serviceworker.js').catch(function (err) {
+                    console.log('ServiceWorker registration error: ', err);
+                });
             });
-        });
-    }
-
-    // PWA Universal Install Manager
-    (function() {
-        let deferredPrompt = null;
-
-        function isStandalone() {
-            return window.matchMedia('(display-mode: standalone)').matches ||
-                   window.navigator.standalone === true ||
-                   document.referrer.includes('android-app://');
         }
 
-        function updateInstallButtonsState() {
-            const btns = document.querySelectorAll('.pwa-install-btn');
-            if (isStandalone()) {
-                btns.forEach(b => b.style.display = 'none');
-            } else if (deferredPrompt) {
-                btns.forEach(b => b.style.display = 'inline-flex');
-            } else {
-                const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-                if (isIOS) {
+        // PWA Universal Install Manager
+        (function () {
+            let deferredPrompt = null;
+
+            function isStandalone() {
+                return window.matchMedia('(display-mode: standalone)').matches ||
+                    window.navigator.standalone === true ||
+                    document.referrer.includes('android-app://');
+            }
+
+            function updateInstallButtonsState() {
+                const btns = document.querySelectorAll('.pwa-install-btn');
+                if (isStandalone()) {
+                    btns.forEach(b => b.style.display = 'none');
+                } else if (deferredPrompt) {
                     btns.forEach(b => b.style.display = 'inline-flex');
                 } else {
-                    btns.forEach(b => b.style.display = 'none');
-                }
-            }
-        }
-
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
-            updateInstallButtonsState();
-        });
-
-        window.addEventListener('appinstalled', () => {
-            deferredPrompt = null;
-            const btns = document.querySelectorAll('.pwa-install-btn');
-            btns.forEach(b => b.style.display = 'none');
-        });
-
-        window.installPwaApp = function() {
-            if (deferredPrompt) {
-                deferredPrompt.prompt();
-                deferredPrompt.userChoice.then((choiceResult) => {
-                    if (choiceResult.outcome === 'accepted') {
-                        const btns = document.querySelectorAll('.pwa-install-btn');
+                    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+                    if (isIOS) {
+                        btns.forEach(b => b.style.display = 'inline-flex');
+                    } else {
                         btns.forEach(b => b.style.display = 'none');
                     }
-                    deferredPrompt = null;
-                });
-            } else {
-                const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-                if (isIOS) {
-                    alert("📲 To Install GO FEST App on iPhone / iPad:\n\n1. Tap the Share icon (⎋) in Safari.\n2. Scroll down & tap 'Add to Home Screen' (+).");
                 }
             }
-        };
 
-        document.addEventListener("DOMContentLoaded", function() {
-            updateInstallButtonsState();
-        });
-    })();
+            window.addEventListener('beforeinstallprompt', (e) => {
+                e.preventDefault();
+                deferredPrompt = e;
+                updateInstallButtonsState();
+            });
+
+            window.addEventListener('appinstalled', () => {
+                deferredPrompt = null;
+                const btns = document.querySelectorAll('.pwa-install-btn');
+                btns.forEach(b => b.style.display = 'none');
+            });
+
+            window.installPwaApp = function () {
+                if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                    deferredPrompt.userChoice.then((choiceResult) => {
+                        if (choiceResult.outcome === 'accepted') {
+                            const btns = document.querySelectorAll('.pwa-install-btn');
+                            btns.forEach(b => b.style.display = 'none');
+                        }
+                        deferredPrompt = null;
+                    });
+                } else {
+                    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+                    if (isIOS) {
+                        alert("📲 To Install GO FEST App on iPhone / iPad:\n\n1. Tap the Share icon (⎋) in Safari.\n2. Scroll down & tap 'Add to Home Screen' (+).");
+                    }
+                }
+            };
+
+            document.addEventListener("DOMContentLoaded", function () {
+                updateInstallButtonsState();
+            });
+        })();
     </script>
     <!-- GLOBAL PDF DOWNLOAD BUFFERING MODAL OVERLAY -->
-    <div id="pdfDownloadOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.78); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 999999; justify-content: center; align-items: center; padding: 20px;">
-        <div style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.98), rgba(15, 23, 42, 0.98)); border: 1px solid rgba(56, 189, 248, 0.4); padding: 30px 34px; border-radius: 20px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8); max-width: 440px; width: 92%; text-align: center; position: relative; animation: modalPop 0.25s ease-out;">
-            <div style="position: absolute; top: -40px; left: 50%; transform: translateX(-50%); width: 140px; height: 140px; background: rgba(56, 189, 248, 0.15); filter: blur(35px); border-radius: 50%; pointer-events: none;"></div>
+    <div id="pdfDownloadOverlay"
+        style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.78); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 999999; justify-content: center; align-items: center; padding: 20px;">
+        <div
+            style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.98), rgba(15, 23, 42, 0.98)); border: 1px solid rgba(56, 189, 248, 0.4); padding: 30px 34px; border-radius: 20px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8); max-width: 440px; width: 92%; text-align: center; position: relative; animation: modalPop 0.25s ease-out;">
+            <div
+                style="position: absolute; top: -40px; left: 50%; transform: translateX(-50%); width: 140px; height: 140px; background: rgba(56, 189, 248, 0.15); filter: blur(35px); border-radius: 50%; pointer-events: none;">
+            </div>
 
             <!-- BUFFER SPINNER -->
             <div style="display: inline-block; position: relative; width: 64px; height: 64px; margin-bottom: 20px;">
-                <div style="box-sizing: border-box; display: block; position: absolute; width: 64px; height: 64px; border: 5px solid rgba(56, 189, 248, 0.18); border-radius: 50%;"></div>
-                <div style="box-sizing: border-box; display: block; position: absolute; width: 64px; height: 64px; border: 5px solid var(--accent-cyan); border-radius: 50%; animation: pdfSpinner 0.9s linear infinite; border-color: var(--accent-cyan) transparent transparent transparent;"></div>
-                <i class="fa-solid fa-file-pdf" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 1.4rem; color: #ef4444;"></i>
+                <div
+                    style="box-sizing: border-box; display: block; position: absolute; width: 64px; height: 64px; border: 5px solid rgba(56, 189, 248, 0.18); border-radius: 50%;">
+                </div>
+                <div
+                    style="box-sizing: border-box; display: block; position: absolute; width: 64px; height: 64px; border: 5px solid var(--accent-cyan); border-radius: 50%; animation: pdfSpinner 0.9s linear infinite; border-color: var(--accent-cyan) transparent transparent transparent;">
+                </div>
+                <i class="fa-solid fa-file-pdf"
+                    style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 1.4rem; color: #ef4444;"></i>
             </div>
 
             <h3 style="font-size: 1.2rem; font-weight: 800; color: #f8fafc; margin: 0 0 10px 0;">
@@ -204,7 +236,8 @@
                 അല്പം സെക്കൻഡുകൾക്കുള്ളിൽ ഡൗൺലോഡ് ആവുന്നതാണ്. ദയവായി കാത്തിരിക്കുക!
             </p>
 
-            <div style="display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 0.76rem; color: var(--text-muted); background: rgba(255,255,255,0.04); padding: 8px 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06);">
+            <div
+                style="display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 0.76rem; color: var(--text-muted); background: rgba(255,255,255,0.04); padding: 8px 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06);">
                 <i class="fa-solid fa-spinner fa-spin" style="color: var(--accent-cyan);"></i>
                 <span>Generating PDF report... Download starting in background</span>
             </div>
@@ -215,50 +248,64 @@
     <iframe id="pdfDownloadHiddenFrame" style="display: none; width: 0; height: 0; border: none;"></iframe>
 
     <style>
-    @keyframes pdfSpinner {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-    @keyframes modalPop {
-      0% { transform: scale(0.92); opacity: 0; }
-      100% { transform: scale(1); opacity: 1; }
-    }
+        @keyframes pdfSpinner {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes modalPop {
+            0% {
+                transform: scale(0.92);
+                opacity: 0;
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
     </style>
 
     <script>
-    window.triggerPdfDownload = function(event, btnElement) {
-        if (event) {
-            event.preventDefault();
-        }
-
-        const overlay = document.getElementById('pdfDownloadOverlay');
-        if (overlay) {
-            overlay.style.display = 'flex';
-        }
-
-        if (btnElement) {
-            btnElement.style.pointerEvents = 'none';
-            btnElement.style.opacity = '0.6';
-
-            const targetUrl = btnElement.getAttribute('href') || btnElement.dataset.url;
-            if (targetUrl && targetUrl !== '#') {
-                const hiddenFrame = document.getElementById('pdfDownloadHiddenFrame');
-                if (hiddenFrame) {
-                    hiddenFrame.src = targetUrl;
-                } else {
-                    window.location.href = targetUrl;
-                }
+        window.triggerPdfDownload = function (event, btnElement) {
+            if (event) {
+                event.preventDefault();
             }
 
-            setTimeout(() => {
-                btnElement.style.pointerEvents = 'auto';
-                btnElement.style.opacity = '1';
-                if (overlay) overlay.style.display = 'none';
-            }, 6000);
-        }
-    };
+            const overlay = document.getElementById('pdfDownloadOverlay');
+            if (overlay) {
+                overlay.style.display = 'flex';
+            }
+
+            if (btnElement) {
+                btnElement.style.pointerEvents = 'none';
+                btnElement.style.opacity = '0.6';
+
+                const targetUrl = btnElement.getAttribute('href') || btnElement.dataset.url;
+                if (targetUrl && targetUrl !== '#') {
+                    const hiddenFrame = document.getElementById('pdfDownloadHiddenFrame');
+                    if (hiddenFrame) {
+                        hiddenFrame.src = targetUrl;
+                    } else {
+                        window.location.href = targetUrl;
+                    }
+                }
+
+                setTimeout(() => {
+                    btnElement.style.pointerEvents = 'auto';
+                    btnElement.style.opacity = '1';
+                    if (overlay) overlay.style.display = 'none';
+                }, 6000);
+            }
+        };
     </script>
 
     {% block extra_js %}{% endblock %}
 </body>
+
 </html>

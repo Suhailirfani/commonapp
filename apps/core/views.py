@@ -1773,9 +1773,7 @@ def download_valuation_form_pdf_view(request, institution_slug, program_id):
     if program.is_group:
         participants = GroupParticipation.objects.filter(program=program).select_related('team')
     else:
-        participants = Contestant.objects.filter(
-            participations__program=program
-        ).select_related('team', 'category').order_by('chest_no')
+        participants = Participation.objects.filter(program=program).select_related('contestant', 'contestant__team')
 
     context = {
         'institution': institution,
@@ -1849,7 +1847,7 @@ def download_bulk_valuation_form_pdf_view(request, institution_slug):
         if prog.is_group:
             participants = GroupParticipation.objects.filter(program=prog).select_related('team')
         else:
-            participants = Contestant.objects.filter(participations__program=prog).select_related('team', 'category').order_by('chest_no')
+            participants = Participation.objects.filter(program=prog).select_related('contestant', 'contestant__team')
         
         programs_data.append({
             'program': prog,

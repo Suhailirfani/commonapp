@@ -61,28 +61,18 @@
             text-align: center;
             font-size: 8pt;
         }
-        .chest-no {
-            font-weight: bold;
-            background-color: #f8fafc;
-            width: 12%;
-        }
-        .participant-name {
-            text-align: left;
-            padding-left: 6px;
-            font-weight: bold;
-            width: 38%;
-        }
         .code-letter {
-            width: 10%;
+            width: 18%;
             background-color: #f8fafc;
             font-weight: bold;
+            font-size: 10pt;
         }
         .marks-col {
-            width: 8%;
-            height: 20px;
+            width: 14%;
+            height: 26px;
         }
         .total-col {
-            width: 8%;
+            width: 18%;
             font-weight: bold;
             background-color: #fef3c7;
         }
@@ -120,39 +110,20 @@
         <table>
             <thead>
                 <tr>
-                    <th style="width: 5%;">S.No</th>
-                    <th style="width: 12%;">Chest No</th>
-                    <th style="width: 35%;">Participant / Team Name</th>
-                    <th style="width: 10%;">Code Letter</th>
+                    <th style="width: 8%;">S.No</th>
+                    <th style="width: 18%;">Code Letter</th>
                     <th class="marks-col">Mark 1</th>
                     <th class="marks-col">Mark 2</th>
                     <th class="marks-col">Mark 3</th>
                     <th class="marks-col">Mark 4</th>
-                    <th class="total-col">Total</th>
+                    <th class="total-col">Marks out of 100</th>
                 </tr>
             </thead>
             <tbody>
                 {% for participant in pdata.participants %}
                 <tr>
                     <td><strong>{{ forloop.counter }}</strong></td>
-                    <td class="chest-no">{% if pdata.program.is_group %}-{% else %}{{ participant.chest_no }}{% endif %}</td>
-                    <td class="participant-name">{% if pdata.program.is_group %}{{ participant.team.name }}{% else %}{{ participant.name|upper }}{% endif %}</td>
-                    <td class="code-letter"></td>
-                    <td class="marks-col"></td>
-                    <td class="marks-col"></td>
-                    <td class="marks-col"></td>
-                    <td class="marks-col"></td>
-                    <td class="total-col"></td>
-                </tr>
-                {% endfor %}
-                
-                <!-- Extra blank rows for additional entries -->
-                {% for i in "12345" %}
-                <tr>
-                    <td><strong>{{ pdata.participants.count|add:forloop.counter }}</strong></td>
-                    <td class="chest-no"></td>
-                    <td class="participant-name"></td>
-                    <td class="code-letter"></td>
+                    <td class="code-letter">{{ participant.code_letter|default:"" }}</td>
                     <td class="marks-col"></td>
                     <td class="marks-col"></td>
                     <td class="marks-col"></td>
