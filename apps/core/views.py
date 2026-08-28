@@ -133,8 +133,12 @@ def competition_edit_view(request, institution_slug, comp_id):
             comp.name_image = request.FILES['name_image']
 
         if request.POST.get('clear_custom_result_template') == '1':
+            if comp.custom_result_template:
+                comp.custom_result_template.delete(save=False)
             comp.custom_result_template = None
         elif 'custom_result_template' in request.FILES:
+            if comp.custom_result_template:
+                comp.custom_result_template.delete(save=False)
             comp.custom_result_template = request.FILES['custom_result_template']
 
         comp.save()
@@ -2544,6 +2548,8 @@ def shareable_results_view(request, institution_slug):
 
     if request.method == 'POST' and request.FILES.get('custom_result_template'):
         if comp:
+            if comp.custom_result_template:
+                comp.custom_result_template.delete(save=False)
             comp.custom_result_template = request.FILES['custom_result_template']
             comp.save()
             messages.success(request, "Official Custom Result Poster Template saved successfully as default for all users!")
