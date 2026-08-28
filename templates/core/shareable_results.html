@@ -671,30 +671,6 @@
 </div>
 {% endif %}
 
-<script>
-    function setGlobalTheme(themeClass, chipEl, iconClass) {
-        document.querySelectorAll('.theme-chip').forEach(c => c.classList.remove('active'));
-        if (chipEl) chipEl.classList.add('active');
-
-        document.querySelectorAll('.winner-card').forEach(card => {
-            card.className = card.className.replace(/\btheme-\d+\b/g, '').trim();
-            card.classList.add(themeClass);
-
-            const motif = card.querySelector('.card-texture-motif i');
-            if (motif) {
-                motif.className = 'fas ' + iconClass;
-            }
-        });
-    }
-
-    function changeSingleCardTheme(selectEl) {
-        const card = selectEl.closest('.winner-card');
-        const [chosenTheme, iconClass] = selectEl.value.split('|');
-        
-        card.className = card.className.replace(/\btheme-\d+\b/g, '').trim();
-        card.classList.add(chosenTheme);
-
-        const motif = card.querySelector('.card-texture-motif i');
 <!-- SAVE POSTER MODAL -->
 <div id="save-poster-modal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(6px); z-index: 99999; display: none; align-items: center; justify-content: center;">
     <div style="background: #18181b; border: 1px solid #3f3f46; padding: 26px; border-radius: 18px; max-width: 480px; width: 92%; color: #fff; box-shadow: 0 25px 50px rgba(0,0,0,0.5);">
@@ -749,7 +725,8 @@
         document.querySelectorAll('.theme-chip').forEach(c => c.classList.remove('active'));
         if (chip) chip.classList.add('active');
 
-        document.getElementById('custom-poster-controls').style.display = 'flex';
+        const controls = document.getElementById('custom-poster-controls');
+        if (controls) controls.style.display = 'flex';
         updateCustomPosterStyle();
     }
 
@@ -763,10 +740,7 @@
         const bgRgba = `rgba(0, 0, 0, ${opacityVal / 100})`;
 
         document.querySelectorAll('.winner-card').forEach(card => {
-            // Remove standard theme classes
-            for (let i = 1; i <= 15; i++) {
-                card.classList.remove('theme-' + i);
-            }
+            card.className = card.className.replace(/\btheme-\d+\b/g, '').trim();
 
             card.style.backgroundImage = `url('${customPosterDataUrl}')`;
             card.style.backgroundSize = '100% 100%';
@@ -792,15 +766,17 @@
     });
     {% endif %}
 
-    function setGlobalTheme(themeClass, chip, iconClass) {
-        document.getElementById('custom-poster-controls').style.display = 'none';
+    function setGlobalTheme(themeClass, chipEl, iconClass) {
+        const controls = document.getElementById('custom-poster-controls');
+        if (controls) controls.style.display = 'none';
 
         document.querySelectorAll('.theme-chip').forEach(c => c.classList.remove('active'));
-        if (chip) chip.classList.add('active');
+        if (chipEl) chipEl.classList.add('active');
 
         document.querySelectorAll('.winner-card').forEach(card => {
             card.style.backgroundImage = '';
             card.style.color = '';
+
             const inner = card.querySelector('.card-inner');
             if (inner) {
                 inner.style.background = '';
@@ -811,9 +787,7 @@
                 });
             }
 
-            for (let i = 1; i <= 15; i++) {
-                card.classList.remove('theme-' + i);
-            }
+            card.className = card.className.replace(/\btheme-\d+\b/g, '').trim();
             card.classList.add(themeClass);
 
             const select = card.querySelector('.card-theme-select');
@@ -842,10 +816,12 @@
             });
         }
 
-        for (let i = 1; i <= 15; i++) {
-            card.classList.remove('theme-' + i);
-        }
+        card.className = card.className.replace(/\btheme-\d+\b/g, '').trim();
         card.classList.add(selectedTheme);
+    }
+
+    function changeSingleCardTheme(selectEl) {
+        setCardTheme(selectEl);
     }
 
     function filterCards() {
