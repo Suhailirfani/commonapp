@@ -239,7 +239,7 @@
         }
 
         .card-inner {
-            padding: 24px;
+            padding: 20px;
             position: relative;
             z-index: 2;
             flex: 1 1 auto;
@@ -247,6 +247,9 @@
             display: flex;
             flex-direction: column;
             justify-content: space-between;
+            background: transparent !important;
+            box-shadow: none !important;
+            border: none !important;
             transition: transform 0.05s ease-out;
         }
 
@@ -266,7 +269,7 @@
             display: flex;
             align-items: baseline;
             gap: 12px;
-            margin-top: 10px;
+            margin-top: 5px;
         }
         .result-number-huge {
             font-size: 3.8rem;
@@ -278,8 +281,18 @@
         .prog-name { font-size: 1.35rem; font-weight: 800; line-height: 1.2; word-break: break-word; }
         .cat-subtitle { font-size: 0.85rem; opacity: 0.85; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
 
-        .ranks-list { display: flex; flex-direction: column; gap: 12px; margin-top: 15px; margin-bottom: 15px; }
-        .rank-row { display: flex; align-items: center; gap: 12px; padding: 10px 14px; position: relative; z-index: 3; }
+        .ranks-list { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; margin-bottom: 10px; }
+        .rank-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 6px 0;
+            position: relative;
+            z-index: 3;
+            background: transparent !important;
+            box-shadow: none !important;
+            border: none !important;
+        }
         .rank-num { font-size: 1.15rem; font-weight: 900; width: 24px; flex-shrink: 0; text-align: center; }
         .rank-info { flex: 1; min-width: 0; }
         .winner-name { font-size: 1.05rem; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -289,9 +302,10 @@
             display: flex;
             justify-content: space-between;
             align-items: flex-end;
-            border-top: 1px solid rgba(255,255,255,0.15);
-            padding-top: 12px;
+            border-top: none !important;
+            padding-top: 10px;
             margin-top: auto;
+            background: transparent !important;
         }
         .fest-art-title { font-size: 1.25rem; font-weight: 900; line-height: 1.1; letter-spacing: -0.5px; }
         .inst-sub { font-size: 0.72rem; opacity: 0.8; text-transform: uppercase; letter-spacing: 1px; }
@@ -598,16 +612,7 @@
                 </select>
             </div>
 
-            <!-- 5. BOX GLASS OPACITY SLIDER -->
-            <div>
-                <div style="display: flex; justify-content: space-between; font-size: 0.82rem; color: #a1a1aa; margin-bottom: 4px; font-weight: 600;">
-                    <span>Box Glass Opacity:</span>
-                    <span id="opacity-val-label" style="color: #fff; font-weight: 700;">0%</span>
-                </div>
-                <input type="range" id="poster-box-opacity" min="0" max="90" value="0" step="5" oninput="updateCustomPosterStyle()" style="width: 100%; vertical-align: middle; accent-color: #8b5cf6;">
-            </div>
-
-            <!-- 6. TEXT ALIGNMENT & FONT SCALE -->
+            <!-- 5. TEXT ALIGNMENT & FONT SCALE -->
             <div>
                 <label style="font-size: 0.82rem; color: #a1a1aa; display: block; margin-bottom: 4px; font-weight: 600;">Text Align & Scale:</label>
                 <div style="display: flex; gap: 8px;">
@@ -625,7 +630,7 @@
             </div>
         </div>
 
-        <!-- 7. VISIBILITY TOGGLES ROW -->
+        <!-- 6. VISIBILITY TOGGLES ROW -->
         <div style="display: flex; flex-wrap: wrap; gap: 18px; margin-top: 14px; padding-top: 12px; border-top: 1px solid #27272a; font-size: 0.82rem; color: #a1a1aa;">
             <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
                 <input type="checkbox" id="toggle-result-number" checked onchange="updateCustomPosterStyle()" style="accent-color: #8b5cf6;">
@@ -634,10 +639,6 @@
             <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
                 <input type="checkbox" id="toggle-footer-branding" checked onchange="updateCustomPosterStyle()" style="accent-color: #8b5cf6;">
                 Show Footer Fest Branding
-            </label>
-            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
-                <input type="checkbox" id="toggle-card-borders" onchange="updateCustomPosterStyle()" style="accent-color: #8b5cf6;">
-                Show Winner Row Boxes
             </label>
         </div>
     </div>
@@ -971,16 +972,7 @@
                 </select>
             </div>
 
-            <!-- 7. BOX GLASS OPACITY SLIDER -->
-            <div>
-                <div style="display: flex; justify-content: space-between; font-size: 0.82rem; color: #a1a1aa; margin-bottom: 4px; font-weight: 600;">
-                    <span>Box Glass Opacity:</span>
-                    <span id="single-opacity-label" style="color: #fff; font-weight: 700;">0%</span>
-                </div>
-                <input type="range" id="single-card-box-opacity" min="0" max="90" value="0" step="5" oninput="previewCardLayoutChange()" style="width: 100%; vertical-align: middle; accent-color: #8b5cf6;">
-            </div>
-
-            <!-- 8. TEXT ALIGNMENT & FONT SCALE -->
+            <!-- 7. TEXT ALIGNMENT & FONT SCALE -->
             <div>
                 <label style="font-size: 0.82rem; color: #a1a1aa; display: block; margin-bottom: 4px; font-weight: 600;">Text Align & Scale:</label>
                 <div style="display: flex; gap: 8px;">
@@ -1007,10 +999,6 @@
             <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
                 <input type="checkbox" id="single-toggle-footer-branding" checked onchange="previewCardLayoutChange()" style="accent-color: #8b5cf6;">
                 Show Footer Fest Branding
-            </label>
-            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
-                <input type="checkbox" id="single-toggle-card-borders" onchange="previewCardLayoutChange()" style="accent-color: #8b5cf6;">
-                Show Winner Row Boxes
             </label>
         </div>
 
@@ -1197,9 +1185,7 @@
         document.getElementById('single-top-offset-label').innerText = vals.topOffset + 'px';
         document.getElementById('single-bottom-offset-label').innerText = vals.bottomOffset + 'px';
         document.getElementById('single-box-width-label').innerText = vals.boxWidth + '%';
-        document.getElementById('single-opacity-label').innerText = vals.opacityVal + '%';
 
-        const bgRgba = `rgba(0, 0, 0, ${vals.opacityVal / 100})`;
         const fontMultiplier = vals.fontScale === 'compact' ? 0.85 : (vals.fontScale === 'large' ? 1.15 : 1.0);
 
         const [themeType, secondParam] = vals.themeVal.split('|');
@@ -1224,7 +1210,9 @@
 
         const inner = card.querySelector('.card-inner');
         if (inner) {
-            inner.style.background = bgRgba;
+            inner.style.background = 'transparent';
+            inner.style.boxShadow = 'none';
+            inner.style.border = 'none';
             inner.style.color = vals.textColor;
             inner.style.backdropFilter = 'none';
             inner.style.webkitBackdropFilter = 'none';
@@ -1248,9 +1236,9 @@
 
             inner.querySelectorAll('.rank-row').forEach(row => {
                 row.style.justifyContent = vals.textAlign === 'center' ? 'center' : (vals.textAlign === 'right' ? 'flex-end' : 'flex-start');
-                row.style.border = vals.showRowBorders ? '1px solid rgba(255,255,255,0.15)' : 'none';
-                row.style.background = vals.showRowBorders ? 'rgba(255,255,255,0.05)' : 'transparent';
-                row.style.borderRadius = '8px';
+                row.style.border = 'none';
+                row.style.background = 'transparent';
+                row.style.boxShadow = 'none';
             });
 
             inner.querySelectorAll('.prog-name').forEach(el => {
@@ -1313,7 +1301,6 @@
         if (!customPosterDataUrl) return;
 
         const textColor = document.getElementById('poster-text-color') ? document.getElementById('poster-text-color').value : '#ffffff';
-        const opacityVal = document.getElementById('poster-box-opacity') ? document.getElementById('poster-box-opacity').value : 35;
         const topOffset = document.getElementById('poster-top-offset') ? document.getElementById('poster-top-offset').value : 20;
         const boxWidth = document.getElementById('poster-box-width') ? document.getElementById('poster-box-width').value : 100;
         const verticalPos = document.getElementById('poster-vertical-pos') ? document.getElementById('poster-vertical-pos').value : 'space-between';
@@ -1322,13 +1309,10 @@
 
         const showResultNum = document.getElementById('toggle-result-number') ? document.getElementById('toggle-result-number').checked : true;
         const showFooter = document.getElementById('toggle-footer-branding') ? document.getElementById('toggle-footer-branding').checked : true;
-        const showRowBorders = document.getElementById('toggle-card-borders') ? document.getElementById('toggle-card-borders').checked : true;
 
-        if (document.getElementById('opacity-val-label')) document.getElementById('opacity-val-label').innerText = opacityVal + '%';
         if (document.getElementById('top-offset-val-label')) document.getElementById('top-offset-val-label').innerText = topOffset + 'px';
         if (document.getElementById('box-width-val-label')) document.getElementById('box-width-val-label').innerText = boxWidth + '%';
 
-        const bgRgba = `rgba(0, 0, 0, ${opacityVal / 100})`;
         const fontMultiplier = fontScale === 'compact' ? 0.85 : (fontScale === 'large' ? 1.15 : 1.0);
 
         document.querySelectorAll('.winner-card').forEach(card => {
@@ -1342,7 +1326,9 @@
 
             const inner = card.querySelector('.card-inner');
             if (inner) {
-                inner.style.background = bgRgba;
+                inner.style.background = 'transparent';
+                inner.style.boxShadow = 'none';
+                inner.style.border = 'none';
                 inner.style.color = textColor;
                 inner.style.backdropFilter = 'none';
                 inner.style.webkitBackdropFilter = 'none';
@@ -1366,12 +1352,12 @@
                     progHeader.style.justifyContent = textAlign === 'center' ? 'center' : (textAlign === 'right' ? 'flex-end' : 'flex-start');
                 }
 
-                // Winner rows styling & alignment
+                // Winner rows styling & alignment (Clean transparent)
                 inner.querySelectorAll('.rank-row').forEach(row => {
                     row.style.justifyContent = textAlign === 'center' ? 'center' : (textAlign === 'right' ? 'flex-end' : 'flex-start');
-                    row.style.border = showRowBorders ? '1px solid rgba(255,255,255,0.15)' : 'none';
-                    row.style.background = showRowBorders ? 'rgba(255,255,255,0.05)' : 'transparent';
-                    row.style.borderRadius = '8px';
+                    row.style.border = 'none';
+                    row.style.background = 'transparent';
+                    row.style.boxShadow = 'none';
                 });
 
                 // Font scaling
@@ -1459,11 +1445,18 @@
 
             const inner = card.querySelector('.card-inner');
             if (inner) {
-                inner.style.background = 'rgba(0, 0, 0, 0.4)';
+                inner.style.background = 'transparent';
+                inner.style.boxShadow = 'none';
+                inner.style.border = 'none';
                 inner.style.backdropFilter = 'none';
                 inner.style.webkitBackdropFilter = 'none';
                 inner.querySelectorAll('.prog-name, .winner-name, .fest-art-title, .result-number-huge, .cat-subtitle, .team-loc').forEach(el => {
                     el.style.color = '#ffffff';
+                });
+                inner.querySelectorAll('.rank-row').forEach(row => {
+                    row.style.background = 'transparent';
+                    row.style.border = 'none';
+                    row.style.boxShadow = 'none';
                 });
             }
         } else {
