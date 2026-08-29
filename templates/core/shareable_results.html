@@ -731,9 +731,14 @@
                     <option value="theme-15|fa-moon">15. Celestial Indigo Illumination</option>
                 </optgroup>
             </select>
-            <button class="btn-dl-card" onclick="downloadCard(this, '{{ prog.name }}')">
-                <i class="fas fa-download"></i> JPEG
-            </button>
+            <div style="display: flex; gap: 6px;">
+                <button type="button" class="btn-edit-card-layout" onclick="openCardLayoutModal(this, '{{ prog.name|escapejs }}')" style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25); color: #fff; padding: 6px 12px; font-size: 0.78rem; font-weight: 700; cursor: pointer; border-radius: 4px; display: inline-flex; align-items: center; gap: 5px;">
+                    <i class="fas fa-sliders"></i> Layout
+                </button>
+                <button class="btn-dl-card" onclick="downloadCard(this, '{{ prog.name }}')">
+                    <i class="fas fa-download"></i> JPEG
+                </button>
+            </div>
         </div>
     </div>
     {% endwith %}
@@ -815,8 +820,287 @@
     </div>
 </div>
 
+<!-- PER-CARD LAYOUT & BOX POSITION CUSTOMIZER MODAL -->
+<div id="card-layout-modal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(6px); z-index: 99999; display: none; align-items: center; justify-content: center;">
+    <div style="background: #18181b; border: 1px solid #8b5cf6; padding: 24px; border-radius: 18px; max-width: 620px; width: 92%; color: #fff; box-shadow: 0 25px 50px rgba(0,0,0,0.5); max-height: 92vh; overflow-y: auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; border-bottom: 1px solid #27272a; padding-bottom: 10px;">
+            <div>
+                <h3 style="color: #c4b5fd; display: flex; align-items: center; gap: 8px; font-size: 1.15rem; margin: 0;">
+                    <i class="fas fa-sliders"></i> Customize Card Position & Box
+                </h3>
+                <span id="target-card-title" style="font-size: 0.82rem; color: #a1a1aa; font-weight: 600;"></span>
+            </div>
+            <button onclick="closeCardLayoutModal()" style="background: none; border: none; color: #a1a1aa; font-size: 1.4rem; cursor: pointer;">&times;</button>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; align-items: center;">
+            <!-- 1. TEMPLATE POSTER SELECTOR -->
+            <div style="grid-column: 1 / -1;">
+                <label style="font-size: 0.82rem; color: #a1a1aa; display: block; margin-bottom: 4px; font-weight: 600;">Card Poster Template:</label>
+                <select id="single-card-theme-select" onchange="previewCardLayoutChange()" style="width: 100%; background: #27272a; border: 1px solid #3f3f46; color: #fff; padding: 7px 10px; border-radius: 6px; font-weight: 700; font-size: 0.85rem; outline: none;">
+                    {% if custom_templates %}
+                    <optgroup label="🎨 Fest HD Custom Posters">
+                        {% for ct in custom_templates %}
+                        <option value="custom|{{ ct.image.url }}?v={% now 'U' %}">🎨 {{ ct.name }}</option>
+                        {% endfor %}
+                    </optgroup>
+                    {% endif %}
+                    <optgroup label="✨ Default Studio Themes">
+                        <option value="theme-1|fa-house-chimney">1. Heritage Cottage</option>
+                        <option value="theme-2|fa-paint-roller">2. Terracotta Sahityotsav</option>
+                        <option value="theme-3|fa-feather">3. Ink Pen Parchment</option>
+                        <option value="theme-4|fa-vector-square">4. Sector Red & Black</option>
+                        <option value="theme-5|fa-ship">5. Crimson Voyage</option>
+                        <option value="theme-6|fa-mosque">6. Royal Emerald Mosque</option>
+                        <option value="theme-7|fa-gem">7. Midnight Rose Gold</option>
+                        <option value="theme-8|fa-bolt">8. Cyberpunk Hologram</option>
+                        <option value="theme-9|fa-award">9. Vintage Gold Parchment</option>
+                        <option value="theme-10|fa-wand-magic-sparkles">10. Cosmic Purple Nebula</option>
+                        <option value="theme-11|fa-border-all">11. Minimalist Swiss Grid</option>
+                        <option value="theme-12|fa-sun">12. Warm Amber Sunrise</option>
+                        <option value="theme-13|fa-shield-halved">13. Royal Sapphire Silver</option>
+                        <option value="theme-14|fa-newspaper">14. Retro Newsprint Gazette</option>
+                        <option value="theme-15|fa-moon">15. Celestial Indigo Illumination</option>
+                    </optgroup>
+                </select>
+            </div>
+
+            <!-- 2. VERTICAL POSITION PRESET -->
+            <div>
+                <label style="font-size: 0.82rem; color: #a1a1aa; display: block; margin-bottom: 4px; font-weight: 600;">Vertical Box Position:</label>
+                <select id="single-card-vertical-pos" onchange="previewCardLayoutChange()" style="width: 100%; background: #27272a; border: 1px solid #3f3f46; color: #fff; padding: 6px 10px; border-radius: 6px; font-weight: 700; font-size: 0.85rem; outline: none;">
+                    <option value="space-between" selected>Full Card (Top-to-Bottom)</option>
+                    <option value="flex-start">Top Area (Header + Winners at Top)</option>
+                    <option value="center">Center Box (Middle of Poster)</option>
+                    <option value="flex-end">Bottom Area (Lower Half)</option>
+                </select>
+            </div>
+
+            <!-- 3. TOP OFFSET MARGIN SLIDER -->
+            <div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.82rem; color: #a1a1aa; margin-bottom: 4px; font-weight: 600;">
+                    <span>Top Margin Offset:</span>
+                    <span id="single-top-offset-label" style="color: #fff; font-weight: 700;">20px</span>
+                </div>
+                <input type="range" id="single-card-top-offset" min="0" max="300" value="20" step="5" oninput="previewCardLayoutChange()" style="width: 100%; vertical-align: middle; accent-color: #8b5cf6;">
+            </div>
+
+            <!-- 4. BOTTOM OFFSET MARGIN SLIDER -->
+            <div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.82rem; color: #a1a1aa; margin-bottom: 4px; font-weight: 600;">
+                    <span>Bottom Margin Offset:</span>
+                    <span id="single-bottom-offset-label" style="color: #fff; font-weight: 700;">20px</span>
+                </div>
+                <input type="range" id="single-card-bottom-offset" min="0" max="250" value="20" step="5" oninput="previewCardLayoutChange()" style="width: 100%; vertical-align: middle; accent-color: #8b5cf6;">
+            </div>
+
+            <!-- 5. CONTENT BOX WIDTH SLIDER -->
+            <div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.82rem; color: #a1a1aa; margin-bottom: 4px; font-weight: 600;">
+                    <span>Content Box Width:</span>
+                    <span id="single-box-width-label" style="color: #fff; font-weight: 700;">100%</span>
+                </div>
+                <input type="range" id="single-card-box-width" min="50" max="100" value="100" step="5" oninput="previewCardLayoutChange()" style="width: 100%; vertical-align: middle; accent-color: #8b5cf6;">
+            </div>
+
+            <!-- 6. TEXT COLOR -->
+            <div>
+                <label style="font-size: 0.82rem; color: #a1a1aa; display: block; margin-bottom: 4px; font-weight: 600;">Text Color:</label>
+                <select id="single-card-text-color" onchange="previewCardLayoutChange()" style="width: 100%; background: #27272a; border: 1px solid #3f3f46; color: #fff; padding: 6px 10px; border-radius: 6px; font-weight: 700; font-size: 0.85rem; outline: none;">
+                    <option value="#ffffff" selected>White (#FFF)</option>
+                    <option value="#000000">Dark Black (#000)</option>
+                    <option value="#fbbf24">Gold Yellow (#FBBF24)</option>
+                    <option value="#38bdf8">Cyan Blue (#38BDF8)</option>
+                </select>
+            </div>
+
+            <!-- 7. BOX GLASS OPACITY SLIDER -->
+            <div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.82rem; color: #a1a1aa; margin-bottom: 4px; font-weight: 600;">
+                    <span>Box Glass Opacity:</span>
+                    <span id="single-opacity-label" style="color: #fff; font-weight: 700;">35%</span>
+                </div>
+                <input type="range" id="single-card-box-opacity" min="0" max="90" value="35" step="5" oninput="previewCardLayoutChange()" style="width: 100%; vertical-align: middle; accent-color: #8b5cf6;">
+            </div>
+
+            <!-- 8. TEXT ALIGNMENT & FONT SCALE -->
+            <div>
+                <label style="font-size: 0.82rem; color: #a1a1aa; display: block; margin-bottom: 4px; font-weight: 600;">Text Align & Scale:</label>
+                <div style="display: flex; gap: 8px;">
+                    <select id="single-card-text-align" onchange="previewCardLayoutChange()" style="flex: 1; background: #27272a; border: 1px solid #3f3f46; color: #fff; padding: 6px 8px; border-radius: 6px; font-weight: 700; font-size: 0.85rem; outline: none;">
+                        <option value="left" selected>Left Align</option>
+                        <option value="center">Center Align</option>
+                        <option value="right">Right Align</option>
+                    </select>
+                    <select id="single-card-font-scale" onchange="previewCardLayoutChange()" style="flex: 1; background: #27272a; border: 1px solid #3f3f46; color: #fff; padding: 6px 8px; border-radius: 6px; font-weight: 700; font-size: 0.85rem; outline: none;">
+                        <option value="compact">Compact</option>
+                        <option value="normal" selected>Normal</option>
+                        <option value="large">Large</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- VISIBILITY TOGGLES ROW -->
+        <div style="display: flex; flex-wrap: wrap; gap: 16px; margin-top: 14px; padding-top: 12px; border-top: 1px solid #27272a; font-size: 0.82rem; color: #a1a1aa;">
+            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                <input type="checkbox" id="single-toggle-result-number" checked onchange="previewCardLayoutChange()" style="accent-color: #8b5cf6;">
+                Show Result Number (#1, #2)
+            </label>
+            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                <input type="checkbox" id="single-toggle-footer-branding" checked onchange="previewCardLayoutChange()" style="accent-color: #8b5cf6;">
+                Show Footer Fest Branding
+            </label>
+            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                <input type="checkbox" id="single-toggle-card-borders" checked onchange="previewCardLayoutChange()" style="accent-color: #8b5cf6;">
+                Show Winner Row Boxes
+            </label>
+        </div>
+
+        <!-- ACTION BUTTONS -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 18px; padding-top: 14px; border-top: 1px solid #27272a; flex-wrap: wrap; gap: 10px;">
+            <button type="button" class="btn btn-outline" style="font-size: 0.82rem; background: #27272a;" onclick="applySingleCardLayoutToAll()">
+                <i class="fas fa-clone"></i> Copy & Apply to ALL Cards
+            </button>
+            <div style="display: flex; gap: 8px;">
+                <button type="button" class="btn btn-gold" onclick="closeCardLayoutModal()">
+                    <i class="fas fa-check"></i> Done
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
     let customPosterDataUrl = "";
+    let currentTargetCard = null;
+
+    function openCardLayoutModal(btn, progName) {
+        currentTargetCard = btn.closest('.winner-card');
+        if (!currentTargetCard) return;
+
+        document.getElementById('target-card-title').innerText = 'Editing: ' + progName;
+
+        const select = currentTargetCard.querySelector('.card-theme-select');
+        if (select) {
+            document.getElementById('single-card-theme-select').value = select.value;
+        }
+
+        document.getElementById('card-layout-modal').style.display = 'flex';
+    }
+
+    function closeCardLayoutModal() {
+        document.getElementById('card-layout-modal').style.display = 'none';
+    }
+
+    function previewCardLayoutChange() {
+        if (!currentTargetCard) return;
+        applyLayoutToCard(currentTargetCard, getModalValues());
+    }
+
+    function getModalValues() {
+        return {
+            themeVal: document.getElementById('single-card-theme-select').value,
+            textColor: document.getElementById('single-card-text-color').value,
+            opacityVal: document.getElementById('single-card-box-opacity').value,
+            topOffset: document.getElementById('single-card-top-offset').value,
+            bottomOffset: document.getElementById('single-card-bottom-offset').value,
+            boxWidth: document.getElementById('single-card-box-width').value,
+            verticalPos: document.getElementById('single-card-vertical-pos').value,
+            textAlign: document.getElementById('single-card-text-align').value,
+            fontScale: document.getElementById('single-card-font-scale').value,
+            showResultNum: document.getElementById('single-toggle-result-number').checked,
+            showFooter: document.getElementById('single-toggle-footer-branding').checked,
+            showRowBorders: document.getElementById('single-toggle-card-borders').checked
+        };
+    }
+
+    function applyLayoutToCard(card, vals) {
+        document.getElementById('single-top-offset-label').innerText = vals.topOffset + 'px';
+        document.getElementById('single-bottom-offset-label').innerText = vals.bottomOffset + 'px';
+        document.getElementById('single-box-width-label').innerText = vals.boxWidth + '%';
+        document.getElementById('single-opacity-label').innerText = vals.opacityVal + '%';
+
+        const bgRgba = `rgba(0, 0, 0, ${vals.opacityVal / 100})`;
+        const fontMultiplier = vals.fontScale === 'compact' ? 0.85 : (vals.fontScale === 'large' ? 1.15 : 1.0);
+
+        const [themeType, secondParam] = vals.themeVal.split('|');
+        if (themeType === 'custom') {
+            card.className = card.className.replace(/\btheme-\d+\b/g, '').trim();
+            card.style.backgroundImage = `url('${secondParam}')`;
+            card.style.backgroundSize = '100% 100%';
+            card.style.backgroundPosition = 'center';
+            card.style.imageRendering = '-webkit-optimize-contrast';
+        } else {
+            card.style.backgroundImage = '';
+            card.className = card.className.replace(/\btheme-\d+\b/g, '').trim();
+            card.classList.add(themeType);
+            const motif = card.querySelector('.card-texture-motif i');
+            if (motif && secondParam) motif.className = 'fas ' + secondParam;
+        }
+
+        const select = card.querySelector('.card-theme-select');
+        if (select) select.value = vals.themeVal;
+
+        card.style.color = vals.textColor;
+
+        const inner = card.querySelector('.card-inner');
+        if (inner) {
+            inner.style.background = bgRgba;
+            inner.style.color = vals.textColor;
+            inner.style.backdropFilter = 'none';
+            inner.style.webkitBackdropFilter = 'none';
+            inner.style.paddingTop = `${vals.topOffset}px`;
+            inner.style.paddingBottom = `${vals.bottomOffset}px`;
+            inner.style.width = `${vals.boxWidth}%`;
+            inner.style.margin = '0 auto';
+            inner.style.justifyContent = vals.verticalPos;
+            inner.style.textAlign = vals.textAlign;
+
+            const numHuge = inner.querySelector('.result-number-huge');
+            if (numHuge) numHuge.style.display = vals.showResultNum ? 'block' : 'none';
+
+            const footer = inner.querySelector('.card-footer-branding');
+            if (footer) footer.style.display = vals.showFooter ? 'flex' : 'none';
+
+            const progHeader = inner.querySelector('.prog-header-top');
+            if (progHeader) {
+                progHeader.style.justifyContent = vals.textAlign === 'center' ? 'center' : (vals.textAlign === 'right' ? 'flex-end' : 'flex-start');
+            }
+
+            inner.querySelectorAll('.rank-row').forEach(row => {
+                row.style.justifyContent = vals.textAlign === 'center' ? 'center' : (vals.textAlign === 'right' ? 'flex-end' : 'flex-start');
+                row.style.border = vals.showRowBorders ? '1px solid rgba(255,255,255,0.15)' : 'none';
+                row.style.background = vals.showRowBorders ? 'rgba(255,255,255,0.05)' : 'transparent';
+                row.style.borderRadius = '8px';
+            });
+
+            inner.querySelectorAll('.prog-name').forEach(el => {
+                el.style.fontSize = `${1.35 * fontMultiplier}rem`;
+                el.style.color = vals.textColor;
+            });
+            inner.querySelectorAll('.winner-name').forEach(el => {
+                el.style.fontSize = `${1.05 * fontMultiplier}rem`;
+                el.style.color = vals.textColor;
+            });
+            inner.querySelectorAll('.cat-subtitle, .team-loc').forEach(el => {
+                el.style.fontSize = `${0.82 * fontMultiplier}rem`;
+                el.style.color = vals.textColor;
+                el.style.opacity = '0.85';
+            });
+            inner.querySelectorAll('.fest-art-title, .result-number-huge').forEach(el => {
+                el.style.color = vals.textColor;
+            });
+        }
+    }
+
+    function applySingleCardLayoutToAll() {
+        const vals = getModalValues();
+        document.querySelectorAll('.winner-card').forEach(card => {
+            applyLayoutToCard(card, vals);
+        });
+        alert('Applied this layout and box position to ALL winner cards!');
+    }
 
     function openSaveTemplateModal() {
         document.getElementById('save-poster-modal').style.display = 'flex';
