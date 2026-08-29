@@ -2185,6 +2185,8 @@ def contestant_edit_view(request, institution_slug, contestant_id):
             messages.error(request, f"Contestants cannot be assigned to Combined Category '{cat.name}'. Please choose a Base Category.")
             return redirect('core:contestant_edit', institution_slug=institution.slug, contestant_id=contestant.id)
 
+        wa_num = request.POST.get('whatsapp_number', '').strip()
+
         if chest_no:
             target_no = int(chest_no)
             existing = Contestant.objects.filter(
