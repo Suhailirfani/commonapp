@@ -74,6 +74,7 @@
         <table class="custom-table">
             <thead>
                 <tr>
+                    <th style="width: 100px;">Result #</th>
                     <th>Program Name</th>
                     <th>Category</th>
                     <th>Format</th>
@@ -85,6 +86,20 @@
             <tbody>
                 {% for prog in programs %}
                 <tr>
+                    <td>
+                        {% if prog.is_announced %}
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <span class="badge" id="res-num-badge-{{ prog.id }}" style="background: rgba(245, 158, 11, 0.2); color: var(--accent-amber); font-weight: 800; font-size: 0.85rem;">
+                                #{{ prog.result_number|default:"-" }}
+                            </span>
+                            <button type="button" onclick="openEditResultModal('{{ prog.id }}', '{{ prog.name|escapejs }}', '{{ prog.result_number|default:'' }}')" style="background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 2px 4px; font-size: 0.8rem;" title="Edit Result Number">
+                                <i class="fa-solid fa-pen-to-square"></i>
+                            </button>
+                        </div>
+                        {% else %}
+                        <span style="color: var(--text-muted); font-size: 0.85rem;">-</span>
+                        {% endif %}
+                    </td>
                     <td><strong>{{ prog.name }}</strong></td>
                     <td><span class="badge badge-approved">{{ prog.category.name }}</span></td>
                     <td>
@@ -126,7 +141,7 @@
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 30px;">
+                    <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 30px;">
                         No programs created.
                     </td>
                 </tr>
@@ -143,7 +158,15 @@
         <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 8px;">
             <div>
                 <strong style="font-size: 1.05rem; display: block; color: var(--text-main);">{{ prog.name }}</strong>
-                <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px;">
+                <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; align-items: center;">
+                    {% if prog.is_announced and prog.result_number %}
+                    <span class="badge" style="background: rgba(245, 158, 11, 0.2); color: var(--accent-amber); font-weight: 800; font-size: 0.75rem;">
+                        Result #{{ prog.result_number }}
+                    </span>
+                    <button type="button" onclick="openEditResultModal('{{ prog.id }}', '{{ prog.name|escapejs }}', '{{ prog.result_number|default:'' }}')" style="background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 0 4px; font-size: 0.75rem;">
+                        <i class="fa-solid fa-pen-to-square"></i>
+                    </button>
+                    {% endif %}
                     <span class="badge badge-approved" style="font-size: 0.75rem;">{{ prog.category.name }}</span>
                     {% if prog.is_group %}
                     <span class="badge badge-pending" style="font-size: 0.75rem;">Group</span>
@@ -192,4 +215,98 @@
     </div>
     {% endfor %}
 </div>
+
+<!-- EDIT RESULT NUMBER MODAL -->
+<div id="edit-result-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); z-index: 9999; justify-content: center; align-items: center; padding: 15px;">
+    <div style="background: #18181b; border: 1px solid #3f3f46; border-radius: 16px; width: 100%; max-width: 420px; padding: 24px; box-shadow: 0 20px 50px rgba(0,0,0,0.8);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+            <h4 style="margin: 0; font-size: 1.15rem; color: #fff; display: flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-hashtag text-warning"></i> Edit Result Number
+            </h4>
+            <button type="button" onclick="closeEditResultModal()" style="background: none; border: none; color: #a1a1aa; font-size: 1.2rem; cursor: pointer;">&times;</button>
+        </div>
+        
+        <p id="modal-prog-title" style="color: #a1a1aa; font-size: 0.9rem; margin-bottom: 16px;"></p>
+
+        <div id="modal-error-box" style="display: none; background: rgba(239, 68, 68, 0.2); border: 1px solid #ef4444; color: #fca5a5; padding: 10px 14px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; margin-bottom: 14px;">
+        </div>
+
+        <form id="edit-result-form" onsubmit="submitEditResultNumber(event)">
+            <input type="hidden" id="modal-prog-id">
+            <div style="margin-bottom: 18px;">
+                <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #d4d4d8; margin-bottom: 6px;">
+                    Result Sequence Number:
+                </label>
+                <input type="number" id="modal-result-input" min="1" step="1" required style="width: 100%; background: #27272a; border: 1px solid #52525b; color: #fff; padding: 10px 14px; border-radius: 8px; font-size: 1.1rem; font-weight: 700; outline: none;" placeholder="e.g. 1, 2, 3...">
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                <button type="button" onclick="closeEditResultModal()" class="btn btn-secondary" style="padding: 8px 16px; font-size: 0.85rem; border-radius: 8px; background: #27272a; border: 1px solid #3f3f46; color: #fff;">
+                    Cancel
+                </button>
+                <button type="submit" id="modal-save-btn" class="btn btn-primary" style="padding: 8px 20px; font-size: 0.85rem; font-weight: 700; border-radius: 8px; background: linear-gradient(135deg, #f59e0b, #d97706); color: #000; border: none;">
+                    Save Number
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openEditResultModal(progId, progName, currentNum) {
+    document.getElementById('modal-prog-id').value = progId;
+    document.getElementById('modal-prog-title').innerHTML = `Set official result announcement number for <strong>${progName}</strong>:`;
+    document.getElementById('modal-result-input').value = currentNum || '';
+    document.getElementById('modal-error-box').style.display = 'none';
+    document.getElementById('edit-result-modal').style.display = 'flex';
+    document.getElementById('modal-result-input').focus();
+}
+
+function closeEditResultModal() {
+    document.getElementById('edit-result-modal').style.display = 'none';
+}
+
+async function submitEditResultNumber(e) {
+    e.preventDefault();
+    const progId = document.getElementById('modal-prog-id').value;
+    const newNum = document.getElementById('modal-result-input').value.trim();
+    const errorBox = document.getElementById('modal-error-box');
+    const saveBtn = document.getElementById('modal-save-btn');
+
+    errorBox.style.display = 'none';
+    saveBtn.disabled = true;
+    saveBtn.innerText = 'Saving...';
+
+    const url = `{% url 'core:update_program_result_number' institution.slug 0 %}`.replace('/0/', `/${progId}/`);
+
+    const formData = new FormData();
+    formData.append('result_number', newNum);
+    formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+    try {
+        const resp = await fetch(url, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+
+        const data = await resp.json();
+        if (resp.ok && data.success) {
+            closeEditResultModal();
+            location.reload();
+        } else {
+            errorBox.innerText = data.message || "Failed to update result number.";
+            errorBox.style.display = 'block';
+        }
+    } catch (err) {
+        errorBox.innerText = "Network error. Please try again.";
+        errorBox.style.display = 'block';
+    } finally {
+        saveBtn.disabled = false;
+        saveBtn.innerText = 'Save Number';
+    }
+}
+</script>
 {% endblock %}

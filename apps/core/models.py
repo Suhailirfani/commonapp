@@ -174,6 +174,7 @@ class Program(TenantBaseModel):
     preferred_stage = models.ForeignKey(Stage, on_delete=models.SET_NULL, null=True, blank=True, related_name='preferred_programs')
     is_announced = models.BooleanField(default=False)
     announced_at = models.DateTimeField(null=True, blank=True)
+    result_number = models.PositiveIntegerField(null=True, blank=True, help_text="Official announcement sequence number")
     MARK_ENTRY_MODES = (
         ('OFFICIALS', 'By Officials (Default)'),
         ('JUDGES', 'Directly by Judges'),

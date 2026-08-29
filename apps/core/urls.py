@@ -83,6 +83,7 @@ urlpatterns = [
     # Public Announcement Control & Score Balancer AI
     path('portal/<slug:institution_slug>/announcements/', views.manage_announcements_view, name='manage_announcements'),
     path('portal/<slug:institution_slug>/announcements/<int:program_id>/toggle/', views.toggle_program_announcement_view, name='toggle_program_announcement'),
+    path('portal/<slug:institution_slug>/announcements/<int:program_id>/update-result-number/', views.update_program_result_number_view, name='update_program_result_number'),
     path('portal/<slug:institution_slug>/announcements/balancer/', views.announcement_balancer_view, name='announcement_balancer'),
     
     # Scheduling, Settings & Points Configuration

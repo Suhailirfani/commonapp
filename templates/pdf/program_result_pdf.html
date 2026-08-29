@@ -130,6 +130,7 @@
     </div>
 
     <div class="info-section">
+        {% if program.result_number %}Result No: <strong>#{{ program.result_number }}</strong> &nbsp;|&nbsp;{% endif %}
         Program: <strong>{{ program.name|upper }}</strong> &nbsp;|&nbsp; 
         Category: <strong>{{ program.category.name }}</strong> &nbsp;|&nbsp; 
         Type: <strong>{% if program.is_group %}Group Event{% else %}Single Event{% endif %}</strong> &nbsp;|&nbsp; 

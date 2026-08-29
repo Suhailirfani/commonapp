@@ -2440,7 +2440,15 @@ def toggle_program_announcement_view(request, institution_slug, program_id):
     program.is_announced = not program.is_announced
     if program.is_announced:
         program.announced_at = timezone.now()
-        messages.success(request, f"📢 Results for '{program.name}' are now PUBLICLY ANNOUNCED!")
+        if not program.result_number:
+            from django.db.models import Max
+            max_num = Program.objects.filter(
+                institution=institution,
+                competition=program.competition,
+                is_announced=True
+            ).aggregate(Max('result_number'))['result_number__max'] or 0
+            program.result_number = max_num + 1
+        messages.success(request, f"📢 Results for '{program.name}' are now PUBLICLY ANNOUNCED (Result #{program.result_number})!")
     else:
         messages.info(request, f"🔒 Results for '{program.name}' are now hidden from public view.")
     program.save()
@@ -2450,6 +2458,45 @@ def toggle_program_announcement_view(request, institution_slug, program_id):
 
     next_url = request.META.get('HTTP_REFERER') or redirect('core:manage_announcements', institution_slug=institution.slug)
     return redirect(next_url)
+
+
+@login_required
+def update_program_result_number_view(request, institution_slug, program_id):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    program = get_object_or_404(Program, id=program_id, institution=institution)
+
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'message': 'Invalid request method.'}, status=405)
+
+    raw_val = request.POST.get('result_number', '').strip()
+    if not raw_val or not raw_val.isdigit():
+        return JsonResponse({'success': False, 'message': 'Please enter a valid positive number.'}, status=400)
+
+    new_number = int(raw_val)
+    if new_number <= 0:
+        return JsonResponse({'success': False, 'message': 'Result number must be greater than 0.'}, status=400)
+
+    # Check if another program in this festival already has this result number
+    existing = Program.objects.filter(
+        institution=institution,
+        competition=program.competition,
+        result_number=new_number
+    ).exclude(id=program.id).first()
+
+    if existing:
+        return JsonResponse({
+            'success': False,
+            'message': f"That number is already fixed for result {existing.name}"
+        }, status=400)
+
+    program.result_number = new_number
+    program.save(update_fields=['result_number'])
+
+    return JsonResponse({
+        'success': True,
+        'result_number': program.result_number,
+        'message': f"Result number for '{program.name}' successfully updated to #{program.result_number}."
+    })
 
 
 def get_top_5_balancing_announcement_suggestions(institution):
@@ -2578,7 +2625,20 @@ def shareable_results_view(request, institution_slug):
 
     custom_templates = list(CustomResultTemplate.objects.filter(competition=comp)) if comp else []
 
-    programs = Program.objects.filter(institution=institution, is_announced=True).select_related('category', 'competition').distinct()
+    announced_progs = list(Program.objects.filter(institution=institution, is_announced=True).select_related('category', 'competition').distinct().order_by('result_number', 'announced_at', 'id'))
+    
+    # Auto-assign result_number if any program is missing one
+    assigned_nums = set(p.result_number for p in announced_progs if p.result_number)
+    next_num = 1
+    for p in announced_progs:
+        if not p.result_number:
+            while next_num in assigned_nums:
+                next_num += 1
+            p.result_number = next_num
+            p.save(update_fields=['result_number'])
+            assigned_nums.add(next_num)
+
+    programs = sorted(announced_progs, key=lambda p: (p.result_number or 999999, p.announced_at or timezone.now()))
 
     cards_data = []
     for prog in programs:

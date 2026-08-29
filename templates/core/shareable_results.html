@@ -720,7 +720,7 @@
         <div class="card-inner" data-tx="0" data-ty="0">
             <div class="drag-indicator-badge"><i class="fas fa-hand-pointer"></i> Drag to Move</div>
             <div class="prog-header-top">
-                <div class="result-number-huge">{{ forloop.counter }}</div>
+                <div class="result-number-huge">{{ prog.result_number|default:forloop.counter }}</div>
                 <div class="prog-title-wrap">
                     <div class="prog-name">{{ prog.name }}</div>
                     <div class="cat-subtitle">{{ prog.category.name }} • {% if prog.is_group %}Group{% else %}Solo{% endif %}</div>

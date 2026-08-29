@@ -135,6 +135,7 @@
         </div>
 
         <div class="info-section">
+            {% if rdata.program.result_number %}Result No: <strong>#{{ rdata.program.result_number }}</strong> &nbsp;|&nbsp;{% endif %}
             Program: <strong>{{ rdata.program.name|upper }}</strong> &nbsp;|&nbsp; 
             Category: <strong>{{ rdata.program.category.name }}</strong> &nbsp;|&nbsp; 
             Type: <strong>{% if rdata.program.is_group %}Group Event{% else %}Single Event{% endif %}</strong> &nbsp;|&nbsp; 
