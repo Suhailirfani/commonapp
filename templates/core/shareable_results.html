@@ -297,23 +297,78 @@
         .inst-sub { font-size: 0.72rem; opacity: 0.8; text-transform: uppercase; letter-spacing: 1px; }
 
         .card-actions-bar {
-            padding: 10px 16px;
-            background: rgba(0,0,0,0.5);
-            backdrop-filter: blur(4px);
+            padding: 8px 10px;
+            background: rgba(0,0,0,0.65);
+            backdrop-filter: blur(6px);
             display: flex;
             justify-content: space-between;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
             position: relative;
             z-index: 5;
             flex-shrink: 0;
+            width: 100%;
+            box-sizing: border-box;
+            overflow: hidden;
         }
         .card-theme-select {
-            background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.2); color: #fff; font-size: 0.75rem; font-weight: 700; padding: 5px 10px; outline: none; cursor: pointer; border-radius: 4px;
+            flex: 1 1 0;
+            min-width: 0;
+            max-width: 110px;
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.25);
+            color: #fff;
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 5px 6px;
+            outline: none;
+            cursor: pointer;
+            border-radius: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         .card-theme-select option { background: #18181b; color: #fff; }
+        
+        .card-actions-btns {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            flex-shrink: 0;
+        }
+        .btn-card-action {
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.25);
+            color: #fff;
+            padding: 5px 7px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            cursor: pointer;
+            border-radius: 4px;
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+        .btn-card-action:hover {
+            background: rgba(255,255,255,0.25);
+        }
         .btn-dl-card {
-            background: #f59e0b; color: #000; border: none; padding: 6px 14px; font-size: 0.78rem; font-weight: 800; cursor: pointer; transition: opacity 0.2s; border-radius: 4px; flex-shrink: 0;
+            background: #f59e0b;
+            color: #000;
+            border: none;
+            padding: 5px 9px;
+            font-size: 0.72rem;
+            font-weight: 800;
+            cursor: pointer;
+            transition: opacity 0.2s;
+            border-radius: 4px;
+            flex-shrink: 0;
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            white-space: nowrap;
         }
         .btn-dl-card:hover { opacity: 0.9; }
 
@@ -770,15 +825,14 @@
                     <option value="theme-14|fa-newspaper">14. Retro Newsprint Gazette</option>
                     <option value="theme-15|fa-moon">15. Celestial Indigo Illumination</option>
                 </optgroup>
-            </select>
-            <div style="display: flex; gap: 5px;">
-                <button type="button" class="btn-drag-card" onclick="toggleDragModeSingle(this)" title="Drag & Move Box" style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25); color: #fff; padding: 6px 10px; font-size: 0.78rem; font-weight: 700; cursor: pointer; border-radius: 4px; display: inline-flex; align-items: center; gap: 4px;">
+            <div class="card-actions-btns">
+                <button type="button" class="btn-card-action btn-drag-card" onclick="toggleDragModeSingle(this)" title="Drag & Move Box">
                     <i class="fas fa-hand-pointer"></i> Move
                 </button>
-                <button type="button" class="btn-edit-card-layout" onclick="openCardLayoutModal(this, '{{ prog.name|escapejs }}')" style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25); color: #fff; padding: 6px 10px; font-size: 0.78rem; font-weight: 700; cursor: pointer; border-radius: 4px; display: inline-flex; align-items: center; gap: 4px;">
+                <button type="button" class="btn-card-action btn-edit-card-layout" onclick="openCardLayoutModal(this, '{{ prog.name|escapejs }}')" title="Card Layout & Box Position">
                     <i class="fas fa-sliders"></i> Layout
                 </button>
-                <button class="btn-dl-card" onclick="downloadCard(this, '{{ prog.name }}')">
+                <button type="button" class="btn-dl-card" onclick="downloadCard(this, '{{ prog.name }}')" title="Download High-Res JPEG">
                     <i class="fas fa-download"></i> JPEG
                 </button>
             </div>
