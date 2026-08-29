@@ -602,9 +602,9 @@
             <div>
                 <div style="display: flex; justify-content: space-between; font-size: 0.82rem; color: #a1a1aa; margin-bottom: 4px; font-weight: 600;">
                     <span>Box Glass Opacity:</span>
-                    <span id="opacity-val-label" style="color: #fff; font-weight: 700;">35%</span>
+                    <span id="opacity-val-label" style="color: #fff; font-weight: 700;">0%</span>
                 </div>
-                <input type="range" id="poster-box-opacity" min="0" max="90" value="35" step="5" oninput="updateCustomPosterStyle()" style="width: 100%; vertical-align: middle; accent-color: #8b5cf6;">
+                <input type="range" id="poster-box-opacity" min="0" max="90" value="0" step="5" oninput="updateCustomPosterStyle()" style="width: 100%; vertical-align: middle; accent-color: #8b5cf6;">
             </div>
 
             <!-- 6. TEXT ALIGNMENT & FONT SCALE -->
@@ -636,7 +636,7 @@
                 Show Footer Fest Branding
             </label>
             <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
-                <input type="checkbox" id="toggle-card-borders" checked onchange="updateCustomPosterStyle()" style="accent-color: #8b5cf6;">
+                <input type="checkbox" id="toggle-card-borders" onchange="updateCustomPosterStyle()" style="accent-color: #8b5cf6;">
                 Show Winner Row Boxes
             </label>
         </div>
@@ -745,7 +745,7 @@
                     {% endif %}
                     <div>
                         {% if prog.competition.name_image %}
-                        <img src="{{ prog.competition.name_image.url }}" alt="{{ prog.competition.name }}" style="max-height: 42px; width: auto; object-fit: contain; display: block; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
+                        <img src="{{ prog.competition.name_image.url }}" alt="{{ prog.competition.name }}" style="max-height: 42px; width: auto; object-fit: contain; display: block; filter: none;">
                         {% else %}
                         <div class="fest-art-title">{{ prog.competition.name|default:"Festival" }}</div>
                         {% endif %}
@@ -975,9 +975,9 @@
             <div>
                 <div style="display: flex; justify-content: space-between; font-size: 0.82rem; color: #a1a1aa; margin-bottom: 4px; font-weight: 600;">
                     <span>Box Glass Opacity:</span>
-                    <span id="single-opacity-label" style="color: #fff; font-weight: 700;">35%</span>
+                    <span id="single-opacity-label" style="color: #fff; font-weight: 700;">0%</span>
                 </div>
-                <input type="range" id="single-card-box-opacity" min="0" max="90" value="35" step="5" oninput="previewCardLayoutChange()" style="width: 100%; vertical-align: middle; accent-color: #8b5cf6;">
+                <input type="range" id="single-card-box-opacity" min="0" max="90" value="0" step="5" oninput="previewCardLayoutChange()" style="width: 100%; vertical-align: middle; accent-color: #8b5cf6;">
             </div>
 
             <!-- 8. TEXT ALIGNMENT & FONT SCALE -->
@@ -1009,7 +1009,7 @@
                 Show Footer Fest Branding
             </label>
             <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
-                <input type="checkbox" id="single-toggle-card-borders" checked onchange="previewCardLayoutChange()" style="accent-color: #8b5cf6;">
+                <input type="checkbox" id="single-toggle-card-borders" onchange="previewCardLayoutChange()" style="accent-color: #8b5cf6;">
                 Show Winner Row Boxes
             </label>
         </div>
