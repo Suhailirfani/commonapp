@@ -789,6 +789,11 @@ def contestant_bulk_upload_view(request, institution_slug):
                     name=cat_name
                 )
 
+                if chest_no:
+                    if Contestant.objects.filter(institution=institution, competition=comp, chest_no=chest_no).exists():
+                        from apps.core.services import get_next_chest_number
+                        chest_no = get_next_chest_number(cat)
+
                 Contestant.objects.create(
                     institution=institution,
                     competition=comp,
@@ -2180,10 +2185,18 @@ def contestant_edit_view(request, institution_slug, contestant_id):
             messages.error(request, f"Contestants cannot be assigned to Combined Category '{cat.name}'. Please choose a Base Category.")
             return redirect('core:contestant_edit', institution_slug=institution.slug, contestant_id=contestant.id)
 
-        wa_num = request.POST.get('whatsapp_number', '').strip()
-
         if chest_no:
-            contestant.chest_no = int(chest_no)
+            target_no = int(chest_no)
+            existing = Contestant.objects.filter(
+                institution=institution,
+                competition=comp,
+                chest_no=target_no
+            ).exclude(id=contestant.id).first()
+            if existing:
+                messages.error(request, f"Chest No #{target_no} is already assigned to {existing.name} ({existing.team.name}) in this festival.")
+                return redirect('core:contestant_edit', institution_slug=institution.slug, contestant_id=contestant.id)
+            contestant.chest_no = target_no
+
         contestant.name = name
         contestant.whatsapp_number = wa_num
         contestant.competition = comp

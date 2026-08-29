@@ -259,11 +259,19 @@ class Contestant(TenantBaseModel):
             from apps.core.services import get_next_chest_number
             self.chest_no = get_next_chest_number(self.category)
         elif not self.chest_no:
-            last = Contestant.objects.filter(
+            from django.db.models import Max
+            max_c = Contestant.objects.filter(
                 institution=self.institution, 
                 competition=self.competition
-            ).order_by('-chest_no').first()
-            self.chest_no = 1001 if not last else last.chest_no + 1
+            ).aggregate(Max('chest_no'))['chest_no__max'] or 1000
+            candidate = max_c + 1
+            while Contestant.objects.filter(
+                institution=self.institution,
+                competition=self.competition,
+                chest_no=candidate
+            ).exists():
+                candidate += 1
+            self.chest_no = candidate
         super().save(*args, **kwargs)
 
 

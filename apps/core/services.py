@@ -23,7 +23,8 @@ def get_default_start_chest_no_for_category(category):
 
 def get_next_chest_number(category):
     """
-    Computes next available chest number for a base category based on its configured or default start_chest_no.
+    Computes next available chest number for a base category based on its configured or default start_chest_no,
+    guaranteeing it does NOT collide with any existing contestant in the institution + competition.
     """
     start_no = get_default_start_chest_no_for_category(category)
     existing_max = Contestant.objects.filter(
@@ -33,8 +34,20 @@ def get_next_chest_number(category):
     ).aggregate(Max('chest_no'))['chest_no__max']
 
     if existing_max and existing_max >= start_no:
-        return existing_max + 1
-    return start_no
+        candidate = existing_max + 1
+    else:
+        candidate = start_no
+
+    used_numbers = set(Contestant.objects.filter(
+        institution=category.institution,
+        competition=category.competition,
+        chest_no__isnull=False
+    ).values_list('chest_no', flat=True))
+
+    while candidate in used_numbers:
+        candidate += 1
+
+    return candidate
 
 
 def auto_generate_all_chest_numbers(institution, overwrite=False):
