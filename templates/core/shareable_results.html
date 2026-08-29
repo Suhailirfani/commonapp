@@ -203,6 +203,41 @@
             box-shadow: 0 24px 60px rgba(0,0,0,0.85);
         }
 
+        .winner-card {
+            user-select: none;
+        }
+        .winner-card.drag-active .card-inner {
+            outline: 2px dashed #fbbf24 !important;
+            outline-offset: 4px;
+            cursor: grab !important;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+        }
+        .winner-card.is-dragging .card-inner {
+            cursor: grabbing !important;
+            opacity: 0.92;
+        }
+        .drag-indicator-badge {
+            position: absolute;
+            top: 6px;
+            right: 8px;
+            background: rgba(245, 158, 11, 0.95);
+            color: #000;
+            font-size: 0.68rem;
+            font-weight: 800;
+            padding: 2px 8px;
+            border-radius: 12px;
+            display: none;
+            align-items: center;
+            gap: 4px;
+            z-index: 20;
+            pointer-events: none;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            letter-spacing: 0.5px;
+        }
+        .winner-card.drag-active .drag-indicator-badge {
+            display: inline-flex;
+        }
+
         .card-inner {
             padding: 24px;
             position: relative;
@@ -212,6 +247,7 @@
             display: flex;
             flex-direction: column;
             justify-content: space-between;
+            transition: transform 0.05s ease-out;
         }
 
         .card-texture-motif {
@@ -482,6 +518,9 @@
         </button>
         {% endif %}
 
+        <button id="btn-toggle-drag-all" class="btn btn-outline" style="border-color: #fbbf24; color: #fbbf24; background: rgba(251, 191, 36, 0.1);" onclick="toggleDragModeAll()">
+            <i class="fas fa-hand-pointer"></i> <span>Drag & Drop Move</span>
+        </button>
         <button class="btn btn-dl-all" onclick="downloadAll()">
             <i class="fas fa-download"></i> Download All Visible Cards (JPEG)
         </button>
@@ -663,7 +702,8 @@
             <i class="fas fa-house-chimney"></i>
         </div>
 
-        <div class="card-inner">
+        <div class="card-inner" data-tx="0" data-ty="0">
+            <div class="drag-indicator-badge"><i class="fas fa-hand-pointer"></i> Drag to Move</div>
             <div class="prog-header-top">
                 <div class="result-number-huge">{{ forloop.counter }}</div>
                 <div class="prog-title-wrap">
@@ -731,8 +771,11 @@
                     <option value="theme-15|fa-moon">15. Celestial Indigo Illumination</option>
                 </optgroup>
             </select>
-            <div style="display: flex; gap: 6px;">
-                <button type="button" class="btn-edit-card-layout" onclick="openCardLayoutModal(this, '{{ prog.name|escapejs }}')" style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25); color: #fff; padding: 6px 12px; font-size: 0.78rem; font-weight: 700; cursor: pointer; border-radius: 4px; display: inline-flex; align-items: center; gap: 5px;">
+            <div style="display: flex; gap: 5px;">
+                <button type="button" class="btn-drag-card" onclick="toggleDragModeSingle(this)" title="Drag & Move Box" style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25); color: #fff; padding: 6px 10px; font-size: 0.78rem; font-weight: 700; cursor: pointer; border-radius: 4px; display: inline-flex; align-items: center; gap: 4px;">
+                    <i class="fas fa-hand-pointer"></i> Move
+                </button>
+                <button type="button" class="btn-edit-card-layout" onclick="openCardLayoutModal(this, '{{ prog.name|escapejs }}')" style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25); color: #fff; padding: 6px 10px; font-size: 0.78rem; font-weight: 700; cursor: pointer; border-radius: 4px; display: inline-flex; align-items: center; gap: 4px;">
                     <i class="fas fa-sliders"></i> Layout
                 </button>
                 <button class="btn-dl-card" onclick="downloadCard(this, '{{ prog.name }}')">
@@ -959,9 +1002,14 @@
 
         <!-- ACTION BUTTONS -->
         <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 18px; padding-top: 14px; border-top: 1px solid #27272a; flex-wrap: wrap; gap: 10px;">
-            <button type="button" class="btn btn-outline" style="font-size: 0.82rem; background: #27272a;" onclick="applySingleCardLayoutToAll()">
-                <i class="fas fa-clone"></i> Copy & Apply to ALL Cards
-            </button>
+            <div style="display: flex; gap: 8px;">
+                <button type="button" class="btn btn-outline" style="font-size: 0.82rem; background: #27272a; border-color: #fbbf24; color: #fbbf24;" onclick="resetCurrentCardPosition()">
+                    <i class="fas fa-rotate-left"></i> Reset Drag Position
+                </button>
+                <button type="button" class="btn btn-outline" style="font-size: 0.82rem; background: #27272a;" onclick="applySingleCardLayoutToAll()">
+                    <i class="fas fa-clone"></i> Copy & Apply to ALL Cards
+                </button>
+            </div>
             <div style="display: flex; gap: 8px;">
                 <button type="button" class="btn btn-gold" onclick="closeCardLayoutModal()">
                     <i class="fas fa-check"></i> Done
@@ -974,6 +1022,122 @@
 <script>
     let customPosterDataUrl = "";
     let currentTargetCard = null;
+
+    // DRAG & DROP MOVE ENGINE
+    let isDragging = false;
+    let activeDragCard = null;
+    let dragStartX = 0, dragStartY = 0;
+    let dragInitX = 0, dragInitY = 0;
+
+    function initDraggableCards() {
+        document.querySelectorAll('.winner-card').forEach(card => {
+            const inner = card.querySelector('.card-inner');
+            if (!inner) return;
+
+            if (!inner.dataset.tx) inner.dataset.tx = '0';
+            if (!inner.dataset.ty) inner.dataset.ty = '0';
+
+            inner.addEventListener('mousedown', (e) => startCardDrag(e, card, inner));
+            inner.addEventListener('touchstart', (e) => startCardDrag(e.touches[0], card, inner), { passive: true });
+        });
+
+        window.addEventListener('mousemove', handleCardDrag);
+        window.addEventListener('touchmove', (e) => {
+            if (isDragging) {
+                handleCardDrag(e.touches[0]);
+            }
+        }, { passive: true });
+
+        window.addEventListener('mouseup', endCardDrag);
+        window.addEventListener('touchend', endCardDrag);
+    }
+
+    function toggleDragModeAll() {
+        const btn = document.getElementById('btn-toggle-drag-all');
+        const cards = document.querySelectorAll('.winner-card');
+        const isActivating = !cards[0] || !cards[0].classList.contains('drag-active');
+
+        cards.forEach(card => {
+            if (isActivating) card.classList.add('drag-active');
+            else card.classList.remove('drag-active');
+        });
+
+        if (btn) {
+            btn.innerHTML = isActivating 
+                ? '<i class="fas fa-check"></i> <span style="font-weight: 800;">Finish Moving</span>' 
+                : '<i class="fas fa-hand-pointer"></i> <span>Drag & Drop Move</span>';
+            btn.style.background = isActivating ? '#fbbf24' : 'rgba(251, 191, 36, 0.1)';
+            btn.style.color = isActivating ? '#000' : '#fbbf24';
+        }
+    }
+
+    function toggleDragModeSingle(btn) {
+        const card = btn.closest('.winner-card');
+        if (!card) return;
+
+        const isActivating = !card.classList.contains('drag-active');
+        if (isActivating) {
+            card.classList.add('drag-active');
+            btn.style.background = '#fbbf24';
+            btn.style.color = '#000';
+            btn.innerHTML = '<i class="fas fa-check"></i> Done';
+        } else {
+            card.classList.remove('drag-active');
+            btn.style.background = 'rgba(255,255,255,0.15)';
+            btn.style.color = '#fff';
+            btn.innerHTML = '<i class="fas fa-hand-pointer"></i> Move';
+        }
+    }
+
+    function startCardDrag(e, card, inner) {
+        if (!card.classList.contains('drag-active')) return;
+        if (e.target.closest('button, select, input, a')) return;
+
+        isDragging = true;
+        activeDragCard = card;
+        card.classList.add('is-dragging');
+
+        dragStartX = e.clientX;
+        dragStartY = e.clientY;
+
+        dragInitX = parseFloat(inner.dataset.tx || '0');
+        dragInitY = parseFloat(inner.dataset.ty || '0');
+    }
+
+    function handleCardDrag(e) {
+        if (!isDragging || !activeDragCard) return;
+
+        const inner = activeDragCard.querySelector('.card-inner');
+        if (!inner) return;
+
+        const dx = e.clientX - dragStartX;
+        const dy = e.clientY - dragStartY;
+
+        const newX = Math.round(dragInitX + dx);
+        const newY = Math.round(dragInitY + dy);
+
+        inner.dataset.tx = newX;
+        inner.dataset.ty = newY;
+        inner.style.transform = `translate(${newX}px, ${newY}px)`;
+    }
+
+    function endCardDrag() {
+        if (isDragging && activeDragCard) {
+            activeDragCard.classList.remove('is-dragging');
+        }
+        isDragging = false;
+        activeDragCard = null;
+    }
+
+    function resetCurrentCardPosition() {
+        if (!currentTargetCard) return;
+        const inner = currentTargetCard.querySelector('.card-inner');
+        if (inner) {
+            inner.dataset.tx = '0';
+            inner.dataset.ty = '0';
+            inner.style.transform = 'translate(0px, 0px)';
+        }
+    }
 
     function openCardLayoutModal(btn, progName) {
         currentTargetCard = btn.closest('.winner-card');
@@ -1327,6 +1491,8 @@
     async function downloadCard(btn, progName) {
         const card = btn.closest('.winner-card');
         const actionsBar = card.querySelector('.card-actions-bar');
+        const wasDragActive = card.classList.contains('drag-active');
+        if (wasDragActive) card.classList.remove('drag-active');
         
         actionsBar.style.display = 'none';
         showOverlay();
@@ -1347,6 +1513,7 @@
             link.click();
         } finally {
             actionsBar.style.display = '';
+            if (wasDragActive) card.classList.add('drag-active');
             hideOverlay();
         }
     }
@@ -1362,6 +1529,9 @@
             const card = cards[i];
             const progName = card.dataset.prog;
             const actionsBar = card.querySelector('.card-actions-bar');
+            const wasDragActive = card.classList.contains('drag-active');
+            if (wasDragActive) card.classList.remove('drag-active');
+
             actionsBar.style.display = 'none';
 
             try {
@@ -1381,12 +1551,17 @@
                 await sleep(350);
             } finally {
                 actionsBar.style.display = '';
+                if (wasDragActive) card.classList.add('drag-active');
             }
         }
         hideOverlay();
     }
 
     function safeFileName(name) { return name.replace(/[^a-z0-9]/gi, '_').toLowerCase(); }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        initDraggableCards();
+    });
 </script>
 </body>
 </html>
