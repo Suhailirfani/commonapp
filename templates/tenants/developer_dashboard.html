@@ -513,6 +513,46 @@
 
     </div>
 
+    <!-- Defined Add-Ons Grid with 1-Click Tenant ON/OFF Managers -->
+    <h4 style="font-size: 1.15rem; font-weight: 700; margin: 28px 0 14px 0; color: #fff; display: flex; align-items: center; gap: 8px;">
+        <i class="fa-solid fa-cubes" style="color: var(--accent-cyan);"></i> Add-On Modules & Tenant ON / OFF Managers ({{ add_ons.count }})
+    </h4>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; margin-bottom: 30px;">
+        {% for addon in add_ons %}
+        <div class="glass-card" style="background: rgba(15, 23, 42, 0.65); border: 1px solid var(--border-color); padding: 18px; border-radius: 14px; display: flex; flex-direction: column; justify-content: space-between; gap: 14px; transition: transform 0.2s, border-color 0.2s;" onmouseover="this.style.borderColor='var(--accent-cyan)'" onmouseout="this.style.borderColor='var(--border-color)'">
+            <div>
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
+                    <h5 style="margin: 0; font-size: 1.1rem; font-weight: 800; color: #fff;">{{ addon.name }}</h5>
+                    <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981; font-weight: 800; font-size: 0.85rem; border: 1px solid #10b981;">₹{{ addon.price }}</span>
+                </div>
+                <div style="font-size: 0.78rem; color: var(--accent-cyan); margin-bottom: 8px;">
+                    <code>{{ addon.code }}</code>
+                </div>
+                <p style="font-size: 0.82rem; color: var(--text-muted); margin: 0; line-height: 1.4;">
+                    {{ addon.description|default:"Tenant extension module." }}
+                </p>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 12px;">
+                <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                    <span class="badge" style="background: rgba(16, 185, 129, 0.2); color: #10b981; font-weight: 700; font-size: 0.75rem;">
+                        🟢 {{ addon.active_grants_count }} Active
+                    </span>
+                    {% if addon.pending_requests_count > 0 %}
+                    <span class="badge" style="background: rgba(245, 158, 11, 0.25); color: #fbbf24; border: 1px solid #f59e0b; font-weight: 800; font-size: 0.75rem;">
+                        ⚡ {{ addon.pending_requests_count }} Requests
+                    </span>
+                    {% endif %}
+                </div>
+
+                <a href="{% url 'tenants:developer_addon_detail' addon.id %}" class="btn-primary" style="padding: 8px 16px; font-size: 0.82rem; background: linear-gradient(135deg, var(--accent-cyan), #0284c7); text-decoration: none; font-weight: 800; border-radius: 8px; box-shadow: 0 4px 12px rgba(14, 165, 233, 0.35);">
+                    <i class="fa-solid fa-toggle-on"></i> Manage ON / OFF
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
     <!-- Active Granted Add-Ons Table -->
     <h4 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 12px; color: var(--text-main);">
         <i class="fa-solid fa-list-check"></i> Active Granted Add-Ons History ({{ granted_add_ons.count }})

@@ -2952,7 +2952,21 @@ def certificate_studio_view(request, institution_slug):
         action = request.POST.get('action')
 
         if action == 'request_cert_addon':
-            messages.success(request, "🎉 Your purchase / activation request for 'Winner Certificate Generation Studio' (PRO) has been registered! Please contact the admin or developer to complete instant activation.")
+            if cert_addon:
+                from apps.tenants.models import AddOnRequest
+                req_obj, created = AddOnRequest.objects.get_or_create(
+                    institution=institution,
+                    add_on=cert_addon,
+                    defaults={
+                        'status': 'pending',
+                        'contact_person': request.user.get_full_name() or request.user.username,
+                        'contact_phone': getattr(institution, 'phone', '') or getattr(request.user, 'phone', '') or '',
+                    }
+                )
+                if not created and req_obj.status == 'rejected':
+                    req_obj.status = 'pending'
+                    req_obj.save(update_fields=['status'])
+            messages.success(request, "🎉 Your purchase / activation request for 'Winner Certificate Generation Studio' (PRO) has been registered! The developer will review and activate it.")
             return redirect('core:certificate_studio', institution_slug=institution.slug)
 
         if not has_cert_addon and action in ['update_settings', 'update_config', 'upload_custom_template', 'upload_signatures']:

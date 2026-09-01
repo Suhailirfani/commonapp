@@ -20,4 +20,7 @@ urlpatterns = [
 
     # Developer Add-Ons routes
     path('developer/add-ons/manage/', views.add_on_manage_view, name='add_on_manage'),
+    path('developer/addons/<int:addon_id>/', views.developer_addon_detail_view, name='developer_addon_detail'),
+    path('developer/addons/<int:addon_id>/toggle/<int:institution_id>/', views.toggle_institution_addon_view, name='toggle_institution_addon'),
 ]
+

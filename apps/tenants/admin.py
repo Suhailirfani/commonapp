@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import SubscriptionPlan, Institution, InstitutionSubscription, SubscriptionApplication, AddOn, GrantedAddOn
+from .models import SubscriptionPlan, Institution, InstitutionSubscription, SubscriptionApplication, AddOn, GrantedAddOn, AddOnRequest
 
 @admin.register(SubscriptionPlan)
 class SubscriptionPlanAdmin(admin.ModelAdmin):
@@ -22,6 +22,14 @@ class GrantedAddOnAdmin(admin.ModelAdmin):
     list_display = ('institution', 'add_on', 'is_active', 'granted_at')
     list_filter = ('is_active', 'add_on')
     search_fields = ('institution__name', 'add_on__name')
+
+
+@admin.register(AddOnRequest)
+class AddOnRequestAdmin(admin.ModelAdmin):
+    list_display = ('institution', 'add_on', 'status', 'contact_person', 'contact_phone', 'requested_at')
+    list_filter = ('status', 'add_on', 'requested_at')
+    search_fields = ('institution__name', 'add_on__name', 'contact_person', 'contact_phone')
+
 
 
 @admin.register(Institution)

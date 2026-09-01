@@ -1,7 +1,8 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from .models import SubscriptionPlan, SubscriptionApplication, Institution, InstitutionSubscription, AddOn, GrantedAddOn
+from django.http import JsonResponse
+from .models import SubscriptionPlan, SubscriptionApplication, Institution, InstitutionSubscription, AddOn, GrantedAddOn, AddOnRequest
 from .forms import SubscriptionPlanForm
 from apps.users.models import User
 
@@ -204,6 +205,10 @@ def developer_dashboard_view(request):
     app_map = {app.institution_slug: app for app in SubscriptionApplication.objects.all()}
     from apps.users.models import User
     admin_user_map = {u.institution_id: u for u in User.objects.filter(role='INSTITUTION_ADMIN')}
+
+    for addon in add_ons:
+        addon.active_grants_count = addon.grants.filter(is_active=True).count()
+        addon.pending_requests_count = addon.requests.filter(status='pending').count()
 
     for inst in institutions:
         app = app_map.get(inst.slug)
@@ -428,3 +433,112 @@ def plan_delete_view(request, plan_id):
         plan.delete()
         messages.success(request, f"Subscription plan '{plan_name}' deleted successfully.")
     return redirect('tenants:developer_dashboard')
+
+
+@login_required
+def developer_addon_detail_view(request, addon_id):
+    if not request.user.is_developer:
+        messages.error(request, "Access Denied: Developer clearance required.")
+        return redirect('landing_page')
+
+    addon = get_object_or_404(AddOn, id=addon_id)
+    all_institutions = Institution.objects.all().order_by('name')
+
+    # Fetch existing grants and requests
+    grants_map = {g.institution_id: g for g in GrantedAddOn.objects.filter(add_on=addon)}
+    requests_map = {r.institution_id: r for r in AddOnRequest.objects.filter(add_on=addon)}
+
+    # Build rich institution list
+    items = []
+    for inst in all_institutions:
+        grant = grants_map.get(inst.id)
+        is_active = grant.is_active if grant else False
+        req = requests_map.get(inst.id)
+        has_pending_req = req and req.status == 'pending'
+
+        items.append({
+            'institution': inst,
+            'grant': grant,
+            'is_active': is_active,
+            'request': req,
+            'has_pending_request': has_pending_req,
+        })
+
+    # Stats
+    total_count = len(items)
+    active_count = sum(1 for item in items if item['is_active'])
+    inactive_count = total_count - active_count
+    pending_count = sum(1 for item in items if item['has_pending_request'])
+
+    # Filtering
+    filter_type = request.GET.get('filter', 'all')
+    search_q = request.GET.get('q', '').strip().lower()
+
+    filtered_items = items
+    if filter_type == 'active':
+        filtered_items = [i for i in filtered_items if i['is_active']]
+    elif filter_type == 'inactive':
+        filtered_items = [i for i in filtered_items if not i['is_active']]
+    elif filter_type == 'requested':
+        filtered_items = [i for i in filtered_items if i['has_pending_request']]
+
+    if search_q:
+        filtered_items = [
+            i for i in filtered_items 
+            if search_q in i['institution'].name.lower() or search_q in i['institution'].slug.lower()
+        ]
+
+    context = {
+        'addon': addon,
+        'items': filtered_items,
+        'total_count': total_count,
+        'active_count': active_count,
+        'inactive_count': inactive_count,
+        'pending_count': pending_count,
+        'filter_type': filter_type,
+        'search_q': search_q,
+    }
+    return render(request, 'tenants/developer_addon_detail.html', context)
+
+
+@login_required
+def toggle_institution_addon_view(request, addon_id, institution_id):
+    if not request.user.is_developer:
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({'success': False, 'error': 'Unauthorized'}, status=403)
+        messages.error(request, "Access Denied.")
+        return redirect('landing_page')
+
+    addon = get_object_or_404(AddOn, id=addon_id)
+    institution = get_object_or_404(Institution, id=institution_id)
+
+    if request.method == 'POST':
+        grant, created = GrantedAddOn.objects.get_or_create(
+            institution=institution,
+            add_on=addon,
+            defaults={'is_active': True}
+        )
+        if not created:
+            grant.is_active = not grant.is_active
+            grant.save()
+
+        # If there's an AddOnRequest, update its status
+        req_obj = AddOnRequest.objects.filter(institution=institution, add_on=addon).first()
+        if req_obj:
+            req_obj.status = 'approved' if grant.is_active else 'rejected'
+            req_obj.save(update_fields=['status'])
+
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.POST.get('ajax') == '1':
+            return JsonResponse({
+                'success': True,
+                'is_active': grant.is_active,
+                'institution_id': institution.id,
+                'status_str': 'ACTIVE' if grant.is_active else 'INACTIVE',
+                'message': f"Add-On '{addon.name}' is now {'ACTIVE' if grant.is_active else 'INACTIVE'} for {institution.name}."
+            })
+
+        status_str = "activated (ON)" if grant.is_active else "deactivated (OFF)"
+        messages.success(request, f"Add-On '{addon.name}' {status_str} for '{institution.name}'!")
+
+    return redirect('tenants:developer_addon_detail', addon_id=addon.id)
+

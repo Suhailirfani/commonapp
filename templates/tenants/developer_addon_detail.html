@@ -1,0 +1,384 @@
+{% extends 'base.html' %}
+
+{% block title %}Manage Add-On: {{ addon.name }} - Developer Portal{% endblock %}
+
+{% block extra_css %}
+<style>
+.addon-stat-card {
+    background: rgba(15, 23, 42, 0.65);
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    transition: transform 0.2s, border-color 0.2s;
+}
+.addon-stat-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(255,255,255,0.25);
+}
+.filter-pill {
+    padding: 8px 16px;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s;
+    border: 1px solid var(--border-color);
+    background: rgba(255,255,255,0.05);
+    color: var(--text-muted);
+}
+.filter-pill:hover {
+    background: rgba(255,255,255,0.1);
+    color: #fff;
+}
+.filter-pill.active {
+    background: linear-gradient(135deg, var(--accent-cyan), #0284c7);
+    color: #fff;
+    border-color: transparent;
+    box-shadow: 0 4px 14px rgba(14, 165, 233, 0.4);
+}
+.inst-card {
+    background: rgba(15, 23, 42, 0.7);
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    padding: 16px 18px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 14px;
+    transition: all 0.25s ease;
+    position: relative;
+    overflow: hidden;
+}
+.inst-card.active-grant {
+    border-color: rgba(16, 185, 129, 0.4);
+    background: linear-gradient(145deg, rgba(16, 185, 129, 0.06), rgba(15, 23, 42, 0.8));
+}
+.inst-card.has-request {
+    border-color: rgba(245, 158, 11, 0.6);
+    box-shadow: 0 0 16px rgba(245, 158, 11, 0.15);
+}
+.inst-avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #1e293b, #0f172a);
+    border: 1px solid rgba(255,255,255,0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 1.1rem;
+    color: var(--accent-cyan);
+    flex-shrink: 0;
+    overflow: hidden;
+}
+.inst-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Modern Switch Toggle */
+.switch-container {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+}
+.switch-toggle {
+    position: relative;
+    width: 52px;
+    height: 28px;
+    background: #334155;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+    border: 1px solid rgba(255,255,255,0.15);
+    display: inline-block;
+}
+.switch-toggle.on {
+    background: linear-gradient(135deg, #10b981, #059669);
+    border-color: #10b981;
+    box-shadow: 0 0 12px rgba(16, 185, 129, 0.4);
+}
+.switch-toggle .switch-knob {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 22px;
+    height: 22px;
+    background: #ffffff;
+    border-radius: 50%;
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+}
+.switch-toggle.on .switch-knob {
+    transform: translateX(24px);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <a href="{% url 'tenants:developer_dashboard' %}#paid-addons" style="color: var(--text-muted); text-decoration: none; font-size: 0.9rem;">
+            <i class="fa-solid fa-arrow-left"></i> Back to Developer Dashboard
+        </a>
+        <div style="display: flex; align-items: center; gap: 12px; margin-top: 6px; flex-wrap: wrap;">
+            <h2 style="font-size: 1.85rem; font-weight: 800; margin: 0; color: #fff;">
+                <i class="fa-solid fa-cube" style="color: var(--accent-cyan);"></i> {{ addon.name }}
+            </h2>
+            <span class="badge" style="background: rgba(14, 165, 233, 0.15); color: var(--accent-cyan); border: 1px solid var(--accent-cyan); font-weight: 800;">
+                <code>{{ addon.code }}</code>
+            </span>
+            <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid #10b981; font-weight: 800; font-size: 0.88rem;">
+                ₹{{ addon.price }}
+            </span>
+        </div>
+        <p style="color: var(--text-muted); font-size: 0.88rem; margin: 4px 0 0 0;">
+            {{ addon.description|default:"Manage tenant activation and purchase requests for this add-on feature." }}
+        </p>
+    </div>
+</div>
+
+<!-- ==================== STATS CARDS ==================== -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 24px;">
+    
+    <div class="addon-stat-card">
+        <div style="width: 44px; height: 44px; border-radius: 10px; background: rgba(14, 165, 233, 0.15); color: var(--accent-cyan); display: flex; align-items: center; justify-content: center; font-size: 1.3rem;">
+            <i class="fa-solid fa-building-columns"></i>
+        </div>
+        <div>
+            <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Total Tenants</div>
+            <div style="font-size: 1.5rem; font-weight: 900; color: #fff;">{{ total_count }}</div>
+        </div>
+    </div>
+
+    <div class="addon-stat-card">
+        <div style="width: 44px; height: 44px; border-radius: 10px; background: rgba(16, 185, 129, 0.15); color: #10b981; display: flex; align-items: center; justify-content: center; font-size: 1.3rem;">
+            <i class="fa-solid fa-toggle-on"></i>
+        </div>
+        <div>
+            <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Active (ON)</div>
+            <div style="font-size: 1.5rem; font-weight: 900; color: #10b981;">{{ active_count }}</div>
+        </div>
+    </div>
+
+    <div class="addon-stat-card">
+        <div style="width: 44px; height: 44px; border-radius: 10px; background: rgba(148, 163, 184, 0.15); color: #94a3b8; display: flex; align-items: center; justify-content: center; font-size: 1.3rem;">
+            <i class="fa-solid fa-toggle-off"></i>
+        </div>
+        <div>
+            <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Inactive (OFF)</div>
+            <div style="font-size: 1.5rem; font-weight: 900; color: #94a3b8;">{{ inactive_count }}</div>
+        </div>
+    </div>
+
+    <div class="addon-stat-card" style="{% if pending_count > 0 %}border-color: rgba(245, 158, 11, 0.5); background: rgba(245, 158, 11, 0.08);{% endif %}">
+        <div style="width: 44px; height: 44px; border-radius: 10px; background: rgba(245, 158, 11, 0.15); color: #f59e0b; display: flex; align-items: center; justify-content: center; font-size: 1.3rem;">
+            <i class="fa-solid fa-bell"></i>
+        </div>
+        <div>
+            <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Requests Pending</div>
+            <div style="font-size: 1.5rem; font-weight: 900; color: #f59e0b;">{{ pending_count }}</div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ==================== SEARCH & FILTERS BAR ==================== -->
+<div class="glass-card" style="margin-bottom: 24px; padding: 16px 20px;">
+    <form method="GET" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin: 0;">
+        
+        <!-- Filter Tabs -->
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <a href="?filter=all{% if search_q %}&q={{ search_q }}{% endif %}" class="filter-pill {% if filter_type == 'all' %}active{% endif %}">
+                All ({{ total_count }})
+            </a>
+            <a href="?filter=requested{% if search_q %}&q={{ search_q }}{% endif %}" class="filter-pill {% if filter_type == 'requested' %}active{% endif %}" style="{% if pending_count > 0 and filter_type != 'requested' %}color: #fbbf24; border-color: rgba(245, 158, 11, 0.4);{% endif %}">
+                <i class="fa-solid fa-bolt"></i> Requests Pending ({{ pending_count }})
+            </a>
+            <a href="?filter=active{% if search_q %}&q={{ search_q }}{% endif %}" class="filter-pill {% if filter_type == 'active' %}active{% endif %}">
+                <i class="fa-solid fa-circle-check"></i> Active ON ({{ active_count }})
+            </a>
+            <a href="?filter=inactive{% if search_q %}&q={{ search_q }}{% endif %}" class="filter-pill {% if filter_type == 'inactive' %}active{% endif %}">
+                <i class="fa-solid fa-circle-xmark"></i> Inactive OFF ({{ inactive_count }})
+            </a>
+        </div>
+
+        <!-- Search Input -->
+        <div style="display: flex; gap: 8px; align-items: center; min-width: 260px;">
+            <input type="hidden" name="filter" value="{{ filter_type }}">
+            <input type="text" name="q" value="{{ search_q }}" placeholder="Search institution or slug..." class="form-control" style="padding: 8px 14px; font-size: 0.88rem;">
+            {% if search_q %}
+            <a href="?filter={{ filter_type }}" class="btn btn-sm" style="background: rgba(255,255,255,0.1); color: #fff; padding: 8px 12px; border-radius: 8px;" title="Clear Search">
+                <i class="fa-solid fa-xmark"></i>
+            </a>
+            {% endif %}
+            <button type="submit" class="btn-primary" style="padding: 8px 14px;">
+                <i class="fa-solid fa-magnifying-glass"></i>
+            </button>
+        </div>
+
+    </form>
+</div>
+
+<!-- ==================== INSTITUTION CARDS GRID ==================== -->
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px;">
+    {% for item in items %}
+    <div class="inst-card {% if item.is_active %}active-grant{% endif %} {% if item.has_pending_request %}has-request{% endif %}" id="card-inst-{{ item.institution.id }}">
+        
+        <!-- Top Institution Header -->
+        <div style="display: flex; gap: 12px; align-items: flex-start;">
+            <div class="inst-avatar">
+                {% if item.institution.logo %}
+                <img src="{{ item.institution.logo.url }}" alt="{{ item.institution.name }}">
+                {% else %}
+                {{ item.institution.name|slice:":1"|upper }}
+                {% endif %}
+            </div>
+            <div style="flex: 1; min-width: 0;">
+                <h4 style="margin: 0; font-size: 1.05rem; font-weight: 700; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ item.institution.name }}">
+                    {{ item.institution.name }}
+                </h4>
+                <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">
+                    <code>/portal/{{ item.institution.slug }}/</code>
+                </div>
+            </div>
+        </div>
+
+        <!-- Badges & Status Information -->
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span class="badge" id="status-badge-{{ item.institution.id }}" style="{% if item.is_active %}background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid #10b981;{% else %}background: rgba(148, 163, 184, 0.15); color: #94a3b8; border: 1px solid #64748b;{% endif %} font-weight: 800; font-size: 0.75rem;">
+                    {% if item.is_active %}🟢 ACTIVE (ON){% else %}⚪ INACTIVE (OFF){% endif %}
+                </span>
+                
+                {% if item.has_pending_request %}
+                <span class="badge" style="background: rgba(245, 158, 11, 0.25); color: #fbbf24; border: 1px solid #f59e0b; font-weight: 800; font-size: 0.72rem;">
+                    ⚡ REQUESTED
+                </span>
+                {% endif %}
+            </div>
+
+            {% if item.request %}
+            <div style="font-size: 0.78rem; color: #cbd5e1; background: rgba(0,0,0,0.25); padding: 6px 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.06);">
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="color: var(--text-muted);">Contact:</span>
+                    <strong style="color: #fff;">{{ item.request.contact_person|default:item.institution.contact_person|default:"Manager" }}</strong>
+                </div>
+                {% if item.request.contact_phone or item.institution.phone %}
+                <div style="display: flex; justify-content: space-between; margin-top: 2px;">
+                    <span style="color: var(--text-muted);">Phone:</span>
+                    <a href="tel:{{ item.request.contact_phone|default:item.institution.phone }}" style="color: var(--accent-cyan); text-decoration: none;">
+                        {{ item.request.contact_phone|default:item.institution.phone }}
+                    </a>
+                </div>
+                {% endif %}
+                <div style="font-size: 0.7rem; color: #94a3b8; margin-top: 3px;">
+                    Requested: {{ item.request.requested_at|date:"M d, Y h:i A" }}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Action / Toggle Bar -->
+        <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 12px; margin-top: 2px;">
+            <a href="{% url 'core:dashboard' item.institution.slug %}" target="_blank" style="font-size: 0.8rem; color: var(--accent-cyan); text-decoration: none; display: flex; align-items: center; gap: 4px;">
+                <i class="fa-solid fa-arrow-up-right-from-square"></i> Open Portal
+            </a>
+
+            <!-- Toggle Switch & Button -->
+            <div class="switch-container">
+                <span id="label-inst-{{ item.institution.id }}" style="font-size: 0.8rem; font-weight: 800; color: {% if item.is_active %}#10b981{% else %}#94a3b8{% endif %};">
+                    {% if item.is_active %}ON{% else %}OFF{% endif %}
+                </span>
+
+                <form method="POST" action="{% url 'tenants:toggle_institution_addon' addon.id item.institution.id %}" id="form-toggle-{{ item.institution.id }}" style="margin: 0; display: inline;">
+                    {% csrf_token %}
+                    <div class="switch-toggle {% if item.is_active %}on{% endif %}" 
+                         id="switch-{{ item.institution.id }}"
+                         onclick="toggleAddonAjax({{ addon.id }}, {{ item.institution.id }})" 
+                         title="Click to toggle ON / OFF">
+                        <div class="switch-knob"></div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+    </div>
+    {% empty %}
+    <div class="glass-card" style="grid-column: 1 / -1; text-align: center; padding: 50px; color: var(--text-muted);">
+        <i class="fa-solid fa-building-columns" style="font-size: 2.5rem; opacity: 0.4; margin-bottom: 12px; display: block;"></i>
+        <h4 style="color: #fff; font-weight: 700; margin-bottom: 4px;">No institutions found</h4>
+        <p style="font-size: 0.88rem; margin: 0;">Try adjusting your filter or search query.</p>
+    </div>
+    {% endfor %}
+</div>
+
+<script>
+function toggleAddonAjax(addonId, instId) {
+    const switchEl = document.getElementById('switch-' + instId);
+    const labelEl = document.getElementById('label-inst-{{ item.institution.id }}' || 'label-inst-' + instId);
+    const badgeEl = document.getElementById('status-badge-' + instId);
+    const cardEl = document.getElementById('card-inst-' + instId);
+    const formEl = document.getElementById('form-toggle-' + instId);
+
+    const csrfToken = formEl.querySelector('[name=csrfmiddlewaretoken]').value;
+    const url = "{% url 'tenants:toggle_institution_addon' addon.id 0 %}".replace('/0/', '/' + instId + '/');
+
+    // Optimistic UI update
+    const isCurrentlyOn = switchEl.classList.contains('on');
+    const newState = !isCurrentlyOn;
+
+    if (newState) {
+        switchEl.classList.add('on');
+        if (labelEl) { labelEl.innerText = 'ON'; labelEl.style.color = '#10b981'; }
+        if (badgeEl) {
+            badgeEl.innerText = '🟢 ACTIVE (ON)';
+            badgeEl.style.background = 'rgba(16, 185, 129, 0.2)';
+            badgeEl.style.color = '#10b981';
+            badgeEl.style.borderColor = '#10b981';
+        }
+        if (cardEl) cardEl.classList.add('active-grant');
+    } else {
+        switchEl.classList.remove('on');
+        if (labelEl) { labelEl.innerText = 'OFF'; labelEl.style.color = '#94a3b8'; }
+        if (badgeEl) {
+            badgeEl.innerText = '⚪ INACTIVE (OFF)';
+            badgeEl.style.background = 'rgba(148, 163, 184, 0.15)';
+            badgeEl.style.color = '#94a3b8';
+            badgeEl.style.borderColor = '#64748b';
+        }
+        if (cardEl) cardEl.classList.remove('active-grant');
+    }
+
+    // Send AJAX POST
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken,
+            'X-Requested-With': 'XMLHttpRequest',
+            'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: 'ajax=1'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (!data.success) {
+            // Revert on failure
+            formEl.submit();
+        }
+    })
+    .catch(err => {
+        // Fallback to normal form submit if fetch fails
+        formEl.submit();
+    });
+}
+</script>
+{% endblock %}

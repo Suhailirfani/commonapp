@@ -148,6 +148,28 @@ class GrantedAddOn(models.Model):
         return f"{self.institution.name} -> {self.add_on.name}"
 
 
+class AddOnRequest(models.Model):
+    STATUS_CHOICES = (
+        ('pending', 'Pending Review'),
+        ('approved', 'Approved / Granted'),
+        ('rejected', 'Rejected'),
+    )
+    institution = models.ForeignKey(Institution, on_delete=models.CASCADE, related_name='addon_requests')
+    add_on = models.ForeignKey(AddOn, on_delete=models.CASCADE, related_name='requests')
+    requested_at = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    notes = models.TextField(blank=True)
+    contact_person = models.CharField(max_length=150, blank=True)
+    contact_phone = models.CharField(max_length=50, blank=True)
+
+    class Meta:
+        ordering = ['-requested_at']
+
+    def __str__(self):
+        return f"Request: {self.institution.name} -> {self.add_on.name} ({self.status})"
+
+
+
 class InstitutionSubscription(models.Model):
     institution = models.OneToOneField(Institution, on_delete=models.CASCADE, related_name='subscription')
     plan = models.ForeignKey(SubscriptionPlan, on_delete=models.SET_NULL, null=True, related_name='subscriptions')
