@@ -2949,34 +2949,38 @@ def certificate_studio_view(request, institution_slug):
     if request.method == 'POST':
         action = request.POST.get('action')
 
-        if action == 'update_config':
-            config.mode = request.POST.get('mode', 'code')
-            config.title = request.POST.get('title', 'CERTIFICATE OF MERIT').strip()
-            config.subtitle = request.POST.get('subtitle', 'PROUDLY PRESENTED TO').strip()
-            config.paragraph_template = request.POST.get('paragraph_template', '').strip()
-            config.signatory_1_title = request.POST.get('signatory_1_title', 'Co-ordinator').strip()
-            config.signatory_1_name = request.POST.get('signatory_1_name', '').strip()
-            config.signatory_2_title = request.POST.get('signatory_2_title', 'Principal / Convener').strip()
-            config.signatory_2_name = request.POST.get('signatory_2_name', '').strip()
-            
-            issue_date_val = request.POST.get('issue_date')
-            if issue_date_val:
-                try:
-                    config.issue_date = datetime.strptime(issue_date_val, '%Y-%m-%d').date()
-                except ValueError:
-                    pass
-            else:
-                config.issue_date = None
+        if action == 'request_cert_addon':
+            messages.success(request, "🎉 Your purchase / activation request for 'Winner Certificate Generation Studio' (PRO) has been registered! Please contact the admin or developer to complete instant activation.")
+            return redirect('core:certificate_studio', institution_slug=institution.slug)
 
-            offset_val = request.POST.get('custom_text_offset_top')
-            if offset_val and str(offset_val).isdigit():
-                config.custom_text_offset_top = int(offset_val)
+        if not has_cert_addon and action in ['update_settings', 'update_config', 'upload_custom_template', 'upload_signatures']:
+            messages.warning(request, "🔒 Winner Certificate Generation Studio is a PRO Add-On. Please unlock the add-on to save custom settings.")
+            return redirect('core:certificate_studio', institution_slug=institution.slug)
+
+        if action in ['update_settings', 'update_config']:
+            config.title = request.POST.get('title', config.title).strip()
+            config.subtitle = request.POST.get('subtitle', config.subtitle).strip()
+            config.paragraph_template = request.POST.get('paragraph_template', config.paragraph_template).strip()
+            config.signatory_1_title = request.POST.get('signatory_1_title', config.signatory_1_title).strip()
+            config.signatory_1_name = request.POST.get('signatory_1_name', config.signatory_1_name).strip()
+            config.signatory_2_title = request.POST.get('signatory_2_title', config.signatory_2_title).strip()
+            config.signatory_2_name = request.POST.get('signatory_2_name', config.signatory_2_name).strip()
+            config.mode = request.POST.get('mode', config.mode)
+
+            issue_date_raw = request.POST.get('issue_date')
+            if issue_date_raw:
+                try:
+                    config.issue_date = datetime.strptime(issue_date_raw, '%Y-%m-%d').date()
+                except Exception:
+                    pass
+
+            offset_raw = request.POST.get('custom_text_offset_top')
+            if offset_raw and str(offset_raw).isdigit():
+                config.custom_text_offset_top = int(offset_raw)
 
             places = request.POST.getlist('include_places')
             if places:
                 config.include_places = ",".join(places)
-            else:
-                config.include_places = "1,2,3"
 
             config.save()
             messages.success(request, "Certificate settings updated successfully!")
@@ -3098,6 +3102,8 @@ def certificate_studio_view(request, institution_slug):
         'institution': institution,
         'competition': comp,
         'config': config,
+        'has_cert_addon': has_cert_addon,
+        'cert_addon': cert_addon,
         'categories': categories,
         'programs': programs,
         'certificates': certificates,
@@ -3127,6 +3133,11 @@ def print_certificates_view(request, institution_slug):
     institution = get_object_or_404(Institution, slug=institution_slug)
     comp = Competition.objects.filter(institution=institution, is_active=True).first() or Competition.objects.filter(institution=institution).first()
     config, _ = CertificateConfig.objects.get_or_create(institution=institution, defaults={'competition': comp})
+
+    has_cert_addon = institution.has_add_on('certificate-generation') or request.user.is_superuser or (hasattr(request.user, 'is_developer') and request.user.is_developer)
+    if not has_cert_addon:
+        messages.warning(request, "🔒 Winner Certificate Studio is a PRO Add-On. Please purchase or unlock the feature to print certificates.")
+        return redirect('core:certificate_studio', institution_slug=institution.slug)
 
     category_id = request.GET.get('category')
     program_id = request.GET.get('program')

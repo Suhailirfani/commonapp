@@ -14,7 +14,7 @@ class SubscriptionPlan(models.Model):
     is_active = models.BooleanField(default=True)
 
     def __str__(self):
-        return f"{self.name} (₹{self.price} - Regular ₹{self.original_price})"
+        return f"{self.name} (Rs. {self.price} - Regular Rs. {self.original_price})"
 
 class Institution(models.Model):
     STATUS_CHOICES = (
@@ -131,7 +131,7 @@ class AddOn(models.Model):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.name} ({self.code}) - ₹{self.price}"
+        return f"{self.name} ({self.code}) - Rs. {self.price}"
 
 
 class GrantedAddOn(models.Model):

@@ -255,6 +255,7 @@
     
     <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
         <!-- Print All Certificates (Vector Quality) -->
+        {% if has_cert_addon %}
         <a href="{% url 'core:print_certificates' institution.slug %}{% if selected_category_id %}?category={{ selected_category_id }}{% endif %}{% if selected_program_id %}&program={{ selected_program_id }}{% endif %}{% if selected_place %}&place={{ selected_place }}{% endif %}" 
            target="_blank" 
            class="btn-primary" 
@@ -262,13 +263,56 @@
            title="Open Browser Print Dialog to print or save crisp vector PDF">
             <i class="fa-solid fa-print"></i> Print All Certificates / Save as PDF (1-Click)
         </a>
+        {% else %}
+        <button type="button" 
+                onclick="openPurchaseModal()" 
+                class="btn-primary" 
+                style="background: linear-gradient(135deg, #f59e0b, #d97706); color: #000; font-weight: 800; padding: 10px 20px; border-radius: 10px; box-shadow: 0 4px 14px rgba(245, 158, 11, 0.4); font-size: 0.95rem; border: none; cursor: pointer;">
+            <i class="fa-solid fa-lock"></i> <span class="badge" style="background: #000; color: #fbbf24; font-size: 0.72rem; margin-right: 4px; padding: 2px 6px;">👑 PRO</span> Unlock to Print All
+        </button>
+        {% endif %}
 
         <!-- Certificate Settings Toggle -->
+        {% if has_cert_addon %}
         <button type="button" onclick="toggleSettingsModal()" class="btn-primary" style="background: rgba(255,255,255,0.08); border: 1px solid var(--border-color); padding: 10px 16px; border-radius: 10px;">
             <i class="fa-solid fa-sliders"></i> Certificate Settings
         </button>
+        {% else %}
+        <button type="button" onclick="openPurchaseModal()" class="btn-primary" style="background: rgba(255,255,255,0.08); border: 1px solid var(--border-color); padding: 10px 16px; border-radius: 10px;">
+            <i class="fa-solid fa-lock"></i> Settings <span class="badge" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; font-size: 0.7rem; margin-left: 2px;">PRO</span>
+        </button>
+        {% endif %}
     </div>
 </div>
+
+{% if not has_cert_addon %}
+<!-- ==================== PRO UPGRADE / PAYWALL BANNER ==================== -->
+<div style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.14), rgba(217, 119, 6, 0.06)); border: 1.5px solid rgba(245, 158, 11, 0.5); border-radius: 16px; padding: 20px 24px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; box-shadow: 0 8px 30px rgba(0,0,0,0.3);">
+    <div style="display: flex; align-items: center; gap: 16px;">
+        <div style="background: linear-gradient(135deg, #f59e0b, #d97706); width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #000; font-size: 1.5rem; box-shadow: 0 4px 14px rgba(245, 158, 11, 0.4); flex-shrink: 0;">
+            <i class="fa-solid fa-crown"></i>
+        </div>
+        <div>
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <h3 style="margin: 0; font-size: 1.2rem; font-weight: 800; color: #fbbf24;">PRO Feature: Winner Certificate Studio</h3>
+                <span class="badge" style="background: rgba(245, 158, 11, 0.25); color: #fbbf24; border: 1px solid #f59e0b; font-weight: 800; font-size: 0.75rem;">PAID ADD-ON</span>
+            </div>
+            <p style="margin: 4px 0 0 0; color: #cbd5e1; font-size: 0.88rem; max-width: 680px; line-height: 1.4;">
+                This fest does not have the <strong>Winner Certificate Studio</strong> add-on activated yet. Unlock now to generate and print 100% crisp vector certificates with automated 1st, 2nd, and 3rd place color themes!
+            </p>
+        </div>
+    </div>
+    <div style="display: flex; align-items: center; gap: 14px;">
+        <div style="text-align: right;">
+            <div style="font-size: 0.72rem; color: #94a3b8; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">Add-On Price</div>
+            <div style="font-size: 1.35rem; font-weight: 900; color: #10b981;">₹{{ cert_addon.price|default:"750.00" }}</div>
+        </div>
+        <button type="button" onclick="openPurchaseModal()" class="btn-primary" style="background: linear-gradient(135deg, #10b981, #059669); color: #fff; font-weight: 800; padding: 12px 22px; border-radius: 10px; box-shadow: 0 4px 16px rgba(16, 185, 129, 0.4); border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; font-size: 0.95rem;">
+            <i class="fa-solid fa-bolt"></i> Unlock Feature
+        </button>
+    </div>
+</div>
+{% endif %}
 
 <!-- ==================== STUDIO CONTROL BAR & OPTIONS ==================== -->
 <div class="glass-card" style="margin-bottom: 24px; padding: 18px 24px;">
@@ -569,6 +613,7 @@
                         {% endif %}
                     </td>
                     <td style="text-align: right; white-space: nowrap;">
+                        {% if has_cert_addon %}
                         <a href="{% url 'core:print_certificates' institution.slug %}?part_id={{ cert.part_id }}{% if cert.is_group %}&is_group=1{% endif %}&autoprint=1" 
                            target="_blank" 
                            class="btn-primary" 
@@ -576,6 +621,14 @@
                            title="Print / Save Winner Certificate as PDF">
                             <i class="fa-solid fa-print"></i> Print / Save PDF
                         </a>
+                        {% else %}
+                        <button type="button" 
+                                onclick="openPurchaseModal()" 
+                                class="btn-primary" 
+                                style="padding: 6px 12px; font-size: 0.8rem; background: rgba(245, 158, 11, 0.15); border: 1px solid #f59e0b; color: #fbbf24; font-weight: 700; cursor: pointer;">
+                            <i class="fa-solid fa-lock"></i> 👑 PRO Print
+                        </button>
+                        {% endif %}
                     </td>
                 </tr>
                 {% empty %}
@@ -768,7 +821,87 @@
     </div>
 </div>
 
+<!-- ==================== PRO UPGRADE & PURCHASE MODAL ==================== -->
+<div id="certPurchaseModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(10px); z-index: 99999; align-items: center; justify-content: center; padding: 20px;">
+    <div class="glass-card" style="width: 100%; max-width: 620px; background: #0f172a; border: 2px solid #f59e0b; border-radius: 20px; padding: 28px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.7); position: relative;">
+        
+        <button type="button" onclick="closePurchaseModal()" style="position: absolute; top: 18px; right: 18px; background: rgba(255,255,255,0.1); border: none; color: #fff; width: 34px; height: 34px; border-radius: 50%; font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+
+        <div style="text-align: center; margin-bottom: 22px;">
+            <div style="width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(135deg, #f59e0b, #d97706); display: inline-flex; align-items: center; justify-content: center; color: #000; font-size: 2rem; box-shadow: 0 8px 20px rgba(245, 158, 11, 0.4); margin-bottom: 12px;">
+                <i class="fa-solid fa-crown"></i>
+            </div>
+            <h2 style="font-size: 1.6rem; font-weight: 800; color: #fff; margin: 0;">
+                Unlock Winner Certificate Studio
+            </h2>
+            <p style="color: #94a3b8; font-size: 0.9rem; margin-top: 4px;">
+                Premium Paid Add-On for <span style="color: #fbbf24; font-weight: 700;">{{ institution.name }}</span>
+            </p>
+        </div>
+
+        <!-- Features Grid -->
+        <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 16px 20px; margin-bottom: 20px;">
+            <div style="font-size: 0.78rem; font-weight: 700; color: #fbbf24; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px;">
+                <i class="fa-solid fa-sparkles"></i> What You Get With This Add-On:
+            </div>
+            <ul style="list-style: none; padding: 0; margin: 0; font-size: 0.88rem; color: #e2e8f0; display: flex; flex-direction: column; gap: 8px;">
+                <li style="display: flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-circle-check" style="color: #10b981;"></i> <strong>1-Click Bulk Vector Printing</strong>: Print or export all winners to PDF instantly.
+                </li>
+                <li style="display: flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-circle-check" style="color: #10b981;"></i> <strong>Option 1 (Code Design)</strong>: Luxury Golden, Silver & Bronze place-specific themes.
+                </li>
+                <li style="display: flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-circle-check" style="color: #10b981;"></i> <strong>Option 2 (Custom Template)</strong>: Upload your own custom background image.
+                </li>
+                <li style="display: flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-circle-check" style="color: #10b981;"></i> <strong>Dual Signatures & Institution Emblem</strong>: Transparent PNG signatures support.
+                </li>
+            </ul>
+        </div>
+
+        <!-- Pricing Card -->
+        <div style="display: flex; justify-content: space-between; align-items: center; background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(5, 150, 105, 0.08)); border: 1.5px solid rgba(16, 185, 129, 0.4); border-radius: 14px; padding: 14px 20px; margin-bottom: 22px;">
+            <div>
+                <div style="font-size: 0.78rem; color: #94a3b8; font-weight: 700; text-transform: uppercase;">One-Time Fest Add-On</div>
+                <div style="font-size: 1.1rem; font-weight: 800; color: #fff;">Full Lifetime Access for This Fest</div>
+            </div>
+            <div style="text-align: right;">
+                <div style="font-size: 1.6rem; font-weight: 900; color: #10b981;">
+                    ₹{{ cert_addon.price|default:"750.00" }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Purchase / Request Action -->
+        <form method="POST" style="margin: 0;">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="request_cert_addon">
+            <button type="submit" class="btn-primary" style="width: 100%; background: linear-gradient(135deg, #10b981, #059669); color: #fff; font-size: 1.05rem; font-weight: 800; padding: 14px; border-radius: 12px; box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                <i class="fa-solid fa-bolt"></i> Submit Instant Purchase / Activation Request
+            </button>
+        </form>
+
+        <div style="text-align: center; margin-top: 14px;">
+            <span style="color: #64748b; font-size: 0.8rem;">
+                Need instant activation via WhatsApp / Call? Contact developer / admin support.
+            </span>
+        </div>
+
+    </div>
+</div>
+
 <script>
+function openPurchaseModal() {
+    document.getElementById('certPurchaseModal').style.display = 'flex';
+}
+
+function closePurchaseModal() {
+    document.getElementById('certPurchaseModal').style.display = 'none';
+}
+
 // Mock data for preview place switching
 const previewData = {
     1: {
