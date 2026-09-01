@@ -294,25 +294,25 @@
             </a>
 
             <!-- Prominent ON / OFF Action Button -->
-            <form method="POST" action="{% url 'tenants:toggle_institution_addon' addon.id item.institution.id %}" id="form-toggle-{{ item.institution.id }}" style="margin: 0; display: inline;">
+            <form method="POST" action="{% url 'tenants:toggle_institution_addon' addon.code item.institution.id %}" id="form-toggle-{{ item.institution.id }}" style="margin: 0; display: inline;">
                 {% csrf_token %}
+                <input type="hidden" name="filter" value="{{ filter_type }}">
+                <input type="hidden" name="q" value="{{ search_q }}">
                 {% if item.is_active %}
-                <button type="button" 
+                <button type="submit" 
                         id="toggle-btn-{{ item.institution.id }}" 
-                        onclick="toggleAddonAjax('{{ addon.id }}', {{ item.institution.id }})" 
                         style="background: linear-gradient(135deg, #10b981, #059669); color: #fff; font-weight: 800; font-size: 0.85rem; padding: 8px 18px; border-radius: 10px; border: none; cursor: pointer; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4); display: inline-flex; align-items: center; gap: 8px;"
                         title="Click to Turn OFF">
-                    <i class="fa-solid fa-toggle-on" id="toggle-icon-{{ item.institution.id }}" style="font-size: 1.25rem;"></i>
-                    <span id="btn-text-{{ item.institution.id }}">🟢 ON (Active)</span>
+                    <i class="fa-solid fa-toggle-on" style="font-size: 1.25rem;"></i>
+                    <span>🟢 ON (Active)</span>
                 </button>
                 {% else %}
-                <button type="button" 
+                <button type="submit" 
                         id="toggle-btn-{{ item.institution.id }}" 
-                        onclick="toggleAddonAjax('{{ addon.id }}', {{ item.institution.id }})" 
                         style="background: rgba(244, 63, 94, 0.15); color: #fb7185; border: 1.5px solid #f43f5e; font-weight: 800; font-size: 0.85rem; padding: 8px 18px; border-radius: 10px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;"
                         title="Click to Turn ON">
-                    <i class="fa-solid fa-toggle-off" id="toggle-icon-{{ item.institution.id }}" style="font-size: 1.25rem;"></i>
-                    <span id="btn-text-{{ item.institution.id }}">⚪ OFF (Turn ON)</span>
+                    <i class="fa-solid fa-toggle-off" style="font-size: 1.25rem;"></i>
+                    <span>⚪ OFF (Turn ON)</span>
                 </button>
                 {% endif %}
             </form>

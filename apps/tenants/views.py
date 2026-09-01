@@ -519,10 +519,10 @@ def developer_addon_detail_view(request, addon_id):
 
 @login_required
 def toggle_institution_addon_view(request, addon_id, institution_id):
-    if not request.user.is_developer:
+    if not (request.user.is_developer or request.user.is_superuser):
         if request.headers.get('x-requested-with') == 'XMLHttpRequest':
             return JsonResponse({'success': False, 'error': 'Unauthorized'}, status=403)
-        messages.error(request, "Access Denied.")
+        messages.error(request, "Access Denied: Developer clearance required.")
         return redirect('landing_page')
 
     if str(addon_id).isdigit():
@@ -556,8 +556,14 @@ def toggle_institution_addon_view(request, addon_id, institution_id):
                 'message': f"Add-On '{addon.name}' is now {'ACTIVE' if grant.is_active else 'INACTIVE'} for {institution.name}."
             })
 
-        status_str = "activated (ON)" if grant.is_active else "deactivated (OFF)"
-        messages.success(request, f"Add-On '{addon.name}' {status_str} for '{institution.name}'!")
+        status_str = "ACTIVATED (ON)" if grant.is_active else "DEACTIVATED (OFF)"
+        messages.success(request, f"Add-On '{addon.name}' is now {status_str} for '{institution.name}'!")
 
-    return redirect('tenants:developer_addon_detail', addon_id=addon.id)
+    from django.urls import reverse
+    filter_val = request.POST.get('filter') or request.GET.get('filter', 'all')
+    q_val = request.POST.get('q') or request.GET.get('q', '')
+    redirect_url = f"{reverse('tenants:developer_addon_detail', kwargs={'addon_id': addon.code})}?filter={filter_val}"
+    if q_val:
+        redirect_url += f"&q={q_val}"
+    return redirect(redirect_url)
 
