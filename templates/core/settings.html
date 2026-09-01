@@ -132,7 +132,15 @@
                 <li><strong>Institution Slug:</strong> <code>{{ institution.slug }}</code></li>
                 <li><strong>Status:</strong> <span class="badge badge-approved"><i class="fa-solid fa-check"></i> {{ institution.get_status_display }}</span></li>
                 <li><strong>Contact Email:</strong> {{ institution.email }}</li>
-                <li><strong>Public Results URL:</strong> <a href="{% url 'public:home' institution.slug %}" target="_blank" style="color: var(--accent-cyan); text-decoration: none;">domain.com/public/{{ institution.slug }}/</a></li>
+                <li>
+                    <strong>Public Results URL:</strong>
+                    <div style="display: inline-flex; align-items: center; gap: 8px; margin-left: 6px; background: rgba(14, 165, 233, 0.1); padding: 3px 8px; border-radius: 8px; border: 1px solid rgba(14, 165, 233, 0.25);">
+                        <a href="{% url 'public:home' institution.slug %}" id="settingsPublicUrlLink" target="_blank" style="color: var(--accent-cyan); text-decoration: none; font-family: monospace; font-size: 0.88rem;">/public/{{ institution.slug }}/</a>
+                        <button type="button" onclick="copySettingsPublicUrl(this)" style="background: none; border: none; color: var(--accent-cyan); cursor: pointer; padding: 2px 4px; font-size: 0.85rem;" title="Copy Public URL">
+                            <i class="fa-solid fa-copy"></i>
+                        </button>
+                    </div>
+                </li>
                 {% if institution.active_add_ons %}
                 <li style="margin-top: 8px;">
                     <strong style="color: var(--accent-emerald);">✨ Active Paid Add-Ons:</strong>
@@ -219,4 +227,29 @@
     </div>
 
 </div>
+
+<script>
+function copySettingsPublicUrl(btn) {
+    const fullUrl = window.location.origin + "{% url 'public:home' institution.slug %}";
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(fullUrl).then(() => {
+            btn.innerHTML = '<i class="fa-solid fa-check" style="color: #10b981;"></i>';
+            setTimeout(() => {
+                btn.innerHTML = '<i class="fa-solid fa-copy"></i>';
+            }, 2000);
+        }).catch(() => {
+            prompt('Copy this link:', fullUrl);
+        });
+    } else {
+        prompt('Copy this link:', fullUrl);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const link = document.getElementById('settingsPublicUrlLink');
+    if (link) {
+        link.innerText = window.location.origin + "{% url 'public:home' institution.slug %}";
+    }
+});
+</script>
 {% endblock %}

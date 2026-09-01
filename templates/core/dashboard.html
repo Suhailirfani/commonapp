@@ -202,9 +202,21 @@
             <span>Download App</span>
         </button>
 
-        <a href="{% url 'public:home' institution.slug %}" target="_blank" class="btn-primary" style="background: linear-gradient(135deg, var(--accent-cyan), #0284c7);">
-            <i class="fa-solid fa-share-nodes"></i> Shareable Public Result Link
-        </a>
+        <!-- SHAREABLE PUBLIC RESULT LINK (COPYABLE) -->
+        <div class="shareable-link-box" style="display: flex; align-items: center; background: rgba(14, 165, 233, 0.12); border: 1px solid rgba(14, 165, 233, 0.35); border-radius: 12px; padding: 4px 6px 4px 12px; gap: 8px; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);">
+            <div style="display: flex; align-items: center; gap: 6px; color: var(--accent-cyan); font-size: 0.82rem; font-weight: 700;">
+                <i class="fa-solid fa-globe"></i>
+                <span class="d-none d-sm-inline" style="opacity: 0.85;">Public Link:</span>
+            </div>
+            <input type="text" id="publicResultLinkInput" readonly style="background: transparent; border: none; color: #fff; font-size: 0.82rem; font-family: monospace; width: 170px; outline: none; cursor: pointer; text-overflow: ellipsis; white-space: nowrap; overflow: hidden;" value="/public/{{ institution.slug }}/" onclick="copyPublicResultLink(this)">
+            <button type="button" onclick="copyPublicResultLink(this)" id="copyPublicLinkBtn" class="btn btn-sm" style="background: linear-gradient(135deg, var(--accent-cyan), #0284c7); color: #fff; border: none; font-size: 0.78rem; font-weight: 700; padding: 6px 12px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 5px; transition: all 0.2s;" title="Copy Public Result Link">
+                <i class="fa-solid fa-copy"></i> <span>Copy Link</span>
+            </button>
+            <a href="{% url 'public:home' institution.slug %}" target="_blank" class="btn btn-sm" style="background: rgba(255,255,255,0.08); color: var(--text-main); border: 1px solid rgba(255,255,255,0.15); font-size: 0.78rem; padding: 6px 8px; border-radius: 8px; text-decoration: none;" title="Open Public Result Portal">
+                <i class="fa-solid fa-arrow-up-right-from-square"></i>
+            </a>
+        </div>
+
         <a href="{% url 'users:user_create' institution.slug %}" class="btn-primary">
             <i class="fa-solid fa-user-plus"></i> Add Sub-User / Team Leader
         </a>
@@ -340,6 +352,55 @@
         <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">പോയിന്റുകൾ ബാലൻസ് ചെയ്ത് പബ്ലിഷ് ചെയ്യാനുള്ള എഐ ടൂൾ</p>
     </a>
 </div>
+
+<script>
+function copyPublicResultLink(el) {
+    const fullUrl = window.location.origin + "{% url 'public:home' institution.slug %}";
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(fullUrl).then(() => {
+            showCopiedFeedback();
+        }).catch(() => {
+            fallbackCopy(fullUrl);
+        });
+    } else {
+        fallbackCopy(fullUrl);
+    }
+}
+
+function fallbackCopy(text) {
+    const input = document.getElementById('publicResultLinkInput');
+    if (input) {
+        input.value = text;
+        input.focus();
+        input.select();
+        try {
+            document.execCommand('copy');
+            showCopiedFeedback();
+        } catch (e) {
+            prompt('Copy this link:', text);
+        }
+    }
+}
+
+function showCopiedFeedback() {
+    const btn = document.getElementById('copyPublicLinkBtn');
+    if (btn) {
+        btn.innerHTML = '<i class="fa-solid fa-check"></i> <span>Copied!</span>';
+        btn.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+        setTimeout(() => {
+            btn.innerHTML = '<i class="fa-solid fa-copy"></i> <span>Copy Link</span>';
+            btn.style.background = 'linear-gradient(135deg, var(--accent-cyan), #0284c7)';
+        }, 2200);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const input = document.getElementById('publicResultLinkInput');
+    if (input) {
+        input.value = window.location.origin + "{% url 'public:home' institution.slug %}";
+    }
+});
+</script>
 
 {% endif %}
 {% endblock %}

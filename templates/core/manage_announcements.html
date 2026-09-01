@@ -8,7 +8,18 @@
         <a href="{% url 'core:dashboard' institution.slug %}" style="color: var(--text-muted); text-decoration: none;"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</a>
         <h2 style="font-size: 1.8rem; font-weight: 800; margin-top: 4px;"><i class="fa-solid fa-bullhorn" style="color: var(--accent-emerald);"></i> Public Announce Control Hub</h2>
     </div>
-    <div>
+    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+        <!-- SHAREABLE PUBLIC RESULT LINK (COPYABLE) -->
+        <div class="shareable-link-box" style="display: flex; align-items: center; background: rgba(14, 165, 233, 0.12); border: 1px solid rgba(14, 165, 233, 0.35); border-radius: 10px; padding: 3px 6px 3px 10px; gap: 6px;">
+            <i class="fa-solid fa-globe" style="color: var(--accent-cyan); font-size: 0.8rem;"></i>
+            <button type="button" onclick="copyPublicResultLinkAnnounce(this)" id="copyAnnounceLinkBtn" class="btn btn-sm" style="background: linear-gradient(135deg, var(--accent-cyan), #0284c7); color: #fff; border: none; font-size: 0.78rem; font-weight: 700; padding: 5px 10px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 4px;" title="Copy Public Result Link">
+                <i class="fa-solid fa-copy"></i> <span>Copy Public Link</span>
+            </button>
+            <a href="{% url 'public:home' institution.slug %}" target="_blank" class="btn btn-sm" style="background: rgba(255,255,255,0.08); color: var(--text-main); border: 1px solid rgba(255,255,255,0.15); font-size: 0.78rem; padding: 5px 8px; border-radius: 6px; text-decoration: none;" title="Open Public Portal">
+                <i class="fa-solid fa-arrow-up-right-from-square"></i>
+            </a>
+        </div>
+
         <a href="{% url 'core:announcement_balancer' institution.slug %}" class="btn-primary" style="background: linear-gradient(135deg, #7c3aed, #4c1d95);">
             <i class="fa-solid fa-wand-magic-sparkles"></i> Score Balancer AI
         </a>
@@ -306,6 +317,27 @@ async function submitEditResultNumber(e) {
     } finally {
         saveBtn.disabled = false;
         saveBtn.innerText = 'Save Number';
+    }
+}
+
+function copyPublicResultLinkAnnounce(btn) {
+    const fullUrl = window.location.origin + "{% url 'public:home' institution.slug %}";
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(fullUrl).then(() => {
+            const btnEl = document.getElementById('copyAnnounceLinkBtn');
+            if (btnEl) {
+                btnEl.innerHTML = '<i class="fa-solid fa-check"></i> <span>Copied!</span>';
+                btnEl.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+                setTimeout(() => {
+                    btnEl.innerHTML = '<i class="fa-solid fa-copy"></i> <span>Copy Public Link</span>';
+                    btnEl.style.background = 'linear-gradient(135deg, var(--accent-cyan), #0284c7)';
+                }, 2200);
+            }
+        }).catch(() => {
+            prompt('Copy this public result link:', fullUrl);
+        });
+    } else {
+        prompt('Copy this public result link:', fullUrl);
     }
 }
 </script>
