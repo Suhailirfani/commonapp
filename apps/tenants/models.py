@@ -34,6 +34,7 @@ class Institution(models.Model):
     status = models.CharField(max_length=15, choices=STATUS_CHOICES, default='PENDING', db_index=True)
     is_demo = models.BooleanField(default=False, help_text="Is this institution in 5-Day Demo/Trial mode?")
     demo_expires_at = models.DateTimeField(null=True, blank=True, help_text="Expiration date for Demo Trial")
+    allow_developer_access = models.BooleanField(default=False, help_text="Allow Developer/Superadmin support access to this institution's workspace")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

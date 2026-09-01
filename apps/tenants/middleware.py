@@ -27,9 +27,14 @@ class TenantMiddleware:
 
         # 2. Scrape logged-in user's tenant scope
         if request.user.is_authenticated:
-            # Developers have global access
+            # Developers have access to institution portals only if allowed by institution
             if request.user.is_developer:
-                pass
+                if request.tenant and path_parts and path_parts[0] == 'portal':
+                    if not request.tenant.allow_developer_access:
+                        from django.contrib import messages
+                        from django.shortcuts import redirect
+                        messages.warning(request, f"🔒 Developer Support Access is currently disabled by {request.tenant.name}. The institution admin must enable it in their Settings to permit access.")
+                        return redirect('tenants:developer_dashboard')
             elif request.user.institution:
                 user_tenant = request.user.institution
                 

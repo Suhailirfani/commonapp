@@ -163,6 +163,37 @@
         </div>
     </div>
 
+    <!-- Section 4: Developer / Superadmin Support Access Toggle -->
+    <div class="glass-card" style="grid-column: 1 / -1; border: 1px solid {% if institution.allow_developer_access %}#10b981{% else %}var(--border-color){% endif %}; background: {% if institution.allow_developer_access %}linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(24, 24, 27, 0.8)){% else %}var(--bg-glass){% endif %};">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+            <div style="max-width: 650px;">
+                <h3 style="font-size: 1.15rem; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px; margin: 0 0 6px 0;">
+                    {% if institution.allow_developer_access %}
+                    <i class="fa-solid fa-lock-open" style="color: #10b981;"></i> Developer Support Access: <span style="color: #10b981;">ENABLED (ON)</span>
+                    {% else %}
+                    <i class="fa-solid fa-lock" style="color: var(--text-muted);"></i> Developer Support Access: <span style="color: var(--text-muted);">DISABLED (OFF)</span>
+                    {% endif %}
+                </h3>
+                <p style="color: var(--text-muted); font-size: 0.85rem; margin: 0; line-height: 1.5;">
+                    Allow the platform Superadmin / Developer temporary access to your dashboard and workspace to help diagnose errors, troubleshoot issues, or assist with setup. Keep this <strong>OFF</strong> by default for full privacy.
+                </p>
+            </div>
+            <form method="POST" style="margin: 0;">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="toggle_developer_access">
+                {% if institution.allow_developer_access %}
+                <button type="submit" class="btn-primary" style="background: rgba(225, 29, 72, 0.2); border: 1px solid #e11d48; color: #f43f5e; padding: 10px 18px; font-weight: 700; border-radius: 10px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                    <i class="fa-solid fa-toggle-on" style="font-size: 1.1rem;"></i> Turn OFF Support Access
+                </button>
+                {% else %}
+                <button type="submit" class="btn-primary" style="background: linear-gradient(135deg, #10b981, #059669); color: #fff; padding: 10px 18px; font-weight: 700; border-radius: 10px; border: none; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                    <i class="fa-solid fa-toggle-off" style="font-size: 1.1rem;"></i> Turn ON Support Access
+                </button>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+
     <!-- Section: Chest Number Generation & Category Ranges -->
     <div class="glass-card" style="grid-column: 1 / -1;">
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">

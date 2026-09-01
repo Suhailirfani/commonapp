@@ -133,7 +133,8 @@
                 <th style="min-width: 180px;">Plan & Granted Add-Ons</th>
                 <th style="min-width: 100px;">Status</th>
                 <th style="min-width: 110px;">Created At</th>
-                <th style="min-width: 110px;">Public Link</th>
+                <th style="min-width: 140px;">Support Access</th>
+                <th style="min-width: 100px;">Public Link</th>
             </tr>
         </thead>
         <tbody>
@@ -196,9 +197,20 @@
                 </td>
                 <td style="font-size: 0.82rem;">{{ inst.created_at|date:"d M Y, h:i A" }}</td>
                 <td>
+                    {% if inst.allow_developer_access %}
+                    <a href="{% url 'core:dashboard' inst.slug %}" class="btn-primary" style="padding: 5px 10px; font-size: 0.78rem; background: linear-gradient(135deg, #10b981, #059669); color: #fff; text-decoration: none; border: none; border-radius: 6px; font-weight: 700; display: inline-flex; align-items: center; gap: 5px;" title="Developer Support Access Enabled by Institution">
+                        <i class="fa-solid fa-door-open"></i> Enter Workspace
+                    </a>
+                    {% else %}
+                    <button type="button" class="btn-secondary" disabled style="opacity: 0.45; cursor: not-allowed; padding: 5px 10px; font-size: 0.78rem; border-radius: 6px; display: inline-flex; align-items: center; gap: 5px;" title="Support access is turned OFF by the institution in Settings">
+                        <i class="fa-solid fa-lock"></i> Access Off
+                    </button>
+                    {% endif %}
+                </td>
+                <td>
                     {% if inst.status == 'APPROVED' %}
                     <a href="{% url 'public:home' inst.slug %}" target="_blank" class="btn-secondary" style="padding: 4px 8px; font-size: 0.78rem; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
-                        <i class="fa-solid fa-external-link"></i> Portal
+                        <i class="fa-solid fa-external-link"></i> Public
                     </a>
                     {% else %}
                     <span style="color: var(--text-muted);">N/A</span>
@@ -207,7 +219,7 @@
             </tr>
             {% empty %}
             <tr>
-                <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 20px;">No registered institutions found.</td>
+                <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 20px;">No registered institutions found.</td>
             </tr>
             {% endfor %}
         </tbody>

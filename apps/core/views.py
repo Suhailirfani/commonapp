@@ -1320,7 +1320,13 @@ def settings_view(request, institution_slug):
                 type=comp_type,
                 year=year
             )
-            messages.success(request, f"Competition '{name}' created successfully!")
+        elif action == 'toggle_developer_access':
+            institution.allow_developer_access = not institution.allow_developer_access
+            institution.save(update_fields=['allow_developer_access'])
+            if institution.allow_developer_access:
+                messages.success(request, "🔓 Developer / Superadmin Support Access is now ENABLED. Developer can view your workspace to assist you.")
+            else:
+                messages.info(request, "🔒 Developer / Superadmin Support Access is now DISABLED.")
         return redirect('core:settings', institution_slug=institution.slug)
 
     base_categories = Category.objects.filter(institution=institution, is_common=False).order_by('id')
