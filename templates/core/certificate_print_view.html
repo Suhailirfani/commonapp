@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Print Winner Certificates - {{ institution.name }}</title>
+
+    <!-- Google Fonts for Print -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=Great+Vibes&family=Playfair+Display:ital,wght@0,600;0,700;0,800;1,600&family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        @page {
+            size: A4 landscape;
+            margin: 0;
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+            color-adjust: exact !important;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: #1e293b;
+            font-family: 'Montserrat', sans-serif;
+            color: #1a1a1a;
+        }
+
+        /* Top Action Bar for screen view */
+        .print-control-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 12px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 9999;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .print-btn {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: #000;
+            font-weight: 800;
+            padding: 10px 24px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 14px rgba(245, 158, 11, 0.4);
+        }
+
+        .print-canvas-wrapper {
+            padding: 80px 20px 40px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 40px;
+        }
+
+        /* Single A4 Landscape Page Container */
+        .cert-page {
+            width: 297mm;
+            height: 210mm;
+            max-width: 100%;
+            background: #fffdfa;
+            position: relative;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.5);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 38mm 40mm 28mm 40mm;
+            page-break-after: always;
+        }
+
+        /* Place Themes */
+        .theme-gold {
+            --primary-accent: #d97706;
+            --badge-bg: #fef3c7;
+            --badge-txt: #b45309;
+            --frame-border: rgba(217, 119, 6, 0.4);
+        }
+        .theme-silver {
+            --primary-accent: #64748b;
+            --badge-bg: #f1f5f9;
+            --badge-txt: #334155;
+            --frame-border: rgba(100, 116, 139, 0.4);
+        }
+        .theme-bronze {
+            --primary-accent: #c2410c;
+            --badge-bg: #ffedd5;
+            --badge-txt: #7c2d12;
+            --frame-border: rgba(194, 65, 12, 0.4);
+        }
+
+        /* Inner Frame */
+        .cert-inner-frame {
+            position: absolute;
+            inset: 8mm;
+            border: 2px solid var(--frame-border);
+            border-radius: 4px;
+            pointer-events: none;
+            z-index: 3;
+        }
+
+        /* Corner SVGs */
+        .corner-tr {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 65mm;
+            height: 65mm;
+            z-index: 2;
+        }
+
+        .corner-bl {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 70mm;
+            height: 70mm;
+            z-index: 2;
+        }
+
+        .custom-bg-img {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: 1;
+        }
+
+        /* Trophy Badge Left */
+        .trophy-badge {
+            position: absolute;
+            left: 12mm;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 32mm;
+            text-align: center;
+            z-index: 5;
+        }
+
+        /* Main Content */
+        .cert-main-content {
+            position: relative;
+            z-index: 5;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .cert-header-title {
+            font-family: 'Cinzel', serif;
+            font-size: 26pt;
+            font-weight: 800;
+            letter-spacing: 5px;
+            text-transform: uppercase;
+            color: #111827;
+            margin: 0;
+        }
+
+        .cert-subtitle {
+            font-family: 'Cinzel', serif;
+            font-size: 13pt;
+            font-weight: 700;
+            letter-spacing: 3px;
+            color: #4b5563;
+            margin: 3px 0 0 0;
+            text-transform: uppercase;
+        }
+
+        .cert-presented {
+            font-size: 9pt;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: #6b7280;
+            margin-top: 6px;
+        }
+
+        .winner-name {
+            font-family: 'Great Vibes', cursive;
+            font-size: 38pt;
+            font-weight: bold;
+            color: #0f172a;
+            margin: 4px 0 0 0;
+            line-height: 1.1;
+        }
+
+        .meta-line {
+            font-size: 10pt;
+            font-weight: 700;
+            color: #4b5563;
+            margin-top: 2px;
+        }
+
+        .divider-line {
+            width: 55%;
+            height: 2px;
+            margin: 4px auto 10px auto;
+            background: linear-gradient(90deg, transparent, var(--primary-accent), transparent);
+            position: relative;
+        }
+
+        .divider-diamond {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(45deg);
+            width: 8px;
+            height: 8px;
+            background: var(--primary-accent);
+        }
+
+        .citation-body {
+            font-family: 'Playfair Display', serif;
+            font-style: italic;
+            font-size: 11pt;
+            line-height: 1.6;
+            color: #374151;
+            max-width: 170mm;
+            margin: 0 auto;
+        }
+
+        .citation-body strong {
+            font-style: normal;
+            font-weight: 700;
+            color: #111827;
+        }
+
+        .signatures-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            padding: 0 4mm;
+        }
+
+        .sig-box {
+            text-align: center;
+        }
+
+        .sig-image {
+            max-height: 12mm;
+            max-width: 40mm;
+            object-fit: contain;
+            margin-bottom: 2mm;
+        }
+
+        .sig-border {
+            border-top: 1.5px solid #6b7280;
+            padding-top: 1.5mm;
+            font-size: 8.5pt;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: #374151;
+            min-width: 40mm;
+        }
+
+        /* Print Media Overrides */
+        @media print {
+            body {
+                background: #ffffff !important;
+            }
+            .print-control-bar {
+                display: none !important;
+            }
+            .print-canvas-wrapper {
+                padding: 0 !important;
+                gap: 0 !important;
+            }
+            .cert-page {
+                box-shadow: none !important;
+                border-radius: 0 !important;
+                margin: 0 !important;
+                page-break-after: always !important;
+                page-break-inside: avoid !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Top Action Bar -->
+<div class="print-control-bar">
+    <div style="color: #fff; display: flex; align-items: center; gap: 10px;">
+        <span style="font-weight: 800; font-size: 1.1rem;"><i class="fa-solid fa-award" style="color: #f59e0b;"></i> {{ institution.name }}</span>
+        <span style="color: #94a3b8; font-size: 0.88rem;">• {{ certificates|length }} Winner Certificates</span>
+    </div>
+    <div style="display: flex; gap: 12px; align-items: center;">
+        <button onclick="window.close()" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 10px 18px; border-radius: 8px; cursor: pointer;">
+            Close
+        </button>
+        <button onclick="window.print()" class="print-btn">
+            <i class="fa-solid fa-print"></i> Print / Save as PDF
+        </button>
+    </div>
+</div>
+
+<div class="print-canvas-wrapper">
+
+    {% for cert in certificates %}
+    <div class="cert-page {% if cert.rank == 1 %}theme-gold{% elif cert.rank == 2 %}theme-silver{% else %}theme-bronze{% endif %}">
+        
+        {% if config.mode == 'custom' and config.template_image %}
+        <img src="{{ config.template_image.url }}" alt="Certificate Template" class="custom-bg-img">
+        {% else %}
+        <div class="cert-inner-frame"></div>
+        
+        <!-- Top Right Geometric Corner -->
+        <svg class="corner-tr" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M200 0 L200 160 Q160 120 130 90 Q90 50 0 0 Z" fill="#0f172a"/>
+            <path d="M200 0 L200 140 Q155 105 125 75 Q85 35 0 0 Z" fill="#1e293b"/>
+            <path d="M200 130 Q150 95 120 65 Q80 25 0 0" stroke="{{ cert.color_accent }}" stroke-width="6" fill="none"/>
+            <path d="M200 150 Q160 110 130 80 Q90 40 0 0" stroke="{{ cert.color_accent }}" stroke-width="2" fill="none"/>
+        </svg>
+
+        <!-- Bottom Left Geometric Corner -->
+        <svg class="corner-bl" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M0 200 L0 40 Q40 80 70 110 Q110 150 200 200 Z" fill="#0f172a"/>
+            <path d="M0 200 L0 60 Q45 95 75 125 Q115 165 200 200 Z" fill="#1e293b"/>
+            <path d="M0 70 Q50 105 80 135 Q120 175 200 200" stroke="{{ cert.color_accent }}" stroke-width="6" fill="none"/>
+            <path d="M0 50 Q40 90 70 120 Q110 160 200 200" stroke="{{ cert.color_accent }}" stroke-width="2" fill="none"/>
+        </svg>
+        {% endif %}
+
+        {% if config.mode == 'code' or not config.template_image %}
+        <div class="trophy-badge">
+            <i class="fa-solid fa-trophy" style="font-size: 28pt; color: {{ cert.trophy_color }}; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.15));"></i>
+            <div style="margin-top: 3mm;">
+                <span style="background: var(--badge-bg); color: var(--badge-txt); border: 1px solid var(--primary-accent); padding: 2px 8px; border-radius: 999px; font-size: 7.5pt; font-weight: 800; text-transform: uppercase;">
+                    {{ cert.place_title }}
+                </span>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="cert-main-content" style="{% if config.mode == 'custom' and config.template_image %}padding-top: {{ config.custom_text_offset_top }}%;{% endif %}">
+            
+            <!-- Header Titles -->
+            <div style="text-align: center;">
+                <h1 class="cert-header-title">{{ config.title|default:"CERTIFICATE" }}</h1>
+                <h2 class="cert-subtitle">OF MERIT & EXCELLENCE</h2>
+                <div class="cert-presented">{{ config.subtitle|default:"PROUDLY PRESENTED TO" }}</div>
+            </div>
+
+            <!-- Winner Recipient & Citation -->
+            <div style="text-align: center;">
+                <div class="winner-name">{{ cert.recipient_name }}</div>
+                
+                <div class="meta-line">
+                    {% if cert.chest_no %}{{ cert.chest_no }}{% endif %}
+                    {% if cert.chest_no and cert.team_name %} • {% endif %}
+                    {% if cert.team_name %}{{ cert.team_name }}{% endif %}
+                    {% if cert.members_str %}<br><span style="font-size: 8.5pt; color: #6b7280; font-weight: normal;">({{ cert.members_str }})</span>{% endif %}
+                </div>
+
+                <div class="divider-line">
+                    <div class="divider-diamond"></div>
+                </div>
+
+                <div class="citation-body">
+                    {{ cert.citation_text }}
+                </div>
+            </div>
+
+            <!-- Signatures Row -->
+            <div class="signatures-row">
+                <!-- Left Signatory -->
+                <div class="sig-box">
+                    {% if config.signatory_1_signature %}
+                    <img src="{{ config.signatory_1_signature.url }}" alt="Signature" class="sig-image">
+                    {% else %}
+                    <div style="height: 12mm;"></div>
+                    {% endif %}
+                    {% if config.signatory_1_name %}
+                    <div style="font-size: 8.5pt; font-weight: 700; color: #111827;">{{ config.signatory_1_name }}</div>
+                    {% endif %}
+                    <div class="sig-border">{{ config.signatory_1_title|default:"Co-ordinator" }}</div>
+                </div>
+
+                <!-- Center Emblem & Date -->
+                <div style="text-align: center;">
+                    {% if institution.logo %}
+                    <img src="{{ institution.logo.url }}" alt="{{ institution.name }}" style="max-height: 12mm; width: auto; object-fit: contain; margin-bottom: 1mm;">
+                    {% else %}
+                    <div style="font-weight: 800; font-size: 9.5pt; color: #111827; letter-spacing: 1px;">{{ institution.name|upper }}</div>
+                    {% endif %}
+                    <div style="font-size: 8pt; color: #6b7280; font-weight: 600;">
+                        Date: {{ cert.issue_date_str }}
+                    </div>
+                </div>
+
+                <!-- Right Signatory -->
+                <div class="sig-box">
+                    {% if config.signatory_2_signature %}
+                    <img src="{{ config.signatory_2_signature.url }}" alt="Signature" class="sig-image">
+                    {% else %}
+                    <div style="height: 12mm;"></div>
+                    {% endif %}
+                    {% if config.signatory_2_name %}
+                    <div style="font-size: 8.5pt; font-weight: 700; color: #111827;">{{ config.signatory_2_name }}</div>
+                    {% endif %}
+                    <div class="sig-border">{{ config.signatory_2_title|default:"Principal / Convener" }}</div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+    {% endfor %}
+
+</div>
+
+</body>
+</html>

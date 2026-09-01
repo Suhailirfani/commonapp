@@ -11,7 +11,7 @@ from apps.users.models import User
 from .models import (
     Competition, Category, Program, Team, Stage, 
     FestDay, Contestant, Participation, GroupParticipation, 
-    PointsConfig, ProgramSchedule
+    PointsConfig, ProgramSchedule, CertificateConfig
 )
 
 @login_required
@@ -2726,6 +2726,466 @@ def shareable_results_view(request, institution_slug):
         'competition': comp,
         'custom_templates': custom_templates
     })
+
+
+# ==============================================================================
+# WINNER CERTIFICATE GENERATION STUDIO (PAID ADD-ON)
+# ==============================================================================
+
+def _get_certificate_winners_data(institution, competition, config, category_id=None, program_id=None, place=None, specific_part_id=None, is_group=None):
+    # Allowed ranks filter
+    if place:
+        try:
+            allowed_ranks = [int(place)]
+        except (ValueError, TypeError):
+            allowed_ranks = [1, 2, 3]
+    else:
+        try:
+            allowed_ranks = [int(r.strip()) for r in config.include_places.split(',') if r.strip().isdigit()]
+        except Exception:
+            allowed_ranks = [1, 2, 3]
+
+    announced_progs_qs = Program.objects.filter(institution=institution, is_announced=True).select_related('category', 'competition')
+    if category_id:
+        announced_progs_qs = announced_progs_qs.filter(category_id=category_id)
+    if program_id:
+        announced_progs_qs = announced_progs_qs.filter(id=program_id)
+    
+    programs = list(announced_progs_qs.order_by('category__name', 'name'))
+    
+    certificates = []
+    cert_index = 1
+    
+    place_meta = {
+        1: {
+            'rank_display': '1st Place',
+            'place_title': '1ST PLACE WINNER',
+            'place_suffix': 'ST',
+            'color_theme': 'gold',
+            'color_hex': '#d97706',
+            'color_accent': '#f59e0b',
+            'color_dark': '#78350f',
+            'color_light': '#fef3c7',
+            'color_badge_bg': '#fffbeb',
+            'gradient': 'linear-gradient(135deg, #b45309, #f59e0b, #d97706)',
+            'ribbon_bg': '#d97706',
+            'trophy_color': '#f59e0b',
+        },
+        2: {
+            'rank_display': '2nd Place',
+            'place_title': '2ND PLACE WINNER',
+            'place_suffix': 'ND',
+            'color_theme': 'silver',
+            'color_hex': '#475569',
+            'color_accent': '#94a3b8',
+            'color_dark': '#1e293b',
+            'color_light': '#f1f5f9',
+            'color_badge_bg': '#f8fafc',
+            'gradient': 'linear-gradient(135deg, #334155, #94a3b8, #64748b)',
+            'ribbon_bg': '#64748b',
+            'trophy_color': '#94a3b8',
+        },
+        3: {
+            'rank_display': '3rd Place',
+            'place_title': '3RD PLACE WINNER',
+            'place_suffix': 'RD',
+            'color_theme': 'bronze',
+            'color_hex': '#9a3412',
+            'color_accent': '#d97706',
+            'color_dark': '#7c2d12',
+            'color_light': '#ffedd5',
+            'color_badge_bg': '#fff7ed',
+            'gradient': 'linear-gradient(135deg, #7c2d12, #ea580c, #9a3412)',
+            'ribbon_bg': '#c2410c',
+            'trophy_color': '#cd7f32',
+        },
+    }
+
+    issue_date_str = config.issue_date.strftime('%d %B %Y') if config.issue_date else timezone.now().strftime('%d %B %Y')
+    fest_name = competition.name if competition else institution.name
+    fest_year = str(competition.year) if competition else str(timezone.now().year)
+
+    for prog in programs:
+        if prog.is_group:
+            gp_qs = GroupParticipation.objects.filter(
+                program=prog,
+                rank__in=allowed_ranks
+            ).select_related('team').prefetch_related('contestants').order_by('rank', '-marks')
+            
+            if specific_part_id and is_group:
+                gp_qs = gp_qs.filter(id=specific_part_id)
+
+            for gp in gp_qs:
+                pm = place_meta.get(gp.rank, place_meta[1])
+                grade_str = f"Grade {gp.grade}" if gp.grade else "Qualified"
+                
+                para = config.paragraph_template or "In recognition of outstanding performance and securing {rank_display} ({grade_display}) in {program_name} ({category_name}) at {institution_name} during {fest_name} {fest_year}."
+                try:
+                    citation = para.format(
+                        rank_display=pm['rank_display'],
+                        grade_display=grade_str,
+                        program_name=prog.name,
+                        category_name=prog.category.name,
+                        institution_name=institution.name,
+                        fest_name=fest_name,
+                        fest_year=fest_year
+                    )
+                except Exception:
+                    citation = f"In recognition of outstanding performance and securing {pm['rank_display']} ({grade_str}) in {prog.name} ({prog.category.name}) at {institution.name} during {fest_name} {fest_year}."
+
+                members_list = [c.name for c in gp.contestants.all()]
+                members_str = ", ".join(members_list) if members_list else ""
+
+                certificates.append({
+                    'index': cert_index,
+                    'is_group': True,
+                    'part_id': gp.id,
+                    'rank': gp.rank,
+                    'rank_display': pm['rank_display'],
+                    'place_title': pm['place_title'],
+                    'place_suffix': pm['place_suffix'],
+                    'color_theme': pm['color_theme'],
+                    'color_hex': pm['color_hex'],
+                    'color_accent': pm['color_accent'],
+                    'color_dark': pm['color_dark'],
+                    'color_light': pm['color_light'],
+                    'color_badge_bg': pm['color_badge_bg'],
+                    'gradient': pm['gradient'],
+                    'ribbon_bg': pm['ribbon_bg'],
+                    'trophy_color': pm['trophy_color'],
+                    'recipient_name': gp.display_name,
+                    'members_str': members_str,
+                    'chest_no': f"Team {gp.team.code_letter}" if (gp.team and gp.team.code_letter) else "",
+                    'team_name': gp.team.name if gp.team else '',
+                    'program_name': prog.name,
+                    'program_id': prog.id,
+                    'category_name': prog.category.name,
+                    'category_id': prog.category.id,
+                    'grade': gp.grade or '',
+                    'grade_display': grade_str,
+                    'marks': gp.marks,
+                    'citation_text': citation,
+                    'issue_date_str': issue_date_str,
+                })
+                cert_index += 1
+        else:
+            p_qs = Participation.objects.filter(
+                program=prog,
+                rank__in=allowed_ranks
+            ).select_related('contestant', 'contestant__team', 'contestant__category').order_by('rank', '-marks')
+
+            if specific_part_id and not is_group:
+                p_qs = p_qs.filter(id=specific_part_id)
+
+            for p in p_qs:
+                pm = place_meta.get(p.rank, place_meta[1])
+                grade_str = f"Grade {p.grade}" if p.grade else "Qualified"
+                
+                para = config.paragraph_template or "In recognition of outstanding performance and securing {rank_display} ({grade_display}) in {program_name} ({category_name}) at {institution_name} during {fest_name} {fest_year}."
+                try:
+                    citation = para.format(
+                        rank_display=pm['rank_display'],
+                        grade_display=grade_str,
+                        program_name=prog.name,
+                        category_name=prog.category.name,
+                        institution_name=institution.name,
+                        fest_name=fest_name,
+                        fest_year=fest_year
+                    )
+                except Exception:
+                    citation = f"In recognition of outstanding performance and securing {pm['rank_display']} ({grade_str}) in {prog.name} ({prog.category.name}) at {institution.name} during {fest_name} {fest_year}."
+
+                certificates.append({
+                    'index': cert_index,
+                    'is_group': False,
+                    'part_id': p.id,
+                    'rank': p.rank,
+                    'rank_display': pm['rank_display'],
+                    'place_title': pm['place_title'],
+                    'place_suffix': pm['place_suffix'],
+                    'color_theme': pm['color_theme'],
+                    'color_hex': pm['color_hex'],
+                    'color_accent': pm['color_accent'],
+                    'color_dark': pm['color_dark'],
+                    'color_light': pm['color_light'],
+                    'color_badge_bg': pm['color_badge_bg'],
+                    'gradient': pm['gradient'],
+                    'ribbon_bg': pm['ribbon_bg'],
+                    'trophy_color': pm['trophy_color'],
+                    'recipient_name': p.contestant.name,
+                    'members_str': '',
+                    'chest_no': f"#{p.contestant.chest_no}",
+                    'team_name': p.contestant.team.name if p.contestant.team else '',
+                    'program_name': prog.name,
+                    'program_id': prog.id,
+                    'category_name': prog.category.name,
+                    'category_id': prog.category.id,
+                    'grade': p.grade or '',
+                    'grade_display': grade_str,
+                    'marks': p.marks,
+                    'citation_text': citation,
+                    'issue_date_str': issue_date_str,
+                })
+                cert_index += 1
+
+    return certificates
+
+
+@login_required
+def certificate_studio_view(request, institution_slug):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    comp = Competition.objects.filter(institution=institution, is_active=True).first() or Competition.objects.filter(institution=institution).first()
+
+    # Get or create certificate config
+    config, _ = CertificateConfig.objects.get_or_create(
+        institution=institution,
+        defaults={'competition': comp}
+    )
+    if comp and config.competition != comp:
+        config.competition = comp
+        config.save(update_fields=['competition'])
+
+    # Handle POST Actions
+    if request.method == 'POST':
+        action = request.POST.get('action')
+
+        if action == 'update_config':
+            config.mode = request.POST.get('mode', 'code')
+            config.title = request.POST.get('title', 'CERTIFICATE OF MERIT').strip()
+            config.subtitle = request.POST.get('subtitle', 'PROUDLY PRESENTED TO').strip()
+            config.paragraph_template = request.POST.get('paragraph_template', '').strip()
+            config.signatory_1_title = request.POST.get('signatory_1_title', 'Co-ordinator').strip()
+            config.signatory_1_name = request.POST.get('signatory_1_name', '').strip()
+            config.signatory_2_title = request.POST.get('signatory_2_title', 'Principal / Convener').strip()
+            config.signatory_2_name = request.POST.get('signatory_2_name', '').strip()
+            
+            issue_date_val = request.POST.get('issue_date')
+            if issue_date_val:
+                try:
+                    config.issue_date = datetime.strptime(issue_date_val, '%Y-%m-%d').date()
+                except ValueError:
+                    pass
+            else:
+                config.issue_date = None
+
+            offset_val = request.POST.get('custom_text_offset_top')
+            if offset_val and str(offset_val).isdigit():
+                config.custom_text_offset_top = int(offset_val)
+
+            places = request.POST.getlist('include_places')
+            if places:
+                config.include_places = ",".join(places)
+            else:
+                config.include_places = "1,2,3"
+
+            config.save()
+            messages.success(request, "Certificate settings updated successfully!")
+            return redirect('core:certificate_studio', institution_slug=institution.slug)
+
+        elif action == 'upload_custom_template':
+            if request.FILES.get('template_image'):
+                config.template_image = request.FILES['template_image']
+                config.mode = 'custom'
+                config.save()
+                messages.success(request, "Custom certificate background template uploaded successfully!")
+            return redirect('core:certificate_studio', institution_slug=institution.slug)
+
+        elif action == 'remove_custom_template':
+            if config.template_image:
+                config.template_image.delete(save=False)
+                config.template_image = None
+                config.mode = 'code'
+                config.save()
+                messages.success(request, "Custom template removed. Switched back to Built-in Code Design.")
+            return redirect('core:certificate_studio', institution_slug=institution.slug)
+
+        elif action == 'upload_signatures':
+            if request.FILES.get('signatory_1_signature'):
+                config.signatory_1_signature = request.FILES['signatory_1_signature']
+            if request.FILES.get('signatory_2_signature'):
+                config.signatory_2_signature = request.FILES['signatory_2_signature']
+            config.save()
+            messages.success(request, "Signatures uploaded successfully!")
+            return redirect('core:certificate_studio', institution_slug=institution.slug)
+
+        elif action == 'remove_signature_1':
+            if config.signatory_1_signature:
+                config.signatory_1_signature.delete(save=False)
+                config.signatory_1_signature = None
+                config.save()
+                messages.success(request, "Signatory 1 signature cleared.")
+            return redirect('core:certificate_studio', institution_slug=institution.slug)
+
+        elif action == 'remove_signature_2':
+            if config.signatory_2_signature:
+                config.signatory_2_signature.delete(save=False)
+                config.signatory_2_signature = None
+                config.save()
+                messages.success(request, "Signatory 2 signature cleared.")
+            return redirect('core:certificate_studio', institution_slug=institution.slug)
+
+    # Filtering parameters
+    category_id = request.GET.get('category')
+    program_id = request.GET.get('program')
+    place_filter = request.GET.get('place')
+
+    categories = Category.objects.filter(institution=institution).order_by('name')
+    programs_qs = Program.objects.filter(institution=institution, is_announced=True).select_related('category')
+    if category_id and str(category_id).isdigit():
+        programs_qs = programs_qs.filter(category_id=category_id)
+    programs = list(programs_qs.order_by('name'))
+
+    # Retrieve all certificates matching filters
+    certificates = _get_certificate_winners_data(
+        institution=institution,
+        competition=comp,
+        config=config,
+        category_id=int(category_id) if category_id and str(category_id).isdigit() else None,
+        program_id=int(program_id) if program_id and str(program_id).isdigit() else None,
+        place=int(place_filter) if place_filter and str(place_filter).isdigit() else None
+    )
+
+    # Sample preview certificates for 1st, 2nd, and 3rd place
+    sample_preview_1 = next((c for c in certificates if c['rank'] == 1), None)
+    sample_preview_2 = next((c for c in certificates if c['rank'] == 2), None)
+    sample_preview_3 = next((c for c in certificates if c['rank'] == 3), None)
+
+    # Fallback preview mocks if no announced winners yet
+    sample_issue_date = config.issue_date.strftime('%d %B %Y') if config.issue_date else timezone.now().strftime('%d %B %Y')
+    fest_name = comp.name if comp else institution.name
+    fest_year = str(comp.year) if comp else str(timezone.now().year)
+
+    if not sample_preview_1:
+        sample_preview_1 = {
+            'index': 1, 'is_group': False, 'rank': 1, 'rank_display': '1st Place', 'place_title': '1ST PLACE WINNER',
+            'place_suffix': 'ST', 'color_theme': 'gold', 'color_hex': '#d97706', 'color_accent': '#f59e0b',
+            'color_dark': '#78350f', 'color_light': '#fef3c7', 'color_badge_bg': '#fffbeb',
+            'gradient': 'linear-gradient(135deg, #b45309, #f59e0b, #d97706)', 'ribbon_bg': '#d97706',
+            'trophy_color': '#f59e0b', 'recipient_name': 'Muhammed Nihal K', 'members_str': '',
+            'chest_no': '#1012', 'team_name': 'Red House', 'program_name': 'Quran Recitation (Hafs)',
+            'category_name': 'Junior Category', 'grade': 'A+', 'grade_display': 'Grade A+', 'marks': 96,
+            'citation_text': f"In recognition of outstanding performance and securing 1st Place (Grade A+) in Quran Recitation (Hafs) (Junior Category) at {institution.name} during {fest_name} {fest_year}.",
+            'issue_date_str': sample_issue_date
+        }
+
+    if not sample_preview_2:
+        sample_preview_2 = {
+            'index': 2, 'is_group': False, 'rank': 2, 'rank_display': '2nd Place', 'place_title': '2ND PLACE WINNER',
+            'place_suffix': 'ND', 'color_theme': 'silver', 'color_hex': '#475569', 'color_accent': '#94a3b8',
+            'color_dark': '#1e293b', 'color_light': '#f1f5f9', 'color_badge_bg': '#f8fafc',
+            'gradient': 'linear-gradient(135deg, #334155, #94a3b8, #64748b)', 'ribbon_bg': '#64748b',
+            'trophy_color': '#94a3b8', 'recipient_name': 'Ahmad Rayan P', 'members_str': '',
+            'chest_no': '#1018', 'team_name': 'Blue House', 'program_name': 'Elocution English',
+            'category_name': 'Junior Category', 'grade': 'A', 'grade_display': 'Grade A', 'marks': 89,
+            'citation_text': f"In recognition of outstanding performance and securing 2nd Place (Grade A) in Elocution English (Junior Category) at {institution.name} during {fest_name} {fest_year}.",
+            'issue_date_str': sample_issue_date
+        }
+
+    if not sample_preview_3:
+        sample_preview_3 = {
+            'index': 3, 'is_group': False, 'rank': 3, 'rank_display': '3rd Place', 'place_title': '3RD PLACE WINNER',
+            'place_suffix': 'RD', 'color_theme': 'bronze', 'color_hex': '#9a3412', 'color_accent': '#d97706',
+            'color_dark': '#7c2d12', 'color_light': '#ffedd5', 'color_badge_bg': '#fff7ed',
+            'gradient': 'linear-gradient(135deg, #7c2d12, #ea580c, #9a3412)', 'ribbon_bg': '#c2410c',
+            'trophy_color': '#cd7f32', 'recipient_name': 'Zainul Abid', 'members_str': '',
+            'chest_no': '#1025', 'team_name': 'Green House', 'program_name': 'Pencil Drawing',
+            'category_name': 'Senior Category', 'grade': 'B', 'grade_display': 'Grade B', 'marks': 78,
+            'citation_text': f"In recognition of outstanding performance and securing 3rd Place (Grade B) in Pencil Drawing (Senior Category) at {institution.name} during {fest_name} {fest_year}.",
+            'issue_date_str': sample_issue_date
+        }
+
+    context = {
+        'institution': institution,
+        'competition': comp,
+        'config': config,
+        'categories': categories,
+        'programs': programs,
+        'certificates': certificates,
+        'total_certificates': len(certificates),
+        'sample_preview_1': sample_preview_1,
+        'sample_preview_2': sample_preview_2,
+        'sample_preview_3': sample_preview_3,
+        'selected_category_id': int(category_id) if category_id and str(category_id).isdigit() else '',
+        'selected_program_id': int(program_id) if program_id and str(program_id).isdigit() else '',
+        'selected_place': int(place_filter) if place_filter and str(place_filter).isdigit() else '',
+    }
+    return render(request, 'core/certificate_studio.html', context)
+
+
+@login_required
+def download_certificate_pdf_view(request, institution_slug):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    comp = Competition.objects.filter(institution=institution, is_active=True).first() or Competition.objects.filter(institution=institution).first()
+    config, _ = CertificateConfig.objects.get_or_create(institution=institution, defaults={'competition': comp})
+
+    category_id = request.GET.get('category')
+    program_id = request.GET.get('program')
+    place = request.GET.get('place')
+    part_id = request.GET.get('part_id')
+    is_group = request.GET.get('is_group') == '1'
+
+    certificates = _get_certificate_winners_data(
+        institution=institution,
+        competition=comp,
+        config=config,
+        category_id=int(category_id) if category_id and str(category_id).isdigit() else None,
+        program_id=int(program_id) if program_id and str(program_id).isdigit() else None,
+        place=int(place) if place and str(place).isdigit() else None,
+        specific_part_id=int(part_id) if part_id and str(part_id).isdigit() else None,
+        is_group=is_group if part_id else None
+    )
+
+    if not certificates:
+        messages.warning(request, "No announced winners found matching the selected certificate filter.")
+        return redirect('core:certificate_studio', institution_slug=institution.slug)
+
+    context = {
+        'institution': institution,
+        'competition': comp,
+        'config': config,
+        'certificates': certificates,
+    }
+
+    if len(certificates) == 1:
+        c = certificates[0]
+        filename = f"Certificate_{c['rank_display']}_{c['recipient_name']}_{c['program_name']}.pdf"
+    else:
+        filename = f"{institution.slug}_winner_certificates_bulk.pdf"
+
+    return render_to_pdf('pdf/certificate_bulk_pdf.html', context, filename=filename, request=request)
+
+
+@login_required
+def print_certificates_view(request, institution_slug):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    comp = Competition.objects.filter(institution=institution, is_active=True).first() or Competition.objects.filter(institution=institution).first()
+    config, _ = CertificateConfig.objects.get_or_create(institution=institution, defaults={'competition': comp})
+
+    category_id = request.GET.get('category')
+    program_id = request.GET.get('program')
+    place = request.GET.get('place')
+    part_id = request.GET.get('part_id')
+    is_group = request.GET.get('is_group') == '1'
+
+    certificates = _get_certificate_winners_data(
+        institution=institution,
+        competition=comp,
+        config=config,
+        category_id=int(category_id) if category_id and str(category_id).isdigit() else None,
+        program_id=int(program_id) if program_id and str(program_id).isdigit() else None,
+        place=int(place) if place and str(place).isdigit() else None,
+        specific_part_id=int(part_id) if part_id and str(part_id).isdigit() else None,
+        is_group=is_group if part_id else None
+    )
+
+    context = {
+        'institution': institution,
+        'competition': comp,
+        'config': config,
+        'certificates': certificates,
+    }
+    return render(request, 'core/certificate_print_view.html', context)
+
 
 
 # ==============================================================================

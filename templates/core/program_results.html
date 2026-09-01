@@ -15,7 +15,10 @@
         <a href="{% url 'core:download_all_results_pdf' institution.slug %}?preview=1{% if selected_category_id %}&category={{ selected_category_id }}{% endif %}" target="_blank" class="btn-primary" style="background: rgba(255,255,255,0.12); color: #fff; border: 1px solid rgba(255,255,255,0.25);" title="Preview All Results PDF">
             <i class="fa-solid fa-eye"></i> Preview PDF
         </a>
-        <a href="{% url 'core:shareable_results' institution.slug %}" class="btn-primary" style="background: linear-gradient(135deg, #f59e0b, #b45309);">
+        <a href="{% url 'core:certificate_studio' institution.slug %}" class="btn-primary" style="background: linear-gradient(135deg, #f59e0b, #d97706); color: #000; font-weight: 800;">
+            <i class="fa-solid fa-award"></i> Winner Certificates
+        </a>
+        <a href="{% url 'core:shareable_results' institution.slug %}" class="btn-primary" style="background: linear-gradient(135deg, #7c3aed, #4c1d95);">
             <i class="fa-solid fa-wand-magic-sparkles"></i> Winner Cards Studio
         </a>
         <a href="?view=announced{% if selected_category_id %}&category={{ selected_category_id }}{% endif %}" class="btn-primary" style="{% if view_mode == 'announced' %}background: linear-gradient(135deg, var(--accent-emerald), #059669);{% else %}background: rgba(255,255,255,0.08); box-shadow: none;{% endif %}">

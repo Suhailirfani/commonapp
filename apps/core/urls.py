@@ -79,6 +79,10 @@ urlpatterns = [
     path('portal/<slug:institution_slug>/results/toppers/', views.toppers_list_view, name='toppers_list'),
     path('portal/<slug:institution_slug>/results/winner-cards/', views.shareable_results_view, name='shareable_results'),
     path('portal/<slug:institution_slug>/results/team-points-cards/', views.team_points_cards_view, name='team_points_cards'),
+    path('portal/<slug:institution_slug>/certificates/', views.certificate_studio_view, name='certificate_studio'),
+    path('portal/<slug:institution_slug>/certificates/download/', views.download_certificate_pdf_view, name='download_certificate_pdf'),
+    path('portal/<slug:institution_slug>/certificates/print/', views.print_certificates_view, name='print_certificates'),
+
     
     # Public Announcement Control & Score Balancer AI
     path('portal/<slug:institution_slug>/announcements/', views.manage_announcements_view, name='manage_announcements'),

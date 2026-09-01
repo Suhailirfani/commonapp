@@ -473,3 +473,39 @@ class Announcement(TenantBaseModel):
 
     def __str__(self):
         return f"{self.title} ({self.institution.name})"
+
+
+# ----------------- Certificate Config -----------------
+class CertificateConfig(TenantBaseModel):
+    MODE_CHOICES = [
+        ('code', 'Built-in Code Design'),
+        ('custom', 'User Uploaded Template'),
+    ]
+
+    competition = models.ForeignKey(Competition, on_delete=models.CASCADE, related_name='certificate_configs', null=True, blank=True)
+    mode = models.CharField(max_length=20, default='code', choices=MODE_CHOICES)
+    template_image = models.ImageField(upload_to='certificate_templates/', null=True, blank=True, help_text="Custom background certificate template image")
+    title = models.CharField(max_length=150, default="CERTIFICATE OF MERIT", help_text="Main Certificate Title")
+    subtitle = models.CharField(max_length=255, default="PROUDLY PRESENTED TO", help_text="Certificate Subtitle / Award text")
+    paragraph_template = models.TextField(
+        blank=True,
+        default="In recognition of outstanding performance and securing {rank_display} ({grade_display}) in {program_name} ({category_name}) at {institution_name} during {fest_name} {fest_year}.",
+        help_text="Customizable citation text with placeholders: {rank_display}, {grade_display}, {program_name}, {category_name}, {institution_name}, {fest_name}, {fest_year}"
+    )
+    signatory_1_title = models.CharField(max_length=100, default="Co-ordinator", help_text="Left signatory title")
+    signatory_1_name = models.CharField(max_length=100, blank=True, default="", help_text="Left signatory name")
+    signatory_1_signature = models.ImageField(upload_to='signatures/', null=True, blank=True, help_text="Optional left signature PNG")
+    signatory_2_title = models.CharField(max_length=100, default="Principal / Convener", help_text="Right signatory title")
+    signatory_2_name = models.CharField(max_length=100, blank=True, default="", help_text="Right signatory name")
+    signatory_2_signature = models.ImageField(upload_to='signatures/', null=True, blank=True, help_text="Optional right signature PNG")
+    issue_date = models.DateField(null=True, blank=True, help_text="Date of Certificate Issue")
+    custom_text_offset_top = models.PositiveIntegerField(default=35, help_text="Vertical start offset in % for custom template text overlay")
+    include_places = models.CharField(max_length=50, default="1,2,3", help_text="Comma-separated ranks to include, e.g. 1,2,3")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Certificate Config - {self.institution.name} ({self.get_mode_display()})"

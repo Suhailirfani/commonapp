@@ -2,7 +2,7 @@ from django.contrib import admin
 from .models import (
     Competition, Category, Team, Stage, FestDay,
     Program, ProgramSchedule, Contestant, Participation,
-    GroupParticipation, PointsConfig, Announcement
+    GroupParticipation, PointsConfig, Announcement, CertificateConfig
 )
 
 @admin.register(Competition)
@@ -86,3 +86,11 @@ class AnnouncementAdmin(admin.ModelAdmin):
     list_display = ('title', 'priority', 'is_public', 'created_at', 'institution')
     list_filter = ('priority', 'is_public', 'institution')
     search_fields = ('title', 'message')
+
+
+@admin.register(CertificateConfig)
+class CertificateConfigAdmin(admin.ModelAdmin):
+    list_display = ('institution', 'mode', 'title', 'signatory_1_title', 'signatory_2_title', 'issue_date', 'created_at')
+    list_filter = ('mode', 'institution')
+    search_fields = ('title', 'subtitle', 'institution__name')
+

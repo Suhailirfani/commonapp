@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Official Winner Certificates - {{ institution.name }}</title>
+    <style>
+        @page {
+            size: A4 landscape;
+            margin: 0.6cm;
+        }
+
+        body {
+            font-family: Helvetica, Arial, sans-serif;
+            color: #111111;
+            background: #ffffff;
+            margin: 0;
+            padding: 0;
+        }
+
+        .certificate-container {
+            width: 100%;
+            border: 3px solid #b45309;
+            padding: 10px;
+            background-color: #ffffff;
+        }
+
+        .cert-border-gold {
+            border: 4px solid #d97706;
+        }
+
+        .cert-border-silver {
+            border: 4px solid #64748b;
+        }
+
+        .cert-border-bronze {
+            border: 4px solid #9a3412;
+        }
+
+        .cert-inner-box {
+            border: 1px solid #d1d5db;
+            padding: 16px 20px;
+            text-align: center;
+        }
+
+        /* Place Colors */
+        .title-gold { color: #b45309; }
+        .title-silver { color: #334155; }
+        .title-bronze { color: #7c2d12; }
+
+        .badge-gold { background-color: #fef3c7; color: #b45309; border: 1px solid #f59e0b; }
+        .badge-silver { background-color: #f1f5f9; color: #334155; border: 1px solid #94a3b8; }
+        .badge-bronze { background-color: #ffedd5; color: #7c2d12; border: 1px solid #ea580c; }
+
+        .cert-main-header {
+            font-size: 26pt;
+            font-weight: bold;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            margin: 0 0 2px 0;
+            color: #111827;
+        }
+
+        .cert-sub-header {
+            font-size: 13pt;
+            font-weight: bold;
+            letter-spacing: 2px;
+            color: #4b5563;
+            margin: 0 0 6px 0;
+            text-transform: uppercase;
+        }
+
+        .cert-presented-txt {
+            font-size: 8.5pt;
+            font-weight: bold;
+            letter-spacing: 1.5px;
+            color: #6b7280;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .cert-winner-name {
+            font-size: 26pt;
+            font-weight: bold;
+            color: #0f172a;
+            margin: 6px 0 2px 0;
+        }
+
+        .cert-chest-team {
+            font-size: 9pt;
+            font-weight: bold;
+            color: #4b5563;
+            margin-bottom: 8px;
+        }
+
+        .cert-divider {
+            border-bottom: 2px solid #d97706;
+            width: 50%;
+            margin: 0 auto 12px auto;
+        }
+        .cert-divider-silver { border-bottom: 2px solid #64748b; }
+        .cert-divider-bronze { border-bottom: 2px solid #9a3412; }
+
+        .cert-paragraph {
+            font-size: 11pt;
+            line-height: 1.5;
+            color: #374151;
+            margin: 0 auto 18px auto;
+            width: 82%;
+        }
+
+        .cert-place-tag {
+            display: inline-block;
+            padding: 4px 14px;
+            font-size: 9pt;
+            font-weight: bold;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+        }
+
+        /* Signatures Table */
+        .signatures-table {
+            width: 100%;
+            margin-top: 14px;
+            border-collapse: collapse;
+        }
+
+        .signatures-table td {
+            text-align: center;
+            vertical-align: bottom;
+            padding: 0 10px;
+        }
+
+        .sig-title {
+            border-top: 1px solid #6b7280;
+            padding-top: 4px;
+            font-size: 8pt;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #374151;
+            width: 140px;
+            margin: 0 auto;
+        }
+
+        .sig-name {
+            font-size: 8.5pt;
+            font-weight: bold;
+            color: #111827;
+            margin-bottom: 2px;
+        }
+
+        .page-break {
+            page-break-after: always;
+        }
+    </style>
+</head>
+<body>
+
+{% for cert in certificates %}
+<div class="certificate-container {% if cert.rank == 1 %}cert-border-gold{% elif cert.rank == 2 %}cert-border-silver{% else %}cert-border-bronze{% endif %}">
+    
+    <div class="cert-inner-box">
+        
+        <!-- Header -->
+        <div class="cert-main-header">{{ config.title|default:"CERTIFICATE" }}</div>
+        <div class="cert-sub-header">OF MERIT & EXCELLENCE</div>
+        <div class="cert-presented-txt">{{ config.subtitle|default:"PROUDLY PRESENTED TO" }}</div>
+
+        <!-- Place Badge -->
+        <div>
+            <span class="cert-place-tag {% if cert.rank == 1 %}badge-gold{% elif cert.rank == 2 %}badge-silver{% else %}badge-bronze{% endif %}">
+                ★ {{ cert.place_title }} ★
+            </span>
+        </div>
+
+        <!-- Recipient Name -->
+        <div class="cert-winner-name">{{ cert.recipient_name }}</div>
+        
+        <div class="cert-chest-team">
+            {% if cert.chest_no %}{{ cert.chest_no }}{% endif %}
+            {% if cert.chest_no and cert.team_name %} • {% endif %}
+            {% if cert.team_name %}{{ cert.team_name }}{% endif %}
+            {% if cert.members_str %}<br><span style="font-size: 8pt; font-weight: normal; color: #6b7280;">({{ cert.members_str }})</span>{% endif %}
+        </div>
+
+        <div class="cert-divider {% if cert.rank == 2 %}cert-divider-silver{% elif cert.rank == 3 %}cert-divider-bronze{% endif %}"></div>
+
+        <!-- Citation Paragraph -->
+        <div class="cert-paragraph">
+            {{ cert.citation_text }}
+        </div>
+
+        <!-- Signatures and Details Table -->
+        <table class="signatures-table">
+            <tr>
+                <!-- Left Signatory -->
+                <td style="width: 32%;">
+                    <div style="height: 35px;"></div>
+                    {% if config.signatory_1_name %}
+                    <div class="sig-name">{{ config.signatory_1_name }}</div>
+                    {% endif %}
+                    <div class="sig-title">{{ config.signatory_1_title|default:"Co-ordinator" }}</div>
+                </td>
+
+                <!-- Center Institution & Date -->
+                <td style="width: 36%;">
+                    <div style="font-size: 10pt; font-weight: bold; color: #111827; text-transform: uppercase; letter-spacing: 1px;">
+                        {{ institution.name }}
+                    </div>
+                    <div style="font-size: 7.5pt; color: #6b7280; margin-top: 2px;">
+                        Date: {{ cert.issue_date_str }}
+                    </div>
+                </td>
+
+                <!-- Right Signatory -->
+                <td style="width: 32%;">
+                    <div style="height: 35px;"></div>
+                    {% if config.signatory_2_name %}
+                    <div class="sig-name">{{ config.signatory_2_name }}</div>
+                    {% endif %}
+                    <div class="sig-title">{{ config.signatory_2_title|default:"Principal / Convener" }}</div>
+                </td>
+            </tr>
+        </table>
+
+    </div>
+
+</div>
+
+{% if not forloop.last %}
+<div class="page-break"></div>
+{% endif %}
+
+{% endfor %}
+
+</body>
+</html>
