@@ -266,25 +266,25 @@
                 {% endif %}
             </div>
 
-            {% if item.request %}
-            <div style="font-size: 0.78rem; color: #cbd5e1; background: rgba(0,0,0,0.25); padding: 6px 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.06);">
+            <div style="font-size: 0.78rem; color: #cbd5e1; background: rgba(0,0,0,0.25); padding: 8px 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06);">
                 <div style="display: flex; justify-content: space-between;">
-                    <span style="color: var(--text-muted);">Contact:</span>
-                    <strong style="color: #fff;">{{ item.request.contact_person|default:item.institution.contact_person|default:"Manager" }}</strong>
+                    <span style="color: var(--text-muted);">Manager:</span>
+                    <strong style="color: #fff;">{{ item.contact_name }}</strong>
                 </div>
-                {% if item.request.contact_phone or item.institution.phone %}
-                <div style="display: flex; justify-content: space-between; margin-top: 2px;">
+                {% if item.contact_phone %}
+                <div style="display: flex; justify-content: space-between; margin-top: 3px;">
                     <span style="color: var(--text-muted);">Phone:</span>
-                    <a href="tel:{{ item.request.contact_phone|default:item.institution.phone }}" style="color: var(--accent-cyan); text-decoration: none;">
-                        {{ item.request.contact_phone|default:item.institution.phone }}
+                    <a href="tel:{{ item.contact_phone }}" style="color: var(--accent-cyan); text-decoration: none;">
+                        {{ item.contact_phone }}
                     </a>
                 </div>
                 {% endif %}
-                <div style="font-size: 0.7rem; color: #94a3b8; margin-top: 3px;">
-                    Requested: {{ item.request.requested_at|date:"M d, Y h:i A" }}
+                {% if item.request %}
+                <div style="font-size: 0.7rem; color: #fbbf24; margin-top: 4px; border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 3px;">
+                    <i class="fa-solid fa-clock"></i> Requested: {{ item.request.requested_at|date:"M d, Y h:i A" }}
                 </div>
+                {% endif %}
             </div>
-            {% endif %}
         </div>
 
         <!-- Action / Toggle Bar -->

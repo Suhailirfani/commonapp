@@ -447,6 +447,8 @@ def developer_addon_detail_view(request, addon_id):
     # Fetch existing grants and requests
     grants_map = {g.institution_id: g for g in GrantedAddOn.objects.filter(add_on=addon)}
     requests_map = {r.institution_id: r for r in AddOnRequest.objects.filter(add_on=addon)}
+    app_map = {app.institution_slug: app for app in SubscriptionApplication.objects.all()}
+    admin_user_map = {u.institution_id: u for u in User.objects.filter(role='INSTITUTION_ADMIN')}
 
     # Build rich institution list
     items = []
@@ -456,12 +458,23 @@ def developer_addon_detail_view(request, addon_id):
         req = requests_map.get(inst.id)
         has_pending_req = req and req.status == 'pending'
 
+        app = app_map.get(inst.slug)
+        admin_u = admin_user_map.get(inst.id)
+        contact_name = (req.contact_person if (req and req.contact_person) else None) or \
+                       (app.contact_name if (app and app.contact_name) else None) or \
+                       (admin_u.get_full_name() if (admin_u and admin_u.get_full_name()) else None) or \
+                       (admin_u.username if admin_u else "Manager")
+        contact_phone = (req.contact_phone if (req and req.contact_phone) else None) or \
+                        inst.phone or (app.phone if app else "")
+
         items.append({
             'institution': inst,
             'grant': grant,
             'is_active': is_active,
             'request': req,
             'has_pending_request': has_pending_req,
+            'contact_name': contact_name,
+            'contact_phone': contact_phone,
         })
 
     # Stats
