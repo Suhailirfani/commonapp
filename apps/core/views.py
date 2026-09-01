@@ -598,10 +598,13 @@ def contestant_list_view(request, institution_slug):
         else:
             contestants = Contestant.objects.none()
 
+    has_contestant_addon = institution.has_add_on('contestant-user-creation')
+
     return render(request, 'core/contestant_list.html', {
         'institution': institution, 
         'contestants': contestants,
-        'managed_team': managed_team
+        'managed_team': managed_team,
+        'has_contestant_addon': has_contestant_addon,
     })
 
 
@@ -1346,8 +1349,20 @@ def settings_view(request, institution_slug):
                 if req_obj:
                     req_obj.status = 'approved' if grant.is_active else 'rejected'
                     req_obj.save(update_fields=['status'])
+        elif action == 'toggle_contestant_addon' and (request.user.is_superuser or (hasattr(request.user, 'is_developer') and request.user.is_developer)):
+            addon = AddOn.objects.filter(code='contestant-user-creation', is_active=True).first()
+            if addon:
+                from apps.tenants.models import GrantedAddOn, AddOnRequest
+                grant, created = GrantedAddOn.objects.get_or_create(institution=institution, add_on=addon, defaults={'is_active': True})
+                if not created:
+                    grant.is_active = not grant.is_active
+                    grant.save()
+                req_obj = AddOnRequest.objects.filter(institution=institution, add_on=addon).first()
+                if req_obj:
+                    req_obj.status = 'approved' if grant.is_active else 'rejected'
+                    req_obj.save(update_fields=['status'])
                 status_str = "ACTIVATED (ON)" if grant.is_active else "DEACTIVATED (OFF)"
-                messages.success(request, f"Winner Certificate Generation Studio is now {status_str} for {institution.name}!")
+                messages.success(request, f"Contestant User Creation & Login Portal is now {status_str} for {institution.name}!")
         return redirect('core:settings', institution_slug=institution.slug)
 
     base_categories = Category.objects.filter(institution=institution, is_common=False).order_by('id')
@@ -1358,6 +1373,9 @@ def settings_view(request, institution_slug):
     has_cert_addon = institution.has_add_on('certificate-generation')
     cert_addon = AddOn.objects.filter(code='certificate-generation', is_active=True).first()
 
+    has_contestant_addon = institution.has_add_on('contestant-user-creation')
+    contestant_addon = AddOn.objects.filter(code='contestant-user-creation', is_active=True).first()
+
     context = {
         'institution': institution,
         'competitions': competitions,
@@ -1366,6 +1384,8 @@ def settings_view(request, institution_slug):
         'base_categories': base_categories,
         'has_cert_addon': has_cert_addon,
         'cert_addon': cert_addon,
+        'has_contestant_addon': has_contestant_addon,
+        'contestant_addon': contestant_addon,
     }
     return render(request, 'core/settings.html', context)
 
@@ -3874,6 +3894,11 @@ def generate_contestant_credentials_view(request, institution_slug):
         return redirect('core:contestant_list', institution_slug=institution.slug)
 
     from django.utils.text import slugify
+    from apps.tenants.models import AddOn, AddOnRequest
+
+    has_contestant_addon = institution.has_add_on('contestant-user-creation')
+    contestant_addon = AddOn.objects.filter(code='contestant-user-creation', is_active=True).first()
+    addon_request = AddOnRequest.objects.filter(institution=institution, add_on__code='contestant-user-creation').first() if contestant_addon else None
 
     unregistered_contestants = Contestant.objects.filter(
         institution=institution,
@@ -3881,6 +3906,30 @@ def generate_contestant_credentials_view(request, institution_slug):
     ).select_related('team', 'category').order_by('chest_no')
 
     if request.method == 'POST':
+        action = request.POST.get('action')
+
+        if action == 'request_contestant_addon':
+            if contestant_addon:
+                contact_p = request.POST.get('contact_person') or getattr(institution, 'contact_name_val', 'Admin')
+                contact_ph = request.POST.get('contact_phone') or institution.phone
+                notes = request.POST.get('notes', '')
+                AddOnRequest.objects.update_or_create(
+                    institution=institution,
+                    add_on=contestant_addon,
+                    defaults={
+                        'status': 'pending',
+                        'contact_person': contact_p,
+                        'contact_phone': contact_ph,
+                        'notes': notes,
+                    }
+                )
+                messages.success(request, f"🎉 Instant activation request for '{contestant_addon.name}' submitted successfully! Our developer will review and activate it shortly.")
+            return redirect('core:generate_contestant_credentials', institution_slug=institution.slug)
+
+        if not has_contestant_addon:
+            messages.error(request, "👑 PRO Add-On Required: Please unlock the Contestant User Creation & Personal Portal feature to generate login credentials.")
+            return redirect('core:generate_contestant_credentials', institution_slug=institution.slug)
+
         generated_count = 0
         for c in unregistered_contestants:
             # Format Name as Username (clean & slugified)
@@ -3958,6 +4007,9 @@ def generate_contestant_credentials_view(request, institution_slug):
         'institution': institution,
         'unregistered_count': unregistered_contestants.count(),
         'credentials_list': credentials_list,
+        'has_contestant_addon': has_contestant_addon,
+        'contestant_addon': contestant_addon,
+        'addon_request': addon_request,
     })
 
 

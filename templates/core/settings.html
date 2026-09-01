@@ -352,6 +352,43 @@
                 </div>
             </div>
 
+            <!-- Module 2: Contestant Credentials Hub & Personal Portal -->
+            <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid {% if has_contestant_addon %}rgba(16, 185, 129, 0.4){% else %}rgba(245, 158, 11, 0.4){% endif %}; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between; gap: 12px;">
+                <div>
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
+                        <h4 style="margin: 0; font-size: 1.05rem; font-weight: 800; color: #fff;">
+                            <i class="fa-solid fa-users-gear" style="color: var(--accent-cyan);"></i> Pupil Portals & Credentials Hub
+                        </h4>
+                        <span class="badge" style="{% if has_contestant_addon %}background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid #10b981;{% else %}background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid #f59e0b;{% endif %} font-weight: 800; font-size: 0.75rem;">
+                            {% if has_contestant_addon %}🟢 ACTIVE (ON){% else %}👑 PRO (OFF){% endif %}
+                        </span>
+                    </div>
+                    <p style="font-size: 0.82rem; color: var(--text-muted); margin: 0; line-height: 1.4;">
+                        Bulk login account generation for all enrolled pupils to access personal schedules, stage venues, timings, and results.
+                    </p>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 10px;">
+                    <a href="{% url 'core:generate_contestant_credentials' institution.slug %}" style="font-size: 0.82rem; color: var(--accent-cyan); text-decoration: none; font-weight: 700;">
+                        <i class="fa-solid fa-arrow-up-right-from-square"></i> Open Credentials Hub
+                    </a>
+
+                    {% if request.user.is_developer or request.user.is_superuser %}
+                    <form method="POST" style="margin: 0;">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="toggle_contestant_addon">
+                        <button type="submit" class="btn btn-sm" style="{% if has_contestant_addon %}background: rgba(244, 63, 94, 0.2); color: #fb7185; border: 1px solid #f43f5e;{% else %}background: linear-gradient(135deg, #10b981, #059669); color: #fff; border: none;{% endif %} font-size: 0.78rem; font-weight: 800; padding: 6px 14px; border-radius: 8px; cursor: pointer;">
+                            {% if has_contestant_addon %}<i class="fa-solid fa-ban"></i> Turn OFF{% else %}<i class="fa-solid fa-bolt"></i> Turn ON (Grant){% endif %}
+                        </button>
+                    </form>
+                    {% else %}
+                    <a href="{% url 'core:generate_contestant_credentials' institution.slug %}" class="btn-primary" style="padding: 6px 12px; font-size: 0.78rem; background: linear-gradient(135deg, #f59e0b, #d97706); color: #000; font-weight: 800;">
+                        {% if has_contestant_addon %}Manage{% else %}Unlock PRO{% endif %}
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+
         </div>
     </div>
 
