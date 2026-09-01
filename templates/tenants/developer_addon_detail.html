@@ -288,27 +288,34 @@
         </div>
 
         <!-- Action / Toggle Bar -->
-        <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 12px; margin-top: 2px;">
-            <a href="{% url 'core:dashboard' item.institution.slug %}" target="_blank" style="font-size: 0.8rem; color: var(--accent-cyan); text-decoration: none; display: flex; align-items: center; gap: 4px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 14px; margin-top: 2px;">
+            <a href="{% url 'core:dashboard' item.institution.slug %}" target="_blank" style="font-size: 0.82rem; color: var(--accent-cyan); text-decoration: none; display: flex; align-items: center; gap: 6px; font-weight: 700;">
                 <i class="fa-solid fa-arrow-up-right-from-square"></i> Open Portal
             </a>
 
-            <!-- Toggle Switch & Button -->
-            <div class="switch-container">
-                <span id="label-inst-{{ item.institution.id }}" style="font-size: 0.8rem; font-weight: 800; color: {% if item.is_active %}#10b981{% else %}#94a3b8{% endif %};">
-                    {% if item.is_active %}ON{% else %}OFF{% endif %}
-                </span>
-
-                <form method="POST" action="{% url 'tenants:toggle_institution_addon' addon.id item.institution.id %}" id="form-toggle-{{ item.institution.id }}" style="margin: 0; display: inline;">
-                    {% csrf_token %}
-                    <div class="switch-toggle {% if item.is_active %}on{% endif %}" 
-                         id="switch-{{ item.institution.id }}"
-                         onclick="toggleAddonAjax({{ addon.id }}, {{ item.institution.id }})" 
-                         title="Click to toggle ON / OFF">
-                        <div class="switch-knob"></div>
-                    </div>
-                </form>
-            </div>
+            <!-- Prominent ON / OFF Action Button -->
+            <form method="POST" action="{% url 'tenants:toggle_institution_addon' addon.id item.institution.id %}" id="form-toggle-{{ item.institution.id }}" style="margin: 0; display: inline;">
+                {% csrf_token %}
+                {% if item.is_active %}
+                <button type="button" 
+                        id="toggle-btn-{{ item.institution.id }}" 
+                        onclick="toggleAddonAjax('{{ addon.id }}', {{ item.institution.id }})" 
+                        style="background: linear-gradient(135deg, #10b981, #059669); color: #fff; font-weight: 800; font-size: 0.85rem; padding: 8px 18px; border-radius: 10px; border: none; cursor: pointer; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4); display: inline-flex; align-items: center; gap: 8px;"
+                        title="Click to Turn OFF">
+                    <i class="fa-solid fa-toggle-on" id="toggle-icon-{{ item.institution.id }}" style="font-size: 1.25rem;"></i>
+                    <span id="btn-text-{{ item.institution.id }}">🟢 ON (Active)</span>
+                </button>
+                {% else %}
+                <button type="button" 
+                        id="toggle-btn-{{ item.institution.id }}" 
+                        onclick="toggleAddonAjax('{{ addon.id }}', {{ item.institution.id }})" 
+                        style="background: rgba(244, 63, 94, 0.15); color: #fb7185; border: 1.5px solid #f43f5e; font-weight: 800; font-size: 0.85rem; padding: 8px 18px; border-radius: 10px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;"
+                        title="Click to Turn ON">
+                    <i class="fa-solid fa-toggle-off" id="toggle-icon-{{ item.institution.id }}" style="font-size: 1.25rem;"></i>
+                    <span id="btn-text-{{ item.institution.id }}">⚪ OFF (Turn ON)</span>
+                </button>
+                {% endif %}
+            </form>
         </div>
 
     </div>
@@ -323,8 +330,9 @@
 
 <script>
 function toggleAddonAjax(addonId, instId) {
-    const switchEl = document.getElementById('switch-' + instId);
-    const labelEl = document.getElementById('label-inst-{{ item.institution.id }}' || 'label-inst-' + instId);
+    const btn = document.getElementById('toggle-btn-' + instId);
+    const btnText = document.getElementById('btn-text-' + instId);
+    const btnIcon = document.getElementById('toggle-icon-' + instId);
     const badgeEl = document.getElementById('status-badge-' + instId);
     const cardEl = document.getElementById('card-inst-' + instId);
     const formEl = document.getElementById('form-toggle-' + instId);
@@ -332,13 +340,18 @@ function toggleAddonAjax(addonId, instId) {
     const csrfToken = formEl.querySelector('[name=csrfmiddlewaretoken]').value;
     const url = "{% url 'tenants:toggle_institution_addon' addon.id 0 %}".replace('/0/', '/' + instId + '/');
 
-    // Optimistic UI update
-    const isCurrentlyOn = switchEl.classList.contains('on');
+    // Optimistic UI state determination
+    const isCurrentlyOn = btnText.innerText.includes('ON');
     const newState = !isCurrentlyOn;
 
     if (newState) {
-        switchEl.classList.add('on');
-        if (labelEl) { labelEl.innerText = 'ON'; labelEl.style.color = '#10b981'; }
+        // Turned ON
+        btn.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+        btn.style.color = '#fff';
+        btn.style.border = 'none';
+        btn.style.boxShadow = '0 4px 14px rgba(16, 185, 129, 0.4)';
+        btnText.innerText = '🟢 ON (Active)';
+        btnIcon.className = 'fa-solid fa-toggle-on';
         if (badgeEl) {
             badgeEl.innerText = '🟢 ACTIVE (ON)';
             badgeEl.style.background = 'rgba(16, 185, 129, 0.2)';
@@ -347,8 +360,13 @@ function toggleAddonAjax(addonId, instId) {
         }
         if (cardEl) cardEl.classList.add('active-grant');
     } else {
-        switchEl.classList.remove('on');
-        if (labelEl) { labelEl.innerText = 'OFF'; labelEl.style.color = '#94a3b8'; }
+        // Turned OFF
+        btn.style.background = 'rgba(244, 63, 94, 0.15)';
+        btn.style.color = '#fb7185';
+        btn.style.border = '1.5px solid #f43f5e';
+        btn.style.boxShadow = 'none';
+        btnText.innerText = '⚪ OFF (Turn ON)';
+        btnIcon.className = 'fa-solid fa-toggle-off';
         if (badgeEl) {
             badgeEl.innerText = '⚪ INACTIVE (OFF)';
             badgeEl.style.background = 'rgba(148, 163, 184, 0.15)';
@@ -371,12 +389,10 @@ function toggleAddonAjax(addonId, instId) {
     .then(response => response.json())
     .then(data => {
         if (!data.success) {
-            // Revert on failure
             formEl.submit();
         }
     })
     .catch(err => {
-        // Fallback to normal form submit if fetch fails
         formEl.submit();
     });
 }
