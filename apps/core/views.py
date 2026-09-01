@@ -6,7 +6,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
 from django.db.models import Q, Count
-from apps.tenants.models import Institution
+from apps.tenants.models import Institution, AddOn
 from apps.users.models import User
 from .models import (
     Competition, Category, Program, Team, Stage, 
@@ -2935,6 +2935,8 @@ def _get_certificate_winners_data(institution, competition, config, category_id=
 def certificate_studio_view(request, institution_slug):
     institution = get_object_or_404(Institution, slug=institution_slug)
     comp = Competition.objects.filter(institution=institution, is_active=True).first() or Competition.objects.filter(institution=institution).first()
+    has_cert_addon = institution.has_add_on('certificate-generation') or request.user.is_superuser or (hasattr(request.user, 'is_developer') and request.user.is_developer)
+    cert_addon = AddOn.objects.filter(code='certificate-generation', is_active=True).first()
 
     # Get or create certificate config
     config, _ = CertificateConfig.objects.get_or_create(
