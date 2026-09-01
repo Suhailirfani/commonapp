@@ -35,6 +35,7 @@ class Institution(models.Model):
     is_demo = models.BooleanField(default=False, help_text="Is this institution in 5-Day Demo/Trial mode?")
     demo_expires_at = models.DateTimeField(null=True, blank=True, help_text="Expiration date for Demo Trial")
     allow_developer_access = models.BooleanField(default=False, help_text="Allow Developer/Superadmin support access to this institution's workspace")
+    is_public_suspended = models.BooleanField(default=False, help_text="Suspend public live portal link for this institution")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Public Portal Suspended - {{ institution.name }}{% endblock %}
+
+{% block content %}
+<div style="max-width: 680px; margin: 50px auto; text-align: center;">
+    <div class="glass-card" style="padding: 48px 32px; border: 1px solid rgba(244, 63, 94, 0.35); background: linear-gradient(135deg, rgba(244, 63, 94, 0.08), rgba(15, 23, 42, 0.85)); box-shadow: 0 20px 40px rgba(0,0,0,0.5); border-radius: 20px;">
+        
+        <!-- Status Icon -->
+        <div style="width: 84px; height: 84px; border-radius: 50%; background: linear-gradient(135deg, rgba(244, 63, 94, 0.2), rgba(225, 29, 72, 0.35)); border: 2px solid rgba(244, 63, 94, 0.5); display: inline-flex; align-items: center; justify-content: center; margin-bottom: 24px; box-shadow: 0 0 30px rgba(244, 63, 94, 0.25);">
+            <i class="fa-solid fa-pause" style="font-size: 2.4rem; color: #fb7185;"></i>
+        </div>
+
+        <!-- Heading & Institution Name -->
+        <div style="margin-bottom: 8px;">
+            <span class="badge" style="background: rgba(244, 63, 94, 0.15); color: #fb7185; border: 1px solid rgba(244, 63, 94, 0.35); font-size: 0.82rem; padding: 6px 14px; border-radius: 999px;">
+                <i class="fa-solid fa-lock"></i> Public Portal Temporarily Suspended
+            </span>
+        </div>
+
+        <h1 style="font-size: 2.2rem; font-weight: 800; margin: 16px 0 8px 0; color: #fff;">
+            {{ institution.name }}
+        </h1>
+        
+        <p style="color: var(--text-muted); font-size: 1.05rem; line-height: 1.6; max-width: 520px; margin: 12px auto 28px auto;">
+            Live results, leaderboards, and contestant scorecards for this event are temporarily suspended by the event organizers. Please check back shortly.
+        </p>
+
+        <!-- Actions -->
+        <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+            <button onclick="window.location.reload();" class="btn-primary" style="background: linear-gradient(135deg, var(--accent-cyan), #0284c7); padding: 10px 22px; font-size: 0.95rem; border-radius: 10px; cursor: pointer; border: none; font-weight: 700; display: inline-flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-arrows-rotate"></i> Refresh Page
+            </button>
+            <a href="{% url 'landing_page' %}" class="btn-primary" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); box-shadow: none; padding: 10px 20px; font-size: 0.95rem; text-decoration: none; border-radius: 10px;">
+                <i class="fa-solid fa-home"></i> Home
+            </a>
+        </div>
+
+        {% if request.user.is_authenticated and request.user.institution == institution %}
+        <div style="margin-top: 32px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.08); font-size: 0.85rem; color: #94a3b8;">
+            <i class="fa-solid fa-user-shield" style="color: var(--accent-amber);"></i> 
+            Logged in as Institution Manager? You can reactivate this public portal in 
+            <a href="{% url 'core:settings' institution.slug %}" style="color: var(--accent-cyan); font-weight: 700; text-decoration: underline;">Settings</a>.
+        </div>
+        {% endif %}
+
+    </div>
+</div>
+{% endblock %}

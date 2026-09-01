@@ -140,6 +140,11 @@
                             <i class="fa-solid fa-copy"></i>
                         </button>
                     </div>
+                    {% if institution.is_public_suspended %}
+                    <span class="badge badge-rejected" style="margin-left: 6px; font-size: 0.75rem;"><i class="fa-solid fa-pause"></i> Suspended</span>
+                    {% else %}
+                    <span class="badge badge-approved" style="margin-left: 6px; font-size: 0.75rem;"><i class="fa-solid fa-circle-check"></i> Active</span>
+                    {% endif %}
                 </li>
                 {% if institution.active_add_ons %}
                 <li style="margin-top: 8px;">
@@ -160,6 +165,41 @@
             <a href="{% url 'core:stage_list' institution.slug %}" class="btn-primary" style="width: 100%; justify-content: center; background: rgba(255,255,255,0.08); box-shadow: none;">
                 <i class="fa-solid fa-location-dot"></i> Manage Stages & Venues
             </a>
+        </div>
+    </div>
+
+    <!-- Section: Public Portal Link Control / Suspend On-Off Switch -->
+    <div class="glass-card" style="grid-column: 1 / -1; border: 1px solid {% if institution.is_public_suspended %}#f43f5e{% else %}#0ea5e9{% endif %}; background: {% if institution.is_public_suspended %}linear-gradient(135deg, rgba(244, 63, 94, 0.08), rgba(24, 24, 27, 0.8)){% else %}linear-gradient(135deg, rgba(14, 165, 233, 0.08), rgba(24, 24, 27, 0.8)){% endif %};">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+            <div style="max-width: 650px;">
+                <h3 style="font-size: 1.15rem; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px; margin: 0 0 6px 0;">
+                    {% if institution.is_public_suspended %}
+                    <i class="fa-solid fa-ban" style="color: #f43f5e; font-size: 1.25rem;"></i> Public Portal Link: <span style="color: #f43f5e;">SUSPENDED (OFFLINE)</span>
+                    {% else %}
+                    <i class="fa-solid fa-globe" style="color: #0ea5e9; font-size: 1.25rem;"></i> Public Portal Link: <span style="color: #0ea5e9;">ACTIVE (LIVE ONLINE)</span>
+                    {% endif %}
+                </h3>
+                <p style="color: var(--text-muted); font-size: 0.85rem; margin: 0; line-height: 1.5;">
+                    {% if institution.is_public_suspended %}
+                    The public results portal (<code>/public/{{ institution.slug }}/</code>) is currently <strong>SUSPENDED</strong>. Visitors and contestants will see a temporary suspension notice instead of live event scores and leaderboards. Click below to re-activate.
+                    {% else %}
+                    The public results portal is currently <strong>ACTIVE & LIVE</strong>. Anyone visiting <code>/public/{{ institution.slug }}/</code> can view announced event results and team standings. Turn this <strong>OFF</strong> to temporarily suspend public access.
+                    {% endif %}
+                </p>
+            </div>
+            <form method="POST" style="margin: 0;">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="toggle_public_suspended">
+                {% if institution.is_public_suspended %}
+                <button type="submit" class="btn-primary" style="background: linear-gradient(135deg, #10b981, #059669); color: #fff; padding: 10px 18px; font-weight: 700; border-radius: 10px; border: none; cursor: pointer; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);">
+                    <i class="fa-solid fa-toggle-off" style="font-size: 1.2rem;"></i> Turn ON Public Link (Activate)
+                </button>
+                {% else %}
+                <button type="submit" class="btn-primary" style="background: rgba(244, 63, 94, 0.18); border: 1px solid #f43f5e; color: #fb7185; padding: 10px 18px; font-weight: 700; border-radius: 10px; cursor: pointer; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 14px rgba(244, 63, 94, 0.15);">
+                    <i class="fa-solid fa-toggle-on" style="font-size: 1.2rem; color: #fb7185;"></i> Suspend Public Link (Turn OFF)
+                </button>
+                {% endif %}
+            </form>
         </div>
     </div>
 

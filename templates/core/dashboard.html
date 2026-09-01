@@ -263,13 +263,13 @@
         </button>
 
         <!-- SHAREABLE PUBLIC RESULT LINK (COPYABLE) -->
-        <div class="shareable-link-box">
-            <div style="display: flex; align-items: center; gap: 5px; color: var(--accent-cyan); font-size: 0.82rem; font-weight: 700; flex-shrink: 0;">
-                <i class="fa-solid fa-globe"></i>
-                <span class="d-none d-sm-inline" style="opacity: 0.85;">Public:</span>
+        <div class="shareable-link-box" style="border-color: {% if institution.is_public_suspended %}rgba(244, 63, 94, 0.4){% else %}rgba(14, 165, 233, 0.35){% endif %};">
+            <div style="display: flex; align-items: center; gap: 5px; color: {% if institution.is_public_suspended %}#fb7185{% else %}var(--accent-cyan){% endif %}; font-size: 0.82rem; font-weight: 700; flex-shrink: 0;">
+                <i class="fa-solid {% if institution.is_public_suspended %}fa-ban{% else %}fa-globe{% endif %}"></i>
+                <span class="d-none d-sm-inline" style="opacity: 0.85;">{% if institution.is_public_suspended %}Suspended:{% else %}Public:{% endif %}</span>
             </div>
-            <input type="text" id="publicResultLinkInput" class="shareable-link-input" readonly value="/public/{{ institution.slug }}/" onclick="copyPublicResultLink(this)">
-            <button type="button" onclick="copyPublicResultLink(this)" id="copyPublicLinkBtn" class="btn btn-sm" style="background: linear-gradient(135deg, var(--accent-cyan), #0284c7); color: #fff; border: none; font-size: 0.78rem; font-weight: 700; padding: 6px 10px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 4px; flex-shrink: 0; white-space: nowrap; transition: all 0.2s;" title="Copy Public Result Link">
+            <input type="text" id="publicResultLinkInput" class="shareable-link-input" readonly value="/public/{{ institution.slug }}/" onclick="copyPublicResultLink(this)" style="{% if institution.is_public_suspended %}color: #fb7185; text-decoration: line-through;{% endif %}">
+            <button type="button" onclick="copyPublicResultLink(this)" id="copyPublicLinkBtn" class="btn btn-sm" style="background: {% if institution.is_public_suspended %}linear-gradient(135deg, #f43f5e, #e11d48){% else %}linear-gradient(135deg, var(--accent-cyan), #0284c7){% endif %}; color: #fff; border: none; font-size: 0.78rem; font-weight: 700; padding: 6px 10px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 4px; flex-shrink: 0; white-space: nowrap; transition: all 0.2s;" title="Copy Public Result Link">
                 <i class="fa-solid fa-copy"></i> <span>Copy Link</span>
             </button>
             <a href="{% url 'public:home' institution.slug %}" target="_blank" class="btn btn-sm" style="background: rgba(255,255,255,0.08); color: var(--text-main); border: 1px solid rgba(255,255,255,0.15); font-size: 0.78rem; padding: 6px 8px; border-radius: 8px; flex-shrink: 0; text-decoration: none;" title="Open Public Result Portal">

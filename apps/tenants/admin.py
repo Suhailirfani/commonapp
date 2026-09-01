@@ -26,8 +26,8 @@ class GrantedAddOnAdmin(admin.ModelAdmin):
 
 @admin.register(Institution)
 class InstitutionAdmin(admin.ModelAdmin):
-    list_display = ('name', 'slug', 'status', 'email', 'phone', 'is_demo', 'created_at')
-    list_filter = ('status', 'is_demo', 'created_at')
+    list_display = ('name', 'slug', 'status', 'is_public_suspended', 'email', 'phone', 'is_demo', 'created_at')
+    list_filter = ('status', 'is_public_suspended', 'is_demo', 'created_at')
     search_fields = ('name', 'slug', 'email', 'phone')
     prepopulated_fields = {'slug': ('name',)}
 

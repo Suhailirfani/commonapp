@@ -1327,6 +1327,13 @@ def settings_view(request, institution_slug):
                 messages.success(request, "🔓 Developer / Superadmin Support Access is now ENABLED. Developer can view your workspace to assist you.")
             else:
                 messages.info(request, "🔒 Developer / Superadmin Support Access is now DISABLED.")
+        elif action == 'toggle_public_suspended':
+            institution.is_public_suspended = not institution.is_public_suspended
+            institution.save(update_fields=['is_public_suspended'])
+            if institution.is_public_suspended:
+                messages.warning(request, "⏸️ Public Portal Link has been SUSPENDED. External visitors cannot access live results until enabled.")
+            else:
+                messages.success(request, "✅ Public Portal Link is now ACTIVE & LIVE for all visitors.")
         return redirect('core:settings', institution_slug=institution.slug)
 
     base_categories = Category.objects.filter(institution=institution, is_common=False).order_by('id')
@@ -2413,6 +2420,15 @@ def manage_announcements_view(request, institution_slug):
     if request.user.is_judge:
         messages.error(request, "Permission Denied: Judges cannot access the Public Announcement Hub.")
         return redirect('core:scoring_program_list', institution_slug=institution.slug)
+
+    if request.method == 'POST' and request.POST.get('action') == 'toggle_public_suspended':
+        institution.is_public_suspended = not institution.is_public_suspended
+        institution.save(update_fields=['is_public_suspended'])
+        if institution.is_public_suspended:
+            messages.warning(request, "⏸️ Public Portal Link has been SUSPENDED. External visitors cannot access live results until enabled.")
+        else:
+            messages.success(request, "✅ Public Portal Link is now ACTIVE & LIVE for all visitors.")
+        return redirect('core:manage_announcements', institution_slug=institution.slug)
 
     programs = Program.objects.filter(institution=institution).select_related('category').order_by('category__name', 'name')
 

@@ -10,15 +10,30 @@
     </div>
     <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
         <!-- SHAREABLE PUBLIC RESULT LINK (COPYABLE) -->
-        <div class="shareable-link-box" style="display: flex; align-items: center; background: rgba(14, 165, 233, 0.12); border: 1px solid rgba(14, 165, 233, 0.35); border-radius: 10px; padding: 3px 6px 3px 10px; gap: 6px;">
-            <i class="fa-solid fa-globe" style="color: var(--accent-cyan); font-size: 0.8rem;"></i>
-            <button type="button" onclick="copyPublicResultLinkAnnounce(this)" id="copyAnnounceLinkBtn" class="btn btn-sm" style="background: linear-gradient(135deg, var(--accent-cyan), #0284c7); color: #fff; border: none; font-size: 0.78rem; font-weight: 700; padding: 5px 10px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 4px;" title="Copy Public Result Link">
+        <div class="shareable-link-box" style="display: flex; align-items: center; background: {% if institution.is_public_suspended %}rgba(244, 63, 94, 0.12){% else %}rgba(14, 165, 233, 0.12){% endif %}; border: 1px solid {% if institution.is_public_suspended %}rgba(244, 63, 94, 0.35){% else %}rgba(14, 165, 233, 0.35){% endif %}; border-radius: 10px; padding: 3px 6px 3px 10px; gap: 6px;">
+            <i class="fa-solid {% if institution.is_public_suspended %}fa-ban{% else %}fa-globe{% endif %}" style="color: {% if institution.is_public_suspended %}#fb7185{% else %}var(--accent-cyan){% endif %}; font-size: 0.8rem;"></i>
+            <button type="button" onclick="copyPublicResultLinkAnnounce(this)" id="copyAnnounceLinkBtn" class="btn btn-sm" style="background: {% if institution.is_public_suspended %}linear-gradient(135deg, #f43f5e, #e11d48){% else %}linear-gradient(135deg, var(--accent-cyan), #0284c7){% endif %}; color: #fff; border: none; font-size: 0.78rem; font-weight: 700; padding: 5px 10px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 4px;" title="Copy Public Result Link">
                 <i class="fa-solid fa-copy"></i> <span>Copy Public Link</span>
             </button>
             <a href="{% url 'public:home' institution.slug %}" target="_blank" class="btn btn-sm" style="background: rgba(255,255,255,0.08); color: var(--text-main); border: 1px solid rgba(255,255,255,0.15); font-size: 0.78rem; padding: 5px 8px; border-radius: 6px; text-decoration: none;" title="Open Public Portal">
                 <i class="fa-solid fa-arrow-up-right-from-square"></i>
             </a>
         </div>
+
+        <!-- Suspend / Activate Public Link Quick Button -->
+        <form method="POST" style="margin: 0; display: inline;">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="toggle_public_suspended">
+            {% if institution.is_public_suspended %}
+            <button type="submit" class="btn btn-sm" style="background: linear-gradient(135deg, #10b981, #059669); color: #fff; border: none; font-size: 0.78rem; font-weight: 700; padding: 6px 12px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;" title="Activate Public Link">
+                <i class="fa-solid fa-toggle-off"></i> Turn ON Public Link
+            </button>
+            {% else %}
+            <button type="submit" class="btn btn-sm" style="background: rgba(244, 63, 94, 0.18); border: 1px solid #f43f5e; color: #fb7185; font-size: 0.78rem; font-weight: 700; padding: 6px 12px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;" title="Suspend Public Link">
+                <i class="fa-solid fa-pause"></i> Suspend Public Link
+            </button>
+            {% endif %}
+        </form>
 
         <a href="{% url 'core:announcement_balancer' institution.slug %}" class="btn-primary" style="background: linear-gradient(135deg, #7c3aed, #4c1d95);">
             <i class="fa-solid fa-wand-magic-sparkles"></i> Score Balancer AI
@@ -30,15 +45,25 @@
 </div>
 
 <!-- Progress Summary Card -->
-<div class="glass-card" style="margin-bottom: 24px; padding: 20px;">
+<div class="glass-card" style="margin-bottom: 24px; padding: 20px; border-color: {% if institution.is_public_suspended %}rgba(244, 63, 94, 0.4){% else %}var(--border-color){% endif %};">
     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
         <div>
-            <h3 style="font-size: 1.2rem; font-weight: 700; margin: 0;">Public Announcement Status</h3>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <h3 style="font-size: 1.2rem; font-weight: 700; margin: 0;">Public Announcement Status</h3>
+                {% if institution.is_public_suspended %}
+                <span class="badge badge-rejected" style="font-size: 0.78rem; padding: 4px 10px;"><i class="fa-solid fa-ban"></i> Public Link Suspended</span>
+                {% else %}
+                <span class="badge badge-approved" style="font-size: 0.78rem; padding: 4px 10px;"><i class="fa-solid fa-circle-check"></i> Public Link Live</span>
+                {% endif %}
+            </div>
             <p style="color: var(--text-muted); font-size: 0.85rem; margin: 4px 0 0 0;">
                 Control which completed program results are visible on the public website & live leaderboards.
+                {% if institution.is_public_suspended %}
+                <strong style="color: #fb7185;">(Notice: The public link is currently suspended; visitors cannot view published scores until activated.)</strong>
+                {% endif %}
             </p>
         </div>
-        <div>
+        <div style="display: flex; gap: 10px; align-items: center;">
             <span class="badge badge-approved" style="font-size: 1.1rem; padding: 10px 18px; background: linear-gradient(135deg, var(--accent-emerald), #059669);">
                 📢 {{ announced_count }} / {{ total_programs }} Announced
             </span>
