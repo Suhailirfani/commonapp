@@ -254,25 +254,17 @@
     </div>
     
     <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-        <!-- Global Bulk Download PDF Button -->
-        <a href="{% url 'core:download_certificate_pdf' institution.slug %}{% if selected_category_id %}?category={{ selected_category_id }}{% endif %}{% if selected_program_id %}&program={{ selected_program_id }}{% endif %}{% if selected_place %}&place={{ selected_place }}{% endif %}" 
-           class="btn-primary" 
-           style="background: linear-gradient(135deg, #f59e0b, #d97706); color: #000; font-weight: 800; padding: 10px 18px; border-radius: 10px; box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35);" 
-           title="Download Bulk PDF for All Matching Winners">
-            <i class="fa-solid fa-file-pdf"></i> Generate Full PDF (1-Click)
-        </a>
-
-        <!-- Print All Certificates -->
+        <!-- Print All Certificates (Vector Quality) -->
         <a href="{% url 'core:print_certificates' institution.slug %}{% if selected_category_id %}?category={{ selected_category_id }}{% endif %}{% if selected_program_id %}&program={{ selected_program_id }}{% endif %}{% if selected_place %}&place={{ selected_place }}{% endif %}" 
            target="_blank" 
            class="btn-primary" 
-           style="background: rgba(255,255,255,0.12); color: #fff; border: 1px solid rgba(255,255,255,0.25); padding: 10px 16px; border-radius: 10px;" 
-           title="Open Browser Print Dialog for crisp vector printing">
-            <i class="fa-solid fa-print"></i> Print / Vector PDF
+           style="background: linear-gradient(135deg, #f59e0b, #d97706); color: #000; font-weight: 800; padding: 10px 20px; border-radius: 10px; box-shadow: 0 4px 14px rgba(245, 158, 11, 0.4); font-size: 0.95rem;" 
+           title="Open Browser Print Dialog to print or save crisp vector PDF">
+            <i class="fa-solid fa-print"></i> Print All Certificates / Save as PDF (1-Click)
         </a>
 
         <!-- Certificate Settings Toggle -->
-        <button type="button" onclick="toggleSettingsModal()" class="btn-primary" style="background: rgba(255,255,255,0.08); border: 1px solid var(--border-color); padding: 10px 14px; border-radius: 10px;">
+        <button type="button" onclick="toggleSettingsModal()" class="btn-primary" style="background: rgba(255,255,255,0.08); border: 1px solid var(--border-color); padding: 10px 16px; border-radius: 10px;">
             <i class="fa-solid fa-sliders"></i> Certificate Settings
         </button>
     </div>
@@ -577,19 +569,12 @@
                         {% endif %}
                     </td>
                     <td style="text-align: right; white-space: nowrap;">
-                        <a href="{% url 'core:download_certificate_pdf' institution.slug %}?part_id={{ cert.part_id }}{% if cert.is_group %}&is_group=1{% endif %}" 
-                           class="btn-primary" 
-                           style="padding: 5px 10px; font-size: 0.78rem; background: {% if cert.rank == 1 %}linear-gradient(135deg, #f59e0b, #d97706); color: #000; font-weight: 800;{% elif cert.rank == 2 %}linear-gradient(135deg, #64748b, #475569); color: #fff;{% else %}linear-gradient(135deg, #ea580c, #9a3412); color: #fff;{% endif %}" 
-                           title="Download Individual Certificate PDF">
-                            <i class="fa-solid fa-file-pdf"></i> Download PDF
-                        </a>
-
-                        <a href="{% url 'core:print_certificates' institution.slug %}?part_id={{ cert.part_id }}{% if cert.is_group %}&is_group=1{% endif %}" 
+                        <a href="{% url 'core:print_certificates' institution.slug %}?part_id={{ cert.part_id }}{% if cert.is_group %}&is_group=1{% endif %}&autoprint=1" 
                            target="_blank" 
                            class="btn-primary" 
-                           style="padding: 5px 8px; font-size: 0.78rem; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);" 
-                           title="Print Single Certificate">
-                            <i class="fa-solid fa-print"></i>
+                           style="padding: 6px 14px; font-size: 0.82rem; background: {% if cert.rank == 1 %}linear-gradient(135deg, #f59e0b, #d97706); color: #000; font-weight: 800;{% elif cert.rank == 2 %}linear-gradient(135deg, #64748b, #475569); color: #fff; font-weight: 700;{% else %}linear-gradient(135deg, #ea580c, #9a3412); color: #fff; font-weight: 700;{% endif %}" 
+                           title="Print / Save Winner Certificate as PDF">
+                            <i class="fa-solid fa-print"></i> Print / Save PDF
                         </a>
                     </td>
                 </tr>

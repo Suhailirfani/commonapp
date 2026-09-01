@@ -430,5 +430,15 @@
 
 </div>
 
+{% if autoprint %}
+<script>
+window.addEventListener('load', () => {
+    setTimeout(() => {
+        window.print();
+    }, 500);
+});
+</script>
+{% endif %}
+
 </body>
 </html>

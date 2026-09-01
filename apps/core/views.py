@@ -3114,6 +3114,16 @@ def certificate_studio_view(request, institution_slug):
 
 @login_required
 def download_certificate_pdf_view(request, institution_slug):
+    # Pure vector print engine is used for certificates; redirect directly to print view
+    query_str = request.META.get('QUERY_STRING', '')
+    url = reverse('core:print_certificates', kwargs={'institution_slug': institution_slug})
+    if query_str:
+        url += f"?{query_str}"
+    return redirect(url)
+
+
+@login_required
+def print_certificates_view(request, institution_slug):
     institution = get_object_or_404(Institution, slug=institution_slug)
     comp = Competition.objects.filter(institution=institution, is_active=True).first() or Competition.objects.filter(institution=institution).first()
     config, _ = CertificateConfig.objects.get_or_create(institution=institution, defaults={'competition': comp})
@@ -3123,6 +3133,7 @@ def download_certificate_pdf_view(request, institution_slug):
     place = request.GET.get('place')
     part_id = request.GET.get('part_id')
     is_group = request.GET.get('is_group') == '1'
+    autoprint = request.GET.get('autoprint', '1') == '1'
 
     certificates = _get_certificate_winners_data(
         institution=institution,
@@ -3144,47 +3155,10 @@ def download_certificate_pdf_view(request, institution_slug):
         'competition': comp,
         'config': config,
         'certificates': certificates,
-    }
-
-    if len(certificates) == 1:
-        c = certificates[0]
-        filename = f"Certificate_{c['rank_display']}_{c['recipient_name']}_{c['program_name']}.pdf"
-    else:
-        filename = f"{institution.slug}_winner_certificates_bulk.pdf"
-
-    return render_to_pdf('pdf/certificate_bulk_pdf.html', context, filename=filename, request=request)
-
-
-@login_required
-def print_certificates_view(request, institution_slug):
-    institution = get_object_or_404(Institution, slug=institution_slug)
-    comp = Competition.objects.filter(institution=institution, is_active=True).first() or Competition.objects.filter(institution=institution).first()
-    config, _ = CertificateConfig.objects.get_or_create(institution=institution, defaults={'competition': comp})
-
-    category_id = request.GET.get('category')
-    program_id = request.GET.get('program')
-    place = request.GET.get('place')
-    part_id = request.GET.get('part_id')
-    is_group = request.GET.get('is_group') == '1'
-
-    certificates = _get_certificate_winners_data(
-        institution=institution,
-        competition=comp,
-        config=config,
-        category_id=int(category_id) if category_id and str(category_id).isdigit() else None,
-        program_id=int(program_id) if program_id and str(program_id).isdigit() else None,
-        place=int(place) if place and str(place).isdigit() else None,
-        specific_part_id=int(part_id) if part_id and str(part_id).isdigit() else None,
-        is_group=is_group if part_id else None
-    )
-
-    context = {
-        'institution': institution,
-        'competition': comp,
-        'config': config,
-        'certificates': certificates,
+        'autoprint': autoprint,
     }
     return render(request, 'core/certificate_print_view.html', context)
+
 
 
 
