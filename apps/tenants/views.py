@@ -441,7 +441,10 @@ def developer_addon_detail_view(request, addon_id):
         messages.error(request, "Access Denied: Developer clearance required.")
         return redirect('landing_page')
 
-    addon = get_object_or_404(AddOn, id=addon_id)
+    if str(addon_id).isdigit():
+        addon = get_object_or_404(AddOn, id=int(addon_id))
+    else:
+        addon = get_object_or_404(AddOn, code=addon_id)
     all_institutions = Institution.objects.all().order_by('name')
 
     # Fetch existing grants and requests
@@ -522,7 +525,10 @@ def toggle_institution_addon_view(request, addon_id, institution_id):
         messages.error(request, "Access Denied.")
         return redirect('landing_page')
 
-    addon = get_object_or_404(AddOn, id=addon_id)
+    if str(addon_id).isdigit():
+        addon = get_object_or_404(AddOn, id=int(addon_id))
+    else:
+        addon = get_object_or_404(AddOn, code=addon_id)
     institution = get_object_or_404(Institution, id=institution_id)
 
     if request.method == 'POST':
