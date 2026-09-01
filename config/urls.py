@@ -13,7 +13,7 @@ urlpatterns = [
     # Apps routing
     path('auth/', include('apps.users.urls')),
     path('subscriptions/', include('apps.tenants.urls')),
-    path('tenants/', include('apps.tenants.urls')),
+    path('tenants/', include(('apps.tenants.urls', 'tenants_alias'), namespace='tenants_alias')),
     path('', include('apps.core.urls')),
     path('', include('apps.public.urls')),
 ]

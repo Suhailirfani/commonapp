@@ -35,11 +35,16 @@
         </button>
         <div class="nav-links" id="navLinks">
             {% if request.user.is_authenticated %}
-            {% if request.user.is_developer %}
-            <a href="{% url 'tenants:developer_dashboard' %}" class="nav-link"><i class="fa-solid fa-code-commit"></i>
-                Dev Portal</a>
-            <a href="/admin/" target="_blank" class="nav-link" style="color: var(--accent-amber); font-weight: 700;"><i
-                    class="fa-solid fa-screwdriver-wrench"></i> Django Admin</a>
+            {% if request.user.is_developer or request.user.is_superuser %}
+            <a href="{% url 'tenants:developer_dashboard' %}" class="nav-link" style="color: var(--accent-cyan); font-weight: 700;">
+                <i class="fa-solid fa-code-commit"></i> Dev Portal
+            </a>
+            <a href="{% url 'tenants:developer_addon_detail' 'certificate-generation' %}" class="nav-link" style="color: #fbbf24; font-weight: 700;">
+                <i class="fa-solid fa-toggle-on"></i> Add-Ons ON/OFF
+            </a>
+            <a href="/admin/" target="_blank" class="nav-link" style="color: var(--accent-amber); font-weight: 700;">
+                <i class="fa-solid fa-screwdriver-wrench"></i> Django Admin
+            </a>
             {% elif request.user.institution %}
             {% if request.user.is_contestant %}
             <a href="{% url 'core:contestant_personal_dashboard' request.user.institution.slug %}" class="nav-link"

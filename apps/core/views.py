@@ -1334,6 +1334,20 @@ def settings_view(request, institution_slug):
                 messages.warning(request, "⏸️ Public Portal Link has been SUSPENDED. External visitors cannot access live results until enabled.")
             else:
                 messages.success(request, "✅ Public Portal Link is now ACTIVE & LIVE for all visitors.")
+        elif action == 'toggle_cert_addon' and (request.user.is_superuser or (hasattr(request.user, 'is_developer') and request.user.is_developer)):
+            addon = AddOn.objects.filter(code='certificate-generation', is_active=True).first()
+            if addon:
+                from apps.tenants.models import GrantedAddOn, AddOnRequest
+                grant, created = GrantedAddOn.objects.get_or_create(institution=institution, add_on=addon, defaults={'is_active': True})
+                if not created:
+                    grant.is_active = not grant.is_active
+                    grant.save()
+                req_obj = AddOnRequest.objects.filter(institution=institution, add_on=addon).first()
+                if req_obj:
+                    req_obj.status = 'approved' if grant.is_active else 'rejected'
+                    req_obj.save(update_fields=['status'])
+                status_str = "ACTIVATED (ON)" if grant.is_active else "DEACTIVATED (OFF)"
+                messages.success(request, f"Winner Certificate Generation Studio is now {status_str} for {institution.name}!")
         return redirect('core:settings', institution_slug=institution.slug)
 
     base_categories = Category.objects.filter(institution=institution, is_common=False).order_by('id')
@@ -1341,12 +1355,17 @@ def settings_view(request, institution_slug):
     for cat in base_categories:
         cat.suggested_start_chest_no = get_default_start_chest_no_for_category(cat)
 
+    has_cert_addon = institution.has_add_on('certificate-generation')
+    cert_addon = AddOn.objects.filter(code='certificate-generation', is_active=True).first()
+
     context = {
         'institution': institution,
         'competitions': competitions,
         'stages': stages,
         'config': config,
         'base_categories': base_categories,
+        'has_cert_addon': has_cert_addon,
+        'cert_addon': cert_addon,
     }
     return render(request, 'core/settings.html', context)
 
