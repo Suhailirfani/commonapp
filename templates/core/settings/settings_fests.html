@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Fest & Competitions Setup - {{ institution.name }}{% endblock %}
+
+{% block content %}
+<div class="page-header" style="margin-bottom: 24px;">
+    <div>
+        <a href="{% url 'core:settings' institution.slug %}" style="color: var(--accent-cyan); text-decoration: none; font-size: 0.9rem; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; margin-bottom: 8px;">
+            <i class="fa-solid fa-arrow-left"></i> Back to Settings Hub
+        </a>
+        <h2 style="font-size: 1.8rem; font-weight: 800;"><i class="fa-solid fa-trophy" style="color: var(--accent-amber);"></i> Fest & Competitions Setup</h2>
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 4px;">Setup your yearly fest (e.g. Mueeniyya Grand Fest 2026), upload emblem logos, and manage fest profiles.</p>
+    </div>
+    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <a href="{% url 'core:team_list' institution.slug %}" class="btn-primary" style="font-size: 0.9rem; background: rgba(255,255,255,0.08); box-shadow: none;">
+            <i class="fa-solid fa-people-group"></i> Manage Teams / Houses
+        </a>
+        <a href="{% url 'core:competition_create' institution.slug %}" class="btn-primary" style="font-size: 0.9rem; background: linear-gradient(135deg, var(--accent-amber), #d97706); color: #000; font-weight: 800;">
+            <i class="fa-solid fa-plus"></i> Create New Fest
+        </a>
+    </div>
+</div>
+
+<div class="glass-card">
+    <div class="table-responsive">
+        <table class="custom-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Fest Emblem</th>
+                    <th>Fest Name</th>
+                    <th>Type</th>
+                    <th>Year</th>
+                    <th>Status</th>
+                    <th style="text-align: right;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for comp in competitions %}
+                <tr>
+                    <td>#{{ comp.id }}</td>
+                    <td>
+                        {% if comp.logo %}
+                        <img src="{{ comp.logo.url }}" alt="{{ comp.name }}" style="width: 36px; height: 36px; object-fit: contain; border-radius: 6px; background: rgba(255,255,255,0.06); padding: 2px; border: 1px solid var(--border-color);">
+                        {% else %}
+                        <span style="color: var(--text-muted); font-size: 0.82rem;"><i class="fa-solid fa-trophy"></i> No Logo</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div style="display: flex; flex-direction: column; gap: 4px;">
+                            <strong>{{ comp.name }}</strong>
+                            {% if comp.name_image %}
+                            <img src="{{ comp.name_image.url }}" alt="{{ comp.name }}" style="max-height: 28px; width: auto; object-fit: contain;">
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td><span class="badge badge-approved">{{ comp.get_type_display }}</span></td>
+                    <td>{{ comp.year }}</td>
+                    <td>
+                        {% if comp.is_active %}
+                        <span class="badge badge-approved"><i class="fa-solid fa-circle-check"></i> Active</span>
+                        {% else %}
+                        <span class="badge badge-rejected">Archived</span>
+                        {% endif %}
+                    </td>
+                    <td style="text-align: right; white-space: nowrap;">
+                        <a href="{% url 'core:competition_edit' institution.slug comp.id %}" style="padding: 6px 14px; font-size: 0.82rem; font-weight: 700; border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; background: linear-gradient(135deg, rgba(56, 189, 248, 0.22), rgba(14, 165, 233, 0.4)); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.5); box-shadow: 0 4px 12px rgba(56, 189, 248, 0.15); transition: all 0.2s;" title="Edit Fest">
+                            <i class="fa-solid fa-pen-to-square"></i> Edit
+                        </a>
+                        <a href="{% url 'core:competition_delete' institution.slug comp.id %}" style="padding: 6px 14px; font-size: 0.82rem; font-weight: 700; border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; background: linear-gradient(135deg, rgba(244, 63, 94, 0.2), rgba(225, 29, 72, 0.35)); color: #fb7185; border: 1px solid rgba(244, 63, 94, 0.45); box-shadow: 0 4px 12px rgba(244, 63, 94, 0.12); transition: all 0.2s;" title="Delete Fest">
+                            <i class="fa-solid fa-trash-can"></i> Delete
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 36px;">
+                        <i class="fa-solid fa-trophy" style="font-size: 2.5rem; opacity: 0.3; margin-bottom: 12px; display: block;"></i>
+                        No fests configured yet. Click "Create New Fest" above to start.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

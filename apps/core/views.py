@@ -96,13 +96,23 @@ def competition_create_view(request, institution_slug):
         year = request.POST.get('year', 2026)
         logo = request.FILES.get('logo')
         name_image = request.FILES.get('name_image')
+        max_single = int(request.POST.get('max_single_programs_per_contestant', 0) or 0)
+        max_group = int(request.POST.get('max_group_programs_per_contestant', 0) or 0)
+        max_total = int(request.POST.get('max_total_programs_per_contestant', 0) or 0)
+        max_team_single = int(request.POST.get('max_team_participants_per_single_program', 0) or 0)
+        max_team_group = int(request.POST.get('max_team_entries_per_group_program', 0) or 0)
         Competition.objects.create(
             institution=institution,
             name=name,
             type=comp_type,
             year=year,
             logo=logo,
-            name_image=name_image
+            name_image=name_image,
+            max_single_programs_per_contestant=max_single,
+            max_group_programs_per_contestant=max_group,
+            max_total_programs_per_contestant=max_total,
+            max_team_participants_per_single_program=max_team_single,
+            max_team_entries_per_group_program=max_team_group,
         )
         messages.success(request, f"Fest '{name}' created successfully!")
         return redirect('core:competition_list', institution_slug=institution.slug)
@@ -117,10 +127,20 @@ def competition_edit_view(request, institution_slug, comp_id):
         name = request.POST.get('name')
         comp_type = request.POST.get('type')
         year = request.POST.get('year', 2026)
+        max_single = int(request.POST.get('max_single_programs_per_contestant', 0) or 0)
+        max_group = int(request.POST.get('max_group_programs_per_contestant', 0) or 0)
+        max_total = int(request.POST.get('max_total_programs_per_contestant', 0) or 0)
+        max_team_single = int(request.POST.get('max_team_participants_per_single_program', 0) or 0)
+        max_team_group = int(request.POST.get('max_team_entries_per_group_program', 0) or 0)
 
         comp.name = name
         comp.type = comp_type
         comp.year = year
+        comp.max_single_programs_per_contestant = max_single
+        comp.max_group_programs_per_contestant = max_group
+        comp.max_total_programs_per_contestant = max_total
+        comp.max_team_participants_per_single_program = max_team_single
+        comp.max_team_entries_per_group_program = max_team_group
 
         if request.POST.get('clear_logo') == '1':
             comp.logo = None
@@ -180,6 +200,10 @@ def category_list_view(request, institution_slug):
     competitions = Competition.objects.filter(institution=institution)
     
     if request.method == 'POST':
+        if not institution.allows_category_management:
+            messages.error(request, "🔒 Category creation and editing is currently locked in Settings.")
+            return redirect('core:category_list', institution_slug=institution.slug)
+
         comp_id = request.POST.get('competition_id')
         name = request.POST.get('name')
         description = request.POST.get('description', '')
@@ -224,6 +248,10 @@ def program_list_view(request, institution_slug):
     categories = list(Category.objects.filter(institution=institution))
 
     if request.method == 'POST':
+        if not institution.allows_program_management:
+            messages.error(request, "🔒 Program creation, editing, and import are currently locked in Settings.")
+            return redirect('core:program_list', institution_slug=institution.slug)
+
         action = request.POST.get('action', '')
 
         # Action 1: Create Single Program
@@ -341,6 +369,10 @@ def program_create_view(request, institution_slug):
     categories = Category.objects.filter(institution=institution)
     
     if request.method == 'POST':
+        if not institution.allows_program_management:
+            messages.error(request, "🔒 Program creation, editing, and import are currently locked in Settings.")
+            return redirect('core:program_list', institution_slug=institution.slug)
+
         comp_id = request.POST.get('competition_id')
         cat_id = request.POST.get('category_id')
         name = request.POST.get('name')
@@ -350,6 +382,7 @@ def program_create_view(request, institution_slug):
         duration = request.POST.get('duration_per_participant', 5)
         comp = get_object_or_404(Competition, id=comp_id, institution=institution)
         cat = get_object_or_404(Category, id=cat_id, institution=institution)
+        max_team = int(request.POST.get('max_participants_per_team', 0) or 0)
 
         Program.objects.create(
             institution=institution,
@@ -359,7 +392,8 @@ def program_create_view(request, institution_slug):
             is_group=is_group,
             program_type=p_type,
             presentation_mode=p_mode,
-            duration_per_participant=duration
+            duration_per_participant=duration,
+            max_participants_per_team=max_team
         )
         messages.success(request, f"Program '{name}' created successfully!")
         return redirect('core:program_list', institution_slug=institution.slug)
@@ -385,6 +419,7 @@ def program_batch_create_view(request, institution_slug):
         is_groups = request.POST.getlist('is_group[]')
         p_modes = request.POST.getlist('presentation_mode[]')
         durations = request.POST.getlist('duration[]')
+        team_limits = request.POST.getlist('max_participants_per_team[]')
 
         created_count = 0
         for i in range(len(names)):
@@ -398,6 +433,7 @@ def program_batch_create_view(request, institution_slug):
             is_group_val = (is_groups[i] == '1' or is_groups[i] == 'true' or is_groups[i] == 'on') if i < len(is_groups) else False
             p_mode = p_modes[i] if i < len(p_modes) else 'SEQUENTIAL'
             duration_val = int(durations[i]) if i < len(durations) and str(durations[i]).isdigit() else 5
+            max_team_val = int(team_limits[i]) if i < len(team_limits) and str(team_limits[i]).isdigit() else 0
 
             comp = Competition.objects.filter(id=comp_id, institution=institution).first()
             cat = Category.objects.filter(id=cat_id, institution=institution).first()
@@ -411,7 +447,8 @@ def program_batch_create_view(request, institution_slug):
                     is_group=is_group_val,
                     program_type=p_type,
                     presentation_mode=p_mode,
-                    duration_per_participant=duration_val
+                    duration_per_participant=duration_val,
+                    max_participants_per_team=max_team_val
                 )
                 created_count += 1
 
@@ -470,6 +507,10 @@ def program_bulk_upload_view(request, institution_slug):
     institution = get_object_or_404(Institution, slug=institution_slug)
 
     if request.method == 'POST' and request.FILES.get('excel_file'):
+        if not institution.allows_program_management:
+            messages.error(request, "🔒 Program creation, editing, and import are currently locked in Settings.")
+            return redirect('core:program_list', institution_slug=institution.slug)
+
         excel_file = request.FILES['excel_file']
         try:
             wb = openpyxl.load_workbook(excel_file)
@@ -545,6 +586,10 @@ def team_list_view(request, institution_slug):
     team_leaders = User.objects.filter(institution=institution, role='TEAM_LEADER')
     
     if request.method == 'POST':
+        if not institution.allows_team_management:
+            messages.error(request, "🔒 Team creation and editing is currently locked in Settings.")
+            return redirect('core:team_list', institution_slug=institution.slug)
+
         comp_id = request.POST.get('competition_id')
         name = request.POST.get('name')
         code_letter = request.POST.get('code_letter', '').strip().upper()
@@ -616,6 +661,10 @@ def contestant_create_view(request, institution_slug):
     teams = Team.objects.filter(institution=institution)
 
     if request.method == 'POST':
+        if not institution.allows_contestant_registration:
+            messages.error(request, "🔒 Contestant registration, editing, and bulk upload are currently locked in Settings.")
+            return redirect('core:contestant_list', institution_slug=institution.slug)
+
         comp_id = request.POST.get('competition_id')
         team_id = request.POST.get('team_id')
         cat_id = request.POST.get('category_id')
@@ -657,6 +706,10 @@ def contestant_batch_create_view(request, institution_slug):
     teams = Team.objects.filter(institution=institution)
 
     if request.method == 'POST':
+        if not institution.allows_contestant_registration:
+            messages.error(request, "🔒 Contestant registration, editing, and bulk upload are currently locked in Settings.")
+            return redirect('core:contestant_list', institution_slug=institution.slug)
+
         comp_ids = request.POST.getlist('competition_id[]')
         team_ids = request.POST.getlist('team_id[]')
         cat_ids = request.POST.getlist('category_id[]')
@@ -745,6 +798,10 @@ def contestant_bulk_upload_view(request, institution_slug):
     institution = get_object_or_404(Institution, slug=institution_slug)
 
     if request.method == 'POST' and request.FILES.get('excel_file'):
+        if not institution.allows_contestant_registration:
+            messages.error(request, "🔒 Contestant registration, editing, and bulk upload are currently locked in Settings.")
+            return redirect('core:contestant_list', institution_slug=institution.slug)
+
         excel_file = request.FILES['excel_file']
         try:
             wb = openpyxl.load_workbook(excel_file)
@@ -1234,6 +1291,9 @@ def points_config_view(request, institution_slug):
     config, created = PointsConfig.objects.get_or_create(institution=institution)
 
     if request.method == 'POST':
+        enable_grades = request.POST.get('enable_grades') in ['1', 'true', 'on', True]
+        config.enable_grades = enable_grades
+
         # Single Item Rules
         config.single_rank_1_points = int(request.POST.get('single_rank_1_points', 5))
         config.single_rank_2_points = int(request.POST.get('single_rank_2_points', 3))
@@ -1259,7 +1319,10 @@ def points_config_view(request, institution_slug):
         config.grade_c_threshold = int(request.POST.get('grade_c_threshold', 60))
 
         config.save()
-        messages.success(request, "Points & grade rules for Single and Group items updated successfully!")
+        if enable_grades:
+            messages.success(request, "Points & grade rules for Single and Group items updated successfully!")
+        else:
+            messages.success(request, "⚡ Ranks-Only Mode Active: Points awarded for 1st, 2nd & 3rd ranks only. Grade columns are hidden.")
 
     return render(request, 'core/points_config.html', {'institution': institution, 'config': config})
 
@@ -1278,6 +1341,8 @@ def settings_view(request, institution_slug):
     if request.method == 'POST':
         action = request.POST.get('action')
         if action == 'update_points':
+            enable_grades = request.POST.get('enable_grades') in ['1', 'true', 'on', True]
+            config.enable_grades = enable_grades
             config.single_rank_1_points = int(request.POST.get('single_rank_1_points', 5))
             config.single_rank_2_points = int(request.POST.get('single_rank_2_points', 3))
             config.single_rank_3_points = int(request.POST.get('single_rank_3_points', 1))
@@ -1313,15 +1378,57 @@ def settings_view(request, institution_slug):
             from .services import auto_generate_all_chest_numbers
             count = auto_generate_all_chest_numbers(institution, overwrite=True)
             messages.success(request, f"🔄 Successfully re-generated sequential chest numbers for {count} contestants across categories!")
+        elif action == 'update_participation_limits':
+            comp_id = request.POST.get('competition_id')
+            target_comps = Competition.objects.filter(institution=institution)
+            if comp_id and str(comp_id).isdigit():
+                target_comps = target_comps.filter(id=comp_id)
+
+            max_single = int(request.POST.get('max_single_programs_per_contestant', 0) or 0)
+            max_group = int(request.POST.get('max_group_programs_per_contestant', 0) or 0)
+            max_total = int(request.POST.get('max_total_programs_per_contestant', 0) or 0)
+            max_team_single = int(request.POST.get('max_team_participants_per_single_program', 0) or 0)
+            max_team_group = int(request.POST.get('max_team_entries_per_group_program', 0) or 0)
+
+            for comp in target_comps:
+                comp.max_single_programs_per_contestant = max_single
+                comp.max_group_programs_per_contestant = max_group
+                comp.max_total_programs_per_contestant = max_total
+                comp.max_team_participants_per_single_program = max_team_single
+                comp.max_team_entries_per_group_program = max_team_group
+                comp.save(update_fields=[
+                    'max_single_programs_per_contestant', 
+                    'max_group_programs_per_contestant', 
+                    'max_total_programs_per_contestant',
+                    'max_team_participants_per_single_program',
+                    'max_team_entries_per_group_program'
+                ])
+
+            s_text = f"{max_single} Single Items" if max_single > 0 else "Unlimited Single Items"
+            g_text = f"{max_group} Group Items" if max_group > 0 else "Unlimited Group Items"
+            t_text = f", {max_total} Total Items" if max_total > 0 else ""
+            ts_text = f", {max_team_single}/Team in Single" if max_team_single > 0 else ""
+            tg_text = f", {max_team_group} Groups/Team in Group" if max_team_group > 0 else ""
+            messages.success(request, f"🎯 Program & Team Participation Limits updated successfully ({s_text}, {g_text}{t_text}{ts_text}{tg_text})!")
         elif action == 'create_competition':
             name = request.POST.get('name')
             comp_type = request.POST.get('type')
             year = request.POST.get('year', 2026)
+            max_single = int(request.POST.get('max_single_programs_per_contestant', 0) or 0)
+            max_group = int(request.POST.get('max_group_programs_per_contestant', 0) or 0)
+            max_total = int(request.POST.get('max_total_programs_per_contestant', 0) or 0)
+            max_team_single = int(request.POST.get('max_team_participants_per_single_program', 0) or 0)
+            max_team_group = int(request.POST.get('max_team_entries_per_group_program', 0) or 0)
             Competition.objects.create(
                 institution=institution,
                 name=name,
                 type=comp_type,
-                year=year
+                year=year,
+                max_single_programs_per_contestant=max_single,
+                max_group_programs_per_contestant=max_group,
+                max_total_programs_per_contestant=max_total,
+                max_team_participants_per_single_program=max_team_single,
+                max_team_entries_per_group_program=max_team_group,
             )
         elif action == 'toggle_developer_access':
             institution.allow_developer_access = not institution.allow_developer_access
@@ -1391,6 +1498,257 @@ def settings_view(request, institution_slug):
 
 
 @login_required
+def settings_fests_view(request, institution_slug):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    competitions = Competition.objects.filter(institution=institution).order_by('-year', '-id')
+    return render(request, 'core/settings/settings_fests.html', {
+        'institution': institution,
+        'competitions': competitions,
+    })
+
+
+@login_required
+def settings_participation_limits_view(request, institution_slug):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    competitions = Competition.objects.filter(institution=institution).order_by('-year', '-id')
+
+    if request.method == 'POST':
+        comp_id = request.POST.get('competition_id')
+        target_comps = Competition.objects.filter(institution=institution)
+        if comp_id and str(comp_id).isdigit():
+            target_comps = target_comps.filter(id=comp_id)
+
+        max_single = int(request.POST.get('max_single_programs_per_contestant', 0) or 0)
+        max_group = int(request.POST.get('max_group_programs_per_contestant', 0) or 0)
+        max_total = int(request.POST.get('max_total_programs_per_contestant', 0) or 0)
+        max_team_single = int(request.POST.get('max_team_participants_per_single_program', 0) or 0)
+        max_team_group = int(request.POST.get('max_team_entries_per_group_program', 0) or 0)
+
+        for comp in target_comps:
+            comp.max_single_programs_per_contestant = max_single
+            comp.max_group_programs_per_contestant = max_group
+            comp.max_total_programs_per_contestant = max_total
+            comp.max_team_participants_per_single_program = max_team_single
+            comp.max_team_entries_per_group_program = max_team_group
+            comp.save(update_fields=[
+                'max_single_programs_per_contestant', 
+                'max_group_programs_per_contestant', 
+                'max_total_programs_per_contestant',
+                'max_team_participants_per_single_program',
+                'max_team_entries_per_group_program'
+            ])
+
+        s_text = f"{max_single} Single Items" if max_single > 0 else "Unlimited Single Items"
+        g_text = f"{max_group} Group Items" if max_group > 0 else "Unlimited Group Items"
+        t_text = f", {max_total} Total Items" if max_total > 0 else ""
+        ts_text = f", {max_team_single}/Team in Single" if max_team_single > 0 else ""
+        tg_text = f", {max_team_group} Groups/Team in Group" if max_team_group > 0 else ""
+        messages.success(request, f"🎯 Program & Team Participation Limits updated successfully ({s_text}, {g_text}{t_text}{ts_text}{tg_text})!")
+        return redirect('core:settings_participation_limits', institution_slug=institution.slug)
+
+    return render(request, 'core/settings/settings_participation_limits.html', {
+        'institution': institution,
+        'competitions': competitions,
+    })
+
+
+@login_required
+def settings_chest_numbers_view(request, institution_slug):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        if action == 'update_chest_ranges':
+            base_cats = Category.objects.filter(institution=institution, is_common=False)
+            for cat in base_cats:
+                val = request.POST.get(f'start_chest_no_{cat.id}')
+                if val and str(val).isdigit():
+                    cat.start_chest_no = int(val)
+                    cat.save()
+            messages.success(request, "Chest number starting ranges updated successfully!")
+        elif action == 'auto_generate_chest_nos':
+            from .services import auto_generate_all_chest_numbers
+            count = auto_generate_all_chest_numbers(institution, overwrite=True)
+            messages.success(request, f"🔄 Successfully re-generated sequential chest numbers for {count} contestants across categories!")
+        return redirect('core:settings_chest_numbers', institution_slug=institution.slug)
+
+    base_categories = Category.objects.filter(institution=institution, is_common=False).order_by('id')
+    from .services import get_default_start_chest_no_for_category
+    for cat in base_categories:
+        cat.suggested_start_chest_no = get_default_start_chest_no_for_category(cat)
+
+    return render(request, 'core/settings/settings_chest_numbers.html', {
+        'institution': institution,
+        'base_categories': base_categories,
+    })
+
+
+@login_required
+def settings_public_portal_view(request, institution_slug):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        if action == 'toggle_public_suspended':
+            institution.is_public_suspended = not institution.is_public_suspended
+            institution.save(update_fields=['is_public_suspended'])
+            if institution.is_public_suspended:
+                messages.warning(request, "⏸️ Public Portal Link has been SUSPENDED. External visitors cannot access live results until enabled.")
+            else:
+                messages.success(request, "✅ Public Portal Link is now ACTIVE & LIVE for all visitors.")
+        return redirect('core:settings_public_portal', institution_slug=institution.slug)
+
+    return render(request, 'core/settings/settings_public_portal.html', {
+        'institution': institution,
+    })
+
+
+@login_required
+def settings_support_access_view(request, institution_slug):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        if action == 'toggle_developer_access':
+            institution.allow_developer_access = not institution.allow_developer_access
+            institution.save(update_fields=['allow_developer_access'])
+            if institution.allow_developer_access:
+                messages.success(request, "🔓 Developer / Superadmin Support Access is now ENABLED. Developer can view your workspace to assist you.")
+            else:
+                messages.info(request, "🔒 Developer / Superadmin Support Access is now DISABLED.")
+        return redirect('core:settings_support_access', institution_slug=institution.slug)
+
+    return render(request, 'core/settings/settings_support_access.html', {
+        'institution': institution,
+    })
+
+
+@login_required
+def settings_addons_view(request, institution_slug):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        if action == 'toggle_cert_addon' and (request.user.is_superuser or (hasattr(request.user, 'is_developer') and request.user.is_developer)):
+            addon = AddOn.objects.filter(code='certificate-generation', is_active=True).first()
+            if addon:
+                from apps.tenants.models import GrantedAddOn, AddOnRequest
+                grant, created = GrantedAddOn.objects.get_or_create(institution=institution, add_on=addon, defaults={'is_active': True})
+                if not created:
+                    grant.is_active = not grant.is_active
+                    grant.save()
+                req_obj = AddOnRequest.objects.filter(institution=institution, add_on=addon).first()
+                if req_obj:
+                    req_obj.status = 'approved' if grant.is_active else 'rejected'
+                    req_obj.save(update_fields=['status'])
+        elif action == 'toggle_contestant_addon' and (request.user.is_superuser or (hasattr(request.user, 'is_developer') and request.user.is_developer)):
+            addon = AddOn.objects.filter(code='contestant-user-creation', is_active=True).first()
+            if addon:
+                from apps.tenants.models import GrantedAddOn, AddOnRequest
+                grant, created = GrantedAddOn.objects.get_or_create(institution=institution, add_on=addon, defaults={'is_active': True})
+                if not created:
+                    grant.is_active = not grant.is_active
+                    grant.save()
+                req_obj = AddOnRequest.objects.filter(institution=institution, add_on=addon).first()
+                if req_obj:
+                    req_obj.status = 'approved' if grant.is_active else 'rejected'
+                    req_obj.save(update_fields=['status'])
+                status_str = "ACTIVATED (ON)" if grant.is_active else "DEACTIVATED (OFF)"
+                messages.success(request, f"Contestant User Creation & Login Portal is now {status_str} for {institution.name}!")
+        return redirect('core:settings_addons', institution_slug=institution.slug)
+
+    has_cert_addon = institution.has_add_on('certificate-generation')
+    cert_addon = AddOn.objects.filter(code='certificate-generation', is_active=True).first()
+    has_contestant_addon = institution.has_add_on('contestant-user-creation')
+    contestant_addon = AddOn.objects.filter(code='contestant-user-creation', is_active=True).first()
+
+    return render(request, 'core/settings/settings_addons.html', {
+        'institution': institution,
+        'has_cert_addon': has_cert_addon,
+        'cert_addon': cert_addon,
+        'has_contestant_addon': has_contestant_addon,
+        'contestant_addon': contestant_addon,
+    })
+
+
+@login_required
+def settings_operations_view(request, institution_slug):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    if request.user.is_judge:
+        messages.error(request, "Permission Denied: Judges cannot access operational settings.")
+        return redirect('core:scoring_program_list', institution_slug=institution.slug)
+
+    competitions = Competition.objects.filter(institution=institution).order_by('-year', '-id')
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        comp_id = request.POST.get('competition_id')
+        target_comps = Competition.objects.filter(institution=institution)
+        if comp_id and str(comp_id).isdigit():
+            target_comps = target_comps.filter(id=comp_id)
+
+        if action == 'save_locks':
+            allow_team = request.POST.get('allow_team_management') in ['1', 'true', 'on', True]
+            allow_cat = request.POST.get('allow_category_management') in ['1', 'true', 'on', True]
+            allow_prog = request.POST.get('allow_program_management') in ['1', 'true', 'on', True]
+            allow_cont = request.POST.get('allow_contestant_registration') in ['1', 'true', 'on', True]
+            allow_assign = request.POST.get('allow_program_assignment') in ['1', 'true', 'on', True]
+
+            for comp in target_comps:
+                comp.allow_team_management = allow_team
+                comp.allow_category_management = allow_cat
+                comp.allow_program_management = allow_prog
+                comp.allow_contestant_registration = allow_cont
+                comp.allow_program_assignment = allow_assign
+                comp.save(update_fields=[
+                    'allow_team_management',
+                    'allow_category_management',
+                    'allow_program_management',
+                    'allow_contestant_registration',
+                    'allow_program_assignment'
+                ])
+            messages.success(request, "🔐 Operational permissions & data entry locks updated successfully!")
+
+        elif action == 'unlock_all':
+            for comp in target_comps:
+                comp.allow_team_management = True
+                comp.allow_category_management = True
+                comp.allow_program_management = True
+                comp.allow_contestant_registration = True
+                comp.allow_program_assignment = True
+                comp.save(update_fields=[
+                    'allow_team_management',
+                    'allow_category_management',
+                    'allow_program_management',
+                    'allow_contestant_registration',
+                    'allow_program_assignment'
+                ])
+            messages.success(request, "🔓 All operations (Teams, Categories, Programs, Contestants, Assignments) have been UNLOCKED.")
+
+        elif action == 'lock_all':
+            for comp in target_comps:
+                comp.allow_team_management = False
+                comp.allow_category_management = False
+                comp.allow_program_management = False
+                comp.allow_contestant_registration = False
+                comp.allow_program_assignment = False
+                comp.save(update_fields=[
+                    'allow_team_management',
+                    'allow_category_management',
+                    'allow_program_management',
+                    'allow_contestant_registration',
+                    'allow_program_assignment'
+                ])
+            messages.warning(request, "🔒 All operations have been LOCKED (Read-Only / Protected Mode Active).")
+
+        return redirect('core:settings_operations', institution_slug=institution.slug)
+
+    active_comp = competitions.filter(is_active=True).first() or competitions.first()
+
+    return render(request, 'core/settings/settings_operations.html', {
+        'institution': institution,
+        'competitions': competitions,
+        'active_comp': active_comp,
+    })
+
+
+@login_required
 def program_assign_contestants_view(request, institution_slug, program_id):
     institution = get_object_or_404(Institution, slug=institution_slug)
     program = get_object_or_404(Program, id=program_id, institution=institution)
@@ -1408,6 +1766,10 @@ def program_assign_contestants_view(request, institution_slug, program_id):
         existing_part_ids = set(Participation.objects.filter(program=program).values_list('contestant_id', flat=True))
 
     if request.method == 'POST':
+        if not institution.allows_program_assignment:
+            messages.error(request, "🔒 Program assignment is currently locked in Settings.")
+            return redirect('core:program_assign_contestants', institution_slug=institution.slug, program_id=program.id)
+
         selected_ids = request.POST.getlist('selected_ids[]')
         selected_ids_set = set(int(x) for x in selected_ids if str(x).isdigit())
 
@@ -1420,6 +1782,41 @@ def program_assign_contestants_view(request, institution_slug, program_id):
                 )
             GroupParticipation.objects.filter(program=program).exclude(team_id__in=selected_ids_set).delete()
         else:
+            comp = program.competition
+            if comp and (comp.has_single_limit or comp.has_total_limit):
+                overlimit_errors = []
+                for contestant_id in selected_ids_set:
+                    c = Contestant.objects.filter(id=contestant_id, institution=institution).first()
+                    if not c:
+                        continue
+                    if contestant_id not in existing_part_ids:
+                        can_add, reason = c.can_enroll_single(1)
+                        if not can_add:
+                            overlimit_errors.append(f"#{c.chest_no} {c.name} ({reason})")
+
+                if overlimit_errors:
+                    messages.error(
+                        request,
+                        f"⚠️ Participation Limit Exceeded for contestant(s): {', '.join(overlimit_errors)}. Assignment was not saved."
+                    )
+                    return redirect('core:program_assign_contestants', institution_slug=institution.slug, program_id=program.id)
+
+            if program.has_team_limit:
+                from collections import Counter
+                selected_contestants = Contestant.objects.filter(id__in=selected_ids_set, institution=institution).select_related('team')
+                team_counts = Counter(c.team for c in selected_contestants if c.team)
+                team_overlimit_errors = []
+                for tm, count in team_counts.items():
+                    if count > program.effective_max_participants_per_team:
+                        team_overlimit_errors.append(f"Team '{tm.name}' ({count} selected / Max {program.effective_max_participants_per_team} allowed)")
+
+                if team_overlimit_errors:
+                    messages.error(
+                        request,
+                        f"⚠️ Team Participation Limit Exceeded for program '{program.name}': {', '.join(team_overlimit_errors)}. Assignment was not saved."
+                    )
+                    return redirect('core:program_assign_contestants', institution_slug=institution.slug, program_id=program.id)
+
             for contestant_id in selected_ids_set:
                 Participation.objects.get_or_create(
                     institution=institution,
@@ -1476,8 +1873,48 @@ def contestant_assign_programs_view(request, institution_slug, contestant_id):
             eligible_programs.append(prog)
 
     if request.method == 'POST':
+        if not institution.allows_program_assignment:
+            messages.error(request, "🔒 Program assignment is currently locked in Settings.")
+            return redirect('core:contestant_assign_programs', institution_slug=institution.slug, contestant_id=contestant.id)
+
         selected_prog_ids = request.POST.getlist('selected_program_ids[]')
         selected_prog_ids_set = set(int(x) for x in selected_prog_ids if str(x).isdigit())
+
+        comp = contestant.competition
+        if comp:
+            if comp.has_single_limit and len(selected_prog_ids_set) > comp.max_single_programs_per_contestant:
+                messages.error(
+                    request,
+                    f"⚠️ Single Program Limit Exceeded: Contestant #{contestant.chest_no} ({contestant.name}) can only participate in up to {comp.max_single_programs_per_contestant} single programs (you selected {len(selected_prog_ids_set)})."
+                )
+                return redirect('core:contestant_assign_programs', institution_slug=institution.slug, contestant_id=contestant.id)
+
+            if comp.has_total_limit:
+                current_group_count = contestant.group_programs_count
+                total_attempted = len(selected_prog_ids_set) + current_group_count
+                if total_attempted > comp.max_total_programs_per_contestant:
+                    messages.error(
+                        request,
+                        f"⚠️ Total Program Limit Exceeded: Contestant #{contestant.chest_no} ({contestant.name}) can participate in a maximum of {comp.max_total_programs_per_contestant} total programs ({len(selected_prog_ids_set)} single + {current_group_count} group = {total_attempted})."
+                    )
+                    return redirect('core:contestant_assign_programs', institution_slug=institution.slug, contestant_id=contestant.id)
+
+        if contestant.team:
+            team_limit_errors = []
+            for prog_id in selected_prog_ids_set:
+                if prog_id not in existing_prog_ids:
+                    prog_obj = Program.objects.filter(id=prog_id, institution=institution).first()
+                    if prog_obj and prog_obj.has_team_limit:
+                        can_team, reason = prog_obj.can_team_enroll(contestant.team, additional=1)
+                        if not can_team:
+                            team_limit_errors.append(reason)
+
+            if team_limit_errors:
+                messages.error(
+                    request,
+                    f"⚠️ Team Participation Limit Exceeded: {'; '.join(team_limit_errors)}"
+                )
+                return redirect('core:contestant_assign_programs', institution_slug=institution.slug, contestant_id=contestant.id)
 
         for prog_id in selected_prog_ids_set:
             Participation.objects.get_or_create(
@@ -1646,15 +2083,20 @@ def download_contestants_teamwise_pdf_view(request, institution_slug):
         else:
             teams = Team.objects.none()
             filename = f"{institution.slug}_contestants.pdf"
+        unassigned_contestants = []
     else:
         teams = Team.objects.filter(institution=institution).prefetch_related(
             'contestants', 'contestants__category'
         ).order_by('name')
         filename = f"{institution.slug}_contestants_teamwise.pdf"
+        unassigned_contestants = Contestant.objects.filter(
+            institution=institution, team__isnull=True
+        ).select_related('category').order_by('chest_no')
 
     context = {
         'institution': institution,
         'teams': teams,
+        'unassigned_contestants': unassigned_contestants,
         'generated_at': timezone.now()
     }
     return render_to_pdf('pdf/contestants_teamwise_pdf.html', context, filename, request=request)
@@ -1861,16 +2303,15 @@ def download_bulk_green_room_pdf_view(request, institution_slug):
         programs = programs.filter(category_id=int(category_id))
     programs = programs.order_by('category__name', 'name')
 
-    # Bulk Query 1: Single contestants with participations
-    single_parts = Contestant.objects.filter(
-        institution=institution,
-        participations__isnull=False
-    ).select_related('team', 'category').prefetch_related('participations').order_by('chest_no').distinct()
+    # Bulk Query 1: Single participations -> contestant list
+    single_parts = Participation.objects.filter(
+        institution=institution
+    ).select_related('contestant', 'contestant__team', 'contestant__category').order_by('contestant__chest_no')
 
     single_by_program = {}
-    for c in single_parts:
-        for p in c.participations.all():
-            single_by_program.setdefault(p.id, []).append(c)
+    for p in single_parts:
+        if p.contestant:
+            single_by_program.setdefault(p.program_id, []).append(p.contestant)
 
     # Bulk Query 2: Group participations
     group_parts = GroupParticipation.objects.filter(
@@ -1908,16 +2349,15 @@ def download_bulk_call_list_pdf_view(request, institution_slug):
         programs = programs.filter(category_id=int(category_id))
     programs = programs.order_by('category__name', 'name')
 
-    # Bulk Query 1: Single contestants with participations
-    single_parts = Contestant.objects.filter(
-        institution=institution,
-        participations__isnull=False
-    ).select_related('team', 'category').prefetch_related('participations').order_by('chest_no').distinct()
+    # Bulk Query 1: Single participations -> contestant list
+    single_parts = Participation.objects.filter(
+        institution=institution
+    ).select_related('contestant', 'contestant__team', 'contestant__category').order_by('contestant__chest_no')
 
     single_by_program = {}
-    for c in single_parts:
-        for p in c.participations.all():
-            single_by_program.setdefault(p.id, []).append(c)
+    for p in single_parts:
+        if p.contestant:
+            single_by_program.setdefault(p.program_id, []).append(p.contestant)
 
     # Bulk Query 2: Group participations
     group_parts = GroupParticipation.objects.filter(
@@ -2005,7 +2445,7 @@ def download_single_result_pdf_view(request, institution_slug, program_id):
         ).select_related('contestant', 'contestant__team').order_by('rank', '-marks'))
 
     winners = [p for p in all_parts if p.rank in [1, 2, 3]]
-    other_grade_holders = [p for p in all_parts if (not p.rank or p.rank > 3) and p.grade]
+    other_grade_holders = [p for p in all_parts if (not p.rank or p.rank > 3) and p.grade] if institution.has_grades else []
 
     context = {
         'institution': institution,
@@ -2040,7 +2480,7 @@ def download_all_results_pdf_view(request, institution_slug):
             ).select_related('contestant', 'contestant__team').order_by('rank', '-marks'))
 
         winners = [p for p in all_parts if p.rank in [1, 2, 3]]
-        other_grade_holders = [p for p in all_parts if (not p.rank or p.rank > 3) and p.grade]
+        other_grade_holders = [p for p in all_parts if (not p.rank or p.rank > 3) and p.grade] if institution.has_grades else []
 
         if winners or other_grade_holders:
             results_data.append({
@@ -2067,6 +2507,10 @@ def category_edit_view(request, institution_slug, category_id):
     base_categories = Category.objects.filter(institution=institution, is_common=False).exclude(id=category.id)
 
     if request.method == 'POST':
+        if not institution.allows_category_management:
+            messages.error(request, "🔒 Category creation and editing is currently locked in Settings.")
+            return redirect('core:category_list', institution_slug=institution.slug)
+
         comp_id = request.POST.get('competition_id')
         name = request.POST.get('name')
         description = request.POST.get('description', '')
@@ -2102,6 +2546,10 @@ def category_edit_view(request, institution_slug, category_id):
 def category_delete_view(request, institution_slug, category_id):
     institution = get_object_or_404(Institution, slug=institution_slug)
     category = get_object_or_404(Category, id=category_id, institution=institution)
+    if not institution.allows_category_management:
+        messages.error(request, "🔒 Category creation and editing is currently locked in Settings.")
+        return redirect('core:category_list', institution_slug=institution.slug)
+
     name = category.name
     category.delete()
     messages.success(request, f"Category '{name}' deleted successfully!")
@@ -2117,6 +2565,10 @@ def team_edit_view(request, institution_slug, team_id):
     team_leaders = User.objects.filter(institution=institution, role='TEAM_LEADER')
 
     if request.method == 'POST':
+        if not institution.allows_team_management:
+            messages.error(request, "🔒 Team creation and editing is currently locked in Settings.")
+            return redirect('core:team_list', institution_slug=institution.slug)
+
         comp_id = request.POST.get('competition_id')
         name = request.POST.get('name')
         code_letter = request.POST.get('code_letter', '').strip().upper()
@@ -2156,6 +2608,10 @@ def team_edit_view(request, institution_slug, team_id):
 def team_delete_view(request, institution_slug, team_id):
     institution = get_object_or_404(Institution, slug=institution_slug)
     team = get_object_or_404(Team, id=team_id, institution=institution)
+    if not institution.allows_team_management:
+        messages.error(request, "🔒 Team creation and editing is currently locked in Settings.")
+        return redirect('core:team_list', institution_slug=institution.slug)
+
     name = team.name
     team.delete()
     messages.success(request, f"Team '{name}' deleted successfully!")
@@ -2171,6 +2627,10 @@ def program_edit_view(request, institution_slug, program_id):
     categories = Category.objects.filter(institution=institution)
 
     if request.method == 'POST':
+        if not institution.allows_program_management:
+            messages.error(request, "🔒 Program creation, editing, and import are currently locked in Settings.")
+            return redirect('core:program_list', institution_slug=institution.slug)
+
         comp_id = request.POST.get('competition_id')
         cat_id = request.POST.get('category_id')
         name = request.POST.get('name')
@@ -2178,6 +2638,7 @@ def program_edit_view(request, institution_slug, program_id):
         p_type = request.POST.get('program_type', 'STAGE')
         p_mode = request.POST.get('presentation_mode', 'SEQUENTIAL')
         duration = request.POST.get('duration_per_participant', 5)
+        max_team = int(request.POST.get('max_participants_per_team', 0) or 0)
 
         comp = get_object_or_404(Competition, id=comp_id, institution=institution)
         cat = get_object_or_404(Category, id=cat_id, institution=institution)
@@ -2189,6 +2650,7 @@ def program_edit_view(request, institution_slug, program_id):
         program.program_type = p_type
         program.presentation_mode = p_mode
         program.duration_per_participant = int(duration) if str(duration).isdigit() else 5
+        program.max_participants_per_team = max_team
 
         program.save()
 
@@ -2207,6 +2669,10 @@ def program_edit_view(request, institution_slug, program_id):
 def program_delete_view(request, institution_slug, program_id):
     institution = get_object_or_404(Institution, slug=institution_slug)
     program = get_object_or_404(Program, id=program_id, institution=institution)
+    if not institution.allows_program_management:
+        messages.error(request, "🔒 Program creation, editing, and import are currently locked in Settings.")
+        return redirect('core:program_list', institution_slug=institution.slug)
+
     name = program.name
     program.delete()
     messages.success(request, f"Program '{name}' deleted successfully!")
@@ -2223,6 +2689,10 @@ def contestant_edit_view(request, institution_slug, contestant_id):
     teams = Team.objects.filter(institution=institution)
 
     if request.method == 'POST':
+        if not institution.allows_contestant_registration:
+            messages.error(request, "🔒 Contestant registration, editing, and bulk upload are currently locked in Settings.")
+            return redirect('core:contestant_list', institution_slug=institution.slug)
+
         chest_no = request.POST.get('chest_no')
         name = request.POST.get('name')
         comp_id = request.POST.get('competition_id')
@@ -2274,6 +2744,10 @@ def contestant_edit_view(request, institution_slug, contestant_id):
 def contestant_delete_view(request, institution_slug, contestant_id):
     institution = get_object_or_404(Institution, slug=institution_slug)
     contestant = get_object_or_404(Contestant, id=contestant_id, institution=institution)
+    if not institution.allows_contestant_registration:
+        messages.error(request, "🔒 Contestant registration, editing, and bulk upload are currently locked in Settings.")
+        return redirect('core:contestant_list', institution_slug=institution.slug)
+
     c_name = contestant.name
     chest_no = contestant.chest_no
     contestant.delete()
@@ -3738,7 +4212,35 @@ def group_assign_view(request, institution_slug, program_id=None):
                     messages.error(request, "Permission Denied: You cannot modify group entries for other teams.")
                     return redirect('core:group_assign', institution_slug=institution.slug)
             else:
+                if prog.has_team_limit:
+                    current_team_groups = GroupParticipation.objects.filter(program=prog, team=tm).count()
+                    if current_team_groups + 1 > prog.effective_max_participants_per_team:
+                        messages.error(request, f"⚠️ Team Entry Limit Exceeded: Team '{tm.name}' has reached the maximum allowed ({prog.effective_max_participants_per_team}) entries for program '{prog.name}'.")
+                        return redirect(f"{reverse('core:group_assign', kwargs={'institution_slug': institution.slug})}?program_id={prog.id}&team_id={tm.id}")
                 gp = GroupParticipation(institution=institution, program=prog, team=tm)
+
+            comp = prog.competition
+            all_candidate_ids = set(int(x) for x in member_ids if str(x).isdigit())
+            if capt:
+                all_candidate_ids.add(capt.id)
+
+            if comp and (comp.has_group_limit or comp.has_total_limit):
+                overlimit_errors = []
+                existing_gp_members = set(gp.contestants.values_list('id', flat=True)) if (group_part_id and gp.id) else set()
+                if group_part_id and gp.id and gp.captain_id:
+                    existing_gp_members.add(gp.captain_id)
+
+                for cid in all_candidate_ids:
+                    if cid not in existing_gp_members:
+                        c_obj = Contestant.objects.filter(id=cid, institution=institution).first()
+                        if c_obj:
+                            can_add, reason = c_obj.can_enroll_group(1)
+                            if not can_add:
+                                overlimit_errors.append(f"#{c_obj.chest_no} {c_obj.name} ({reason})")
+
+                if overlimit_errors:
+                    messages.error(request, f"⚠️ Group Program Limit Exceeded for contestant(s): {', '.join(overlimit_errors)}. Group entry was not saved.")
+                    return redirect(f"{reverse('core:group_assign', kwargs={'institution_slug': institution.slug})}?program_id={prog.id}&team_id={tm.id}")
 
             gp.group_name = group_name
             gp.captain = capt

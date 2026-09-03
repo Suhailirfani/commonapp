@@ -111,7 +111,7 @@
     <div class="info-section">
         Program: <strong>{{ program.name|upper }}</strong> | 
         Category: <strong>{{ program.category.name }}</strong> | 
-        Total Participants: <strong>{{ participants.count }}</strong> | 
+        Total Participants: <strong>{{ participants|length }}</strong> | 
         Date: <strong>{% now "F d, Y" %}</strong>
     </div>
 
@@ -140,7 +140,7 @@
                 <!-- Blank rows for extra entries -->
                 {% for i in "12345" %}
                     <tr>
-                        <td class="row-number">{{ participants.count|add:forloop.counter }}</td>
+                        <td class="row-number">{{ participants|length|add:forloop.counter }}</td>
                         <td class="chest-no"></td>
                         <td class="participant-name"></td>
                         <td class="code-letter"></td>

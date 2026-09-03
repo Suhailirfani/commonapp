@@ -147,7 +147,9 @@
                 <th class="chest-col">Chest No</th>
                 <th class="name-col left-align">Winner Name</th>
                 <th class="team-col">Team / House</th>
+                {% if institution.has_grades %}
                 <th class="grade-col">Grade</th>
+                {% endif %}
                 <th class="points-col">Points</th>
             </tr>
         </thead>
@@ -177,9 +179,11 @@
                 <td class="team-col">
                     {% if program.is_group %}{{ p.team.name }}{% else %}{{ p.contestant.team.name }}{% endif %}
                 </td>
+                {% if institution.has_grades %}
                 <td class="grade-col">
                     {{ p.grade|default:"-" }}
                 </td>
+                {% endif %}
                 <td class="points-col">
                     {{ p.total_points }}
                 </td>
@@ -191,9 +195,9 @@
     <div style="font-size: 8.5pt; font-style: italic; margin-bottom: 12px; color: #666;">No rank winners awarded for this program.</div>
     {% endif %}
 
+    {% if institution.has_grades and other_grade_holders %}
     <!-- OTHER GRADE HOLDERS SECTION -->
     <div class="section-title">⭐ OTHER GRADE HOLDERS</div>
-    {% if other_grade_holders %}
     <table>
         <thead>
             <tr>
@@ -236,8 +240,6 @@
             {% endfor %}
         </tbody>
     </table>
-    {% else %}
-    <div style="font-size: 8.5pt; font-style: italic; margin-bottom: 12px; color: #666;">No additional grade holders recorded.</div>
     {% endif %}
 
     <div class="signature-section">

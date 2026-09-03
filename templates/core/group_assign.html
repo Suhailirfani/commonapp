@@ -66,15 +66,27 @@
                     <span style="color: var(--accent-amber); font-size: 0.8rem; display: block;">⭐ Pick 1 Captain radio button next to selected members (Captain's name shows at Mark Entry & Results)</span>
                 </label>
 
-                <div style="max-height: 300px; overflow-y: auto; background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); border-radius: 8px; padding: 12px;">
+                <div style="max-height: 320px; overflow-y: auto; background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); border-radius: 8px; padding: 12px;">
                     {% for c in eligible_contestants %}
-                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
-                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.9rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05); gap: 10px;">
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.9rem; flex: 1;">
                             <input type="checkbox" name="member_ids[]" value="{{ c.id }}" class="member-check" onchange="toggleCaptainRadio(this, '{{ c.id }}')">
-                            <strong>#{{ c.chest_no }} {{ c.name }}</strong>
+                            <div>
+                                <strong>#{{ c.chest_no }} {{ c.name }}</strong>
+                                <span style="display: block; font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">
+                                    {% if selected_program.competition.has_group_limit %}
+                                        Group items: <strong style="color: {% if c.group_programs_count >= selected_program.competition.max_group_programs_per_contestant %}#fb7185{% else %}var(--accent-cyan){% endif %};">{{ c.group_programs_count }}/{{ selected_program.competition.max_group_programs_per_contestant }}</strong>
+                                    {% else %}
+                                        Group items: {{ c.group_programs_count }} (Unlimited)
+                                    {% endif %}
+                                    {% if selected_program.competition.has_total_limit %}
+                                        | Total: {{ c.total_programs_count }}/{{ selected_program.competition.max_total_programs_per_contestant }}
+                                    {% endif %}
+                                </span>
+                            </div>
                         </label>
                         <div id="cap_wrap_{{ c.id }}" style="display: none;">
-                            <label style="color: var(--accent-amber); font-size: 0.82rem; font-weight: 700; cursor: pointer;">
+                            <label style="color: var(--accent-amber); font-size: 0.82rem; font-weight: 700; cursor: pointer; white-space: nowrap;">
                                 <input type="radio" name="captain_id" value="{{ c.id }}" class="captain-radio"> ⭐ Captain
                             </label>
                         </div>

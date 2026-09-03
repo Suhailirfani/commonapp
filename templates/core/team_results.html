@@ -67,7 +67,9 @@
                     <th style="width: 15%;">Team</th>
                     <th style="width: 20%;">Item / Program</th>
                     <th style="width: 10%;">Rank</th>
+                    {% if institution.has_grades %}
                     <th style="width: 10%;">Grade</th>
+                    {% endif %}
                     <th style="width: 10%;">Point</th>
                 </tr>
             </thead>
@@ -91,6 +93,7 @@
                         <span style="color: var(--text-muted);">-</span>
                         {% endif %}
                     </td>
+                    {% if institution.has_grades %}
                     <td>
                         {% if row.grade %}
                         <span class="badge badge-approved" style="background: rgba(6, 182, 212, 0.2); border: 1px solid var(--accent-cyan); color: var(--accent-cyan); font-weight: 700;">{{ row.grade }} Grade</span>
@@ -98,11 +101,12 @@
                         <span style="color: var(--text-muted);">-</span>
                         {% endif %}
                     </td>
+                    {% endif %}
                     <td><strong style="color: var(--accent-cyan); font-size: 1.15rem;">+{{ row.points }} pts</strong></td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 30px;">
+                    <td colspan="{% if institution.has_grades %}8{% else %}7{% endif %}" style="text-align: center; color: var(--text-muted); padding: 30px;">
                         No announced points recorded for {{ team.name }} yet.
                     </td>
                 </tr>
@@ -137,7 +141,7 @@
                         {{ row.rank }}
                     </span>
                     {% endif %}
-                    {% if row.grade %}
+                    {% if institution.has_grades and row.grade %}
                     <span class="badge" style="background: rgba(6, 182, 212, 0.2); border: 1px solid var(--accent-cyan); color: var(--accent-cyan); font-size: 0.72rem; font-weight: 700;">{{ row.grade }}</span>
                     {% endif %}
                 </div>

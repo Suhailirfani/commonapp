@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Public Results Portal Settings - {{ institution.name }}{% endblock %}
+
+{% block content %}
+<div class="page-header" style="margin-bottom: 24px;">
+    <div>
+        <a href="{% url 'core:settings' institution.slug %}" style="color: var(--accent-cyan); text-decoration: none; font-size: 0.9rem; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; margin-bottom: 8px;">
+            <i class="fa-solid fa-arrow-left"></i> Back to Settings Hub
+        </a>
+        <h2 style="font-size: 1.8rem; font-weight: 800;"><i class="fa-solid fa-globe" style="color: var(--accent-cyan);"></i> Public Results Portal Link & Access</h2>
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 4px;">Control whether external visitors, parents, and contestants can access live results, leaderboards, and standings.</p>
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr; gap: 24px;">
+
+    <!-- Card 1: Link & Live Preview -->
+    <div class="glass-card" style="border: 1px solid {% if institution.is_public_suspended %}#f43f5e{% else %}#0ea5e9{% endif %}; background: {% if institution.is_public_suspended %}linear-gradient(135deg, rgba(244, 63, 94, 0.08), rgba(24, 24, 27, 0.8)){% else %}linear-gradient(135deg, rgba(14, 165, 233, 0.08), rgba(24, 24, 27, 0.8)){% endif %};">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px;">
+            <div style="max-width: 650px;">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                    <span class="badge" style="{% if institution.is_public_suspended %}background: rgba(244, 63, 94, 0.2); color: #fb7185; border: 1px solid #f43f5e;{% else %}background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid #10b981;{% endif %} font-size: 0.85rem; font-weight: 800; padding: 6px 12px;">
+                        {% if institution.is_public_suspended %}<i class="fa-solid fa-ban"></i> CURRENTLY SUSPENDED (OFFLINE){% else %}<i class="fa-solid fa-circle-check"></i> CURRENTLY ACTIVE (LIVE ONLINE){% endif %}
+                    </span>
+                </div>
+                <h3 style="font-size: 1.4rem; font-weight: 800; color: #fff; margin: 0 0 10px 0;">
+                    {% if institution.is_public_suspended %}
+                    Public Link is Suspended
+                    {% else %}
+                    Public Link is Live & Accessible
+                    {% endif %}
+                </h3>
+                <p style="color: var(--text-muted); font-size: 0.9rem; margin: 0; line-height: 1.6;">
+                    {% if institution.is_public_suspended %}
+                    Visitors attempting to open your public link will see a polite suspension notice. No scores or announced winners are visible.
+                    {% else %}
+                    Anyone visiting your public link can view announced event results, house leaderboards, and schedule timings.
+                    {% endif %}
+                </p>
+
+                <div style="margin-top: 18px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                    <span style="font-weight: 700; font-size: 0.88rem; color: #fff;">Public URL:</span>
+                    <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(0, 0, 0, 0.35); padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border-color);">
+                        <a href="{% url 'public:home' institution.slug %}" id="publicUrlText" target="_blank" style="color: var(--accent-cyan); text-decoration: none; font-family: monospace; font-size: 0.95rem; font-weight: 700;">
+                            /public/{{ institution.slug }}/
+                        </a>
+                        <button type="button" onclick="copyPublicUrl(this)" style="background: none; border: none; color: var(--accent-cyan); cursor: pointer; padding: 4px 8px; font-size: 0.9rem;" title="Copy Public URL">
+                            <i class="fa-solid fa-copy"></i>
+                        </button>
+                    </div>
+                    <a href="{% url 'public:home' institution.slug %}" target="_blank" class="btn-primary" style="font-size: 0.85rem; padding: 8px 14px; background: rgba(255,255,255,0.08); box-shadow: none;">
+                        <i class="fa-solid fa-arrow-up-right-from-square"></i> Open Portal
+                    </a>
+                </div>
+            </div>
+
+            <form method="POST" style="margin: 0;">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="toggle_public_suspended">
+                {% if institution.is_public_suspended %}
+                <button type="submit" class="btn-primary" style="background: linear-gradient(135deg, #10b981, #059669); color: #fff; padding: 14px 24px; font-weight: 800; font-size: 1rem; border-radius: 12px; border: none; cursor: pointer; display: flex; align-items: center; gap: 10px; box-shadow: 0 4px 18px rgba(16, 185, 129, 0.35);">
+                    <i class="fa-solid fa-toggle-off" style="font-size: 1.4rem;"></i> Turn ON Public Link (Activate)
+                </button>
+                {% else %}
+                <button type="submit" class="btn-primary" style="background: rgba(244, 63, 94, 0.18); border: 1px solid #f43f5e; color: #fb7185; padding: 14px 24px; font-weight: 800; font-size: 1rem; border-radius: 12px; cursor: pointer; display: flex; align-items: center; gap: 10px; box-shadow: 0 4px 18px rgba(244, 63, 94, 0.2);">
+                    <i class="fa-solid fa-toggle-on" style="font-size: 1.4rem; color: #fb7185;"></i> Suspend Public Link (Turn OFF)
+                </button>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+
+</div>
+
+<script>
+function copyPublicUrl(btn) {
+    const fullUrl = window.location.origin + "{% url 'public:home' institution.slug %}";
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(fullUrl).then(() => {
+            btn.innerHTML = '<i class="fa-solid fa-check" style="color: #10b981;"></i>';
+            setTimeout(() => {
+                btn.innerHTML = '<i class="fa-solid fa-copy"></i>';
+            }, 2000);
+        }).catch(() => {
+            prompt('Copy this link:', fullUrl);
+        });
+    } else {
+        prompt('Copy this link:', fullUrl);
+    }
+}
+</script>
+{% endblock %}

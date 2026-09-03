@@ -3,16 +3,59 @@
 {% block title %}Points Rules - {{ institution.name }}{% endblock %}
 
 {% block content %}
-<div class="page-header">
+<div class="page-header" style="margin-bottom: 24px;">
     <div>
-        <a href="{% url 'core:settings' institution.slug %}" style="color: var(--text-muted); text-decoration: none;"><i class="fa-solid fa-arrow-left"></i> Back to Settings</a>
-        <h2 style="font-size: 1.8rem; font-weight: 800; margin-top: 4px;"><i class="fa-solid fa-sliders" style="color: var(--accent-cyan);"></i> Points & Grade Distribution Rules</h2>
+        <a href="{% url 'core:settings' institution.slug %}" style="color: var(--accent-cyan); text-decoration: none; font-size: 0.9rem; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; margin-bottom: 8px;">
+            <i class="fa-solid fa-arrow-left"></i> Back to Settings Hub
+        </a>
+        <h2 style="font-size: 1.8rem; font-weight: 800; margin: 0;"><i class="fa-solid fa-sliders" style="color: var(--accent-cyan);"></i> Points & Grading System Rules</h2>
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 4px;">Choose your evaluation mode (Ranks & Grades OR Ranks-Only) and set point values for positions.</p>
     </div>
 </div>
 
 <form method="POST">
     {% csrf_token %}
     <input type="hidden" name="action" value="update_points">
+
+    <!-- Mode Selector Card: Ranks & Grades vs Ranks Only -->
+    <div class="glass-card" style="margin-bottom: 24px; border: 1px solid rgba(255,255,255,0.18); background: linear-gradient(145deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.95));">
+        <h3 style="font-size: 1.2rem; font-weight: 800; color: #fff; margin: 0 0 12px 0; display: flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-scale-balanced" style="color: var(--accent-amber);"></i> Evaluation & Scoring Mode
+        </h3>
+        <p style="color: #cbd5e1; font-size: 0.88rem; margin: 0 0 16px 0;">
+            ഗ്രേഡുകൾക്ക് പോയിന്റുകൾ നൽകാത്ത സ്ഥാപനങ്ങൾക്ക് <strong>"Ranks Only Mode"</strong> തിരഞ്ഞെടുക്കാവുന്നതാണ്. ഈ മോഡിൽ റിസൾട്ട് ഷീറ്റുകളിലും പബ്ലിക് പോർട്ടലിലും ഗ്രേഡ് കോളം ഉണ്ടാവില്ല.
+        </p>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
+            
+            <!-- Option 1: Standard Mode (Ranks + Grades) -->
+            <label class="mode-card {% if config.enable_grades %}active-mode{% endif %}" id="mode_card_standard">
+                <div style="display: flex; align-items: flex-start; gap: 12px;">
+                    <input type="radio" name="enable_grades" value="1" {% if config.enable_grades %}checked{% endif %} onchange="toggleGradingMode(true)" style="margin-top: 4px; accent-color: var(--accent-cyan);">
+                    <div>
+                        <strong style="color: #fff; font-size: 1rem; display: block;">🏆 Ranks + Grades Mode (Default)</strong>
+                        <span style="font-size: 0.82rem; color: #94a3b8; line-height: 1.4; display: block; margin-top: 4px;">
+                            Awards points for 1st, 2nd, 3rd ranks + Letter Grades (A+, A, B, C). Grade columns are displayed in results & PDF sheets.
+                        </span>
+                    </div>
+                </div>
+            </label>
+
+            <!-- Option 2: Ranks Only Mode (No Grades) -->
+            <label class="mode-card {% if not config.enable_grades %}active-mode{% endif %}" id="mode_card_ranksonly">
+                <div style="display: flex; align-items: flex-start; gap: 12px;">
+                    <input type="radio" name="enable_grades" value="0" {% if not config.enable_grades %}checked{% endif %} onchange="toggleGradingMode(false)" style="margin-top: 4px; accent-color: var(--accent-amber);">
+                    <div>
+                        <strong style="color: #fbbf24; font-size: 1rem; display: block;">⚡ Ranks Only Mode (No Grade Points)</strong>
+                        <span style="font-size: 0.82rem; color: #cbd5e1; line-height: 1.4; display: block; margin-top: 4px;">
+                            Only 1st, 2nd & 3rd ranks receive points. <strong>No Grade column</strong> is shown on result sheets, PDFs, or public portals.
+                        </span>
+                    </div>
+                </div>
+            </label>
+
+        </div>
+    </div>
 
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px;">
 
@@ -22,7 +65,7 @@
                 <i class="fa-solid fa-user"></i> Single Items (Individual Events)
             </h3>
             
-            <h5 style="color: var(--text-muted); margin-bottom: 8px;">Rank Points</h5>
+            <h5 style="color: #fff; margin-bottom: 8px; font-size: 0.9rem;">Rank Points</h5>
             <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
                 <div class="form-group">
                     <label class="form-label">1st Rank</label>
@@ -38,23 +81,26 @@
                 </div>
             </div>
 
-            <h5 style="color: var(--text-muted); margin: 16px 0 8px 0;">Grade Points</h5>
-            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px;">
-                <div class="form-group">
-                    <label class="form-label">A+ Grade</label>
-                    <input type="number" name="single_grade_aplus_points" class="form-control" value="{{ config.single_grade_aplus_points }}" required min="0">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">A Grade</label>
-                    <input type="number" name="single_grade_a_points" class="form-control" value="{{ config.single_grade_a_points }}" required min="0">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">B Grade</label>
-                    <input type="number" name="single_grade_b_points" class="form-control" value="{{ config.single_grade_b_points }}" required min="0">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">C Grade</label>
-                    <input type="number" name="single_grade_c_points" class="form-control" value="{{ config.single_grade_c_points }}" required min="0">
+            <!-- Single Grade Points Block -->
+            <div id="single_grade_block" class="grade-section" style="{% if not config.enable_grades %}opacity: 0.35; pointer-events: none;{% endif %}">
+                <h5 style="color: #fff; margin: 18px 0 8px 0; font-size: 0.9rem;">Grade Points</h5>
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px;">
+                    <div class="form-group">
+                        <label class="form-label">A+ Grade</label>
+                        <input type="number" name="single_grade_aplus_points" id="s_aplus" class="form-control" value="{{ config.single_grade_aplus_points }}" required min="0">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">A Grade</label>
+                        <input type="number" name="single_grade_a_points" id="s_a" class="form-control" value="{{ config.single_grade_a_points }}" required min="0">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">B Grade</label>
+                        <input type="number" name="single_grade_b_points" id="s_b" class="form-control" value="{{ config.single_grade_b_points }}" required min="0">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">C Grade</label>
+                        <input type="number" name="single_grade_c_points" id="s_c" class="form-control" value="{{ config.single_grade_c_points }}" required min="0">
+                    </div>
                 </div>
             </div>
         </div>
@@ -65,7 +111,7 @@
                 <i class="fa-solid fa-people-group"></i> Group Items (Team Events)
             </h3>
             
-            <h5 style="color: var(--text-muted); margin-bottom: 8px;">Rank Points</h5>
+            <h5 style="color: #fff; margin-bottom: 8px; font-size: 0.9rem;">Rank Points</h5>
             <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
                 <div class="form-group">
                     <label class="form-label">1st Rank</label>
@@ -81,32 +127,40 @@
                 </div>
             </div>
 
-            <h5 style="color: var(--text-muted); margin: 16px 0 8px 0;">Grade Points</h5>
-            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px;">
-                <div class="form-group">
-                    <label class="form-label">A+ Grade</label>
-                    <input type="number" name="group_grade_aplus_points" class="form-control" value="{{ config.group_grade_aplus_points }}" required min="0">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">A Grade</label>
-                    <input type="number" name="group_grade_a_points" class="form-control" value="{{ config.group_grade_a_points }}" required min="0">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">B Grade</label>
-                    <input type="number" name="group_grade_b_points" class="form-control" value="{{ config.group_grade_b_points }}" required min="0">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">C Grade</label>
-                    <input type="number" name="group_grade_c_points" class="form-control" value="{{ config.group_grade_c_points }}" required min="0">
+            <!-- Group Grade Points Block -->
+            <div id="group_grade_block" class="grade-section" style="{% if not config.enable_grades %}opacity: 0.35; pointer-events: none;{% endif %}">
+                <h5 style="color: #fff; margin: 18px 0 8px 0; font-size: 0.9rem;">Grade Points</h5>
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px;">
+                    <div class="form-group">
+                        <label class="form-label">A+ Grade</label>
+                        <input type="number" name="group_grade_aplus_points" id="g_aplus" class="form-control" value="{{ config.group_grade_aplus_points }}" required min="0">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">A Grade</label>
+                        <input type="number" name="group_grade_a_points" id="g_a" class="form-control" value="{{ config.group_grade_a_points }}" required min="0">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">B Grade</label>
+                        <input type="number" name="group_grade_b_points" id="g_b" class="form-control" value="{{ config.group_grade_b_points }}" required min="0">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">C Grade</label>
+                        <input type="number" name="group_grade_c_points" id="g_c" class="form-control" value="{{ config.group_grade_c_points }}" required min="0">
+                    </div>
                 </div>
             </div>
         </div>
 
         <!-- Grade Cutoff Thresholds -->
-        <div class="glass-card" style="grid-column: 1 / -1;">
-            <h3 style="font-size: 1.2rem; font-weight: 700; color: var(--accent-indigo); margin-bottom: 16px;">
-                <i class="fa-solid fa-chart-line"></i> Grade Cutoff Threshold Marks (Out of 100)
-            </h3>
+        <div class="glass-card" id="cutoff_threshold_card" style="grid-column: 1 / -1; {% if not config.enable_grades %}opacity: 0.35; pointer-events: none;{% endif %}">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--accent-indigo); margin: 0;">
+                    <i class="fa-solid fa-chart-line"></i> Grade Cutoff Threshold Marks (Out of 100)
+                </h3>
+                <span id="grade_status_badge" class="badge {% if config.enable_grades %}badge-approved{% else %}badge-rejected{% endif %}">
+                    {% if config.enable_grades %}Grades Active{% else %}Grades Disabled (Ranks Only){% endif %}
+                </span>
+            </div>
             
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px;">
                 <div class="form-group">
@@ -126,14 +180,79 @@
                     <input type="number" name="grade_c_threshold" class="form-control" value="{{ config.grade_c_threshold }}" required min="0" max="100">
                 </div>
             </div>
-
-            <div style="display: flex; justify-content: flex-end; margin-top: 20px;">
-                <button type="submit" class="btn-primary" style="font-size: 1.05rem; padding: 12px 28px;">
-                    <i class="fa-solid fa-floppy-disk"></i> Save All Points & Grade Rules
-                </button>
-            </div>
         </div>
 
     </div>
+
+    <div style="display: flex; justify-content: flex-end; margin-top: 24px;">
+        <button type="submit" class="btn-primary" style="font-size: 1.05rem; padding: 12px 32px; font-weight: 700;">
+            <i class="fa-solid fa-floppy-disk"></i> Save Scoring Rules
+        </button>
+    </div>
 </form>
+
+<style>
+.mode-card {
+    background: rgba(15, 23, 42, 0.6);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: block;
+}
+.mode-card:hover {
+    border-color: rgba(255, 255, 255, 0.25);
+    background: rgba(15, 23, 42, 0.8);
+}
+.mode-card.active-mode {
+    border-color: var(--accent-cyan);
+    background: rgba(6, 182, 212, 0.12);
+    box-shadow: 0 4px 18px rgba(6, 182, 212, 0.2);
+}
+#mode_card_ranksonly.active-mode {
+    border-color: var(--accent-amber);
+    background: rgba(245, 158, 11, 0.12);
+    box-shadow: 0 4px 18px rgba(245, 158, 11, 0.2);
+}
+</style>
+
+<script>
+function toggleGradingMode(enable) {
+    const cardStd = document.getElementById('mode_card_standard');
+    const cardRankOnly = document.getElementById('mode_card_ranksonly');
+    const singleGradeBlock = document.getElementById('single_grade_block');
+    const groupGradeBlock = document.getElementById('group_grade_block');
+    const cutoffCard = document.getElementById('cutoff_threshold_card');
+    const badge = document.getElementById('grade_status_badge');
+
+    if (enable) {
+        cardStd.classList.add('active-mode');
+        cardRankOnly.classList.remove('active-mode');
+        singleGradeBlock.style.opacity = '1';
+        singleGradeBlock.style.pointerEvents = 'auto';
+        groupGradeBlock.style.opacity = '1';
+        groupGradeBlock.style.pointerEvents = 'auto';
+        cutoffCard.style.opacity = '1';
+        cutoffCard.style.pointerEvents = 'auto';
+        if (badge) {
+            badge.className = 'badge badge-approved';
+            badge.innerText = 'Grades Active';
+        }
+    } else {
+        cardStd.classList.remove('active-mode');
+        cardRankOnly.classList.add('active-mode');
+        singleGradeBlock.style.opacity = '0.35';
+        singleGradeBlock.style.pointerEvents = 'none';
+        groupGradeBlock.style.opacity = '0.35';
+        groupGradeBlock.style.pointerEvents = 'none';
+        cutoffCard.style.opacity = '0.35';
+        cutoffCard.style.pointerEvents = 'none';
+        if (badge) {
+            badge.className = 'badge badge-rejected';
+            badge.innerText = 'Grades Disabled (Ranks Only)';
+        }
+    }
+}
+</script>
 {% endblock %}

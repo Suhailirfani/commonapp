@@ -4,418 +4,445 @@
 {% block title %}Settings - {{ institution.name }}{% endblock %}
 
 {% block content %}
-<div class="page-header">
+<div class="page-header" style="margin-bottom: 24px;">
     <div>
-        <a href="{% url 'core:dashboard' institution.slug %}" style="color: var(--text-muted); text-decoration: none;"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</a>
-        <h2 style="font-size: 2rem; font-weight: 800; margin-top: 4px;"><i class="fa-solid fa-gear" style="color: var(--accent-indigo);"></i> Portal Settings & Configuration</h2>
-    </div>
-</div>
-
-<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px;">
-
-    <!-- Section 1: Fest Setup (Initial setup task) -->
-    <div class="glass-card" style="grid-column: 1 / -1;">
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
-            <div>
-                <h3 style="font-size: 1.3rem; font-weight: 700;"><i class="fa-solid fa-trophy" style="color: var(--accent-amber);"></i> Fest Setup</h3>
-                <p style="color: var(--text-muted); font-size: 0.85rem;">Setup your yearly fest (e.g. Mueeniyya Grand Fest 2026).</p>
-            </div>
-            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                <a href="{% url 'core:team_list' institution.slug %}" class="btn-primary" style="font-size: 0.9rem; background: rgba(255,255,255,0.08); box-shadow: none;">
-                    <i class="fa-solid fa-people-group"></i> Manage Teams / Houses
-                </a>
-                <a href="{% url 'core:competition_create' institution.slug %}" class="btn-primary" style="font-size: 0.9rem;">
-                    <i class="fa-solid fa-plus"></i> Create New Fest
-                </a>
-            </div>
-        </div>
-
-        <div class="table-responsive">
-            <table class="custom-table">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Fest Emblem</th>
-                        <th>Fest Name</th>
-                        <th>Type</th>
-                        <th>Year</th>
-                        <th>Status</th>
-                        <th style="text-align: right;">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for comp in competitions %}
-                    <tr>
-                        <td>#{{ comp.id }}</td>
-                        <td>
-                            {% if comp.logo %}
-                            <img src="{{ comp.logo.url }}" alt="{{ comp.name }}" style="width: 36px; height: 36px; object-fit: contain; border-radius: 6px; background: rgba(255,255,255,0.06); padding: 2px; border: 1px solid var(--border-color);">
-                            {% else %}
-                            <span style="color: var(--text-muted); font-size: 0.82rem;"><i class="fa-solid fa-trophy"></i> No Logo</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            <div style="display: flex; flex-direction: column; gap: 4px;">
-                                <strong>{{ comp.name }}</strong>
-                                {% if comp.name_image %}
-                                <img src="{{ comp.name_image.url }}" alt="{{ comp.name }}" style="max-height: 28px; width: auto; object-fit: contain;">
-                                {% endif %}
-                            </div>
-                        </td>
-                        <td><span class="badge badge-approved">{{ comp.get_type_display }}</span></td>
-                        <td>{{ comp.year }}</td>
-                        <td>
-                            {% if comp.is_active %}
-                            <span class="badge badge-approved"><i class="fa-solid fa-circle-check"></i> Active</span>
-                            {% else %}
-                            <span class="badge badge-rejected">Archived</span>
-                            {% endif %}
-                        </td>
-                        <td style="text-align: right; white-space: nowrap;">
-                            <a href="{% url 'core:competition_edit' institution.slug comp.id %}" style="padding: 6px 14px; font-size: 0.82rem; font-weight: 700; border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; background: linear-gradient(135deg, rgba(56, 189, 248, 0.22), rgba(14, 165, 233, 0.4)); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.5); box-shadow: 0 4px 12px rgba(56, 189, 248, 0.15); transition: all 0.2s;" title="Edit Fest">
-                                <i class="fa-solid fa-pen-to-square"></i> Edit
-                            </a>
-                            <a href="{% url 'core:competition_delete' institution.slug comp.id %}" style="padding: 6px 14px; font-size: 0.82rem; font-weight: 700; border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; background: linear-gradient(135deg, rgba(244, 63, 94, 0.2), rgba(225, 29, 72, 0.35)); color: #fb7185; border: 1px solid rgba(244, 63, 94, 0.45); box-shadow: 0 4px 12px rgba(244, 63, 94, 0.12); transition: all 0.2s;" title="Delete Fest">
-                                <i class="fa-solid fa-trash-can"></i> Delete
-                            </a>
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 24px;">
-                            No fests configured yet. Click "Create New Fest" above to start.
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    <!-- Section 2: Points Rules -->
-    <div class="glass-card">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-            <h3 style="font-size: 1.2rem; font-weight: 700;"><i class="fa-solid fa-sliders" style="color: var(--accent-cyan);"></i> Points & Grade Distribution</h3>
-            <a href="{% url 'core:points_config' institution.slug %}" class="btn-primary" style="font-size: 0.8rem; padding: 6px 12px;">
-                <i class="fa-solid fa-gear"></i> Full Rule Settings
-            </a>
-        </div>
-
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
-            <div style="background: rgba(255,255,255,0.03); border-radius: 8px; padding: 12px;">
-                <h5 style="color: var(--accent-emerald); font-size: 0.9rem; margin-bottom: 6px;"><i class="fa-solid fa-user"></i> Single Items (Individual)</h5>
-                <p style="font-size: 0.8rem; color: var(--text-muted); margin: 0;">
-                    Ranks: 1st={{ config.single_rank_1_points }}pts, 2nd={{ config.single_rank_2_points }}pts, 3rd={{ config.single_rank_3_points }}pts<br>
-                    Grades: A+={{ config.single_grade_aplus_points }}, A={{ config.single_grade_a_points }}, B={{ config.single_grade_b_points }}, C={{ config.single_grade_c_points }}
-                </p>
-            </div>
-            <div style="background: rgba(255,255,255,0.03); border-radius: 8px; padding: 12px;">
-                <h5 style="color: var(--accent-amber); font-size: 0.9rem; margin-bottom: 6px;"><i class="fa-solid fa-people-group"></i> Group Items (Teams)</h5>
-                <p style="font-size: 0.8rem; color: var(--text-muted); margin: 0;">
-                    Ranks: 1st={{ config.group_rank_1_points }}pts, 2nd={{ config.group_rank_2_points }}pts, 3rd={{ config.group_rank_3_points }}pts<br>
-                    Grades: A+={{ config.group_grade_aplus_points }}, A={{ config.group_grade_a_points }}, B={{ config.group_grade_b_points }}, C={{ config.group_grade_c_points }}
-                </p>
-            </div>
-        </div>
-
-        <a href="{% url 'core:points_config' institution.slug %}" class="btn-primary" style="width: 100%; justify-content: center; background: rgba(255,255,255,0.08); box-shadow: none;">
-            <i class="fa-solid fa-sliders"></i> Customize Single & Group Item Rules
+        <a href="{% url 'core:dashboard' institution.slug %}" style="color: var(--accent-cyan); text-decoration: none; font-size: 0.9rem; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; margin-bottom: 8px;">
+            <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
         </a>
+        <h2 style="font-size: 2rem; font-weight: 800; margin: 0; display: flex; align-items: center; gap: 10px;">
+            <i class="fa-solid fa-gear" style="color: var(--accent-indigo);"></i> Portal Settings & Configuration
+        </h2>
+        <p style="color: #94a3b8; font-size: 0.95rem; margin-top: 6px;">സെറ്റിംഗ്സുകൾ ക്രമീകരിക്കാൻ താഴെയുള്ള കാർഡുകളിൽ ക്ലിക്ക് ചെയ്യുക.</p>
     </div>
+</div>
 
-    <!-- Section 3: Institution Profile & Venues -->
-    <div class="glass-card" style="display: flex; flex-direction: column; justify-content: space-between;">
-        <div>
-            <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 16px;"><i class="fa-solid fa-building" style="color: var(--accent-emerald);"></i> Institution Workspace Details</h3>
-            <ul style="list-style: none; line-height: 2.2; font-size: 0.95rem;">
-                <li><strong>Institution Name:</strong> {{ institution.name }}</li>
-                <li><strong>Institution Slug:</strong> <code>{{ institution.slug }}</code></li>
-                <li><strong>Status:</strong> <span class="badge badge-approved"><i class="fa-solid fa-check"></i> {{ institution.get_status_display }}</span></li>
-                <li><strong>Contact Email:</strong> {{ institution.email }}</li>
-                <li>
-                    <strong>Public Results URL:</strong>
-                    <div style="display: inline-flex; align-items: center; gap: 8px; margin-left: 6px; background: rgba(14, 165, 233, 0.1); padding: 3px 8px; border-radius: 8px; border: 1px solid rgba(14, 165, 233, 0.25);">
-                        <a href="{% url 'public:home' institution.slug %}" id="settingsPublicUrlLink" target="_blank" style="color: var(--accent-cyan); text-decoration: none; font-family: monospace; font-size: 0.88rem;">/public/{{ institution.slug }}/</a>
-                        <button type="button" onclick="copySettingsPublicUrl(this)" style="background: none; border: none; color: var(--accent-cyan); cursor: pointer; padding: 2px 4px; font-size: 0.85rem;" title="Copy Public URL">
-                            <i class="fa-solid fa-copy"></i>
-                        </button>
-                    </div>
-                    {% if institution.is_public_suspended %}
-                    <span class="badge badge-rejected" style="margin-left: 6px; font-size: 0.75rem;"><i class="fa-solid fa-pause"></i> Suspended</span>
-                    {% else %}
-                    <span class="badge badge-approved" style="margin-left: 6px; font-size: 0.75rem;"><i class="fa-solid fa-circle-check"></i> Active</span>
-                    {% endif %}
-                </li>
-                {% if institution.active_add_ons %}
-                <li style="margin-top: 8px;">
-                    <strong style="color: var(--accent-emerald);">✨ Active Paid Add-Ons:</strong>
-                    <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px;">
-                        {% for grant in institution.active_add_ons %}
-                        <span class="badge badge-approved" style="font-size: 0.8rem;"><i class="fa-solid fa-puzzle-piece"></i> {{ grant.add_on.name }}</span>
-                        {% endfor %}
-                    </div>
-                </li>
-                {% endif %}
-            </ul>
-        </div>
-        <div style="margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 16px; display: flex; flex-direction: column; gap: 10px;">
-            <a href="{% url 'core:manage_schedule' institution.slug %}" class="btn-primary" style="width: 100%; justify-content: center; background: linear-gradient(135deg, var(--accent-cyan), #0284c7);">
-                <i class="fa-solid fa-calendar-days"></i> Fest Schedule & Auto-Scheduler Engine
-            </a>
-            <a href="{% url 'core:stage_list' institution.slug %}" class="btn-primary" style="width: 100%; justify-content: center; background: rgba(255,255,255,0.08); box-shadow: none;">
-                <i class="fa-solid fa-location-dot"></i> Manage Stages & Venues
-            </a>
-        </div>
-    </div>
+<!-- Settings Hub Cards Grid (2 per row on mobile) -->
+<div class="settings-grid">
 
-    <!-- Section: Public Portal Link Control / Suspend On-Off Switch -->
-    <div class="glass-card" style="grid-column: 1 / -1; border: 1px solid {% if institution.is_public_suspended %}#f43f5e{% else %}#0ea5e9{% endif %}; background: {% if institution.is_public_suspended %}linear-gradient(135deg, rgba(244, 63, 94, 0.08), rgba(24, 24, 27, 0.8)){% else %}linear-gradient(135deg, rgba(14, 165, 233, 0.08), rgba(24, 24, 27, 0.8)){% endif %};">
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
-            <div style="max-width: 650px;">
-                <h3 style="font-size: 1.15rem; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px; margin: 0 0 6px 0;">
-                    {% if institution.is_public_suspended %}
-                    <i class="fa-solid fa-ban" style="color: #f43f5e; font-size: 1.25rem;"></i> Public Portal Link: <span style="color: #f43f5e;">SUSPENDED (OFFLINE)</span>
-                    {% else %}
-                    <i class="fa-solid fa-globe" style="color: #0ea5e9; font-size: 1.25rem;"></i> Public Portal Link: <span style="color: #0ea5e9;">ACTIVE (LIVE ONLINE)</span>
-                    {% endif %}
-                </h3>
-                <p style="color: var(--text-muted); font-size: 0.85rem; margin: 0; line-height: 1.5;">
-                    {% if institution.is_public_suspended %}
-                    The public results portal (<code>/public/{{ institution.slug }}/</code>) is currently <strong>SUSPENDED</strong>. Visitors and contestants will see a temporary suspension notice instead of live event scores and leaderboards. Click below to re-activate.
-                    {% else %}
-                    The public results portal is currently <strong>ACTIVE & LIVE</strong>. Anyone visiting <code>/public/{{ institution.slug }}/</code> can view announced event results and team standings. Turn this <strong>OFF</strong> to temporarily suspend public access.
-                    {% endif %}
-                </p>
+    <!-- 1. Fest Setup -->
+    <a href="{% url 'core:settings_fests' institution.slug %}" class="settings-card card-amber">
+        <div class="settings-card-header">
+            <div class="settings-icon icon-amber">
+                <i class="fa-solid fa-trophy"></i>
             </div>
-            <form method="POST" style="margin: 0;">
-                {% csrf_token %}
-                <input type="hidden" name="action" value="toggle_public_suspended">
-                {% if institution.is_public_suspended %}
-                <button type="submit" class="btn-primary" style="background: linear-gradient(135deg, #10b981, #059669); color: #fff; padding: 10px 18px; font-weight: 700; border-radius: 10px; border: none; cursor: pointer; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);">
-                    <i class="fa-solid fa-toggle-off" style="font-size: 1.2rem;"></i> Turn ON Public Link (Activate)
-                </button>
+            <span class="settings-badge badge-amber">{{ competitions.count }} Fest{{ competitions.count|pluralize }}</span>
+        </div>
+        <div class="settings-card-body">
+            <h3 class="settings-title">Fest & Competitions</h3>
+            <p class="settings-desc">ഫെസ്റ്റ് വിവരങ്ങൾ, ലോഗോ, വർഷം എന്നിവ ക്രമീകരിക്കുക.</p>
+        </div>
+        <div class="settings-card-footer">
+            <span>തുറക്കുക</span>
+            <i class="fa-solid fa-arrow-right"></i>
+        </div>
+    </a>
+
+    <!-- 2. Participation Limits -->
+    <a href="{% url 'core:settings_participation_limits' institution.slug %}" class="settings-card card-cyan">
+        <div class="settings-card-header">
+            <div class="settings-icon icon-cyan">
+                <i class="fa-solid fa-user-shield"></i>
+            </div>
+            <span class="settings-badge badge-cyan">
+                {% if competitions.first.has_single_limit or competitions.first.has_team_single_limit or competitions.first.has_team_group_limit %}
+                Custom Rules
                 {% else %}
-                <button type="submit" class="btn-primary" style="background: rgba(244, 63, 94, 0.18); border: 1px solid #f43f5e; color: #fb7185; padding: 10px 18px; font-weight: 700; border-radius: 10px; cursor: pointer; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 14px rgba(244, 63, 94, 0.15);">
-                    <i class="fa-solid fa-toggle-on" style="font-size: 1.2rem; color: #fb7185;"></i> Suspend Public Link (Turn OFF)
-                </button>
+                Unlimited
                 {% endif %}
-            </form>
+            </span>
         </div>
-    </div>
+        <div class="settings-card-body">
+            <h3 class="settings-title">Participation Limits</h3>
+            <p class="settings-desc">മത്സരാർത്ഥികൾക്കും ടീമുകൾക്കുമുള്ള പ്രോഗ്രാം പരിധികൾ.</p>
+        </div>
+        <div class="settings-card-footer">
+            <span>തുറക്കുക</span>
+            <i class="fa-solid fa-arrow-right"></i>
+        </div>
+    </a>
 
-    <!-- Section 4: Developer / Superadmin Support Access Toggle -->
-    <div class="glass-card" style="grid-column: 1 / -1; border: 1px solid {% if institution.allow_developer_access %}#10b981{% else %}var(--border-color){% endif %}; background: {% if institution.allow_developer_access %}linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(24, 24, 27, 0.8)){% else %}var(--bg-glass){% endif %};">
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
-            <div style="max-width: 650px;">
-                <h3 style="font-size: 1.15rem; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px; margin: 0 0 6px 0;">
-                    {% if institution.allow_developer_access %}
-                    <i class="fa-solid fa-lock-open" style="color: #10b981;"></i> Developer Support Access: <span style="color: #10b981;">ENABLED (ON)</span>
-                    {% else %}
-                    <i class="fa-solid fa-lock" style="color: var(--text-muted);"></i> Developer Support Access: <span style="color: var(--text-muted);">DISABLED (OFF)</span>
-                    {% endif %}
-                </h3>
-                <p style="color: var(--text-muted); font-size: 0.85rem; margin: 0; line-height: 1.5;">
-                    Allow the platform Superadmin / Developer temporary access to your dashboard and workspace to help diagnose errors, troubleshoot issues, or assist with setup. Keep this <strong>OFF</strong> by default for full privacy.
-                </p>
+    <!-- 3. Points & Grade Distribution -->
+    <a href="{% url 'core:points_config' institution.slug %}" class="settings-card card-emerald">
+        <div class="settings-card-header">
+            <div class="settings-icon icon-emerald">
+                <i class="fa-solid fa-sliders"></i>
             </div>
-            <form method="POST" style="margin: 0;">
-                {% csrf_token %}
-                <input type="hidden" name="action" value="toggle_developer_access">
-                {% if institution.allow_developer_access %}
-                <button type="submit" class="btn-primary" style="background: rgba(225, 29, 72, 0.2); border: 1px solid #e11d48; color: #f43f5e; padding: 10px 18px; font-weight: 700; border-radius: 10px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
-                    <i class="fa-solid fa-toggle-on" style="font-size: 1.1rem;"></i> Turn OFF Support Access
-                </button>
+            <span class="settings-badge badge-emerald">Scoring System</span>
+        </div>
+        <div class="settings-card-body">
+            <h3 class="settings-title">Points & Grade Rules</h3>
+            <p class="settings-desc">സ്ഥാനങ്ങൾക്കും ഗ്രേഡുകൾക്കുമുള്ള പോയിന്റുകൾ നൽകുക.</p>
+        </div>
+        <div class="settings-card-footer">
+            <span>തുറക്കുക</span>
+            <i class="fa-solid fa-arrow-right"></i>
+        </div>
+    </a>
+
+    <!-- 4. Chest Numbers & Auto-Generation -->
+    <a href="{% url 'core:settings_chest_numbers' institution.slug %}" class="settings-card card-purple">
+        <div class="settings-card-header">
+            <div class="settings-icon icon-purple">
+                <i class="fa-solid fa-hashtag"></i>
+            </div>
+            <span class="settings-badge badge-purple">{{ base_categories.count }} Categories</span>
+        </div>
+        <div class="settings-card-body">
+            <h3 class="settings-title">Chest Number Ranges</h3>
+            <p class="settings-desc">വിഭാഗം അനുസരിച്ച് ചെസ്റ്റ് നമ്പർ നൽകലും പുനഃക്രമീകരണവും.</p>
+        </div>
+        <div class="settings-card-footer">
+            <span>തുറക്കുക</span>
+            <i class="fa-solid fa-arrow-right"></i>
+        </div>
+    </a>
+
+    <!-- 5. Public Results Portal -->
+    <a href="{% url 'core:settings_public_portal' institution.slug %}" class="settings-card card-blue">
+        <div class="settings-card-header">
+            <div class="settings-icon icon-blue">
+                <i class="fa-solid fa-globe"></i>
+            </div>
+            <span class="settings-badge {% if institution.is_public_suspended %}badge-rose{% else %}badge-emerald{% endif %}">
+                {% if institution.is_public_suspended %}Suspended{% else %}Live Online{% endif %}
+            </span>
+        </div>
+        <div class="settings-card-body">
+            <h3 class="settings-title">Public Results Link</h3>
+            <p class="settings-desc">പൊതുജനങ്ങൾക്കുള്ള റിസൾട്ട് ലിങ്ക് ഓൺ/ഓഫ് ചെയ്യുക.</p>
+        </div>
+        <div class="settings-card-footer">
+            <span>തുറക്കുക</span>
+            <i class="fa-solid fa-arrow-right"></i>
+        </div>
+    </a>
+
+    <!-- 6. Support & Security Access -->
+    <a href="{% url 'core:settings_support_access' institution.slug %}" class="settings-card card-teal">
+        <div class="settings-card-header">
+            <div class="settings-icon icon-teal">
+                <i class="fa-solid fa-headset"></i>
+            </div>
+            <span class="settings-badge {% if institution.allow_developer_access %}badge-emerald{% else %}badge-neutral{% endif %}">
+                {% if institution.allow_developer_access %}Support ON{% else %}Private (OFF){% endif %}
+            </span>
+        </div>
+        <div class="settings-card-body">
+            <h3 class="settings-title">Developer Support</h3>
+            <p class="settings-desc">സാങ്കേതിക സഹായത്തിനായി ഡെവലപ്പർക്ക് താൽക്കാലിക പ്രവേശനം നൽകുക.</p>
+        </div>
+        <div class="settings-card-footer">
+            <span>തുറക്കുക</span>
+            <i class="fa-solid fa-arrow-right"></i>
+        </div>
+    </a>
+
+    <!-- 7. Operations & Data Entry Locks -->
+    <a href="{% url 'core:settings_operations' institution.slug %}" class="settings-card card-rose">
+        <div class="settings-card-header">
+            <div class="settings-icon icon-rose">
+                <i class="fa-solid fa-lock"></i>
+            </div>
+            <span class="settings-badge badge-rose">
+                {% if institution.allows_team_management and institution.allows_category_management and institution.allows_program_management and institution.allows_contestant_registration and institution.allows_program_assignment %}
+                All Unlocked
                 {% else %}
-                <button type="submit" class="btn-primary" style="background: linear-gradient(135deg, #10b981, #059669); color: #fff; padding: 10px 18px; font-weight: 700; border-radius: 10px; border: none; cursor: pointer; display: flex; align-items: center; gap: 6px;">
-                    <i class="fa-solid fa-toggle-off" style="font-size: 1.1rem;"></i> Turn ON Support Access
-                </button>
+                Protected (Locks Active)
                 {% endif %}
-            </form>
+            </span>
         </div>
-    </div>
-
-    <!-- Section: Chest Number Generation & Category Ranges -->
-    <div class="glass-card" style="grid-column: 1 / -1;">
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
-            <div>
-                <h3 style="font-size: 1.3rem; font-weight: 700;"><i class="fa-solid fa-hashtag" style="color: var(--accent-amber);"></i> Category Chest Number Starting Ranges & Re-Generation</h3>
-                <p style="color: var(--text-muted); font-size: 0.85rem;">Set starting chest numbers for first-time contestant additions (e.g. Primary=1001, Junior=2001, Senior=3001).</p>
-            </div>
-            <form method="POST" style="margin: 0;">
-                {% csrf_token %}
-                <input type="hidden" name="action" value="auto_generate_chest_nos">
-                <button type="submit" class="btn-primary" style="background: linear-gradient(135deg, var(--accent-emerald), #059669); font-size: 0.88rem;" onclick="return confirm('Re-generate & renumber sequential chest numbers for ALL existing contestants category by category?');">
-                    <i class="fa-solid fa-arrows-rotate"></i> 🔄 Re-Generate All Chest Numbers
-                </button>
-            </form>
+        <div class="settings-card-body">
+            <h3 class="settings-title">Operations & Data Locks</h3>
+            <p class="settings-desc">ടീമുകൾ, കാറ്റഗറികൾ, മത്സരങ്ങൾ, മത്സരാർത്ഥികൾ ചേർക്കൽ ഓൺ/ഓഫ് ചെയ്യുക.</p>
         </div>
-
-        <form method="POST">
-            {% csrf_token %}
-            <input type="hidden" name="action" value="update_chest_ranges">
-
-            <div class="table-responsive">
-                <table class="custom-table">
-                    <thead>
-                        <tr>
-                            <th>Category Name</th>
-                            <th>Category Type</th>
-                            <th>Starting Chest Number</th>
-                            <th>Actions / Info</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for cat in base_categories %}
-                        <tr>
-                            <td><strong>{{ cat.name }}</strong></td>
-                            <td><span class="badge badge-approved">Base Category</span></td>
-                            <td>
-                                <input type="number" name="start_chest_no_{{ cat.id }}" value="{% if cat.start_chest_no and cat.start_chest_no != 1001 %}{{ cat.start_chest_no }}{% else %}{{ cat.suggested_start_chest_no }}{% endif %}" class="form-control" style="width: 140px; font-weight: 700; color: var(--accent-cyan);" min="1" required>
-                            </td>
-                            <td style="color: var(--text-muted); font-size: 0.85rem;">
-                                Contestants auto-sequence starting from #{% if cat.start_chest_no and cat.start_chest_no != 1001 %}{{ cat.start_chest_no }}{% else %}{{ cat.suggested_start_chest_no }}{% endif %}
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="4" style="text-align: center; color: var(--text-muted); padding: 20px;">
-                                No base categories found. Create base categories first.
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-
-            {% if base_categories %}
-            <div style="margin-top: 16px; text-align: right;">
-                <button type="submit" class="btn-primary">
-                    <i class="fa-solid fa-floppy-disk"></i> Save Chest Number Starting Ranges
-                </button>
-            </div>
-            {% endif %}
-        </form>
-    <!-- Paid Add-Ons & Feature Extensions Status -->
-    <div class="glass-card" style="margin-top: 30px; border-top: 4px solid #f59e0b;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
-            <div>
-                <h3 style="font-size: 1.25rem; font-weight: 700; margin: 0; color: #fff;">
-                    <i class="fa-solid fa-cubes" style="color: #f59e0b;"></i> Fest Feature Extensions & Add-Ons
-                </h3>
-                <p style="color: var(--text-muted); font-size: 0.85rem; margin: 4px 0 0 0;">
-                    Manage premium add-ons, certificate studios, and personal contestant dashboards for this fest.
-                </p>
-            </div>
-            {% if request.user.is_developer or request.user.is_superuser %}
-            <a href="{% url 'tenants:developer_addon_detail' 'certificate-generation' %}" class="btn-primary" style="background: linear-gradient(135deg, var(--accent-cyan), #0284c7); font-size: 0.82rem; padding: 6px 14px; text-decoration: none;">
-                <i class="fa-solid fa-sliders"></i> Open Developer Add-Ons Manager
-            </a>
-            {% endif %}
+        <div class="settings-card-footer">
+            <span>തുറക്കുക</span>
+            <i class="fa-solid fa-arrow-right"></i>
         </div>
+    </a>
 
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px;">
-            
-            <!-- Module 1: Winner Certificate Studio -->
-            <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid {% if has_cert_addon %}rgba(16, 185, 129, 0.4){% else %}rgba(245, 158, 11, 0.4){% endif %}; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between; gap: 12px;">
-                <div>
-                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
-                        <h4 style="margin: 0; font-size: 1.05rem; font-weight: 800; color: #fff;">
-                            <i class="fa-solid fa-award" style="color: #f59e0b;"></i> Winner Certificate Studio
-                        </h4>
-                        <span class="badge" style="{% if has_cert_addon %}background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid #10b981;{% else %}background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid #f59e0b;{% endif %} font-weight: 800; font-size: 0.75rem;">
-                            {% if has_cert_addon %}🟢 ACTIVE (ON){% else %}👑 PRO (OFF){% endif %}
-                        </span>
-                    </div>
-                    <p style="font-size: 0.82rem; color: var(--text-muted); margin: 0; line-height: 1.4;">
-                        Automated luxury merit certificates for 1st (Gold), 2nd (Silver), and 3rd (Bronze) place winners with 1-click bulk vector printing.
-                    </p>
-                </div>
-
-                <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 10px;">
-                    <a href="{% url 'core:certificate_studio' institution.slug %}" style="font-size: 0.82rem; color: var(--accent-cyan); text-decoration: none; font-weight: 700;">
-                        <i class="fa-solid fa-arrow-up-right-from-square"></i> Open Studio
-                    </a>
-
-                    {% if request.user.is_developer or request.user.is_superuser %}
-                    <form method="POST" style="margin: 0;">
-                        {% csrf_token %}
-                        <input type="hidden" name="action" value="toggle_cert_addon">
-                        <button type="submit" class="btn btn-sm" style="{% if has_cert_addon %}background: rgba(244, 63, 94, 0.2); color: #fb7185; border: 1px solid #f43f5e;{% else %}background: linear-gradient(135deg, #10b981, #059669); color: #fff; border: none;{% endif %} font-size: 0.78rem; font-weight: 800; padding: 6px 14px; border-radius: 8px; cursor: pointer;">
-                            {% if has_cert_addon %}<i class="fa-solid fa-ban"></i> Turn OFF{% else %}<i class="fa-solid fa-bolt"></i> Turn ON (Grant){% endif %}
-                        </button>
-                    </form>
-                    {% else %}
-                    <a href="{% url 'core:certificate_studio' institution.slug %}" class="btn-primary" style="padding: 6px 12px; font-size: 0.78rem; background: linear-gradient(135deg, #f59e0b, #d97706); color: #000; font-weight: 800;">
-                        {% if has_cert_addon %}Manage{% else %}Unlock PRO{% endif %}
-                    </a>
-                    {% endif %}
-                </div>
+    <!-- 7. Add-Ons & Feature Extensions -->
+    <a href="{% url 'core:settings_addons' institution.slug %}" class="settings-card card-orange">
+        <div class="settings-card-header">
+            <div class="settings-icon icon-orange">
+                <i class="fa-solid fa-cubes"></i>
             </div>
-
-            <!-- Module 2: Contestant Credentials Hub & Personal Portal -->
-            <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid {% if has_contestant_addon %}rgba(16, 185, 129, 0.4){% else %}rgba(245, 158, 11, 0.4){% endif %}; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between; gap: 12px;">
-                <div>
-                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
-                        <h4 style="margin: 0; font-size: 1.05rem; font-weight: 800; color: #fff;">
-                            <i class="fa-solid fa-users-gear" style="color: var(--accent-cyan);"></i> Pupil Portals & Credentials Hub
-                        </h4>
-                        <span class="badge" style="{% if has_contestant_addon %}background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid #10b981;{% else %}background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid #f59e0b;{% endif %} font-weight: 800; font-size: 0.75rem;">
-                            {% if has_contestant_addon %}🟢 ACTIVE (ON){% else %}👑 PRO (OFF){% endif %}
-                        </span>
-                    </div>
-                    <p style="font-size: 0.82rem; color: var(--text-muted); margin: 0; line-height: 1.4;">
-                        Bulk login account generation for all enrolled pupils to access personal schedules, stage venues, timings, and results.
-                    </p>
-                </div>
-
-                <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 10px;">
-                    <a href="{% url 'core:generate_contestant_credentials' institution.slug %}" style="font-size: 0.82rem; color: var(--accent-cyan); text-decoration: none; font-weight: 700;">
-                        <i class="fa-solid fa-arrow-up-right-from-square"></i> Open Credentials Hub
-                    </a>
-
-                    {% if request.user.is_developer or request.user.is_superuser %}
-                    <form method="POST" style="margin: 0;">
-                        {% csrf_token %}
-                        <input type="hidden" name="action" value="toggle_contestant_addon">
-                        <button type="submit" class="btn btn-sm" style="{% if has_contestant_addon %}background: rgba(244, 63, 94, 0.2); color: #fb7185; border: 1px solid #f43f5e;{% else %}background: linear-gradient(135deg, #10b981, #059669); color: #fff; border: none;{% endif %} font-size: 0.78rem; font-weight: 800; padding: 6px 14px; border-radius: 8px; cursor: pointer;">
-                            {% if has_contestant_addon %}<i class="fa-solid fa-ban"></i> Turn OFF{% else %}<i class="fa-solid fa-bolt"></i> Turn ON (Grant){% endif %}
-                        </button>
-                    </form>
-                    {% else %}
-                    <a href="{% url 'core:generate_contestant_credentials' institution.slug %}" class="btn-primary" style="padding: 6px 12px; font-size: 0.78rem; background: linear-gradient(135deg, #f59e0b, #d97706); color: #000; font-weight: 800;">
-                        {% if has_contestant_addon %}Manage{% else %}Unlock PRO{% endif %}
-                    </a>
-                    {% endif %}
-                </div>
-            </div>
-
+            <span class="settings-badge badge-orange">Pro Modules</span>
         </div>
-    </div>
+        <div class="settings-card-body">
+            <h3 class="settings-title">Extensions & Add-Ons</h3>
+            <p class="settings-desc">സർട്ടിഫിക്കറ്റ് പ്രിന്റിംഗ്, യൂസർ ലോഗിൻ പോർട്ടലുകൾ.</p>
+        </div>
+        <div class="settings-card-footer">
+            <span>തുറക്കുക</span>
+            <i class="fa-solid fa-arrow-right"></i>
+        </div>
+    </a>
+
+    <!-- 8. Venues & Auto-Scheduler -->
+    <a href="{% url 'core:manage_schedule' institution.slug %}" class="settings-card card-pink">
+        <div class="settings-card-header">
+            <div class="settings-icon icon-pink">
+                <i class="fa-solid fa-calendar-days"></i>
+            </div>
+            <span class="settings-badge badge-pink">Smart Engine</span>
+        </div>
+        <div class="settings-card-body">
+            <h3 class="settings-title">Schedules & Stages</h3>
+            <p class="settings-desc">സ്റ്റേജുകൾ ക്രമീകരിക്കലും ഓട്ടോമാറ്റിക് ഷെഡ്യൂളിംഗും.</p>
+        </div>
+        <div class="settings-card-footer">
+            <span>തുറക്കുക</span>
+            <i class="fa-solid fa-arrow-right"></i>
+        </div>
+    </a>
+
+    <!-- 9. Teams & Houses -->
+    <a href="{% url 'core:team_list' institution.slug %}" class="settings-card card-indigo">
+        <div class="settings-card-header">
+            <div class="settings-icon icon-indigo">
+                <i class="fa-solid fa-people-group"></i>
+            </div>
+            <span class="settings-badge badge-indigo">Houses Setup</span>
+        </div>
+        <div class="settings-card-body">
+            <h3 class="settings-title">Teams & Houses</h3>
+            <p class="settings-desc">ടീമുകൾ, ഹൗസുകൾ, നിറങ്ങൾ എന്നിവ നിയന്ത്രിക്കുക.</p>
+        </div>
+        <div class="settings-card-footer">
+            <span>തുറക്കുക</span>
+            <i class="fa-solid fa-arrow-right"></i>
+        </div>
+    </a>
+
+    <!-- 10. Categories -->
+    <a href="{% url 'core:category_list' institution.slug %}" class="settings-card card-green">
+        <div class="settings-card-header">
+            <div class="settings-icon icon-green">
+                <i class="fa-solid fa-tags"></i>
+            </div>
+            <span class="settings-badge badge-green">Age Categories</span>
+        </div>
+        <div class="settings-card-body">
+            <h3 class="settings-title">Categories Master</h3>
+            <p class="settings-desc">പ്രായപരിധി വിഭാഗങ്ങളും കാറ്റഗറികളും ഉണ്ടാക്കുക.</p>
+        </div>
+        <div class="settings-card-footer">
+            <span>തുറക്കുക</span>
+            <i class="fa-solid fa-arrow-right"></i>
+        </div>
+    </a>
 
 </div>
 
-<script>
-function copySettingsPublicUrl(btn) {
-    const fullUrl = window.location.origin + "{% url 'public:home' institution.slug %}";
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(fullUrl).then(() => {
-            btn.innerHTML = '<i class="fa-solid fa-check" style="color: #10b981;"></i>';
-            setTimeout(() => {
-                btn.innerHTML = '<i class="fa-solid fa-copy"></i>';
-            }, 2000);
-        }).catch(() => {
-            prompt('Copy this link:', fullUrl);
-        });
-    } else {
-        prompt('Copy this link:', fullUrl);
-    }
+<style>
+/* Responsive Grid: Multi-column on desktop, exactly 2 columns on mobile */
+.settings-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px;
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    const link = document.getElementById('settingsPublicUrlLink');
-    if (link) {
-        link.innerText = window.location.origin + "{% url 'public:home' institution.slug %}";
+/* Lighter, distinct card styling standing out from dark background */
+.settings-card {
+    background: linear-gradient(145deg, rgba(30, 41, 59, 0.88), rgba(24, 33, 47, 0.95));
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
+    border-radius: 14px;
+    padding: 18px;
+    text-decoration: none;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.settings-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    opacity: 0.85;
+    transition: opacity 0.25s, height 0.25s;
+}
+
+.settings-card:hover {
+    transform: translateY(-4px);
+    background: linear-gradient(145deg, rgba(39, 53, 76, 0.95), rgba(30, 41, 59, 0.98));
+    border-color: rgba(255, 255, 255, 0.3);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
+}
+
+.settings-card:hover::before {
+    opacity: 1;
+    height: 4px;
+}
+
+/* Card Top Row */
+.settings-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.settings-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.settings-badge {
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 4px 8px;
+    border-radius: 6px;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+}
+
+/* Card Content */
+.settings-title {
+    font-size: 1.08rem;
+    font-weight: 800;
+    color: #ffffff;
+    margin: 0 0 6px 0;
+    letter-spacing: -0.01em;
+}
+
+.settings-desc {
+    font-size: 0.83rem;
+    color: #cbd5e1; /* Clear, bright readable text */
+    margin: 0;
+    line-height: 1.5;
+    font-weight: 400;
+}
+
+/* Card Footer */
+.settings-card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    margin-top: 14px;
+    padding-top: 10px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #94a3b8;
+    transition: color 0.2s;
+}
+
+.settings-card:hover .settings-card-footer {
+    color: #ffffff;
+}
+
+.settings-card-footer i {
+    transition: transform 0.2s;
+}
+
+.settings-card:hover .settings-card-footer i {
+    transform: translateX(4px);
+}
+
+/* Specific Accent Variants */
+.card-amber::before { background: var(--accent-amber); }
+.card-amber:hover { border-color: rgba(245, 158, 11, 0.5); box-shadow: 0 12px 28px rgba(245, 158, 11, 0.15); }
+.icon-amber { background: rgba(245, 158, 11, 0.22); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.35); }
+.badge-amber { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); }
+
+.card-cyan::before { background: var(--accent-cyan); }
+.card-cyan:hover { border-color: rgba(56, 189, 248, 0.5); box-shadow: 0 12px 28px rgba(56, 189, 248, 0.15); }
+.icon-cyan { background: rgba(56, 189, 248, 0.22); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); }
+.badge-cyan { background: rgba(56, 189, 248, 0.2); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4); }
+
+.card-emerald::before { background: var(--accent-emerald); }
+.card-emerald:hover { border-color: rgba(16, 185, 129, 0.5); box-shadow: 0 12px 28px rgba(16, 185, 129, 0.15); }
+.icon-emerald { background: rgba(16, 185, 129, 0.22); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.35); }
+.badge-emerald { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); }
+
+.card-purple::before { background: #c084fc; }
+.card-purple:hover { border-color: rgba(192, 132, 252, 0.5); box-shadow: 0 12px 28px rgba(192, 132, 252, 0.15); }
+.icon-purple { background: rgba(192, 132, 252, 0.22); color: #d8b4fe; border: 1px solid rgba(192, 132, 252, 0.35); }
+.badge-purple { background: rgba(192, 132, 252, 0.2); color: #d8b4fe; border: 1px solid rgba(192, 132, 252, 0.4); }
+
+.card-blue::before { background: #0ea5e9; }
+.card-blue:hover { border-color: rgba(14, 165, 233, 0.5); box-shadow: 0 12px 28px rgba(14, 165, 233, 0.15); }
+.icon-blue { background: rgba(14, 165, 233, 0.22); color: #38bdf8; border: 1px solid rgba(14, 165, 233, 0.35); }
+.badge-rose { background: rgba(244, 63, 94, 0.2); color: #fb7185; border: 1px solid rgba(244, 63, 94, 0.4); }
+
+.card-teal::before { background: #14b8a6; }
+.card-teal:hover { border-color: rgba(20, 184, 166, 0.5); box-shadow: 0 12px 28px rgba(20, 184, 166, 0.15); }
+.icon-teal { background: rgba(20, 184, 166, 0.22); color: #2dd4bf; border: 1px solid rgba(20, 184, 166, 0.35); }
+.badge-neutral { background: rgba(255, 255, 255, 0.1); color: #cbd5e1; border: 1px solid rgba(255, 255, 255, 0.2); }
+
+.card-orange::before { background: #f97316; }
+.card-orange:hover { border-color: rgba(249, 115, 22, 0.5); box-shadow: 0 12px 28px rgba(249, 115, 22, 0.15); }
+.icon-orange { background: rgba(249, 115, 22, 0.22); color: #fb923c; border: 1px solid rgba(249, 115, 22, 0.35); }
+.badge-orange { background: rgba(249, 115, 22, 0.2); color: #fdba74; border: 1px solid rgba(249, 115, 22, 0.4); }
+
+.card-pink::before { background: #f472b6; }
+.card-pink:hover { border-color: rgba(244, 114, 182, 0.5); box-shadow: 0 12px 28px rgba(244, 114, 182, 0.15); }
+.icon-pink { background: rgba(244, 114, 182, 0.22); color: #f9a8d4; border: 1px solid rgba(244, 114, 182, 0.35); }
+.badge-pink { background: rgba(244, 114, 182, 0.2); color: #f9a8d4; border: 1px solid rgba(244, 114, 182, 0.4); }
+
+.card-indigo::before { background: #818cf8; }
+.card-indigo:hover { border-color: rgba(129, 140, 248, 0.5); box-shadow: 0 12px 28px rgba(129, 140, 248, 0.15); }
+.icon-indigo { background: rgba(129, 140, 248, 0.22); color: #a5b4fc; border: 1px solid rgba(129, 140, 248, 0.35); }
+.badge-indigo { background: rgba(129, 140, 248, 0.2); color: #a5b4fc; border: 1px solid rgba(129, 140, 248, 0.4); }
+
+.card-green::before { background: #84cc16; }
+.card-green:hover { border-color: rgba(132, 204, 22, 0.5); box-shadow: 0 12px 28px rgba(132, 204, 22, 0.15); }
+.icon-green { background: rgba(132, 204, 22, 0.22); color: #bef264; border: 1px solid rgba(132, 204, 22, 0.35); }
+.badge-green { background: rgba(132, 204, 22, 0.2); color: #bef264; border: 1px solid rgba(132, 204, 22, 0.4); }
+
+/* MOBILE RESPONSIVENESS: EXACTLY 2 CARDS PER ROW */
+@media (max-width: 640px) {
+    .settings-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 10px !important;
     }
-});
-</script>
+    .settings-card {
+        padding: 12px 10px;
+        border-radius: 12px;
+    }
+    .settings-icon {
+        width: 34px;
+        height: 34px;
+        font-size: 1rem;
+        border-radius: 8px;
+    }
+    .settings-badge {
+        font-size: 0.65rem;
+        padding: 2px 6px;
+    }
+    .settings-title {
+        font-size: 0.88rem;
+        margin-bottom: 4px;
+    }
+    .settings-desc {
+        font-size: 0.72rem;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        line-height: 1.35;
+    }
+    .settings-card-footer {
+        margin-top: 10px;
+        padding-top: 6px;
+        font-size: 0.75rem;
+    }
+}
+</style>
 {% endblock %}

@@ -11,6 +11,19 @@
     </div>
 </div>
 
+{% if not institution.allows_program_assignment %}
+<!-- LOCK BANNER -->
+<div class="glass-card" style="margin-bottom: 20px; padding: 14px 18px; border: 1px solid rgba(239, 68, 68, 0.4); background: linear-gradient(135deg, rgba(239, 68, 68, 0.12), rgba(15, 23, 42, 0.95)); border-radius: 12px;">
+    <div style="display: flex; align-items: center; gap: 12px;">
+        <i class="fa-solid fa-lock" style="font-size: 1.3rem; color: #f87171;"></i>
+        <div>
+            <strong style="color: #f87171; font-size: 0.95rem; display: block;">🔒 Program Assignment Locked (പ്രോഗ്രാം അസൈൻമെന്റ് ലോക്ക് ചെയ്തിരിക്കുന്നു)</strong>
+            <span style="color: #cbd5e1; font-size: 0.83rem;">സെറ്റിംഗ്സിൽ പ്രോഗ്രാം അസൈൻമെന്റ് ലോക്ക് ചെയ്തിരിക്കുന്നതിനാൽ എൻട്രികൾ മാറ്റാനോ പുതിയ എൻട്രികൾ നൽകാനോ സാധിക്കില്ല. <a href="{% url 'core:settings_operations' institution.slug %}" style="color: var(--accent-cyan); font-weight: 700;">അൺലോക്ക് ചെയ്യാൻ ഇവിടെ ക്ലിക്ക് ചെയ്യുക</a>.</span>
+        </div>
+    </div>
+</div>
+{% endif %}
+
 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px;">
 
     <!-- Way 1: Step-by-Step Contestant Picker & Search (Assign by Student) -->

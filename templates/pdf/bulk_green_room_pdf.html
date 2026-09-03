@@ -112,7 +112,7 @@
         <div class="info-section">
             Program: <strong>{{ pdata.program.name|upper }}</strong> | 
             Category: <strong>{{ pdata.program.category.name }}</strong> | 
-            Total Participants: <strong>{{ pdata.participants.count }}</strong> | 
+            Total Participants: <strong>{{ pdata.participants|length }}</strong> | 
             Date: <strong>{% now "F d, Y" %}</strong>
         </div>
 
@@ -141,7 +141,7 @@
                     <!-- Blank rows for extra entries -->
                     {% for i in "12345" %}
                         <tr>
-                            <td class="row-number">{{ pdata.participants.count|add:forloop.counter }}</td>
+                            <td class="row-number">{{ pdata.participants|length|add:forloop.counter }}</td>
                             <td class="chest-no"></td>
                             <td class="participant-name"></td>
                             <td class="code-letter"></td>

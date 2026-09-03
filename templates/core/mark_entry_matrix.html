@@ -82,7 +82,9 @@
 
                         <th style="text-align: center; background: rgba(245, 158, 11, 0.15); color: #fbbf24;">Converted Score (/100)</th>
                         <th>Current Rank</th>
+                        {% if institution.has_grades %}
                         <th>Grade</th>
+                        {% endif %}
                     </tr>
                 </thead>
                 <tbody>
@@ -126,6 +128,7 @@
                             <span style="color: var(--text-muted);">-</span>
                             {% endif %}
                         </td>
+                        {% if institution.has_grades %}
                         <td>
                             {% if p.grade %}
                             <span class="badge badge-pending">{{ p.grade }} Grade</span>
@@ -133,10 +136,11 @@
                             <span style="color: var(--text-muted);">-</span>
                             {% endif %}
                         </td>
+                        {% endif %}
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="{{ judge_range|length|add:8 }}" style="text-align: center; color: var(--text-muted); padding: 30px;">
+                        <td colspan="{% if institution.has_grades %}{{ judge_range|length|add:8 }}{% else %}{{ judge_range|length|add:7 }}{% endif %}" style="text-align: center; color: var(--text-muted); padding: 30px;">
                             No participants registered for this program yet.
                         </td>
                     </tr>
@@ -165,7 +169,7 @@
                         {% if p.rank %}
                         <span class="badge badge-approved" style="font-size: 0.8rem; margin-bottom: 2px; display: block;">Rank {{ p.rank }}</span>
                         {% endif %}
-                        {% if p.grade %}
+                        {% if institution.has_grades and p.grade %}
                         <span class="badge badge-pending" style="font-size: 0.8rem; display: block;">{{ p.grade }} Grade</span>
                         {% endif %}
                     </div>

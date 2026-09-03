@@ -86,9 +86,11 @@
                     <tr>
                         <th style="width: 15%;">Rank</th>
                         <th style="width: 15%;">Chest No</th>
-                        <th style="width: 35%;">Participant / Team Name</th>
-                        <th style="width: 20%;">Team / House</th>
+                        <th style="width: {% if institution.has_grades %}35%{% else %}45%{% endif %};">Participant / Team Name</th>
+                        <th style="width: {% if institution.has_grades %}20%{% else %}25%{% endif %};">Team / House</th>
+                        {% if institution.has_grades %}
                         <th style="width: 15%;">Grade</th>
+                        {% endif %}
                     </tr>
                 </thead>
                 <tbody>
@@ -121,6 +123,7 @@
                             {% endif %}
                         </td>
                         <td><span class="badge badge-approved">{% if item.program.is_group %}{{ p.team.name }}{% else %}{{ p.contestant.team.name }}{% endif %}</span></td>
+                        {% if institution.has_grades %}
                         <td>
                             {% if p.grade %}
                             <span class="badge badge-approved" style="background: rgba(6, 182, 212, 0.2); border: 1px solid var(--accent-cyan); color: var(--accent-cyan); font-weight: 700;">Grade {{ p.grade }}</span>
@@ -128,10 +131,11 @@
                             <span style="color: var(--text-muted);">-</span>
                             {% endif %}
                         </td>
+                        {% endif %}
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 20px;">
+                        <td colspan="{% if institution.has_grades %}5{% else %}4{% endif %}" style="text-align: center; color: var(--text-muted); padding: 20px;">
                             No scores recorded for this event.
                         </td>
                     </tr>
@@ -159,11 +163,13 @@
                         </strong>
                         <span class="badge badge-approved" style="font-size: 0.72rem; margin-top: 4px;">{% if item.program.is_group %}{{ p.team.name }}{% else %}{{ p.contestant.team.name }}{% endif %}</span>
                     </div>
+                    {% if institution.has_grades %}
                     <div>
                         {% if p.grade %}
                         <span class="badge badge-approved" style="font-size: 0.78rem; background: rgba(6, 182, 212, 0.2); border: 1px solid var(--accent-cyan); color: var(--accent-cyan);">Grade {{ p.grade }}</span>
                         {% endif %}
                     </div>
+                    {% endif %}
                 </div>
             </div>
             {% empty %}

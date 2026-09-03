@@ -1,0 +1,219 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Participation Limits & Rules - {{ institution.name }}{% endblock %}
+
+{% block content %}
+<div class="page-header" style="margin-bottom: 24px;">
+    <div>
+        <a href="{% url 'core:settings' institution.slug %}" style="color: var(--accent-cyan); text-decoration: none; font-size: 0.9rem; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; margin-bottom: 8px;">
+            <i class="fa-solid fa-arrow-left"></i> Back to Settings Hub
+        </a>
+        <h2 style="font-size: 1.8rem; font-weight: 800;"><i class="fa-solid fa-user-shield" style="color: var(--accent-cyan);"></i> Program Participation Limits & Rules</h2>
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 4px;">Set maximum programs allowed per contestant across Single and Group events, and per-team quotas in programs. Default is <strong>0 (No Limit / Unlimited)</strong>.</p>
+    </div>
+    <div>
+        <span class="badge badge-approved" style="font-size: 0.85rem; padding: 8px 16px;">
+            <i class="fa-solid fa-circle-info"></i> Default: Unlimited (0)
+        </span>
+    </div>
+</div>
+
+<div class="glass-card" style="border-top: 4px solid var(--accent-cyan);">
+    <form method="POST">
+        {% csrf_token %}
+
+        {% if competitions.count > 1 %}
+        <div class="form-group" style="margin-bottom: 20px; max-width: 440px;">
+            <label class="form-label" style="font-weight: 700; color: var(--accent-amber); font-size: 0.95rem;">Select Fest / Competition to Configure</label>
+            <select name="competition_id" class="form-control" onchange="syncCompetitionLimits(this)">
+                {% for comp in competitions %}
+                <option value="{{ comp.id }}" 
+                        data-single="{{ comp.max_single_programs_per_contestant|default:0 }}"
+                        data-group="{{ comp.max_group_programs_per_contestant|default:0 }}"
+                        data-total="{{ comp.max_total_programs_per_contestant|default:0 }}"
+                        data-team-single="{{ comp.max_team_participants_per_single_program|default:0 }}"
+                        data-team-group="{{ comp.max_team_entries_per_group_program|default:0 }}">
+                    {{ comp.name }} ({{ comp.year }})
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        {% elif competitions.first %}
+        <input type="hidden" name="competition_id" value="{{ competitions.first.id }}">
+        {% endif %}
+
+        {% with current_comp=competitions.first %}
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; background: rgba(0,0,0,0.2); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color);">
+            
+            <!-- Contestant Limit: Single Programs -->
+            <div class="form-group" style="margin: 0;">
+                <label class="form-label" style="color: var(--accent-emerald); font-weight: 700; display: flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-user"></i> Student Limit: Single Items
+                </label>
+                <div style="position: relative;">
+                    <input type="number" name="max_single_programs_per_contestant" id="limit_single_input" 
+                           value="{{ current_comp.max_single_programs_per_contestant|default:0 }}" 
+                           class="form-control" style="font-size: 1.15rem; font-weight: 700; color: var(--accent-emerald);" min="0" required>
+                </div>
+                <small style="color: var(--text-muted); font-size: 0.8rem; display: block; margin-top: 6px;">
+                    e.g. <code>4</code> = Max 4 single items per student. Set <code>0</code> for Unlimited.
+                </small>
+                <div style="display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap;">
+                    <button type="button" class="btn-preset" onclick="setLimitPreset('limit_single_input', 0)">No Limit (0)</button>
+                    <button type="button" class="btn-preset" onclick="setLimitPreset('limit_single_input', 3)">3</button>
+                    <button type="button" class="btn-preset" onclick="setLimitPreset('limit_single_input', 4)">4</button>
+                    <button type="button" class="btn-preset" onclick="setLimitPreset('limit_single_input', 5)">5</button>
+                    <button type="button" class="btn-preset" onclick="setLimitPreset('limit_single_input', 6)">6</button>
+                </div>
+            </div>
+
+            <!-- Contestant Limit: Group Programs -->
+            <div class="form-group" style="margin: 0;">
+                <label class="form-label" style="color: var(--accent-amber); font-weight: 700; display: flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-people-group"></i> Student Limit: Group Items
+                </label>
+                <div style="position: relative;">
+                    <input type="number" name="max_group_programs_per_contestant" id="limit_group_input" 
+                           value="{{ current_comp.max_group_programs_per_contestant|default:0 }}" 
+                           class="form-control" style="font-size: 1.15rem; font-weight: 700; color: var(--accent-amber);" min="0" required>
+                </div>
+                <small style="color: var(--text-muted); font-size: 0.8rem; display: block; margin-top: 6px;">
+                    e.g. <code>4</code> = Max 4 group items per student. Set <code>0</code> for Unlimited.
+                </small>
+                <div style="display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap;">
+                    <button type="button" class="btn-preset" onclick="setLimitPreset('limit_group_input', 0)">No Limit (0)</button>
+                    <button type="button" class="btn-preset" onclick="setLimitPreset('limit_group_input', 2)">2</button>
+                    <button type="button" class="btn-preset" onclick="setLimitPreset('limit_group_input', 3)">3</button>
+                    <button type="button" class="btn-preset" onclick="setLimitPreset('limit_group_input', 4)">4</button>
+                    <button type="button" class="btn-preset" onclick="setLimitPreset('limit_group_input', 5)">5</button>
+                </div>
+            </div>
+
+            <!-- Total Combined Limit (Optional) -->
+            <div class="form-group" style="margin: 0;">
+                <label class="form-label" style="color: var(--accent-cyan); font-weight: 700; display: flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-layer-group"></i> Student Limit: Total Combined Cap
+                </label>
+                <div style="position: relative;">
+                    <input type="number" name="max_total_programs_per_contestant" id="limit_total_input" 
+                           value="{{ current_comp.max_total_programs_per_contestant|default:0 }}" 
+                           class="form-control" style="font-size: 1.15rem; font-weight: 700; color: var(--accent-cyan);" min="0" required>
+                </div>
+                <small style="color: var(--text-muted); font-size: 0.8rem; display: block; margin-top: 6px;">
+                    Overall cap across single + group items combined. Set <code>0</code> for Unlimited.
+                </small>
+                <div style="display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap;">
+                    <button type="button" class="btn-preset" onclick="setLimitPreset('limit_total_input', 0)">No Limit (0)</button>
+                    <button type="button" class="btn-preset" onclick="setLimitPreset('limit_total_input', 5)">5</button>
+                    <button type="button" class="btn-preset" onclick="setLimitPreset('limit_total_input', 6)">6</button>
+                    <button type="button" class="btn-preset" onclick="setLimitPreset('limit_total_input', 8)">8</button>
+                    <button type="button" class="btn-preset" onclick="setLimitPreset('limit_total_input', 10)">10</button>
+                </div>
+            </div>
+
+            <!-- Team Limit: Single Programs -->
+            <div class="form-group" style="margin: 0;">
+                <label class="form-label" style="color: #c084fc; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-users-viewfinder"></i> Team Limit: Single Program
+                </label>
+                <div style="position: relative;">
+                    <input type="number" name="max_team_participants_per_single_program" id="limit_team_single_input" 
+                           value="{{ current_comp.max_team_participants_per_single_program|default:0 }}" 
+                           class="form-control" style="font-size: 1.15rem; font-weight: 700; color: #c084fc;" min="0" required>
+                </div>
+                <small style="color: var(--text-muted); font-size: 0.8rem; display: block; margin-top: 6px;">
+                    Max participants from 1 team in a single item. Set <code>0</code> for Unlimited.
+                </small>
+                <div style="display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap;">
+                    <button type="button" class="btn-preset" onclick="setLimitPreset('limit_team_single_input', 0)">No Limit (0)</button>
+                    <button type="button" class="btn-preset" onclick="setLimitPreset('limit_team_single_input', 1)">1</button>
+                    <button type="button" class="btn-preset" onclick="setLimitPreset('limit_team_single_input', 2)">2</button>
+                    <button type="button" class="btn-preset" onclick="setLimitPreset('limit_team_single_input', 3)">3</button>
+                    <button type="button" class="btn-preset" onclick="setLimitPreset('limit_team_single_input', 4)">4</button>
+                    <button type="button" class="btn-preset" onclick="setLimitPreset('limit_team_single_input', 5)">5</button>
+                </div>
+            </div>
+
+            <!-- Team Limit: Group Programs -->
+            <div class="form-group" style="margin: 0;">
+                <label class="form-label" style="color: #f472b6; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-people-roof"></i> Team Limit: Group Program
+                </label>
+                <div style="position: relative;">
+                    <input type="number" name="max_team_entries_per_group_program" id="limit_team_group_input" 
+                           value="{{ current_comp.max_team_entries_per_group_program|default:0 }}" 
+                           class="form-control" style="font-size: 1.15rem; font-weight: 700; color: #f472b6;" min="0" required>
+                </div>
+                <small style="color: var(--text-muted); font-size: 0.8rem; display: block; margin-top: 6px;">
+                    Max group entries from 1 team in a group item. Set <code>0</code> for Unlimited.
+                </small>
+                <div style="display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap;">
+                    <button type="button" class="btn-preset" onclick="setLimitPreset('limit_team_group_input', 0)">No Limit (0)</button>
+                    <button type="button" class="btn-preset" onclick="setLimitPreset('limit_team_group_input', 1)">1 Entry</button>
+                    <button type="button" class="btn-preset" onclick="setLimitPreset('limit_team_group_input', 2)">2 Entries</button>
+                    <button type="button" class="btn-preset" onclick="setLimitPreset('limit_team_group_input', 3)">3 Entries</button>
+                </div>
+            </div>
+
+        </div>
+        {% endwith %}
+
+        <div style="margin-top: 24px; display: flex; justify-content: flex-end;">
+            <button type="submit" class="btn-primary" style="background: linear-gradient(135deg, var(--accent-cyan), #0284c7); padding: 12px 28px; font-weight: 700; font-size: 1rem;">
+                <i class="fa-solid fa-floppy-disk"></i> Save Participation Limits
+            </button>
+        </div>
+    </form>
+</div>
+
+<style>
+.btn-preset {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--border-color);
+    color: var(--text-muted);
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.btn-preset:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.3);
+}
+</style>
+
+<script>
+function setLimitPreset(inputId, value) {
+    const input = document.getElementById(inputId);
+    if (input) {
+        input.value = value;
+        input.focus();
+    }
+}
+
+function syncCompetitionLimits(selectElem) {
+    const opt = selectElem.options[selectElem.selectedIndex];
+    if (opt) {
+        const single = opt.getAttribute('data-single') || 0;
+        const group = opt.getAttribute('data-group') || 0;
+        const total = opt.getAttribute('data-total') || 0;
+        const teamSingle = opt.getAttribute('data-team-single') || 0;
+        const teamGroup = opt.getAttribute('data-team-group') || 0;
+        const singleInp = document.getElementById('limit_single_input');
+        const groupInp = document.getElementById('limit_group_input');
+        const totalInp = document.getElementById('limit_total_input');
+        const teamSingleInp = document.getElementById('limit_team_single_input');
+        const teamGroupInp = document.getElementById('limit_team_group_input');
+        if (singleInp) singleInp.value = single;
+        if (groupInp) groupInp.value = group;
+        if (totalInp) totalInp.value = total;
+        if (teamSingleInp) teamSingleInp.value = teamSingle;
+        if (teamGroupInp) teamGroupInp.value = teamGroup;
+    }
+}
+</script>
+{% endblock %}

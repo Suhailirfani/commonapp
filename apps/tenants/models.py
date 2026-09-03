@@ -116,6 +116,46 @@ class Institution(models.Model):
     def active_add_ons(self):
         return self.granted_add_ons.filter(is_active=True, add_on__is_active=True).select_related('add_on')
 
+    @property
+    def points_config(self):
+        from apps.core.models import PointsConfig
+        config, _ = PointsConfig.objects.get_or_create(institution=self)
+        return config
+
+    @property
+    def has_grades(self):
+        return self.points_config.enable_grades
+
+    @property
+    def allows_team_management(self):
+        from apps.core.models import Competition
+        comp = Competition.objects.filter(institution=self, is_active=True).first() or Competition.objects.filter(institution=self).first()
+        return comp.allow_team_management if comp else True
+
+    @property
+    def allows_category_management(self):
+        from apps.core.models import Competition
+        comp = Competition.objects.filter(institution=self, is_active=True).first() or Competition.objects.filter(institution=self).first()
+        return comp.allow_category_management if comp else True
+
+    @property
+    def allows_program_management(self):
+        from apps.core.models import Competition
+        comp = Competition.objects.filter(institution=self, is_active=True).first() or Competition.objects.filter(institution=self).first()
+        return comp.allow_program_management if comp else True
+
+    @property
+    def allows_contestant_registration(self):
+        from apps.core.models import Competition
+        comp = Competition.objects.filter(institution=self, is_active=True).first() or Competition.objects.filter(institution=self).first()
+        return comp.allow_contestant_registration if comp else True
+
+    @property
+    def allows_program_assignment(self):
+        from apps.core.models import Competition
+        comp = Competition.objects.filter(institution=self, is_active=True).first() or Competition.objects.filter(institution=self).first()
+        return comp.allow_program_assignment if comp else True
+
 
 class AddOn(models.Model):
     name = models.CharField(max_length=150, help_text="Add-on Name (e.g. Contestant User Creation)")

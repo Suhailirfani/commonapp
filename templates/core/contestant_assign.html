@@ -21,6 +21,49 @@
     <form method="POST">
         {% csrf_token %}
         
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; background: rgba(0,0,0,0.25); padding: 12px 16px; border-radius: 10px; border: 1px solid var(--border-color);">
+            <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                <span style="font-size: 0.9rem; color: var(--text-muted); font-weight: 600;">
+                    <i class="fa-solid fa-user-shield" style="color: var(--accent-cyan);"></i> Program Participation Limits:
+                </span>
+                {% if contestant.competition.has_single_limit %}
+                <span class="badge" style="background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid #10b981; font-weight: 700;">
+                    Single: Max {{ contestant.competition.max_single_programs_per_contestant }}
+                </span>
+                {% else %}
+                <span class="badge badge-approved" style="font-weight: 700;">
+                    Single: No Limit (Unlimited)
+                </span>
+                {% endif %}
+
+                {% if contestant.competition.has_group_limit %}
+                <span class="badge" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid #f59e0b; font-weight: 700;">
+                    Group: Max {{ contestant.competition.max_group_programs_per_contestant }} (Enrolled: {{ contestant.group_programs_count }})
+                </span>
+                {% else %}
+                <span class="badge badge-pending" style="font-weight: 700;">
+                    Group: Unlimited (Enrolled: {{ contestant.group_programs_count }})
+                </span>
+                {% endif %}
+
+                {% if contestant.competition.has_total_limit %}
+                <span class="badge" style="background: rgba(14, 165, 233, 0.2); color: #38bdf8; border: 1px solid #0ea5e9; font-weight: 700;">
+                    Total Limit: Max {{ contestant.competition.max_total_programs_per_contestant }}
+                </span>
+                {% endif %}
+            </div>
+
+            <div id="selectionStatusWrap">
+                <span id="counterBadge" class="badge badge-approved" style="font-size: 0.92rem; padding: 6px 14px;">
+                    Enrolled: <strong id="selectedCountNum">0</strong>{% if contestant.competition.has_single_limit %} / {{ contestant.competition.max_single_programs_per_contestant }}{% endif %}
+                </span>
+            </div>
+        </div>
+
+        <div id="limitAlertBox" style="display: none; background: rgba(244, 63, 94, 0.15); border: 1px solid #f43f5e; color: #fb7185; padding: 10px 16px; border-radius: 8px; margin-bottom: 16px; font-weight: 700; font-size: 0.9rem;">
+            <i class="fa-solid fa-triangle-exclamation"></i> Single Program Limit Reached! Uncheck a program to choose another.
+        </div>
+
         <!-- DESKTOP TABLE VIEW -->
         <div class="table-responsive desktop-table-view">
             <table class="custom-table">
@@ -37,9 +80,16 @@
                     {% for prog in eligible_programs %}
                     <tr>
                         <td>
-                            <input type="checkbox" name="selected_program_ids[]" value="{{ prog.id }}" {% if prog.id in existing_prog_ids %}checked{% endif %} style="width: 18px; height: 18px; cursor: pointer;">
+                            <input type="checkbox" name="selected_program_ids[]" value="{{ prog.id }}" class="prog-enroll-check" {% if prog.id in existing_prog_ids %}checked{% endif %} style="width: 18px; height: 18px; cursor: pointer;" onchange="updateEnrollmentCount()">
                         </td>
-                        <td><strong>{{ prog.name }}</strong></td>
+                        <td>
+                            <strong>{{ prog.name }}</strong>
+                            {% if prog.has_team_limit %}
+                            <span class="badge" style="background: rgba(192, 132, 252, 0.15); color: #c084fc; border: 1px solid rgba(192, 132, 252, 0.3); font-size: 0.72rem; padding: 2px 6px; margin-left: 6px;">
+                                Max {{ prog.effective_max_participants_per_team }}/Team
+                            </span>
+                            {% endif %}
+                        </td>
                         <td><span class="badge badge-approved">{{ prog.category.name }}</span>{% if prog.category.is_common %}<span class="badge badge-pending" style="font-size: 0.72rem; margin-left: 4px;">Combined</span>{% endif %}</td>
                         <td>{{ prog.get_program_type_display }}</td>
                         <td>{% if prog.is_group %}<span class="badge badge-pending">Group Event</span>{% else %}<span class="badge badge-approved">Single Event</span>{% endif %}</td>
@@ -59,7 +109,7 @@
         <div class="mobile-card-list-view">
             {% for prog in eligible_programs %}
             <div style="background: rgba(255,255,255,0.02); padding: 12px; border-radius: 10px; border: 1px solid var(--border-color); margin-bottom: 8px; display: flex; align-items: center; gap: 12px;">
-                <input type="checkbox" name="selected_program_ids[]" value="{{ prog.id }}" {% if prog.id in existing_prog_ids %}checked{% endif %} style="width: 20px; height: 20px; cursor: pointer;">
+                <input type="checkbox" name="selected_program_ids[]" value="{{ prog.id }}" class="prog-enroll-check" {% if prog.id in existing_prog_ids %}checked{% endif %} style="width: 20px; height: 20px; cursor: pointer;" onchange="updateEnrollmentCount()">
                 <div style="flex: 1;">
                     <strong style="color: var(--text-main); font-size: 1.05rem;">{{ prog.name }}</strong>
                     <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px;">
@@ -83,10 +133,71 @@
         </div>
 
         <div style="margin-top: 20px; text-align: right;">
-            <button type="submit" class="btn-primary" style="font-size: 1.05rem; padding: 12px 28px; width: 100%; justify-content: center; background: linear-gradient(135deg, var(--accent-emerald), #059669);">
+            <button type="submit" id="saveEnrollBtn" class="btn-primary" style="font-size: 1.05rem; padding: 12px 28px; width: 100%; justify-content: center; background: linear-gradient(135deg, var(--accent-emerald), #059669);">
                 <i class="fa-solid fa-floppy-disk"></i> Save Program Enrollments
             </button>
         </div>
     </form>
 </div>
+
+<script>
+const MAX_SINGLE_LIMIT = {{ contestant.competition.max_single_programs_per_contestant|default:0 }};
+const MAX_TOTAL_LIMIT = {{ contestant.competition.max_total_programs_per_contestant|default:0 }};
+const CURRENT_GROUP_COUNT = {{ contestant.group_programs_count|default:0 }};
+
+function updateEnrollmentCount() {
+    const desktopChecks = Array.from(document.querySelectorAll('.desktop-table-view .prog-enroll-check'));
+    const mobileChecks = Array.from(document.querySelectorAll('.mobile-card-list-view .prog-enroll-check'));
+    
+    // Sync checkboxes between desktop & mobile if user toggles one
+    const checkedValues = new Set();
+    document.querySelectorAll('.prog-enroll-check:checked').forEach(cb => checkedValues.add(cb.value));
+
+    const count = checkedValues.size;
+    const countSpan = document.getElementById('selectedCountNum');
+    const badge = document.getElementById('counterBadge');
+    const alertBox = document.getElementById('limitAlertBox');
+    const saveBtn = document.getElementById('saveEnrollBtn');
+
+    if (countSpan) countSpan.innerText = count;
+
+    let isOverlimit = false;
+    if (MAX_SINGLE_LIMIT > 0 && count > MAX_SINGLE_LIMIT) {
+        isOverlimit = true;
+    }
+    if (MAX_TOTAL_LIMIT > 0 && (count + CURRENT_GROUP_COUNT) > MAX_TOTAL_LIMIT) {
+        isOverlimit = true;
+    }
+
+    if (isOverlimit) {
+        if (badge) {
+            badge.style.background = 'rgba(244, 63, 94, 0.2)';
+            badge.style.color = '#fb7185';
+            badge.style.border = '1px solid #f43f5e';
+        }
+        if (alertBox) alertBox.style.display = 'block';
+        if (saveBtn) {
+            saveBtn.disabled = true;
+            saveBtn.style.opacity = '0.5';
+            saveBtn.style.cursor = 'not-allowed';
+        }
+    } else {
+        if (badge) {
+            badge.style.background = 'rgba(16, 185, 129, 0.2)';
+            badge.style.color = '#10b981';
+            badge.style.border = '1px solid #10b981';
+        }
+        if (alertBox) alertBox.style.display = 'none';
+        if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.style.opacity = '1';
+            saveBtn.style.cursor = 'pointer';
+        }
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    updateEnrollmentCount();
+});
+</script>
 {% endblock %}

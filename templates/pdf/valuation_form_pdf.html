@@ -103,7 +103,7 @@
     <div class="info-section">
         Program: <strong>{{ program.name|upper }}</strong> | 
         Category: <strong>{{ program.category.name }}</strong> | 
-        Total Participants: <strong>{{ participants.count }}</strong> | 
+        Total Participants: <strong>{{ participants|length }}</strong> | 
         Date: <strong>{% now "F d, Y" %}</strong>
     </div>
 
@@ -124,7 +124,7 @@
             {% for participant in participants %}
             <tr>
                 <td><strong>{{ forloop.counter }}</strong></td>
-                <td class="code-letter">{{ participant.code_letter|default:"" }}</td>
+                <td class="code-letter">{% if participant.code_letter %}{{ participant.code_letter }}{% elif participant.contestant.team.code_letter %}{{ participant.contestant.team.code_letter }}{% elif participant.team.code_letter %}{{ participant.team.code_letter }}{% else %}{% endif %}</td>
                 <td class="marks-col"></td>
                 <td class="marks-col"></td>
                 <td class="marks-col"></td>

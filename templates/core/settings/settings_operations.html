@@ -1,0 +1,319 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Operations & Data Locks - {{ institution.name }}{% endblock %}
+
+{% block content %}
+<div class="page-header" style="margin-bottom: 24px;">
+    <div>
+        <a href="{% url 'core:settings' institution.slug %}" style="color: var(--accent-cyan); text-decoration: none; font-size: 0.9rem; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; margin-bottom: 8px;">
+            <i class="fa-solid fa-arrow-left"></i> Back to Settings Hub
+        </a>
+        <h2 style="font-size: 1.8rem; font-weight: 800; margin: 0;">
+            <i class="fa-solid fa-lock" style="color: var(--accent-amber);"></i> Operations & Data Entry Locks
+        </h2>
+        <p style="color: #cbd5e1; font-size: 0.9rem; margin-top: 4px;">
+            ടീമുകൾ, കാറ്റഗറികൾ, പ്രോഗ്രാമുകൾ, മത്സരാർത്ഥികൾ എന്നിവ ചേർക്കലും എഡിറ്റ് ചെയ്യലും ആവശ്യമുള്ളപ്പോൾ ഓൺ/ഓഫ് ചെയ്യുക.
+        </p>
+    </div>
+</div>
+
+<!-- Quick Global Locks Bar -->
+<div class="glass-card" style="margin-bottom: 24px; background: linear-gradient(145deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.95)); border: 1px solid rgba(255,255,255,0.14);">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+        <div>
+            <h4 style="font-size: 1.1rem; font-weight: 700; color: #fff; margin: 0 0 4px 0;">
+                <i class="fa-solid fa-bolt" style="color: var(--accent-cyan);"></i> Quick Master Actions
+            </h4>
+            <p style="color: #94a3b8; font-size: 0.84rem; margin: 0;">
+                എല്ലാ എൻട്രികളും ഒരൊറ്റ ക്ലിക്കിൽ പൂർണ്ണമായി തുറക്കുകയോ (Unlock) അല്ലെങ്കിൽ വ്യൂ-ഒൺലി മോഡിലേക്ക് ലോക്ക് ചെയ്യുകയോ ചെയ്യാം.
+            </p>
+        </div>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <form method="POST" style="margin: 0;">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="unlock_all">
+                <button type="submit" class="btn-primary" style="background: linear-gradient(135deg, #10b981, #059669); color: #fff; font-size: 0.85rem; padding: 8px 16px; border: none; font-weight: 700;">
+                    <i class="fa-solid fa-lock-open"></i> Unlock All Operations
+                </button>
+            </form>
+            <form method="POST" style="margin: 0;">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="lock_all">
+                <button type="submit" class="btn-primary" style="background: rgba(239, 68, 68, 0.2); border: 1px solid #ef4444; color: #f87171; font-size: 0.85rem; padding: 8px 16px; font-weight: 700;">
+                    <i class="fa-solid fa-lock"></i> Lock All (Read-Only)
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<form method="POST">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="save_locks">
+
+    {% if competitions.count > 1 %}
+    <!-- Fest Selector if multiple -->
+    <div class="glass-card" style="margin-bottom: 20px; padding: 14px 18px; background: rgba(15, 23, 42, 0.7);">
+        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+            <label class="form-label" style="margin: 0; font-weight: 700; color: #fff;">Apply Rules To Fest:</label>
+            <select name="competition_id" class="form-control" style="width: auto; min-width: 240px;">
+                <option value="">-- Apply to All Fests & Competitions --</option>
+                {% for comp in competitions %}
+                <option value="{{ comp.id }}" {% if active_comp and active_comp.id == comp.id %}selected{% endif %}>
+                    {{ comp.name }} ({{ comp.year }})
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+    {% endif %}
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 18px;">
+
+        <!-- 1. Add / Edit Teams -->
+        <div class="op-card {% if active_comp.allow_team_management %}op-unlocked{% else %}op-locked{% endif %}">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div class="op-icon" style="background: rgba(99, 102, 241, 0.15); color: #818cf8;">
+                        <i class="fa-solid fa-people-group"></i>
+                    </div>
+                    <div>
+                        <h4 style="margin: 0; font-size: 1.05rem; font-weight: 700; color: #fff;">1. Add & Edit Teams</h4>
+                        <span style="font-size: 0.8rem; color: #94a3b8;">ടീമുകൾ ചേർക്കലും എഡിറ്റ് ചെയ്യലും</span>
+                    </div>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" name="allow_team_management" value="1" {% if active_comp.allow_team_management %}checked{% endif %} onchange="updateCardState(this)">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <p style="color: #cbd5e1; font-size: 0.85rem; line-height: 1.5; margin: 12px 0 0 0;">
+                പുതിയ ടീമുകളെ ചേർക്കാനും, ടീം പേരുകൾ എഡിറ്റ് ചെയ്യാനും, ഡിലീറ്റ് ചെയ്യാനുമുള്ള അനുമതി.
+            </p>
+            <div class="op-status-badge">
+                {% if active_comp.allow_team_management %}
+                <span class="badge badge-approved" style="font-size: 0.75rem;"><i class="fa-solid fa-lock-open"></i> UNLOCKED (തുറന്നിരിക്കുന്നു)</span>
+                {% else %}
+                <span class="badge badge-rejected" style="font-size: 0.75rem;"><i class="fa-solid fa-lock"></i> LOCKED (ലോക്ക്ഡ്)</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- 2. Add / Edit Categories -->
+        <div class="op-card {% if active_comp.allow_category_management %}op-unlocked{% else %}op-locked{% endif %}">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div class="op-icon" style="background: rgba(168, 85, 247, 0.15); color: #c084fc;">
+                        <i class="fa-solid fa-layer-group"></i>
+                    </div>
+                    <div>
+                        <h4 style="margin: 0; font-size: 1.05rem; font-weight: 700; color: #fff;">2. Add & Edit Categories</h4>
+                        <span style="font-size: 0.8rem; color: #94a3b8;">കാറ്റഗറികൾ ചേർക്കലും എഡിറ്റ് ചെയ്യലും</span>
+                    </div>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" name="allow_category_management" value="1" {% if active_comp.allow_category_management %}checked{% endif %} onchange="updateCardState(this)">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <p style="color: #cbd5e1; font-size: 0.85rem; line-height: 1.5; margin: 12px 0 0 0;">
+                പുതിയ മത്സര വിഭാഗങ്ങൾ (Senior, Junior etc.) ഉണ്ടാക്കാനും തിരുത്താനുമുള്ള അനുമതി.
+            </p>
+            <div class="op-status-badge">
+                {% if active_comp.allow_category_management %}
+                <span class="badge badge-approved" style="font-size: 0.75rem;"><i class="fa-solid fa-lock-open"></i> UNLOCKED (തുറന്നിരിക്കുന്നു)</span>
+                {% else %}
+                <span class="badge badge-rejected" style="font-size: 0.75rem;"><i class="fa-solid fa-lock"></i> LOCKED (ലോക്ക്ഡ്)</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- 3. Add / Edit Programs & Import -->
+        <div class="op-card {% if active_comp.allow_program_management %}op-unlocked{% else %}op-locked{% endif %}">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div class="op-icon" style="background: rgba(6, 182, 212, 0.15); color: #22d3ee;">
+                        <i class="fa-solid fa-list-check"></i>
+                    </div>
+                    <div>
+                        <h4 style="margin: 0; font-size: 1.05rem; font-weight: 700; color: #fff;">3. Add & Edit Programs</h4>
+                        <span style="font-size: 0.8rem; color: #94a3b8;">പ്രോഗ്രാമുകൾ ചേർക്കലും ഇമ്പോർട്ടും</span>
+                    </div>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" name="allow_program_management" value="1" {% if active_comp.allow_program_management %}checked{% endif %} onchange="updateCardState(this)">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <p style="color: #cbd5e1; font-size: 0.85rem; line-height: 1.5; margin: 12px 0 0 0;">
+                പ്രോഗ്രാമുകൾ ഉണ്ടാക്കാനും, എഡിറ്റ് ചെയ്യാനും, Excel / WhatsApp വഴി ഇമ്പോർട്ട് ചെയ്യാനുമുള്ള അനുമതി.
+            </p>
+            <div class="op-status-badge">
+                {% if active_comp.allow_program_management %}
+                <span class="badge badge-approved" style="font-size: 0.75rem;"><i class="fa-solid fa-lock-open"></i> UNLOCKED (തുറന്നിരിക്കുന്നു)</span>
+                {% else %}
+                <span class="badge badge-rejected" style="font-size: 0.75rem;"><i class="fa-solid fa-lock"></i> LOCKED (ലോക്ക്ഡ്)</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- 4. Add / Edit Contestants & Bulk Upload -->
+        <div class="op-card {% if active_comp.allow_contestant_registration %}op-unlocked{% else %}op-locked{% endif %}">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div class="op-icon" style="background: rgba(16, 185, 129, 0.15); color: #34d399;">
+                        <i class="fa-solid fa-user-plus"></i>
+                    </div>
+                    <div>
+                        <h4 style="margin: 0; font-size: 1.05rem; font-weight: 700; color: #fff;">4. Add & Edit Contestants</h4>
+                        <span style="font-size: 0.8rem; color: #94a3b8;">മത്സരാർത്ഥികളെ ചേർക്കലും രജിസ്ട്രേഷനും</span>
+                    </div>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" name="allow_contestant_registration" value="1" {% if active_comp.allow_contestant_registration %}checked{% endif %} onchange="updateCardState(this)">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <p style="color: #cbd5e1; font-size: 0.85rem; line-height: 1.5; margin: 12px 0 0 0;">
+                പുതിയ മത്സരാർത്ഥികളെ രജിസ്റ്റർ ചെയ്യാനും, എഡിറ്റ് ചെയ്യാനും, Excel ബൾക്ക് അപ്‌ലോഡ് ചെയ്യാനുമുള്ള അനുമതി.
+            </p>
+            <div class="op-status-badge">
+                {% if active_comp.allow_contestant_registration %}
+                <span class="badge badge-approved" style="font-size: 0.75rem;"><i class="fa-solid fa-lock-open"></i> UNLOCKED (തുറന്നിരിക്കുന്നു)</span>
+                {% else %}
+                <span class="badge badge-rejected" style="font-size: 0.75rem;"><i class="fa-solid fa-lock"></i> LOCKED (ലോക്ക്ഡ്)</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- 5. Program Assignment -->
+        <div class="op-card {% if active_comp.allow_program_assignment %}op-unlocked{% else %}op-locked{% endif %}" style="grid-column: 1 / -1;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div class="op-icon" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24;">
+                        <i class="fa-solid fa-user-check"></i>
+                    </div>
+                    <div>
+                        <h4 style="margin: 0; font-size: 1.05rem; font-weight: 700; color: #fff;">5. Program Assignment (Single & Group Entries)</h4>
+                        <span style="font-size: 0.8rem; color: #94a3b8;">പ്രോഗ്രാം അസൈൻമെന്റ് & എൻട്രി</span>
+                    </div>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" name="allow_program_assignment" value="1" {% if active_comp.allow_program_assignment %}checked{% endif %} onchange="updateCardState(this)">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <p style="color: #cbd5e1; font-size: 0.85rem; line-height: 1.5; margin: 12px 0 0 0;">
+                മത്സരാർത്ഥികളെ സിംഗിൾ ഇനങ്ങളിലേക്കും ഗ്രൂപ്പ് ഇനങ്ങളിലേക്കും തിരഞ്ഞെടുക്കാനും അസൈൻ ചെയ്യാനുമുള്ള അനുമതി. രജിസ്ട്രേഷൻ അവസാനിക്കുമ്പോൾ ഇത് ലോക്ക് ചെയ്യാവുന്നതാണ്.
+            </p>
+            <div class="op-status-badge">
+                {% if active_comp.allow_program_assignment %}
+                <span class="badge badge-approved" style="font-size: 0.75rem;"><i class="fa-solid fa-lock-open"></i> UNLOCKED (തുറന്നിരിക്കുന്നു)</span>
+                {% else %}
+                <span class="badge badge-rejected" style="font-size: 0.75rem;"><i class="fa-solid fa-lock"></i> LOCKED (ലോക്ക്ഡ്)</span>
+                {% endif %}
+            </div>
+        </div>
+
+    </div>
+
+    <div style="display: flex; justify-content: flex-end; margin-top: 24px;">
+        <button type="submit" class="btn-primary" style="font-size: 1.05rem; padding: 12px 32px; font-weight: 700;">
+            <i class="fa-solid fa-floppy-disk"></i> Save Permissions & Locks
+        </button>
+    </div>
+</form>
+
+<style>
+.op-card {
+    background: linear-gradient(145deg, rgba(30, 41, 59, 0.85), rgba(24, 33, 47, 0.95));
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 14px;
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: all 0.2s ease;
+}
+.op-card.op-unlocked {
+    border-color: rgba(16, 185, 129, 0.3);
+}
+.op-card.op-locked {
+    border-color: rgba(239, 68, 68, 0.3);
+    background: linear-gradient(145deg, rgba(30, 41, 59, 0.6), rgba(15, 23, 42, 0.85));
+}
+.op-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+}
+.op-status-badge {
+    margin-top: 14px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+/* Toggle Switch Styling */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 48px;
+    height: 26px;
+    flex-shrink: 0;
+}
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(255, 255, 255, 0.2);
+    transition: .3s;
+    border-radius: 34px;
+    border: 1px solid rgba(255,255,255,0.2);
+}
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: .3s;
+    border-radius: 50%;
+}
+input:checked + .slider {
+    background-color: #10b981;
+}
+input:checked + .slider:before {
+    transform: translateX(22px);
+}
+</style>
+
+<script>
+function updateCardState(checkbox) {
+    const card = checkbox.closest('.op-card');
+    const badgeContainer = card.querySelector('.op-status-badge');
+    if (checkbox.checked) {
+        card.classList.remove('op-locked');
+        card.classList.add('op-unlocked');
+        badgeContainer.innerHTML = '<span class="badge badge-approved" style="font-size: 0.75rem;"><i class="fa-solid fa-lock-open"></i> UNLOCKED (തുറന്നിരിക്കുന്നു)</span>';
+    } else {
+        card.classList.remove('op-unlocked');
+        card.classList.add('op-locked');
+        badgeContainer.innerHTML = '<span class="badge badge-rejected" style="font-size: 0.75rem;"><i class="fa-solid fa-lock"></i> LOCKED (ലോക്ക്ഡ്)</span>';
+    }
+}
+</script>
+{% endblock %}

@@ -67,6 +67,25 @@
             <input type="number" name="duration_per_participant" class="form-control" value="{{ program.duration_per_participant }}" min="1">
         </div>
 
+        <div class="form-group">
+            <label class="form-label" style="color: {% if program.is_group %}#f472b6{% else %}#c084fc{% endif %}; font-weight: 700;">
+                <i class="fa-solid {% if program.is_group %}fa-people-roof{% else %}fa-users-viewfinder{% endif %}"></i> 
+                {% if program.is_group %}Max Group Entries per Team (Override){% else %}Max Participants per Team (Override){% endif %}
+            </label>
+            <input type="number" name="max_participants_per_team" class="form-control" value="{{ program.max_participants_per_team|default:0 }}" min="0" placeholder="0 = Use Fest Default / Unlimited">
+            <small style="color: var(--text-muted); font-size: 0.75rem; display: block; margin-top: 4px;">
+                Current effective limit: 
+                <strong>
+                    {% if program.has_team_limit %}
+                        {{ program.effective_max_participants_per_team }} {% if program.is_group %}Group Entries{% else %}Participants{% endif %} per Team
+                    {% else %}
+                        Unlimited (0)
+                    {% endif %}
+                </strong>
+                (Leave 0 to use fest default).
+            </small>
+        </div>
+
         <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 24px;">
             <a href="{% url 'core:program_list' institution.slug %}" class="btn-primary" style="background: rgba(255,255,255,0.08); box-shadow: none;">Cancel</a>
             <button type="submit" class="btn-success">

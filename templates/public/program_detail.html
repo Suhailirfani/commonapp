@@ -28,7 +28,9 @@
                 <th>Team</th>
                 {% endif %}
                 <th>Code Letter</th>
+                {% if institution.has_grades %}
                 <th>Grade</th>
+                {% endif %}
             </tr>
         </thead>
         <tbody>
@@ -59,6 +61,7 @@
                 <td><span class="badge badge-approved">{{ p.contestant.team.name }}</span></td>
                 {% endif %}
                 <td><code>{{ p.code_letter|default:"-" }}</code></td>
+                {% if institution.has_grades %}
                 <td>
                     {% if p.grade %}
                     <span class="badge badge-approved" style="font-weight: 800;">{{ p.grade }} Grade</span>
@@ -66,10 +69,11 @@
                     <span style="color: var(--text-muted);">-</span>
                     {% endif %}
                 </td>
+                {% endif %}
             </tr>
             {% empty %}
             <tr>
-                <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 30px;">
+                <td colspan="{% if institution.has_grades %}6{% else %}5{% endif %}" style="text-align: center; color: var(--text-muted); padding: 30px;">
                     No participation records found.
                 </td>
             </tr>

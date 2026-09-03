@@ -30,17 +30,35 @@
     </div>
 </div>
 
+{% if not institution.allows_category_management %}
+<!-- LOCK BANNER -->
+<div class="glass-card" style="margin-bottom: 20px; padding: 14px 18px; border: 1px solid rgba(239, 68, 68, 0.4); background: linear-gradient(135deg, rgba(239, 68, 68, 0.12), rgba(15, 23, 42, 0.95)); border-radius: 12px;">
+    <div style="display: flex; align-items: center; gap: 12px;">
+        <i class="fa-solid fa-lock" style="font-size: 1.3rem; color: #f87171;"></i>
+        <div>
+            <strong style="color: #f87171; font-size: 0.95rem; display: block;">🔒 Category Management Locked (കാറ്റഗറി മാറ്റങ്ങൾ ലോക്ക് ചെയ്തിരിക്കുന്നു)</strong>
+            <span style="color: #cbd5e1; font-size: 0.83rem;">സെറ്റിംഗ്സിൽ കാറ്റഗറി മാനേജ്മെന്റ് ലോക്ക് ചെയ്തിരിക്കുന്നതിനാൽ പുതിയ വിഭാഗങ്ങൾ ചേർക്കാനോ എഡിറ്റ് ചെയ്യാനോ സാധിക്കില്ല. <a href="{% url 'core:settings_operations' institution.slug %}" style="color: var(--accent-cyan); font-weight: 700;">അൺലോക്ക് ചെയ്യാൻ ഇവിടെ ക്ലിക്ക് ചെയ്യുക</a>.</span>
+        </div>
+    </div>
+</div>
+{% endif %}
+
 <div class="form-grid-2">
 
     <!-- Add Category Form -->
-    <div class="glass-card">
-        <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 16px;"><i class="fa-solid fa-plus"></i> Add New Category</h3>
+    <div class="glass-card" style="{% if not institution.allows_category_management %}opacity: 0.65;{% endif %}">
+        <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 16px;">
+            <i class="fa-solid fa-plus"></i> Add New Category
+            {% if not institution.allows_category_management %}
+            <span class="badge badge-rejected" style="font-size: 0.72rem; margin-left: 8px;"><i class="fa-solid fa-lock"></i> Locked</span>
+            {% endif %}
+        </h3>
         
         <form method="POST">
             {% csrf_token %}
             <div class="form-group">
                 <label class="form-label">Fest</label>
-                <select name="competition_id" class="form-control" required>
+                <select name="competition_id" class="form-control" required {% if not institution.allows_category_management %}disabled{% endif %}>
                     {% for comp in competitions %}
                     <option value="{{ comp.id }}">{{ comp.name }}</option>
                     {% endfor %}
@@ -49,12 +67,12 @@
 
             <div class="form-group">
                 <label class="form-label">Category Name</label>
-                <input type="text" name="name" class="form-control" placeholder="e.g. Sub-Junior or General A" required>
+                <input type="text" name="name" class="form-control" placeholder="e.g. Sub-Junior or General A" required {% if not institution.allows_category_management %}disabled{% endif %}>
             </div>
 
             <div class="form-group">
                 <label class="form-label">Category Type</label>
-                <select name="is_common" id="is_common_select" class="form-control" onchange="toggleCommonSection()" required>
+                <select name="is_common" id="is_common_select" class="form-control" onchange="toggleCommonSection()" required {% if not institution.allows_category_management %}disabled{% endif %}>
                     <option value="0">Standard Base Category (e.g. Sub-Junior, Junior, Senior)</option>
                     <option value="1">Common / Combined Category (e.g. General A, General B)</option>
                 </select>
@@ -69,7 +87,7 @@
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px;">
                     {% for b_cat in base_categories %}
                     <div style="display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.02); padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border-color);">
-                        <input type="checkbox" name="included_categories[]" value="{{ b_cat.id }}" id="cat_inc_{{ b_cat.id }}" style="width: 16px; height: 16px; cursor: pointer;">
+                        <input type="checkbox" name="included_categories[]" value="{{ b_cat.id }}" id="cat_inc_{{ b_cat.id }}" style="width: 16px; height: 16px; cursor: pointer;" {% if not institution.allows_category_management %}disabled{% endif %}>
                         <label for="cat_inc_{{ b_cat.id }}" style="cursor: pointer; font-size: 0.88rem;">{{ b_cat.name }}</label>
                     </div>
                     {% empty %}
@@ -80,10 +98,10 @@
 
             <div class="form-group">
                 <label class="form-label">Description / Remarks (Optional)</label>
-                <input type="text" name="description" class="form-control" placeholder="e.g. Age 10-12 years or Combined General Category">
+                <input type="text" name="description" class="form-control" placeholder="e.g. Age 10-12 years or Combined General Category" {% if not institution.allows_category_management %}disabled{% endif %}>
             </div>
 
-            <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; margin-top: 10px;">
+            <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; margin-top: 10px;" {% if not institution.allows_category_management %}disabled style="opacity: 0.5; cursor: not-allowed;"{% endif %}>
                 <i class="fa-solid fa-floppy-disk"></i> Save Category
             </button>
         </form>

@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Workspace Details & Developer Support - {{ institution.name }}{% endblock %}
+
+{% block content %}
+<div class="page-header" style="margin-bottom: 24px;">
+    <div>
+        <a href="{% url 'core:settings' institution.slug %}" style="color: var(--accent-cyan); text-decoration: none; font-size: 0.9rem; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; margin-bottom: 8px;">
+            <i class="fa-solid fa-arrow-left"></i> Back to Settings Hub
+        </a>
+        <h2 style="font-size: 1.8rem; font-weight: 800;"><i class="fa-solid fa-shield-halved" style="color: var(--accent-emerald);"></i> Workspace & Developer Support Access</h2>
+        <p style="color: #cbd5e1; font-size: 0.9rem; margin-top: 4px;">
+            സ്ഥാപന വിവരങ്ങൾ, ആക്ടീവ് ഫീച്ചറുകൾ, സാങ്കേതിക സഹായത്തിനായുള്ള ഡെവലപ്പർ സപ്പോർട്ട് അനുമതി.
+        </p>
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 24px;">
+
+    <!-- Workspace Details Card -->
+    <div class="glass-card" style="background: linear-gradient(145deg, rgba(30, 41, 59, 0.88), rgba(24, 33, 47, 0.95)); border: 1px solid rgba(255,255,255,0.12);">
+        <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 16px; color: #fff;">
+            <i class="fa-solid fa-building" style="color: var(--accent-emerald);"></i> സ്ഥാപന വിവരങ്ങൾ (Workspace Details)
+        </h3>
+        <ul style="list-style: none; line-height: 2.4; font-size: 0.95rem; padding: 0; color: #e2e8f0;">
+            <li style="border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 6px;">
+                <span style="color: #94a3b8;">സ്ഥാപനത്തിന്റെ പേര്:</span> <strong>{{ institution.name }}</strong>
+            </li>
+            <li style="border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 6px;">
+                <span style="color: #94a3b8;">പോർട്ടൽ ലിങ്ക് (Slug):</span> <code style="color: var(--accent-cyan);">{{ institution.slug }}</code>
+            </li>
+            <li style="border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 6px;">
+                <span style="color: #94a3b8;">അക്കൗണ്ട് സ്റ്റാറ്റസ്:</span> <span class="badge badge-approved"><i class="fa-solid fa-check"></i> {{ institution.get_status_display }}</span>
+            </li>
+            <li style="border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 6px;">
+                <span style="color: #94a3b8;">ഇമെയിൽ വിലാസം:</span> <strong>{{ institution.email }}</strong>
+            </li>
+            {% if institution.active_add_ons %}
+            <li style="padding-top: 6px;">
+                <strong style="color: var(--accent-emerald);">✨ ആക്ടീവ് ആഡ്-ഓണുകൾ (Add-Ons):</strong>
+                <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px;">
+                    {% for grant in institution.active_add_ons %}
+                    <span class="badge badge-approved" style="font-size: 0.82rem;"><i class="fa-solid fa-puzzle-piece"></i> {{ grant.add_on.name }}</span>
+                    {% endfor %}
+                </div>
+            </li>
+            {% endif %}
+        </ul>
+    </div>
+
+    <!-- Developer Support Access Toggle Card -->
+    <div class="glass-card" style="border: 1px solid {% if institution.allow_developer_access %}#10b981{% else %}rgba(255,255,255,0.12){% endif %}; background: {% if institution.allow_developer_access %}linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(24, 33, 47, 0.95)){% else %}linear-gradient(145deg, rgba(30, 41, 59, 0.88), rgba(24, 33, 47, 0.95)){% endif %}; display: flex; flex-direction: column; justify-content: space-between;">
+        <div>
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+                {% if institution.allow_developer_access %}
+                <span class="badge" style="background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid #10b981; font-weight: 800; font-size: 0.85rem; padding: 6px 12px;">
+                    <i class="fa-solid fa-lock-open"></i> SUPPORT ACCESS: ON (തുറന്നിരിക്കുന്നു)
+                </span>
+                {% else %}
+                <span class="badge" style="background: rgba(255, 255, 255, 0.08); color: #cbd5e1; border: 1px solid rgba(255,255,255,0.15); font-weight: 800; font-size: 0.85rem; padding: 6px 12px;">
+                    <i class="fa-solid fa-lock"></i> SUPPORT ACCESS: OFF (സുരക്ഷിതം)
+                </span>
+                {% endif %}
+            </div>
+            
+            <h3 style="font-size: 1.25rem; font-weight: 700; color: #fff; margin: 0 0 10px 0;">
+                <i class="fa-solid fa-headset" style="color: var(--accent-cyan);"></i> ഡെവലപ്പർ സപ്പോർട്ട് ആക്സസ് (Developer Support)
+            </h3>
+            
+            <p style="color: #cbd5e1; font-size: 0.9rem; line-height: 1.7; margin: 0;">
+                നിങ്ങളുടെ പോർട്ടലിലെ സാങ്കേതിക തകരാറുകളോ എററുകളോ പരിഹരിക്കുന്നതിനും, സെറ്റപ്പ് ചെയ്യുന്നതിനും ഡെവലപ്പർക്ക് / സൂപ്പർ അഡ്മിന് താൽക്കാലികമായി നിങ്ങളുടെ ഡാഷ്‌ബോർഡിൽ പ്രവേശിക്കാനുള്ള അനുമതിയാണിത്.
+            </p>
+
+            <div style="background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 12px; margin-top: 14px;">
+                <p style="color: #94a3b8; font-size: 0.83rem; margin: 0; line-height: 1.5;">
+                    💡 <strong>സഹായം ആവശ്യമുള്ളപ്പോൾ മാത്രം</strong> ഇത് <strong>ON</strong> ആക്കുക. സാധാരണ സമയങ്ങളിൽ നിങ്ങളുടെ സ്ഥാപനത്തിന്റെ സ്വകാര്യതയും സുരക്ഷയും നിലനിർത്താൻ ഇത് <strong>OFF</strong> ആക്കി വെക്കാവുന്നതാണ്.
+                </p>
+            </div>
+        </div>
+
+        <div style="margin-top: 24px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 16px;">
+            <form method="POST" style="margin: 0;">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="toggle_developer_access">
+                {% if institution.allow_developer_access %}
+                <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; background: rgba(225, 29, 72, 0.2); border: 1px solid #e11d48; color: #f43f5e; padding: 12px; font-weight: 700; font-size: 0.95rem;">
+                    <i class="fa-solid fa-toggle-on" style="font-size: 1.2rem;"></i> സപ്പോർട്ട് അനുമതി ഓഫ് ചെയ്യുക (Turn OFF Access)
+                </button>
+                {% else %}
+                <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; background: linear-gradient(135deg, #10b981, #059669); color: #fff; padding: 12px; font-weight: 700; border: none; font-size: 0.95rem;">
+                    <i class="fa-solid fa-toggle-off" style="font-size: 1.2rem;"></i> സപ്പോർട്ട് അനുമതി ഓൺ ചെയ്യുക (Turn ON Access)
+                </button>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

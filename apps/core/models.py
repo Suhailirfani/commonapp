@@ -32,6 +32,49 @@ class Competition(TenantBaseModel):
     start_date = models.DateField(null=True, blank=True)
     end_date = models.DateField(null=True, blank=True)
     is_active = models.BooleanField(default=True)
+    max_single_programs_per_contestant = models.PositiveIntegerField(
+        default=0, 
+        help_text="Maximum single programs allowed per contestant (0 for no limit / unlimited)"
+    )
+    max_group_programs_per_contestant = models.PositiveIntegerField(
+        default=0, 
+        help_text="Maximum group programs allowed per contestant (0 for no limit / unlimited)"
+    )
+    max_total_programs_per_contestant = models.PositiveIntegerField(
+        default=0, 
+        help_text="Maximum total programs allowed per contestant (0 for no limit / unlimited)"
+    )
+    max_team_participants_per_single_program = models.PositiveIntegerField(
+        default=0,
+        help_text="Default maximum participants allowed per team in a single program (0 for no limit / unlimited)"
+    )
+    max_team_entries_per_group_program = models.PositiveIntegerField(
+        default=0,
+        help_text="Default maximum group entries allowed per team in a group program (0 for no limit / unlimited)"
+    )
+
+    # Operational Locks / Feature Toggles
+    allow_team_management = models.BooleanField(
+        default=True, 
+        help_text="Allow adding, editing, or deleting Teams"
+    )
+    allow_category_management = models.BooleanField(
+        default=True, 
+        help_text="Allow adding, editing, or deleting Categories"
+    )
+    allow_program_management = models.BooleanField(
+        default=True, 
+        help_text="Allow adding, editing, or deleting Programs & Bulk Import"
+    )
+    allow_contestant_registration = models.BooleanField(
+        default=True, 
+        help_text="Allow adding, editing, or deleting Contestants & Bulk Upload"
+    )
+    allow_program_assignment = models.BooleanField(
+        default=True, 
+        help_text="Allow assigning or unassigning contestants in single and group programs"
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -39,6 +82,26 @@ class Competition(TenantBaseModel):
 
     def __str__(self):
         return f"{self.name} ({self.get_type_display()}) - {self.institution.name}"
+
+    @property
+    def has_single_limit(self):
+        return bool(self.max_single_programs_per_contestant and self.max_single_programs_per_contestant > 0)
+
+    @property
+    def has_group_limit(self):
+        return bool(self.max_group_programs_per_contestant and self.max_group_programs_per_contestant > 0)
+
+    @property
+    def has_total_limit(self):
+        return bool(self.max_total_programs_per_contestant and self.max_total_programs_per_contestant > 0)
+
+    @property
+    def has_team_single_limit(self):
+        return bool(self.max_team_participants_per_single_program and self.max_team_participants_per_single_program > 0)
+
+    @property
+    def has_team_group_limit(self):
+        return bool(self.max_team_entries_per_group_program and self.max_team_entries_per_group_program > 0)
 
 
 class CustomResultTemplate(TenantBaseModel):
@@ -187,6 +250,10 @@ class Program(TenantBaseModel):
         default='OFFICIALS',
         help_text="Who inputs marks for this program: Officials or Judges"
     )
+    max_participants_per_team = models.PositiveIntegerField(
+        default=0,
+        help_text="Maximum participants allowed per team for this program (0 to use fest default / unlimited)"
+    )
 
     class Meta:
         ordering = ['category', 'name']
@@ -194,6 +261,48 @@ class Program(TenantBaseModel):
     def __str__(self):
         group_str = "Group" if self.is_group else "Single"
         return f"{self.name} ({self.category.name}) [{group_str}]"
+
+    @property
+    def effective_max_participants_per_team(self):
+        if self.max_participants_per_team and self.max_participants_per_team > 0:
+            return self.max_participants_per_team
+        if self.competition:
+            if self.is_group:
+                return self.competition.max_team_entries_per_group_program or 0
+            else:
+                return self.competition.max_team_participants_per_single_program or 0
+        return 0
+
+    @property
+    def has_team_limit(self):
+        return self.effective_max_participants_per_team > 0
+
+    def get_team_participants_count(self, team):
+        if not team:
+            return 0
+        if self.is_group:
+            return self.group_participations.filter(team=team).count()
+        return self.single_participations.filter(contestant__team=team).count()
+
+    def can_team_enroll(self, team, additional=1, exclude_contestant_ids=None):
+        """Checks if team can enroll additional participant(s)/entries into this program. Returns (can_enroll: bool, reason: str)."""
+        limit = self.effective_max_participants_per_team
+        if not limit or limit <= 0:
+            return True, ""
+
+        current_count = self.get_team_participants_count(team)
+        if exclude_contestant_ids:
+            if not self.is_group:
+                excluded_in_prog = self.single_participations.filter(
+                    contestant__team=team,
+                    contestant_id__in=exclude_contestant_ids
+                ).count()
+                current_count = max(0, current_count - excluded_in_prog)
+
+        if current_count + additional > limit:
+            item_type = "group entries" if self.is_group else "participants"
+            return False, f"Team '{team.name}' has reached the maximum allowed {item_type} limit ({limit}) for program '{self.name}'."
+        return True, ""
 
     @property
     def judge_slots(self):
@@ -250,6 +359,46 @@ class Contestant(TenantBaseModel):
             if p.rank or p.grade:
                 pts += p.total_points
         return pts
+
+    @property
+    def single_programs_count(self):
+        return self.participations.count()
+
+    @property
+    def group_programs_count(self):
+        return GroupParticipation.objects.filter(
+            models.Q(contestants=self) | models.Q(captain=self)
+        ).distinct().count()
+
+    @property
+    def total_programs_count(self):
+        return self.single_programs_count + self.group_programs_count
+
+    def can_enroll_single(self, additional=1):
+        """Checks if contestant can enroll in additional single program(s). Returns (can_enroll: bool, reason: str)."""
+        comp = self.competition
+        if not comp:
+            return True, ""
+        if comp.has_single_limit:
+            if self.single_programs_count + additional > comp.max_single_programs_per_contestant:
+                return False, f"Maximum single programs limit ({comp.max_single_programs_per_contestant}) reached."
+        if comp.has_total_limit:
+            if self.total_programs_count + additional > comp.max_total_programs_per_contestant:
+                return False, f"Maximum total programs limit ({comp.max_total_programs_per_contestant}) reached."
+        return True, ""
+
+    def can_enroll_group(self, additional=1):
+        """Checks if contestant can participate in additional group program(s). Returns (can_enroll: bool, reason: str)."""
+        comp = self.competition
+        if not comp:
+            return True, ""
+        if comp.has_group_limit:
+            if self.group_programs_count + additional > comp.max_group_programs_per_contestant:
+                return False, f"Maximum group programs limit ({comp.max_group_programs_per_contestant}) reached."
+        if comp.has_total_limit:
+            if self.total_programs_count + additional > comp.max_total_programs_per_contestant:
+                return False, f"Maximum total programs limit ({comp.max_total_programs_per_contestant}) reached."
+        return True, ""
 
     def __str__(self):
         return f"#{self.chest_no} {self.name} ({self.team.name})"
@@ -317,20 +466,22 @@ class Participation(TenantBaseModel):
         r1 = config.single_rank_1_points if config else 5
         r2 = config.single_rank_2_points if config else 3
         r3 = config.single_rank_3_points if config else 1
-        gap = config.single_grade_aplus_points if config else 6
-        ga = config.single_grade_a_points if config else 5
-        gb = config.single_grade_b_points if config else 3
-        gc = config.single_grade_c_points if config else 1
+        has_grades = config.enable_grades if config else True
+        gap = (config.single_grade_aplus_points if config else 6) if has_grades else 0
+        ga = (config.single_grade_a_points if config else 5) if has_grades else 0
+        gb = (config.single_grade_b_points if config else 3) if has_grades else 0
+        gc = (config.single_grade_c_points if config else 1) if has_grades else 0
 
         pts = 0
         if self.rank == 1: pts += r1
         elif self.rank == 2: pts += r2
         elif self.rank == 3: pts += r3
 
-        if self.grade == 'A+': pts += gap
-        elif self.grade == 'A': pts += ga
-        elif self.grade == 'B': pts += gb
-        elif self.grade == 'C': pts += gc
+        if has_grades:
+            if self.grade == 'A+': pts += gap
+            elif self.grade == 'A': pts += ga
+            elif self.grade == 'B': pts += gb
+            elif self.grade == 'C': pts += gc
         return pts
 
 
@@ -388,25 +539,33 @@ class GroupParticipation(TenantBaseModel):
         r1 = config.group_rank_1_points if config else 10
         r2 = config.group_rank_2_points if config else 6
         r3 = config.group_rank_3_points if config else 3
-        gap = config.group_grade_aplus_points if config else 6
-        ga = config.group_grade_a_points if config else 5
-        gb = config.group_grade_b_points if config else 3
-        gc = config.group_grade_c_points if config else 1
+        has_grades = config.enable_grades if config else True
+        gap = (config.group_grade_aplus_points if config else 6) if has_grades else 0
+        ga = (config.group_grade_a_points if config else 5) if has_grades else 0
+        gb = (config.group_grade_b_points if config else 3) if has_grades else 0
+        gc = (config.group_grade_c_points if config else 1) if has_grades else 0
 
         pts = 0
         if self.rank == 1: pts += r1
         elif self.rank == 2: pts += r2
         elif self.rank == 3: pts += r3
 
-        if self.grade == 'A+': pts += gap
-        elif self.grade == 'A': pts += ga
-        elif self.grade == 'B': pts += gb
-        elif self.grade == 'C': pts += gc
+        if has_grades:
+            if self.grade == 'A+': pts += gap
+            elif self.grade == 'A': pts += ga
+            elif self.grade == 'B': pts += gb
+            elif self.grade == 'C': pts += gc
         return pts
 
 
 # ----------------- Points Configuration -----------------
 class PointsConfig(TenantBaseModel):
+    # Master Mode
+    enable_grades = models.BooleanField(
+        default=True, 
+        help_text="Enable Grades (A+, A, B, C) and display Grade columns across result sheets and scoreboards. Turn OFF for Ranks Only mode."
+    )
+
     # Single Event Rank Points
     single_rank_1_points = models.IntegerField(default=5)
     single_rank_2_points = models.IntegerField(default=3)

@@ -105,5 +105,29 @@
 <p style="color: #64748b; text-align: center;">No teams created yet.</p>
 {% endfor %}
 
+{% if unassigned_contestants %}
+<div class="team-title">
+    GENERAL / UNASSIGNED CONTESTANTS (Total: {{ unassigned_contestants|length }})
+</div>
+<table>
+    <thead>
+        <tr>
+            <th style="width: 15%;">Chest No</th>
+            <th style="width: 55%;">Contestant Full Name</th>
+            <th style="width: 30%;">Category</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for contestant in unassigned_contestants %}
+        <tr>
+            <td><strong>#{{ contestant.chest_no }}</strong></td>
+            <td><strong>{{ contestant.name }}</strong></td>
+            <td>{{ contestant.category.name|default:"-" }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endif %}
+
 </body>
 </html>

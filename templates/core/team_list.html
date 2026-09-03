@@ -30,17 +30,35 @@
     </div>
 </div>
 
+{% if not institution.allows_team_management %}
+<!-- LOCK BANNER -->
+<div class="glass-card" style="margin-bottom: 20px; padding: 14px 18px; border: 1px solid rgba(239, 68, 68, 0.4); background: linear-gradient(135deg, rgba(239, 68, 68, 0.12), rgba(15, 23, 42, 0.95)); border-radius: 12px;">
+    <div style="display: flex; align-items: center; gap: 12px;">
+        <i class="fa-solid fa-lock" style="font-size: 1.3rem; color: #f87171;"></i>
+        <div>
+            <strong style="color: #f87171; font-size: 0.95rem; display: block;">🔒 Team Management Locked (ടീം മാറ്റങ്ങൾ ലോക്ക് ചെയ്തിരിക്കുന്നു)</strong>
+            <span style="color: #cbd5e1; font-size: 0.83rem;">സെറ്റിംഗ്സിൽ ടീം മാനേജ്മെന്റ് ലോക്ക് ചെയ്തിരിക്കുന്നതിനാൽ പുതിയ ടീമുകൾ ചേർക്കാനോ എഡിറ്റ് ചെയ്യാനോ സാധിക്കില്ല. <a href="{% url 'core:settings_operations' institution.slug %}" style="color: var(--accent-cyan); font-weight: 700;">അൺലോക്ക് ചെയ്യാൻ ഇവിടെ ക്ലിക്ക് ചെയ്യുക</a>.</span>
+        </div>
+    </div>
+</div>
+{% endif %}
+
 <div class="form-grid-2">
 
     <!-- Add Team Form -->
-    <div class="glass-card">
-        <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 16px;"><i class="fa-solid fa-plus"></i> Add New Team / House</h3>
+    <div class="glass-card" style="{% if not institution.allows_team_management %}opacity: 0.65;{% endif %}">
+        <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 16px;">
+            <i class="fa-solid fa-plus"></i> Add New Team / House
+            {% if not institution.allows_team_management %}
+            <span class="badge badge-rejected" style="font-size: 0.72rem; margin-left: 8px;"><i class="fa-solid fa-lock"></i> Locked</span>
+            {% endif %}
+        </h3>
         
         <form method="POST" enctype="multipart/form-data">
             {% csrf_token %}
             <div class="form-group">
                 <label class="form-label">Fest</label>
-                <select name="competition_id" class="form-control" required>
+                <select name="competition_id" class="form-control" required {% if not institution.allows_team_management %}disabled{% endif %}>
                     {% for comp in competitions %}
                     <option value="{{ comp.id }}">{{ comp.name }}</option>
                     {% endfor %}
@@ -49,17 +67,17 @@
 
             <div class="form-group">
                 <label class="form-label">Team Name</label>
-                <input type="text" name="name" class="form-control" placeholder="e.g. Red House, Ruby, Emerald, Al-Fath" required>
+                <input type="text" name="name" class="form-control" placeholder="e.g. Red House, Ruby, Emerald, Al-Fath" required {% if not institution.allows_team_management %}disabled{% endif %}>
             </div>
 
             <div class="form-group">
                 <label class="form-label">Code / Identification Letter (Optional)</label>
-                <input type="text" name="code_letter" class="form-control" placeholder="e.g. A, B, RED, BLUE" maxlength="10">
+                <input type="text" name="code_letter" class="form-control" placeholder="e.g. A, B, RED, BLUE" maxlength="10" {% if not institution.allows_team_management %}disabled{% endif %}>
             </div>
 
             <div class="form-group">
                 <label class="form-label">Assign Team Leader (Optional)</label>
-                <select name="leader_id" class="form-control">
+                <select name="leader_id" class="form-control" {% if not institution.allows_team_management %}disabled{% endif %}>
                     <option value="">-- Select Team Leader --</option>
                     {% for leader in team_leaders %}
                     <option value="{{ leader.id }}">{{ leader.username }} {% if leader.managed_team %}(Currently: {{ leader.managed_team.name }}){% endif %}</option>
@@ -69,10 +87,10 @@
 
             <div class="form-group">
                 <label class="form-label">Team Logo / Emblem (Optional)</label>
-                <input type="file" name="logo" class="form-control" accept="image/*">
+                <input type="file" name="logo" class="form-control" accept="image/*" {% if not institution.allows_team_management %}disabled{% endif %}>
             </div>
 
-            <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; margin-top: 10px;">
+            <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; margin-top: 10px;" {% if not institution.allows_team_management %}disabled style="opacity: 0.5; cursor: not-allowed;"{% endif %}>
                 <i class="fa-solid fa-floppy-disk"></i> Save Team
             </button>
         </form>

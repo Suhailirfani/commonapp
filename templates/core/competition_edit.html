@@ -67,6 +67,38 @@
                 <input type="number" name="year" class="form-control" value="{{ comp.year }}" required>
             </div>
 
+            <!-- Program Participation Limits -->
+            <div style="background: rgba(0,0,0,0.25); border: 1px solid var(--border-color); border-radius: 10px; padding: 14px; margin-bottom: 16px;">
+                <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--accent-cyan); margin-bottom: 10px;">
+                    <i class="fa-solid fa-user-shield"></i> Contestant Program Participation Limits (0 = Unlimited)
+                </h4>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div class="form-group" style="margin: 0;">
+                        <label class="form-label" style="font-size: 0.82rem; color: var(--accent-emerald);">Max Single Programs</label>
+                        <input type="number" name="max_single_programs_per_contestant" class="form-control" value="{{ comp.max_single_programs_per_contestant|default:0 }}" min="0" placeholder="0 = No limit">
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <label class="form-label" style="font-size: 0.82rem; color: var(--accent-amber);">Max Group Programs</label>
+                        <input type="number" name="max_group_programs_per_contestant" class="form-control" value="{{ comp.max_group_programs_per_contestant|default:0 }}" min="0" placeholder="0 = No limit">
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-top: 10px;">
+                    <div class="form-group" style="margin: 0;">
+                        <label class="form-label" style="font-size: 0.82rem; color: var(--accent-cyan);">Max Total Programs</label>
+                        <input type="number" name="max_total_programs_per_contestant" class="form-control" value="{{ comp.max_total_programs_per_contestant|default:0 }}" min="0" placeholder="0 = No limit">
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <label class="form-label" style="font-size: 0.82rem; color: #c084fc;">Team Limit (Single Item)</label>
+                        <input type="number" name="max_team_participants_per_single_program" class="form-control" value="{{ comp.max_team_participants_per_single_program|default:0 }}" min="0" placeholder="0 = No limit">
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <label class="form-label" style="font-size: 0.82rem; color: #f472b6;">Team Limit (Group Item)</label>
+                        <input type="number" name="max_team_entries_per_group_program" class="form-control" value="{{ comp.max_team_entries_per_group_program|default:0 }}" min="0" placeholder="0 = No limit">
+                    </div>
+                </div>
+                <small style="color: var(--text-muted); font-size: 0.74rem; display: block; margin-top: 6px;">Default 0 allows unlimited participation across programs and teams.</small>
+            </div>
+
             <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 24px;">
                 <a href="{% url 'core:competition_list' institution.slug %}" class="btn-primary" style="background: rgba(255,255,255,0.08); box-shadow: none;">Cancel</a>
                 <button type="submit" class="btn-success">

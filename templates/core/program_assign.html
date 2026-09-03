@@ -8,15 +8,28 @@
     <div>
         <a href="{% url 'core:program_list' institution.slug %}" style="color: var(--text-muted); text-decoration: none;"><i class="fa-solid fa-arrow-left"></i> Back to Programs</a>
         <h2 style="font-size: 1.8rem; font-weight: 800; margin-top: 4px;">Assign Contestants: <span style="color: var(--accent-cyan);">{{ program.name }}</span></h2>
-        <p style="color: var(--text-muted); font-size: 0.9rem;">
-            Category: <strong>{{ program.category.name }}</strong>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 6px;">
+            <span class="badge badge-approved" style="font-size: 0.8rem;">
+                <i class="fa-solid fa-tag"></i> {{ program.category.name }}
+            </span>
             {% if program.category.is_common %}
-            <span class="badge badge-pending" style="font-size: 0.78rem; margin-left: 4px;">
+            <span class="badge badge-pending" style="font-size: 0.78rem;">
                 Combined Category ({% for inc in program.category.get_eligible_categories %}{{ inc.name }}{% if not forloop.last %}, {% endif %}{% endfor %})
             </span>
             {% endif %}
-            | Format: <strong>{% if program.is_group %}Group Event{% else %}Single Event{% endif %}</strong>
-        </p>
+            <span class="badge badge-pending" style="font-size: 0.8rem;">
+                {% if program.is_group %}Group Event{% else %}Single Event{% endif %}
+            </span>
+            {% if program.has_team_limit %}
+            <span class="badge" style="background: rgba(192, 132, 252, 0.2); color: #c084fc; border: 1px solid rgba(192, 132, 252, 0.4); font-size: 0.8rem; font-weight: 700;">
+                <i class="fa-solid fa-users-viewfinder"></i> Team Limit: Max {{ program.effective_max_participants_per_team }} per Team
+            </span>
+            {% else %}
+            <span class="badge badge-approved" style="font-size: 0.78rem;">
+                Team Limit: Unlimited
+            </span>
+            {% endif %}
+        </div>
     </div>
 </div>
 

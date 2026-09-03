@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Feature Extensions & Add-Ons - {{ institution.name }}{% endblock %}
+
+{% block content %}
+<div class="page-header" style="margin-bottom: 24px;">
+    <div>
+        <a href="{% url 'core:settings' institution.slug %}" style="color: var(--accent-cyan); text-decoration: none; font-size: 0.9rem; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; margin-bottom: 8px;">
+            <i class="fa-solid fa-arrow-left"></i> Back to Settings Hub
+        </a>
+        <h2 style="font-size: 1.8rem; font-weight: 800;"><i class="fa-solid fa-cubes" style="color: var(--accent-amber);"></i> Feature Extensions & Add-Ons</h2>
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 4px;">Manage premium studios, winner certificate generators, and contestant dashboards.</p>
+    </div>
+    {% if request.user.is_developer or request.user.is_superuser %}
+    <a href="{% url 'tenants:developer_addon_detail' 'certificate-generation' %}" class="btn-primary" style="background: linear-gradient(135deg, var(--accent-cyan), #0284c7); font-size: 0.85rem; padding: 8px 16px; text-decoration: none;">
+        <i class="fa-solid fa-sliders"></i> Open Developer Add-Ons Manager
+    </a>
+    {% endif %}
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px;">
+    
+    <!-- Module 1: Winner Certificate Studio -->
+    <div class="glass-card" style="border: 1px solid {% if has_cert_addon %}rgba(16, 185, 129, 0.4){% else %}rgba(245, 158, 11, 0.4){% endif %}; display: flex; flex-direction: column; justify-content: space-between; gap: 16px;">
+        <div>
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+                <h3 style="margin: 0; font-size: 1.2rem; font-weight: 800; color: #fff;">
+                    <i class="fa-solid fa-award" style="color: #f59e0b;"></i> Winner Certificate Studio
+                </h3>
+                <span class="badge" style="{% if has_cert_addon %}background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid #10b981;{% else %}background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid #f59e0b;{% endif %} font-weight: 800; font-size: 0.78rem;">
+                    {% if has_cert_addon %}🟢 ACTIVE (ON){% else %}👑 PRO (OFF){% endif %}
+                </span>
+            </div>
+            <p style="font-size: 0.88rem; color: var(--text-muted); margin: 0; line-height: 1.5;">
+                Automated luxury merit certificates for 1st (Gold), 2nd (Silver), and 3rd (Bronze) place winners with 1-click bulk vector printing.
+            </p>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 14px;">
+            <a href="{% url 'core:certificate_studio' institution.slug %}" style="font-size: 0.88rem; color: var(--accent-cyan); text-decoration: none; font-weight: 700;">
+                <i class="fa-solid fa-arrow-up-right-from-square"></i> Open Studio
+            </a>
+
+            {% if request.user.is_developer or request.user.is_superuser %}
+            <form method="POST" style="margin: 0;">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="toggle_cert_addon">
+                <button type="submit" class="btn btn-sm" style="{% if has_cert_addon %}background: rgba(244, 63, 94, 0.2); color: #fb7185; border: 1px solid #f43f5e;{% else %}background: linear-gradient(135deg, #10b981, #059669); color: #fff; border: none;{% endif %} font-size: 0.82rem; font-weight: 800; padding: 8px 16px; border-radius: 8px; cursor: pointer;">
+                    {% if has_cert_addon %}<i class="fa-solid fa-ban"></i> Turn OFF{% else %}<i class="fa-solid fa-bolt"></i> Turn ON (Grant){% endif %}
+                </button>
+            </form>
+            {% else %}
+            <a href="{% url 'core:certificate_studio' institution.slug %}" class="btn-primary" style="padding: 8px 16px; font-size: 0.85rem; background: linear-gradient(135deg, #f59e0b, #d97706); color: #000; font-weight: 800;">
+                {% if has_cert_addon %}Manage{% else %}Unlock PRO{% endif %}
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Module 2: Contestant Credentials Hub & Personal Portal -->
+    <div class="glass-card" style="border: 1px solid {% if has_contestant_addon %}rgba(16, 185, 129, 0.4){% else %}rgba(245, 158, 11, 0.4){% endif %}; display: flex; flex-direction: column; justify-content: space-between; gap: 16px;">
+        <div>
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+                <h3 style="margin: 0; font-size: 1.2rem; font-weight: 800; color: #fff;">
+                    <i class="fa-solid fa-users-gear" style="color: var(--accent-cyan);"></i> Pupil Portals & Credentials Hub
+                </h3>
+                <span class="badge" style="{% if has_contestant_addon %}background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid #10b981;{% else %}background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid #f59e0b;{% endif %} font-weight: 800; font-size: 0.78rem;">
+                    {% if has_contestant_addon %}🟢 ACTIVE (ON){% else %}👑 PRO (OFF){% endif %}
+                </span>
+            </div>
+            <p style="font-size: 0.88rem; color: var(--text-muted); margin: 0; line-height: 1.5;">
+                Bulk login account generation for all enrolled pupils to access personal schedules, stage venues, timings, and results.
+            </p>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 14px;">
+            <a href="{% url 'core:generate_contestant_credentials' institution.slug %}" style="font-size: 0.88rem; color: var(--accent-cyan); text-decoration: none; font-weight: 700;">
+                <i class="fa-solid fa-arrow-up-right-from-square"></i> Open Credentials Hub
+            </a>
+
+            {% if request.user.is_developer or request.user.is_superuser %}
+            <form method="POST" style="margin: 0;">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="toggle_contestant_addon">
+                <button type="submit" class="btn btn-sm" style="{% if has_contestant_addon %}background: rgba(244, 63, 94, 0.2); color: #fb7185; border: 1px solid #f43f5e;{% else %}background: linear-gradient(135deg, #10b981, #059669); color: #fff; border: none;{% endif %} font-size: 0.82rem; font-weight: 800; padding: 8px 16px; border-radius: 8px; cursor: pointer;">
+                    {% if has_contestant_addon %}<i class="fa-solid fa-ban"></i> Turn OFF{% else %}<i class="fa-solid fa-bolt"></i> Turn ON (Grant){% endif %}
+                </button>
+            </form>
+            {% else %}
+            <a href="{% url 'core:generate_contestant_credentials' institution.slug %}" class="btn-primary" style="padding: 8px 16px; font-size: 0.85rem; background: linear-gradient(135deg, #f59e0b, #d97706); color: #000; font-weight: 800;">
+                {% if has_contestant_addon %}Manage{% else %}Unlock PRO{% endif %}
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+</div>
+{% endblock %}
