@@ -62,12 +62,12 @@
                 </div>
             </div>
             <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
-                {% if item.program.is_announced %}
                 {% if item.program.result_number %}
                 <span class="badge" style="background: rgba(245, 158, 11, 0.2); color: var(--accent-amber); font-weight: 800; font-size: 0.75rem;">
                     Result #{{ item.program.result_number }}
                 </span>
                 {% endif %}
+                {% if item.program.is_announced %}
                 <span class="badge badge-approved" style="font-size: 0.75rem;"><i class="fa-solid fa-bullhorn"></i> Announced</span>
                 {% else %}
                 <span class="badge badge-pending" style="font-size: 0.75rem;"><i class="fa-solid fa-lock"></i> Hidden Draft</span>

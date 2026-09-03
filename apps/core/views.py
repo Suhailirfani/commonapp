@@ -2837,15 +2837,34 @@ def program_results_view(request, institution_slug):
     category_id = request.GET.get('category')
     view_mode = request.GET.get('view', 'announced')
     
+    # Auto-assign result_number to any completed program missing one (1 for first entry, 2, 3...)
+    from django.db.models import Max
+    unassigned_progs = Program.objects.filter(
+        institution=institution,
+        result_number__isnull=True
+    ).filter(
+        Q(single_participations__marks__isnull=False) | Q(group_participations__marks__isnull=False)
+    ).distinct().order_by('id')
+
+    if unassigned_progs.exists():
+        max_num = Program.objects.filter(
+            institution=institution,
+            result_number__isnull=False
+        ).aggregate(Max('result_number'))['result_number__max'] or 0
+        for up in unassigned_progs:
+            max_num += 1
+            up.result_number = max_num
+            up.save(update_fields=['result_number'])
+
     programs = Program.objects.filter(institution=institution).select_related('category')
     if category_id:
         programs = programs.filter(category_id=category_id)
     if view_mode == 'announced':
         programs = programs.filter(is_announced=True).order_by('result_number', 'announced_at', 'id')
     elif view_mode == 'draft':
-        programs = programs.filter(is_announced=False).order_by('id')
+        programs = programs.filter(is_announced=False).order_by('result_number', 'id')
     else:
-        programs = programs.order_by('-is_announced', 'result_number', 'announced_at', 'id')
+        programs = programs.order_by('result_number', 'id')
 
     program_results = []
     for prog in programs:
@@ -3069,7 +3088,7 @@ def toggle_program_announcement_view(request, institution_slug, program_id):
             max_num = Program.objects.filter(
                 institution=institution,
                 competition=program.competition,
-                is_announced=True
+                result_number__isnull=False
             ).aggregate(Max('result_number'))['result_number__max'] or 0
             program.result_number = max_num + 1
         messages.success(request, f"📢 Results for '{program.name}' are now PUBLICLY ANNOUNCED (Result #{program.result_number})!")

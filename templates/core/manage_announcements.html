@@ -126,10 +126,10 @@
                 {% for prog in programs %}
                 <tr>
                     <td>
-                        {% if prog.is_announced %}
+                        {% if prog.result_number %}
                         <div style="display: flex; align-items: center; gap: 6px;">
                             <span class="badge" id="res-num-badge-{{ prog.id }}" style="background: rgba(245, 158, 11, 0.2); color: var(--accent-amber); font-weight: 800; font-size: 0.85rem;">
-                                #{{ prog.result_number|default:"-" }}
+                                #{{ prog.result_number }}
                             </span>
                             <button type="button" onclick="openEditResultModal('{{ prog.id }}', '{{ prog.name|escapejs }}', '{{ prog.result_number|default:'' }}')" style="background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 2px 4px; font-size: 0.8rem;" title="Edit Result Number">
                                 <i class="fa-solid fa-pen-to-square"></i>
@@ -198,7 +198,7 @@
             <div>
                 <strong style="font-size: 1.05rem; display: block; color: var(--text-main);">{{ prog.name }}</strong>
                 <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; align-items: center;">
-                    {% if prog.is_announced and prog.result_number %}
+                    {% if prog.result_number %}
                     <span class="badge" style="background: rgba(245, 158, 11, 0.2); color: var(--accent-amber); font-weight: 800; font-size: 0.75rem;">
                         Result #{{ prog.result_number }}
                     </span>

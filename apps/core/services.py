@@ -130,7 +130,16 @@ def calculate_program_results(program):
         else:
             part.grade = None
 
-        part.save()
+    # Assign permanent sequential result number upon mark entry (1 for first entry, 2, 3...)
+    from django.db.models import Max
+    if not program.result_number:
+        max_num = Program.objects.filter(
+            institution=institution,
+            competition=program.competition,
+            result_number__isnull=False
+        ).aggregate(Max('result_number'))['result_number__max'] or 0
+        program.result_number = max_num + 1
+        program.save(update_fields=['result_number'])
 
     recalculate_team_points(institution)
 
