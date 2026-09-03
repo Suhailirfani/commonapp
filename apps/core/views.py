@@ -970,15 +970,84 @@ def mark_entry_matrix_view(request, institution_slug, program_id):
             return redirect('core:scoring_program_list', institution_slug=institution.slug)
 
     if program.is_group:
-        participations = GroupParticipation.objects.filter(program=program).select_related('team')
-        has_marks = GroupParticipation.objects.filter(program=program, marks__isnull=False).exists()
+        participations = list(GroupParticipation.objects.filter(program=program).select_related('team').prefetch_related('contestants'))
+        has_marks = any(p.marks is not None for p in participations)
     else:
-        participations = Participation.objects.filter(program=program).select_related('contestant', 'contestant__team')
-        has_marks = Participation.objects.filter(program=program, marks__isnull=False).exists()
+        participations = list(Participation.objects.filter(program=program).select_related('contestant', 'contestant__team'))
+        has_marks = any(p.marks is not None for p in participations)
+
+    # Sort participations: if code letters exist, sort by code_letter; else fallback to chest_no/id
+    participations.sort(key=lambda x: (
+        0 if x.code_letter else 1,
+        x.code_letter.upper() if x.code_letter else '',
+        getattr(getattr(x, 'contestant', None), 'chest_no', 0) or x.id
+    ))
 
     if request.method == 'POST':
-        # Action 1: Update Judge Settings (Count & Max Marks per judge)
-        if 'action' in request.POST and request.POST.get('action') == 'update_judge_settings':
+        action = request.POST.get('action', '')
+
+        # Action 1: Fix / Auto-Assign / Clear Code Letters (Admin/Official only)
+        if action == 'fix_code_letters':
+            if request.user.is_judge:
+                messages.error(request, "Permission Denied: Judges cannot modify code letters.")
+                return redirect('core:mark_entry_matrix', institution_slug=institution.slug, program_id=program.id)
+
+            mode = request.POST.get('fix_mode', 'sequential')
+            import random
+
+            def _get_letter_code(idx):
+                res = ""
+                while idx >= 0:
+                    res = chr(ord('A') + (idx % 26)) + res
+                    idx = (idx // 26) - 1
+                return res
+
+            parts_list = list(participations)
+            if mode == 'sequential':
+                # Order by chest_no or id then assign A, B, C...
+                parts_list.sort(key=lambda x: (getattr(getattr(x, 'contestant', None), 'chest_no', 0) or x.id))
+                for idx, p in enumerate(parts_list):
+                    p.code_letter = _get_letter_code(idx)
+                    p.save(update_fields=['code_letter'])
+                messages.success(request, f"✅ Successfully assigned sequential Code Letters (A, B, C...) to {len(parts_list)} participants.")
+
+            elif mode == 'random':
+                # Shuffle randomly and assign A, B, C...
+                random.shuffle(parts_list)
+                for idx, p in enumerate(parts_list):
+                    p.code_letter = _get_letter_code(idx)
+                    p.save(update_fields=['code_letter'])
+                messages.success(request, f"🎲 Successfully randomized and assigned Code Letters (A, B, C...) to {len(parts_list)} participants.")
+
+            elif mode == 'team_code':
+                # Copy from team code letter
+                updated_c = 0
+                for p in parts_list:
+                    team_code = ''
+                    if hasattr(p, 'contestant') and p.contestant and p.contestant.team:
+                        team_code = p.contestant.team.code_letter or ''
+                    elif hasattr(p, 'team') and p.team:
+                        team_code = p.team.code_letter or ''
+                    p.code_letter = team_code.strip().upper() if team_code else None
+                    p.save(update_fields=['code_letter'])
+                    if team_code:
+                        updated_c += 1
+                messages.success(request, f"🏷️ Successfully synced team code letters to {updated_c} participants.")
+
+            elif mode == 'clear':
+                for p in parts_list:
+                    p.code_letter = None
+                    p.save(update_fields=['code_letter'])
+                messages.info(request, "🗑️ Cleared all code letters for this program.")
+
+            return redirect('core:mark_entry_matrix', institution_slug=institution.slug, program_id=program.id)
+
+        # Action 2: Update Judge Settings (Count & Max Marks per judge)
+        if action == 'update_judge_settings':
+            if request.user.is_judge:
+                messages.error(request, "Permission Denied: Judges cannot modify judge panel settings.")
+                return redirect('core:mark_entry_matrix', institution_slug=institution.slug, program_id=program.id)
+
             try:
                 new_jc = int(request.POST.get('judge_count', 1))
                 new_max = int(request.POST.get('max_marks_per_judge', 100))
@@ -993,7 +1062,7 @@ def mark_entry_matrix_view(request, institution_slug, program_id):
                 messages.error(request, "Invalid judge configuration values.")
             return redirect('core:mark_entry_matrix', institution_slug=institution.slug, program_id=program.id)
 
-        # Action 2: Save Marks Entry Matrix
+        # Action 3: Save Marks Entry Matrix
         part_ids = set()
         for key in request.POST.keys():
             if key.startswith('code_letter_'):
@@ -1054,7 +1123,8 @@ def mark_entry_matrix_view(request, institution_slug, program_id):
                 p = Participation.objects.filter(id=part_id, program=program).first()
 
             if p:
-                p.code_letter = code
+                if not request.user.is_judge:
+                    p.code_letter = code if code else None
                 p.marks = converted_marks_100
                 p.judge_marks = j_dict
                 p.save()
@@ -2771,7 +2841,11 @@ def program_results_view(request, institution_slug):
     if category_id:
         programs = programs.filter(category_id=category_id)
     if view_mode == 'announced':
-        programs = programs.filter(is_announced=True)
+        programs = programs.filter(is_announced=True).order_by('result_number', 'announced_at', 'id')
+    elif view_mode == 'draft':
+        programs = programs.filter(is_announced=False).order_by('id')
+    else:
+        programs = programs.order_by('-is_announced', 'result_number', 'announced_at', 'id')
 
     program_results = []
     for prog in programs:

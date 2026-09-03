@@ -53,7 +53,7 @@ def public_results_view(request, institution_slug):
     if suspended_response:
         return suspended_response
 
-    announced_programs = Program.objects.filter(institution=institution, is_announced=True).select_related('category')
+    announced_programs = Program.objects.filter(institution=institution, is_announced=True).select_related('category').order_by('result_number', 'announced_at', 'id')
     return render(request, 'public/results.html', {'institution': institution, 'programs': announced_programs})
 
 
@@ -66,9 +66,15 @@ def public_program_detail_view(request, institution_slug, program_id):
     program = get_object_or_404(Program, id=program_id, institution=institution, is_announced=True)
     
     if program.is_group:
-        participations = GroupParticipation.objects.filter(program=program).select_related('team').order_by('rank', '-marks')
+        participations = GroupParticipation.objects.filter(
+            program=program,
+            rank__in=[1, 2, 3]
+        ).select_related('team').order_by('rank', '-marks')
     else:
-        participations = Participation.objects.filter(program=program).select_related('contestant', 'contestant__team').order_by('rank', '-marks')
+        participations = Participation.objects.filter(
+            program=program,
+            rank__in=[1, 2, 3]
+        ).select_related('contestant', 'contestant__team').order_by('rank', '-marks')
 
     return render(request, 'public/program_detail.html', {
         'institution': institution,

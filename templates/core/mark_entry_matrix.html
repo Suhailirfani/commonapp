@@ -17,9 +17,24 @@
     </div>
 </div>
 
-{% if not request.user.is_judge or request.user.is_developer or request.user.is_institution_admin %}
+{% if request.user.is_judge %}
+<!-- JUDGE BLIND EVALUATION NOTICE BANNER -->
+<div class="glass-card" style="margin-bottom: 20px; padding: 14px 20px; border: 1px solid rgba(168, 85, 247, 0.4); background: linear-gradient(135deg, rgba(88, 28, 135, 0.25), rgba(15, 23, 42, 0.9)); display: flex; align-items: center; gap: 14px;">
+    <div style="width: 44px; height: 44px; border-radius: 10px; background: rgba(168, 85, 247, 0.2); display: flex; align-items: center; justify-content: center; color: #c084fc; font-size: 1.4rem; flex-shrink: 0;">
+        <i class="fa-solid fa-user-secret"></i>
+    </div>
+    <div>
+        <strong style="color: #e9d5ff; font-size: 1.02rem; display: block;">Blind Judge Evaluation Mode</strong>
+        <div style="font-size: 0.84rem; color: #d8b4fe; margin-top: 2px;">
+            You are evaluating contestants strictly by <strong>Code Letter</strong> fixed by event officials. Chest numbers, names, and team details are hidden.
+        </div>
+    </div>
+</div>
+
+{% else %}
+
 <!-- ADMIN JUDGE CONFIGURATION CONTROL BAR -->
-<div class="glass-card" style="margin-bottom: 20px; padding: 18px 22px; border: 1px solid rgba(56, 189, 248, 0.3); background: linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.8));">
+<div class="glass-card" style="margin-bottom: 16px; padding: 16px 20px; border: 1px solid rgba(56, 189, 248, 0.3); background: linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.8));">
     <form method="POST" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
         {% csrf_token %}
         <input type="hidden" name="action" value="update_judge_settings">
@@ -29,7 +44,7 @@
                 <i class="fa-solid fa-sliders"></i> Judge Panel Settings for this Program
             </div>
             <div style="font-size: 0.84rem; color: var(--text-muted); margin-top: 2px;">
-                ഈ പ്രോഗ്രാം വിലയിരുത്തുന്ന ജഡ്ജുമാരുടെ എണ്ണം ക്രമീകരിക്കുക. മാർക്ക് രേഖപ്പെടുത്തിയ ജഡ്ജുമാരുടെ സ്കോറുകളുടെ ശരാശരി കണക്കാക്കി സ്വയം <strong>100 പോയിന്റ് സ്കെയിലിലേക്ക്</strong> മാറ്റുന്നതാണ് (മാർക്ക് രേഖപ്പെടുത്താത്ത ഫീൽഡുകൾ ജഡ്ജുമാരുടെ എണ്ണത്തിൽ ഉൾപ്പെടുത്തില്ല).
+                Configure number of judges and max score per judge.
             </div>
         </div>
 
@@ -50,11 +65,67 @@
         </div>
     </form>
 </div>
+
+<!-- ADMIN CODE LETTER FIXING TOOLBAR -->
+<div class="glass-card" style="margin-bottom: 20px; padding: 16px 20px; border: 1px solid rgba(168, 85, 247, 0.4); background: linear-gradient(135deg, rgba(88, 28, 135, 0.15), rgba(15, 23, 42, 0.9));">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+        <div>
+            <div style="font-size: 0.95rem; font-weight: 800; color: #c084fc; display: flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-tag"></i> Code Letter Fixing (Blind Evaluation)
+            </div>
+            <div style="font-size: 0.84rem; color: var(--text-muted); margin-top: 2px;">
+                Assign code letters to participants before judging. <strong>Judges will ONLY see code letters</strong> without contestant names or chest numbers.
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+            <!-- Sequential Auto A, B, C... -->
+            <form method="POST" style="margin: 0;">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="fix_code_letters">
+                <input type="hidden" name="fix_mode" value="sequential">
+                <button type="submit" class="btn-primary" style="padding: 7px 14px; font-size: 0.82rem; background: linear-gradient(135deg, var(--accent-cyan), #0284c7);" title="Assign A, B, C, D in order">
+                    <i class="fa-solid fa-arrow-down-a-z"></i> Auto A, B, C...
+                </button>
+            </form>
+
+            <!-- Random / Shuffle -->
+            <form method="POST" style="margin: 0;" onsubmit="return confirm('Randomize code letters for all participants in this program?');">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="fix_code_letters">
+                <input type="hidden" name="fix_mode" value="random">
+                <button type="submit" class="btn-primary" style="padding: 7px 14px; font-size: 0.82rem; background: linear-gradient(135deg, #a855f7, #7e22ce);" title="Shuffle and assign random letters">
+                    <i class="fa-solid fa-shuffle"></i> Randomize / Shuffle
+                </button>
+            </form>
+
+            <!-- Copy Team Code -->
+            <form method="POST" style="margin: 0;">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="fix_code_letters">
+                <input type="hidden" name="fix_mode" value="team_code">
+                <button type="submit" class="btn-primary" style="padding: 7px 14px; font-size: 0.82rem; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2);" title="Use team code letters">
+                    <i class="fa-solid fa-users"></i> Use Team Codes
+                </button>
+            </form>
+
+            <!-- Clear -->
+            <form method="POST" style="margin: 0;" onsubmit="return confirm('Clear all code letters for this program?');">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="fix_code_letters">
+                <input type="hidden" name="fix_mode" value="clear">
+                <button type="submit" class="btn-secondary" style="padding: 7px 12px; font-size: 0.82rem; color: #f43f5e; background: rgba(244, 63, 94, 0.1); border: 1px solid rgba(244, 63, 94, 0.3);" title="Clear code letters">
+                    <i class="fa-solid fa-trash-can"></i> Clear
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
 {% endif %}
 
 <div class="glass-card">
     <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-        <span><i class="fa-solid fa-keyboard" style="color: var(--accent-cyan);"></i> <strong>Keyboard Tip:</strong> Press <kbd>Tab</kbd> to move quickly between judge input fields. Total marks are live-converted out of 100.</span>
+        <span><i class="fa-solid fa-keyboard" style="color: var(--accent-cyan);"></i> <strong>Keyboard Tip:</strong> Press <kbd>Tab</kbd> to move quickly between score input fields. Total marks are live-converted out of 100.</span>
     </p>
 
     <form method="POST" id="matrix-form">
@@ -65,15 +136,18 @@
             <table class="custom-table">
                 <thead>
                     <tr>
-                        <th>#</th>
-                        {% if program.is_group %}
-                        <th>Group / Team</th>
-                        {% else %}
-                        <th>Chest No</th>
-                        <th>Contestant Name</th>
-                        <th>Team</th>
+                        <th style="width: 50px;">#</th>
+                        {% if not request.user.is_judge %}
+                            {% if program.is_group %}
+                            <th>Group / Team</th>
+                            {% else %}
+                            <th>Chest No</th>
+                            <th>Contestant Name</th>
+                            <th>Team</th>
+                            {% endif %}
                         {% endif %}
-                        <th>Code Letter</th>
+
+                        <th style="width: 140px; text-align: center; background: rgba(168, 85, 247, 0.15); color: #d8b4fe;">Code Letter</th>
                         
                         <!-- DYNAMIC JUDGE COLUMNS -->
                         {% for j_num in judge_range %}
@@ -81,30 +155,49 @@
                         {% endfor %}
 
                         <th style="text-align: center; background: rgba(245, 158, 11, 0.15); color: #fbbf24;">Converted Score (/100)</th>
+                        
+                        {% if not request.user.is_judge %}
                         <th>Current Rank</th>
                         {% if institution.has_grades %}
                         <th>Grade</th>
+                        {% endif %}
                         {% endif %}
                     </tr>
                 </thead>
                 <tbody>
                     {% for p in participations %}
                     <tr>
-                        <td>{{ forloop.counter }}</td>
-                        {% if program.is_group %}
-                        <td>
-                            <strong>{{ p.display_name }}</strong>
-                            <div style="color: var(--text-muted); font-size: 0.75rem;">
-                                {% for m in p.contestants.all %}{{ m.name }}{% if not forloop.last %}, {% endif %}{% endfor %}
-                            </div>
-                        </td>
-                        {% else %}
-                        <td><strong style="color: var(--accent-cyan);">#{{ p.contestant.chest_no }}</strong></td>
-                        <td><strong>{{ p.contestant.name }}</strong></td>
-                        <td><span class="badge badge-approved">{{ p.contestant.team.name }}</span></td>
+                        <td><strong>{{ forloop.counter }}</strong></td>
+                        {% if not request.user.is_judge %}
+                            {% if program.is_group %}
+                            <td>
+                                <strong>{{ p.display_name }}</strong>
+                                <div style="color: var(--text-muted); font-size: 0.75rem;">
+                                    {% for m in p.contestants.all %}{{ m.name }}{% if not forloop.last %}, {% endif %}{% endfor %}
+                                </div>
+                            </td>
+                            {% else %}
+                            <td><strong style="color: var(--accent-cyan);">#{{ p.contestant.chest_no }}</strong></td>
+                            <td><strong>{{ p.contestant.name }}</strong></td>
+                            <td><span class="badge badge-approved">{{ p.contestant.team.name }}</span></td>
+                            {% endif %}
                         {% endif %}
-                        <td>
-                            <input type="text" name="code_letter_{{ p.id }}" value="{{ p.code_letter|default:'' }}" class="form-control matrix-input" style="width: 85px; text-transform: uppercase;" placeholder="Code">
+
+                        <!-- CODE LETTER COLUMN -->
+                        <td style="text-align: center;">
+                            {% if request.user.is_judge %}
+                                {% if p.code_letter %}
+                                <span class="badge" style="font-size: 1.1rem; font-weight: 900; background: linear-gradient(135deg, #a855f7, #6b21a8); color: #fff; padding: 6px 16px; border-radius: 8px; letter-spacing: 1px;">
+                                    {{ p.code_letter }}
+                                </span>
+                                {% else %}
+                                <span class="badge badge-pending" style="font-size: 0.8rem; background: rgba(245, 158, 11, 0.2); color: #fbbf24;">
+                                    Not Fixed
+                                </span>
+                                {% endif %}
+                            {% else %}
+                                <input type="text" name="code_letter_{{ p.id }}" value="{{ p.code_letter|default:'' }}" class="form-control matrix-input" style="width: 85px; text-transform: uppercase; text-align: center; font-weight: 800;" placeholder="Code">
+                            {% endif %}
                         </td>
 
                         <!-- JUDGE SCORE INPUT FIELDS -->
@@ -121,6 +214,7 @@
                             </span>
                         </td>
 
+                        {% if not request.user.is_judge %}
                         <td>
                             {% if p.rank %}
                             <span class="badge badge-approved">Rank {{ p.rank }}</span>
@@ -137,10 +231,11 @@
                             {% endif %}
                         </td>
                         {% endif %}
+                        {% endif %}
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="{% if institution.has_grades %}{{ judge_range|length|add:8 }}{% else %}{{ judge_range|length|add:7 }}{% endif %}" style="text-align: center; color: var(--text-muted); padding: 30px;">
+                        <td colspan="10" style="text-align: center; color: var(--text-muted); padding: 30px;">
                             No participants registered for this program yet.
                         </td>
                     </tr>
@@ -153,6 +248,24 @@
         <div class="mobile-card-list-view">
             {% for p in participations %}
             <div style="background: rgba(255,255,255,0.02); padding: 16px; border-radius: 14px; border: 1px solid var(--border-color); margin-bottom: 14px;">
+                
+                {% if request.user.is_judge %}
+                <!-- JUDGE MOBILE HEADER: CODE LETTER ONLY -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.06);">
+                    <span style="font-size: 0.9rem; color: var(--text-muted); font-weight: 700;">Participant #{{ forloop.counter }}</span>
+                    {% if p.code_letter %}
+                    <span class="badge" style="font-size: 1.15rem; font-weight: 900; background: linear-gradient(135deg, #a855f7, #6b21a8); color: #fff; padding: 6px 18px; border-radius: 8px; letter-spacing: 1px;">
+                        Code: {{ p.code_letter }}
+                    </span>
+                    {% else %}
+                    <span class="badge badge-pending" style="font-size: 0.8rem; background: rgba(245, 158, 11, 0.2); color: #fbbf24;">
+                        Pending Code
+                    </span>
+                    {% endif %}
+                </div>
+
+                {% else %}
+                <!-- ADMIN MOBILE HEADER: FULL DETAILS -->
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
                     <div>
                         {% if program.is_group %}
@@ -177,8 +290,9 @@
 
                 <div style="margin-bottom: 10px;">
                     <label class="form-label" style="font-size: 0.75rem; color: var(--text-muted);">Code Letter</label>
-                    <input type="text" name="code_letter_{{ p.id }}" value="{{ p.code_letter|default:'' }}" class="form-control" style="text-transform: uppercase; width: 100px;" placeholder="CODE">
+                    <input type="text" name="code_letter_{{ p.id }}" value="{{ p.code_letter|default:'' }}" class="form-control" style="text-transform: uppercase; width: 100px; font-weight: 800; text-align: center;" placeholder="CODE">
                 </div>
+                {% endif %}
 
                 <!-- DYNAMIC MOBILE JUDGE SCORE INPUTS GRID -->
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 8px; background: rgba(0,0,0,0.25); padding: 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08); margin-bottom: 10px;">
@@ -208,7 +322,7 @@
         {% if participations %}
         <div style="margin-top: 24px; text-align: right;">
             <button type="submit" class="btn-primary" style="font-size: 1.05rem; padding: 12px 28px; width: 100%; justify-content: center; background: linear-gradient(135deg, var(--accent-emerald), #059669);">
-                <i class="fa-solid fa-floppy-disk"></i> Save All Marks & Auto-Calculate Results
+                <i class="fa-solid fa-floppy-disk"></i> Save Marks & Calculate Scores
             </button>
         </div>
         {% endif %}

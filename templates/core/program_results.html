@@ -24,6 +24,9 @@
         <a href="?view=announced{% if selected_category_id %}&category={{ selected_category_id }}{% endif %}" class="btn-primary" style="{% if view_mode == 'announced' %}background: linear-gradient(135deg, var(--accent-emerald), #059669);{% else %}background: rgba(255,255,255,0.08); box-shadow: none;{% endif %}">
             <i class="fa-solid fa-bullhorn"></i> Announced (Public)
         </a>
+        <a href="?view=draft{% if selected_category_id %}&category={{ selected_category_id }}{% endif %}" class="btn-primary" style="{% if view_mode == 'draft' %}background: linear-gradient(135deg, #f59e0b, #d97706); color: #000; font-weight: 700;{% else %}background: rgba(255,255,255,0.08); box-shadow: none;{% endif %}">
+            <i class="fa-solid fa-lock"></i> Draft Results
+        </a>
         <a href="?view=all{% if selected_category_id %}&category={{ selected_category_id }}{% endif %}" class="btn-primary" style="{% if view_mode == 'all' %}background: linear-gradient(135deg, #0284c7, #0369a1);{% else %}background: rgba(255,255,255,0.08); box-shadow: none;{% endif %}">
             <i class="fa-solid fa-eye"></i> All Results (Admin)
         </a>
