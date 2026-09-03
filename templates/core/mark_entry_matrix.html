@@ -11,8 +11,17 @@
             <span class="badge badge-approved">{{ program.category.name }}</span>
             <span class="badge badge-pending">{% if program.is_group %}Group Program{% else %}Single Program{% endif %}</span>
             <span class="badge" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid #f59e0b;">
-                <i class="fa-solid fa-gavel"></i> {{ program.judge_count }} Judge(s) &bull; Max {{ program.max_marks_per_judge }} marks/judge &bull; Scale: Converted to /100
+                <i class="fa-solid fa-gavel"></i> {{ program.judge_count }} Judge(s) &bull; Max {{ program.max_marks_per_judge }} marks/judge &bull; Scale: /100
             </span>
+            {% if program.mark_entry_mode == 'JUDGES' %}
+            <span class="badge" style="background: rgba(168, 85, 247, 0.2); color: #c084fc; border: 1px solid #a855f7;">
+                <i class="fa-solid fa-scale-balanced"></i> Duty: Directly by Judges
+            </span>
+            {% else %}
+            <span class="badge" style="background: rgba(56, 189, 248, 0.2); color: var(--accent-cyan); border: 1px solid var(--accent-cyan);">
+                <i class="fa-solid fa-user-tie"></i> Duty: By Officials
+            </span>
+            {% endif %}
         </div>
     </div>
 </div>
@@ -44,27 +53,45 @@
                 <i class="fa-solid fa-sliders"></i> Judge Panel Settings for this Program
             </div>
             <div style="font-size: 0.84rem; color: var(--text-muted); margin-top: 2px;">
-                Configure number of judges and max score per judge.
+                Configure number of judges, max marks, and who has the mark entering duty.
             </div>
         </div>
 
         <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
             <div style="display: flex; align-items: center; gap: 6px;">
-                <label class="form-label" style="font-size: 0.82rem; margin: 0; color: #cbd5e1;">Number of Judges:</label>
-                <input type="number" name="judge_count" value="{{ program.judge_count }}" min="1" max="10" class="form-control" style="width: 80px; padding: 6px 10px; font-weight: 800; text-align: center;">
+                <label class="form-label" style="font-size: 0.82rem; margin: 0; color: #cbd5e1;">Mark Entering Duty:</label>
+                <select name="mark_entry_mode" class="form-control" style="width: 175px; padding: 6px 10px; font-weight: 700; font-size: 0.82rem;">
+                    <option value="OFFICIALS" {% if program.mark_entry_mode == 'OFFICIALS' %}selected{% endif %}>👤 By Officials (Default)</option>
+                    <option value="JUDGES" {% if program.mark_entry_mode == 'JUDGES' %}selected{% endif %}>⚖️ Directly by Judges</option>
+                </select>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 6px;">
+                <label class="form-label" style="font-size: 0.82rem; margin: 0; color: #cbd5e1;">Judges:</label>
+                <input type="number" name="judge_count" value="{{ program.judge_count }}" min="1" max="10" class="form-control" style="width: 70px; padding: 6px 10px; font-weight: 800; text-align: center;">
             </div>
 
             <div style="display: flex; align-items: center; gap: 6px;">
                 <label class="form-label" style="font-size: 0.82rem; margin: 0; color: #cbd5e1;">Max Marks/Judge:</label>
-                <input type="number" name="max_marks_per_judge" value="{{ program.max_marks_per_judge }}" min="10" max="500" class="form-control" style="width: 90px; padding: 6px 10px; font-weight: 800; text-align: center;">
+                <input type="number" name="max_marks_per_judge" value="{{ program.max_marks_per_judge }}" min="10" max="500" class="form-control" style="width: 80px; padding: 6px 10px; font-weight: 800; text-align: center;">
             </div>
 
             <button type="submit" class="btn-primary" style="padding: 7px 18px; font-size: 0.85rem; background: linear-gradient(135deg, var(--accent-cyan), #0284c7);">
-                <i class="fa-solid fa-check"></i> Save Judge Settings
+                <i class="fa-solid fa-check"></i> Save Panel Settings
             </button>
         </div>
     </form>
 </div>
+
+{% if program.mark_entry_mode == 'JUDGES' %}
+<!-- ADMIN MARK ENTRY LOCKED BANNER -->
+<div class="glass-card" style="margin-bottom: 16px; padding: 12px 18px; border: 1px solid rgba(245, 158, 11, 0.4); background: rgba(245, 158, 11, 0.1); display: flex; align-items: center; gap: 12px;">
+    <i class="fa-solid fa-lock" style="font-size: 1.3rem; color: #fbbf24;"></i>
+    <div style="font-size: 0.88rem; color: #fef08a;">
+        <strong style="color: #fbbf24;">Mark Entering Duty Fixed for Judges:</strong> Admin mark input fields are disabled to prevent interference with judge scoring. Judges will enter marks directly through their accounts. You can still fix/edit code letters.
+    </div>
+</div>
+{% endif %}
 
 <!-- ADMIN CODE LETTER FIXING TOOLBAR -->
 <div class="glass-card" style="margin-bottom: 20px; padding: 16px 20px; border: 1px solid rgba(168, 85, 247, 0.4); background: linear-gradient(135deg, rgba(88, 28, 135, 0.15), rgba(15, 23, 42, 0.9));">
@@ -203,7 +230,11 @@
                         <!-- JUDGE SCORE INPUT FIELDS -->
                         {% for j in p.judge_marks_list %}
                         <td style="text-align: center;">
+                            {% if not request.user.is_judge and program.mark_entry_mode == 'JUDGES' %}
+                            <input type="number" value="{{ j.score }}" class="form-control matrix-input" style="width: 95px; text-align: center; font-weight: 700; opacity: 0.55; cursor: not-allowed; background: rgba(0,0,0,0.3); border-color: rgba(255,255,255,0.1); color: #94a3b8;" placeholder="Locked" disabled title="Locked: Mark entering duty is fixed for Judges">
+                            {% else %}
                             <input type="number" step="0.1" min="0" max="{{ program.max_marks_per_judge }}" name="j_{{ j.judge_num }}_marks_{{ p.id }}" value="{{ j.score }}" class="form-control matrix-input judge-mark-input" style="width: 95px; text-align: center; font-weight: 700;" placeholder="J{{ j.judge_num }}" data-part-id="{{ p.id }}" oninput="updateConvertedMarks('{{ p.id }}')">
+                            {% endif %}
                         </td>
                         {% endfor %}
 
@@ -299,7 +330,11 @@
                     {% for j in p.judge_marks_list %}
                     <div>
                         <label class="form-label" style="font-size: 0.75rem; color: var(--accent-cyan); font-weight: 700;">Judge {{ j.judge_num }}</label>
+                        {% if not request.user.is_judge and program.mark_entry_mode == 'JUDGES' %}
+                        <input type="number" value="{{ j.score }}" class="form-control" style="text-align: center; font-weight: 700; opacity: 0.55; cursor: not-allowed; background: rgba(0,0,0,0.3); color: #94a3b8;" placeholder="Locked" disabled title="Locked: Mark entering duty is fixed for Judges">
+                        {% else %}
                         <input type="number" step="0.1" min="0" max="{{ program.max_marks_per_judge }}" name="j_{{ j.judge_num }}_marks_{{ p.id }}" value="{{ j.score }}" class="form-control" style="text-align: center; font-weight: 700;" placeholder="Max {{ program.max_marks_per_judge }}" data-part-id="{{ p.id }}" oninput="updateConvertedMarks('{{ p.id }}')">
+                        {% endif %}
                     </div>
                     {% endfor %}
                 </div>
@@ -321,9 +356,15 @@
 
         {% if participations %}
         <div style="margin-top: 24px; text-align: right;">
+            {% if not request.user.is_judge and program.mark_entry_mode == 'JUDGES' %}
+            <button type="submit" class="btn-primary" style="font-size: 1.05rem; padding: 12px 28px; width: 100%; justify-content: center; background: linear-gradient(135deg, var(--accent-cyan), #0284c7);">
+                <i class="fa-solid fa-floppy-disk"></i> Save Code Letters (Mark Entry Locked for Judges)
+            </button>
+            {% else %}
             <button type="submit" class="btn-primary" style="font-size: 1.05rem; padding: 12px 28px; width: 100%; justify-content: center; background: linear-gradient(135deg, var(--accent-emerald), #059669);">
                 <i class="fa-solid fa-floppy-disk"></i> Save Marks & Calculate Scores
             </button>
+            {% endif %}
         </div>
         {% endif %}
     </form>
@@ -336,8 +377,8 @@
 
     function syncResponsiveInputs() {
         const isMobile = window.innerWidth <= 768;
-        const desktopInputs = document.querySelectorAll('.desktop-table-view input, .desktop-table-view select');
-        const mobileInputs = document.querySelectorAll('.mobile-card-list-view input, .mobile-card-list-view select');
+        const desktopInputs = document.querySelectorAll('.desktop-table-view input:not([disabled]), .desktop-table-view select');
+        const mobileInputs = document.querySelectorAll('.mobile-card-list-view input:not([disabled]), .mobile-card-list-view select');
 
         if (isMobile) {
             desktopInputs.forEach(el => el.disabled = true);
