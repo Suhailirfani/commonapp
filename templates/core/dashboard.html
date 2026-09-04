@@ -196,6 +196,12 @@
         flex-wrap: wrap;
         align-items: center;
     }
+    .dashboard-header-row-mobile {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
     .shareable-link-box {
         display: flex;
         align-items: center;
@@ -219,32 +225,71 @@
         white-space: nowrap;
         overflow: hidden;
     }
+    .add-subuser-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        white-space: nowrap;
+    }
     @media (max-width: 768px) {
         .dashboard-header-actions {
             width: 100% !important;
             display: flex !important;
             flex-direction: column !important;
-            gap: 10px !important;
-            margin-top: 8px !important;
+            gap: 8px !important;
+            margin-top: 6px !important;
         }
-        .dashboard-header-actions > a,
-        .dashboard-header-actions > button,
         .dashboard-header-actions > .pwa-install-btn {
             width: 100% !important;
             justify-content: center !important;
             text-align: center !important;
         }
-        .shareable-link-box {
+        .dashboard-header-row-mobile {
+            display: flex !important;
+            flex-direction: row !important;
+            align-items: center !important;
             width: 100% !important;
-            justify-content: space-between !important;
-            padding: 6px 8px 6px 10px !important;
+            gap: 8px !important;
+        }
+        .shareable-link-box {
+            flex: 1 1 0 !important;
+            min-width: 0 !important;
+            padding: 5px 6px 5px 8px !important;
+            border-radius: 10px !important;
             box-sizing: border-box !important;
+            gap: 4px !important;
         }
         .shareable-link-input {
             flex: 1 1 0 !important;
             min-width: 0 !important;
             width: 100% !important;
+            font-size: 0.74rem !important;
+        }
+        .add-subuser-btn {
+            flex: 0 0 auto !important;
+            width: auto !important;
+            padding: 7px 11px !important;
             font-size: 0.78rem !important;
+            border-radius: 10px !important;
+            justify-content: center !important;
+            gap: 4px !important;
+        }
+        .copy-link-text {
+            display: none !important;
+        }
+        .subuser-btn-full-text {
+            display: none !important;
+        }
+        .subuser-btn-short-text {
+            display: inline !important;
+        }
+    }
+    @media (min-width: 769px) {
+        .subuser-btn-short-text {
+            display: none !important;
+        }
+        .subuser-btn-full-text {
+            display: inline !important;
         }
     }
 </style>
@@ -262,24 +307,29 @@
             <span>Download App</span>
         </button>
 
-        <!-- SHAREABLE PUBLIC RESULT LINK (COPYABLE) -->
-        <div class="shareable-link-box" style="border-color: {% if institution.is_public_suspended %}rgba(244, 63, 94, 0.4){% else %}rgba(14, 165, 233, 0.35){% endif %};">
-            <div style="display: flex; align-items: center; gap: 5px; color: {% if institution.is_public_suspended %}#fb7185{% else %}var(--accent-cyan){% endif %}; font-size: 0.82rem; font-weight: 700; flex-shrink: 0;">
-                <i class="fa-solid {% if institution.is_public_suspended %}fa-ban{% else %}fa-globe{% endif %}"></i>
-                <span class="d-none d-sm-inline" style="opacity: 0.85;">{% if institution.is_public_suspended %}Suspended:{% else %}Public:{% endif %}</span>
+        <div class="dashboard-header-row-mobile">
+            <!-- SHAREABLE PUBLIC RESULT LINK (COPYABLE) -->
+            <div class="shareable-link-box" style="border-color: {% if institution.is_public_suspended %}rgba(244, 63, 94, 0.4){% else %}rgba(14, 165, 233, 0.35){% endif %};">
+                <div style="display: flex; align-items: center; gap: 4px; color: {% if institution.is_public_suspended %}#fb7185{% else %}var(--accent-cyan){% endif %}; font-size: 0.8rem; font-weight: 700; flex-shrink: 0;">
+                    <i class="fa-solid {% if institution.is_public_suspended %}fa-ban{% else %}fa-globe{% endif %}"></i>
+                    <span class="d-none d-sm-inline" style="opacity: 0.85;">{% if institution.is_public_suspended %}Suspended:{% else %}Public:{% endif %}</span>
+                </div>
+                <input type="text" id="publicResultLinkInput" class="shareable-link-input" readonly value="/public/{{ institution.slug }}/" onclick="copyPublicResultLink(this)" style="{% if institution.is_public_suspended %}color: #fb7185; text-decoration: line-through;{% endif %}">
+                <button type="button" onclick="copyPublicResultLink(this)" id="copyPublicLinkBtn" class="btn btn-sm" style="background: {% if institution.is_public_suspended %}linear-gradient(135deg, #f43f5e, #e11d48){% else %}linear-gradient(135deg, var(--accent-cyan), #0284c7){% endif %}; color: #fff; border: none; font-size: 0.75rem; font-weight: 700; padding: 5px 8px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 4px; flex-shrink: 0; white-space: nowrap; transition: all 0.2s;" title="Copy Public Result Link">
+                    <i class="fa-solid fa-copy"></i> <span class="copy-link-text">Copy Link</span>
+                </button>
+                <a href="{% url 'public:home' institution.slug %}" target="_blank" class="btn btn-sm" style="background: rgba(255,255,255,0.08); color: var(--text-main); border: 1px solid rgba(255,255,255,0.15); font-size: 0.75rem; padding: 5px 7px; border-radius: 8px; flex-shrink: 0; text-decoration: none;" title="Open Public Result Portal">
+                    <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                </a>
             </div>
-            <input type="text" id="publicResultLinkInput" class="shareable-link-input" readonly value="/public/{{ institution.slug }}/" onclick="copyPublicResultLink(this)" style="{% if institution.is_public_suspended %}color: #fb7185; text-decoration: line-through;{% endif %}">
-            <button type="button" onclick="copyPublicResultLink(this)" id="copyPublicLinkBtn" class="btn btn-sm" style="background: {% if institution.is_public_suspended %}linear-gradient(135deg, #f43f5e, #e11d48){% else %}linear-gradient(135deg, var(--accent-cyan), #0284c7){% endif %}; color: #fff; border: none; font-size: 0.78rem; font-weight: 700; padding: 6px 10px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 4px; flex-shrink: 0; white-space: nowrap; transition: all 0.2s;" title="Copy Public Result Link">
-                <i class="fa-solid fa-copy"></i> <span>Copy Link</span>
-            </button>
-            <a href="{% url 'public:home' institution.slug %}" target="_blank" class="btn btn-sm" style="background: rgba(255,255,255,0.08); color: var(--text-main); border: 1px solid rgba(255,255,255,0.15); font-size: 0.78rem; padding: 6px 8px; border-radius: 8px; flex-shrink: 0; text-decoration: none;" title="Open Public Result Portal">
-                <i class="fa-solid fa-arrow-up-right-from-square"></i>
+
+            <!-- ADD SUB-USER BUTTON -->
+            <a href="{% url 'users:user_create' institution.slug %}" class="btn-primary add-subuser-btn">
+                <i class="fa-solid fa-user-plus"></i>
+                <span class="subuser-btn-full-text">Add Sub-User / Team Leader</span>
+                <span class="subuser-btn-short-text">Add User</span>
             </a>
         </div>
-
-        <a href="{% url 'users:user_create' institution.slug %}" class="btn-primary">
-            <i class="fa-solid fa-user-plus"></i> Add Sub-User / Team Leader
-        </a>
     </div>
 </div>
 
