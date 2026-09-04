@@ -1,6 +1,6 @@
 from django.db.models import Max
 from apps.core.models import (
-    Participation, GroupParticipation, PointsConfig, 
+    Program, Category, Participation, GroupParticipation, PointsConfig, 
     Team, Contestant
 )
 
