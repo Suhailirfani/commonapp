@@ -66,11 +66,11 @@ class User(AbstractUser):
 
     @property
     def is_institution_admin(self):
-        return self.role == 'INSTITUTION_ADMIN'
+        return self.role == 'INSTITUTION_ADMIN' or self.is_developer
 
     @property
     def is_sub_admin(self):
-        return self.role in ['INSTITUTION_ADMIN', 'SUB_ADMIN']
+        return self.role in ['INSTITUTION_ADMIN', 'SUB_ADMIN'] or self.is_developer
 
     @property
     def is_tabulator(self):
@@ -78,12 +78,13 @@ class User(AbstractUser):
 
     @property
     def is_judge(self):
-        return self.role == 'JUDGE'
+        return self.role == 'JUDGE' and not self.is_developer
 
     @property
     def is_team_leader(self):
-        return self.role == 'TEAM_LEADER'
+        return self.role == 'TEAM_LEADER' and not self.is_developer
 
     @property
     def is_contestant(self):
-        return self.role == 'CONTESTANT'
+        return self.role == 'CONTESTANT' and not self.is_developer
+

@@ -17,14 +17,14 @@ from .models import (
 @login_required
 def dashboard_view(request, institution_slug):
     institution = get_object_or_404(Institution, slug=institution_slug)
-    if request.user.is_judge:
+    if request.user.is_judge and not request.user.is_developer:
         return redirect('core:judge_dashboard', institution_slug=institution.slug)
 
     competitions = Competition.objects.filter(institution=institution)
     teams = Team.objects.filter(institution=institution)
     programs = Program.objects.filter(institution=institution)
 
-    if request.user.is_team_leader:
+    if request.user.is_team_leader and not request.user.is_developer:
         team = getattr(request.user, 'managed_team', None)
         if not team:
             team = teams.first()
