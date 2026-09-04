@@ -1068,6 +1068,27 @@ def mark_entry_matrix_view(request, institution_slug, program_id):
         # Action 3: Save Marks Entry Matrix
         is_admin_locked_from_marks = (not request.user.is_judge) and (program.mark_entry_mode == 'JUDGES')
 
+        # Capture pre-state snapshot for edit history tracking
+        if program.is_group:
+            pre_parts = list(GroupParticipation.objects.filter(program=program).select_related('team').prefetch_related('contestants'))
+        else:
+            pre_parts = list(Participation.objects.filter(program=program).select_related('contestant', 'contestant__team'))
+
+        has_any_previous_marks = any(p.marks is not None for p in pre_parts)
+        before_snapshot = {}
+        for p in pre_parts:
+            before_snapshot[p.id] = {
+                'id': p.id,
+                'name': p.display_name if program.is_group else p.contestant.name,
+                'chest_no': p.contestant.chest_no if not program.is_group else '',
+                'team': p.team.name if program.is_group else (p.contestant.team.name if p.contestant.team else ''),
+                'code_letter': p.code_letter,
+                'marks': p.marks,
+                'judge_marks': dict(p.judge_marks or {}),
+                'rank': p.rank,
+                'grade': p.grade,
+            }
+
         part_ids = set()
         for key in request.POST.keys():
             if key.startswith('code_letter_'):
@@ -1144,12 +1165,98 @@ def mark_entry_matrix_view(request, institution_slug, program_id):
         if not is_admin_locked_from_marks:
             from .services import calculate_program_results
             calculate_program_results(program)
+
+            # Record edit history if this program already had marks previously
+            if has_any_previous_marks:
+                if program.is_group:
+                    post_parts = list(GroupParticipation.objects.filter(program=program).select_related('team').prefetch_related('contestants'))
+                else:
+                    post_parts = list(Participation.objects.filter(program=program).select_related('contestant', 'contestant__team'))
+
+                diff_items = []
+                summary_lines = []
+                after_snapshot = {}
+
+                for p in post_parts:
+                    b = before_snapshot.get(p.id, {})
+                    old_marks = b.get('marks')
+                    new_marks = p.marks
+                    old_rank = b.get('rank')
+                    new_rank = p.rank
+                    old_grade = b.get('grade')
+                    new_grade = p.grade
+                    old_jm = b.get('judge_marks', {})
+                    new_jm = dict(p.judge_marks or {})
+                    old_code = b.get('code_letter')
+                    new_code = p.code_letter
+
+                    after_snapshot[p.id] = {
+                        'id': p.id,
+                        'name': p.display_name if program.is_group else p.contestant.name,
+                        'chest_no': p.contestant.chest_no if not program.is_group else '',
+                        'team': p.team.name if program.is_group else (p.contestant.team.name if p.contestant.team else ''),
+                        'code_letter': p.code_letter,
+                        'marks': p.marks,
+                        'judge_marks': new_jm,
+                        'rank': p.rank,
+                        'grade': p.grade,
+                    }
+
+                    # Check if anything changed for this participant
+                    if old_marks != new_marks or old_rank != new_rank or old_grade != new_grade or old_jm != new_jm or old_code != new_code:
+                        name_str = p.display_name if program.is_group else f"#{p.contestant.chest_no} {p.contestant.name}"
+                        team_str = p.team.name if program.is_group else (p.contestant.team.name if p.contestant.team else '')
+                        
+                        diff_items.append({
+                            'participant_id': p.id,
+                            'name': p.display_name if program.is_group else p.contestant.name,
+                            'chest_no': p.contestant.chest_no if not program.is_group else '',
+                            'team': team_str,
+                            'old_marks': old_marks,
+                            'new_marks': new_marks,
+                            'old_rank': old_rank,
+                            'new_rank': new_rank,
+                            'old_grade': old_grade,
+                            'new_grade': new_grade,
+                            'old_judge_marks': old_jm,
+                            'new_judge_marks': new_jm,
+                            'old_code': old_code,
+                            'new_code': new_code,
+                        })
+
+                        changes = []
+                        if old_marks != new_marks:
+                            changes.append(f"Marks: {old_marks if old_marks is not None else '-'} ➔ {new_marks if new_marks is not None else '-'}")
+                        if old_rank != new_rank:
+                            changes.append(f"Rank: {old_rank if old_rank else '-'} ➔ {new_rank if new_rank else '-'}")
+                        if old_grade != new_grade:
+                            changes.append(f"Grade: {old_grade or '-'} ➔ {new_grade or '-'}")
+                        if old_code != new_code:
+                            changes.append(f"Code: {old_code or '-'} ➔ {new_code or '-'}")
+                        
+                        summary_lines.append(f"{name_str} ({team_str}): " + ", ".join(changes))
+
+                if diff_items:
+                    from apps.core.models import ProgramResultEditHistory
+                    ProgramResultEditHistory.objects.create(
+                        institution=institution,
+                        program=program,
+                        edited_by=request.user if request.user.is_authenticated else None,
+                        timestamp=timezone.now(),
+                        reason="Marks & Results Edited",
+                        changes_summary="\n".join(summary_lines),
+                        details=diff_items,
+                        snapshot_before=before_snapshot,
+                        snapshot_after=after_snapshot
+                    )
+
             messages.success(request, f"Marks saved and converted to /100 scale for '{program.name}'!")
         else:
             messages.success(request, f"Code letters saved successfully for '{program.name}'! (Mark entry is locked for Judges).")
         return redirect('core:mark_entry_matrix', institution_slug=institution.slug, program_id=program.id)
 
     judge_range = list(range(1, (program.judge_count or 1) + 1))
+    edit_history = list(program.edit_history.all().select_related('edited_by').order_by('-timestamp'))
 
     return render(request, 'core/mark_entry_matrix.html', {
         'institution': institution,
@@ -1157,6 +1264,7 @@ def mark_entry_matrix_view(request, institution_slug, program_id):
         'participations': participations,
         'judge_range': judge_range,
         'has_marks': has_marks,
+        'edit_history': edit_history,
     })
 
 
@@ -2892,9 +3000,13 @@ def program_results_view(request, institution_slug):
             ).select_related('contestant', 'contestant__team').order_by('rank', '-marks')
 
         if participations.exists():
+            history_list = list(prog.edit_history.all().select_related('edited_by').order_by('-timestamp'))
             program_results.append({
                 'program': prog,
-                'participations': participations
+                'participations': participations,
+                'edit_history': history_list,
+                'has_edit_history': len(history_list) > 0,
+                'edit_history_count': len(history_list),
             })
 
     return render(request, 'core/program_results.html', {

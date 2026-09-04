@@ -668,3 +668,24 @@ class CertificateConfig(TenantBaseModel):
 
     def __str__(self):
         return f"Certificate Config - {self.institution.name} ({self.get_mode_display()})"
+
+
+# ----------------- Program Result Edit History -----------------
+class ProgramResultEditHistory(TenantBaseModel):
+    program = models.ForeignKey(Program, on_delete=models.CASCADE, related_name='edit_history')
+    edited_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='result_edits')
+    timestamp = models.DateTimeField(default=timezone.now, db_index=True)
+    reason = models.CharField(max_length=255, blank=True, default="Marks/Results updated")
+    changes_summary = models.TextField(blank=True, help_text="Human-readable summary of what changed")
+    details = models.JSONField(default=list, blank=True, help_text="Structured list of per-contestant before/after changes")
+    snapshot_before = models.JSONField(default=dict, blank=True)
+    snapshot_after = models.JSONField(default=dict, blank=True)
+
+    class Meta:
+        ordering = ['-timestamp']
+        verbose_name = "Program Result Edit History"
+        verbose_name_plural = "Program Result Edit Histories"
+
+    def __str__(self):
+        return f"Edit for {self.program.name} at {self.timestamp.strftime('%Y-%m-%d %H:%M')}"
+

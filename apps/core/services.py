@@ -130,6 +130,8 @@ def calculate_program_results(program):
         else:
             part.grade = None
 
+        part.save(update_fields=['rank', 'grade'])
+
     # Assign permanent sequential result number upon mark entry (1 for first entry, 2, 3...)
     from django.db.models import Max
     if not program.result_number:

@@ -3,7 +3,7 @@
 {% block title %}Mark Entry Matrix - {{ program.name }}{% endblock %}
 
 {% block content %}
-<div class="page-header">
+<div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px;">
     <div>
         <a href="{% url 'core:scoring_program_list' institution.slug %}" style="color: var(--text-muted); text-decoration: none;"><i class="fa-solid fa-arrow-left"></i> Back to Mark Entry</a>
         <h2 style="font-size: 1.8rem; font-weight: 800; margin-top: 4px;">Mark Entry Matrix: <span style="color: var(--accent-cyan);">{{ program.name }}</span></h2>
@@ -24,6 +24,13 @@
             {% endif %}
         </div>
     </div>
+    {% if not request.user.is_judge and edit_history %}
+    <div style="display: flex; align-items: center; gap: 8px;">
+        <button type="button" class="btn-primary" style="padding: 6px 14px; font-size: 0.85rem; background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); cursor: pointer; display: inline-flex; align-items: center; gap: 6px;" onclick="openHistoryModal('prog-history-{{ program.id }}')" title="View Edit History">
+            <i class="fa-solid fa-clock-rotate-left"></i> Edit History <span class="badge" style="background: #ef4444; color: #fff; font-size: 0.7rem; padding: 1px 6px; border-radius: 999px;">{{ edit_history|length }}</span>
+        </button>
+    </div>
+    {% endif %}
 </div>
 
 {% if request.user.is_judge %}
@@ -450,5 +457,179 @@
         // Ensure only active responsive inputs are submitted
         syncResponsiveInputs();
     });
+
+    function openHistoryModal(modalId) {
+        const modal = document.getElementById(modalId);
+        if (modal) {
+            modal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
+    }
+
+    function closeHistoryModal(modalId) {
+        const modal = document.getElementById(modalId);
+        if (modal) {
+            modal.style.display = 'none';
+            document.body.style.overflow = '';
+        }
+    }
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            document.querySelectorAll('.custom-modal-backdrop').forEach(m => {
+                m.style.display = 'none';
+            });
+            document.body.style.overflow = '';
+        }
+    });
+
+    document.addEventListener('click', function(e) {
+        if (e.target && e.target.classList.contains('custom-modal-backdrop')) {
+            e.target.style.display = 'none';
+            document.body.style.overflow = '';
+        }
+    });
 </script>
+
+{% if not request.user.is_judge and edit_history %}
+<!-- EDIT HISTORY MODAL -->
+<div id="prog-history-{{ program.id }}" class="custom-modal-backdrop" style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.78); backdrop-filter: blur(8px); z-index: 9999; align-items: center; justify-content: center; padding: 16px;">
+    <div class="glass-card custom-modal-box" style="max-width: 860px; width: 100%; max-height: 88vh; overflow-y: auto; background: #0f172a; border: 1px solid rgba(239, 68, 68, 0.4); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 25px rgba(239, 68, 68, 0.2); border-radius: 16px; padding: 24px; box-sizing: border-box;">
+        
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid var(--border-color); padding-bottom: 14px; margin-bottom: 18px;">
+            <div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="width: 34px; height: 34px; border-radius: 8px; background: rgba(239, 68, 68, 0.2); color: #f87171; display: inline-flex; align-items: center; justify-content: center; font-size: 1.1rem;">
+                        <i class="fa-solid fa-clock-rotate-left"></i>
+                    </span>
+                    <h3 style="font-size: 1.25rem; font-weight: 800; color: #fff; margin: 0;">Result Edit History</h3>
+                </div>
+                <div style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">
+                    <strong style="color: var(--text-main);">{{ program.name }}</strong> ({{ program.category.name }}) &bull; <span style="color: #f87171; font-weight: 700;">{{ edit_history|length }} edit record{{ edit_history|length|pluralize }}</span>
+                </div>
+            </div>
+            <button type="button" onclick="closeHistoryModal('prog-history-{{ program.id }}')" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #fff; width: 32px; height: 32px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1rem;">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+            {% for hist in edit_history %}
+            <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 16px;">
+                
+                <!-- History Header -->
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.06);">
+                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                        <span class="badge" style="background: rgba(239, 68, 68, 0.2); color: #fca5a5; font-size: 0.8rem; font-weight: 700;">
+                            <i class="fa-regular fa-clock"></i> {{ hist.timestamp|date:"d M Y, h:i A" }}
+                        </span>
+                        <span style="font-size: 0.78rem; color: var(--text-muted);">
+                            ({{ hist.timestamp|timesince }} ago)
+                        </span>
+                    </div>
+                    <div>
+                        <span class="badge" style="background: rgba(56, 189, 248, 0.15); color: var(--accent-cyan); font-size: 0.78rem;">
+                            <i class="fa-solid fa-user-shield"></i> Edited by: <strong>{{ hist.edited_by.get_full_name|default:hist.edited_by.username|default:"Admin" }}</strong>
+                        </span>
+                    </div>
+                </div>
+
+                <!-- History Details Table -->
+                {% if hist.details %}
+                <div class="table-responsive" style="margin-bottom: 10px;">
+                    <table class="custom-table" style="font-size: 0.85rem; margin: 0;">
+                        <thead>
+                            <tr style="background: rgba(0,0,0,0.35);">
+                                <th style="width: 28%;">Participant / Team</th>
+                                <th style="text-align: center; width: 18%;">Marks</th>
+                                <th style="text-align: center; width: 18%;">Place / Rank</th>
+                                {% if institution.has_grades %}
+                                <th style="text-align: center; width: 16%;">Grade</th>
+                                {% endif %}
+                                <th style="width: 20%;">Judge Scores</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for d in hist.details %}
+                            <tr>
+                                <td>
+                                    <strong style="color: var(--text-main);">
+                                        {% if d.chest_no %}<span style="color: var(--accent-cyan);">#{{ d.chest_no }}</span> {% endif %}{{ d.name }}
+                                    </strong>
+                                    {% if d.team %}
+                                    <div style="color: var(--text-muted); font-size: 0.72rem;">{{ d.team }}</div>
+                                    {% endif %}
+                                </td>
+                                <td style="text-align: center;">
+                                    {% if d.old_marks != d.new_marks %}
+                                        <span style="color: #ef4444; text-decoration: line-through; margin-right: 4px; font-weight: 600;">{{ d.old_marks|default:"-" }}</span>
+                                        <i class="fa-solid fa-arrow-right" style="font-size: 0.7rem; color: var(--text-muted);"></i>
+                                        <span style="color: #10b981; font-weight: 800; margin-left: 4px;">{{ d.new_marks|default:"-" }}</span>
+                                    {% else %}
+                                        <span style="color: var(--text-muted);">{{ d.new_marks|default:"-" }}</span>
+                                    {% endif %}
+                                </td>
+                                <td style="text-align: center;">
+                                    {% if d.old_rank != d.new_rank %}
+                                        <span style="color: #ef4444; text-decoration: line-through; margin-right: 4px; font-weight: 600;">
+                                            {% if d.old_rank %}{{ d.old_rank }}{% if d.old_rank == 1 %}st{% elif d.old_rank == 2 %}nd{% elif d.old_rank == 3 %}rd{% else %}th{% endif %}{% else %}-{% endif %}
+                                        </span>
+                                        <i class="fa-solid fa-arrow-right" style="font-size: 0.7rem; color: var(--text-muted);"></i>
+                                        <span style="color: #10b981; font-weight: 800; margin-left: 4px;">
+                                            {% if d.new_rank %}{{ d.new_rank }}{% if d.new_rank == 1 %}st{% elif d.new_rank == 2 %}nd{% elif d.new_rank == 3 %}rd{% else %}th{% endif %}{% else %}-{% endif %}
+                                        </span>
+                                    {% else %}
+                                        <span style="color: var(--text-muted);">
+                                            {% if d.new_rank %}{{ d.new_rank }}{% if d.new_rank == 1 %}st{% elif d.new_rank == 2 %}nd{% elif d.new_rank == 3 %}rd{% else %}th{% endif %}{% else %}-{% endif %}
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                {% if institution.has_grades %}
+                                <td style="text-align: center;">
+                                    {% if d.old_grade != d.new_grade %}
+                                        <span style="color: #ef4444; text-decoration: line-through; margin-right: 4px; font-weight: 600;">{{ d.old_grade|default:"-" }}</span>
+                                        <i class="fa-solid fa-arrow-right" style="font-size: 0.7rem; color: var(--text-muted);"></i>
+                                        <span style="color: #10b981; font-weight: 800; margin-left: 4px;">{{ d.new_grade|default:"-" }}</span>
+                                    {% else %}
+                                        <span style="color: var(--text-muted);">{{ d.new_grade|default:"-" }}</span>
+                                    {% endif %}
+                                </td>
+                                {% endif %}
+                                <td>
+                                    {% if d.old_judge_marks != d.new_judge_marks %}
+                                    <div style="font-size: 0.72rem; line-height: 1.4;">
+                                        <div style="color: #f87171;"><span style="font-weight: 600;">Old:</span> {% for jk, jv in d.old_judge_marks.items %}J{{ jk }}: {{ jv|default:"-" }}{% if not forloop.last %}, {% endif %}{% empty %}-{% endfor %}</div>
+                                        <div style="color: #34d399;"><span style="font-weight: 600;">New:</span> {% for jk, jv in d.new_judge_marks.items %}J{{ jk }}: {{ jv|default:"-" }}{% if not forloop.last %}, {% endif %}{% empty %}-{% endfor %}</div>
+                                    </div>
+                                    {% else %}
+                                    <span style="color: var(--text-muted); font-size: 0.72rem;">Unchanged</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% endif %}
+
+                <!-- Changes Text Summary -->
+                {% if hist.changes_summary %}
+                <div style="font-size: 0.78rem; color: var(--text-muted); background: rgba(0,0,0,0.3); border-radius: 6px; padding: 8px 12px; white-space: pre-line; border-left: 3px solid #ef4444;">
+                    {{ hist.changes_summary }}
+                </div>
+                {% endif %}
+
+            </div>
+            {% endfor %}
+        </div>
+
+        <div style="margin-top: 20px; display: flex; justify-content: flex-end;">
+            <button type="button" class="btn-primary" style="background: rgba(255,255,255,0.1); color: #fff; padding: 8px 18px;" onclick="closeHistoryModal('prog-history-{{ program.id }}')">
+                Close
+            </button>
+        </div>
+
+    </div>
+</div>
+{% endif %}
 {% endblock %}
