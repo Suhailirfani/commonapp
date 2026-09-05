@@ -132,18 +132,54 @@ def calculate_program_results(program):
 
         part.save(update_fields=['rank', 'grade'])
 
-    # Assign permanent sequential result number upon mark entry (1 for first entry, 2, 3...)
-    from django.db.models import Max
-    if not program.result_number:
+    # Only assign result_number if program is already announced
+    if program.is_announced and not program.result_number:
+        from django.db.models import Max
         max_num = Program.objects.filter(
             institution=institution,
             competition=program.competition,
+            is_announced=True,
             result_number__isnull=False
-        ).aggregate(Max('result_number'))['result_number__max'] or 0
+        ).exclude(id=program.id).aggregate(Max('result_number'))['result_number__max'] or 0
         program.result_number = max_num + 1
         program.save(update_fields=['result_number'])
 
     recalculate_team_points(institution)
+
+
+def resequence_announced_results(institution, competition=None):
+    """
+    Ensures all announced programs are numbered sequentially (1, 2, 3...)
+    strictly ordered by their announcement time (announced_at, then id).
+    Unannounced programs have result_number set to None.
+    """
+    from apps.core.models import Program, Competition
+    comps = [competition] if competition else list(Competition.objects.filter(institution=institution))
+    for comp in comps:
+        # Clear result_number from unannounced programs
+        Program.objects.filter(
+            institution=institution,
+            competition=comp,
+            is_announced=False,
+            result_number__isnull=False
+        ).update(result_number=None)
+
+        # Re-number announced programs strictly by announced_at, then id
+        announced_progs = list(
+            Program.objects.filter(
+                institution=institution,
+                competition=comp,
+                is_announced=True
+            ).order_by('announced_at', 'id')
+        )
+        for idx, prog in enumerate(announced_progs, start=1):
+            if not prog.announced_at:
+                prog.announced_at = timezone.now()
+            if prog.result_number != idx:
+                prog.result_number = idx
+                prog.save(update_fields=['result_number', 'announced_at'])
+            elif not prog.announced_at:
+                prog.save(update_fields=['announced_at'])
 
 
 def get_team_standings(institution, announced_only=True, limit_n_results=None):
@@ -165,15 +201,18 @@ def get_team_standings(institution, announced_only=True, limit_n_results=None):
                 prog_qs = Program.objects.filter(institution=institution)
                 if announced_only:
                     prog_qs = prog_qs.filter(is_announced=True)
+                    allowed_program_ids = set(
+                        prog_qs.order_by('result_number', 'announced_at', 'id')
+                        .values_list('id', flat=True)[:n_val]
+                    )
                 else:
                     prog_qs = prog_qs.filter(
                         Q(single_participations__marks__isnull=False) | Q(group_participations__marks__isnull=False)
                     ).distinct()
-                
-                allowed_program_ids = set(
-                    prog_qs.order_by('announced_at', 'id')
-                    .values_list('id', flat=True)[:n_val]
-                )
+                    allowed_program_ids = set(
+                        prog_qs.order_by('id')
+                        .values_list('id', flat=True)[:n_val]
+                    )
         except (ValueError, TypeError):
             allowed_program_ids = None
 

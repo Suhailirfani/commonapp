@@ -54,8 +54,13 @@
     <a href="{% url 'public:program_detail' institution.slug program.id %}" class="glass-card" style="text-decoration: none; color: inherit;">
         <div style="display: flex; justify-content: space-between; align-items: flex-start;">
             <div>
-                <span class="badge badge-approved" style="font-size: 0.7rem;">{{ program.category.name }}</span>
-                <h4 style="font-size: 1.15rem; font-weight: 700; margin-top: 6px;">{{ program.name }}</h4>
+                <div style="display: flex; gap: 6px; align-items: center; margin-bottom: 4px; flex-wrap: wrap;">
+                    {% if program.result_number %}
+                    <span class="badge" style="background: rgba(245, 158, 11, 0.2); color: var(--accent-amber); font-weight: 800; font-size: 0.72rem;">Result #{{ program.result_number }}</span>
+                    {% endif %}
+                    <span class="badge badge-approved" style="font-size: 0.7rem;">{{ program.category.name }}</span>
+                </div>
+                <h4 style="font-size: 1.15rem; font-weight: 700; margin-top: 4px;">{{ program.name }}</h4>
             </div>
             <i class="fa-solid fa-angle-right" style="color: var(--text-muted);"></i>
         </div>

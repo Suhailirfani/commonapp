@@ -6,7 +6,12 @@
 {% block content %}
 <div style="margin-bottom: 24px;">
     <a href="{% url 'public:home' institution.slug %}" style="color: var(--text-muted); text-decoration: none;"><i class="fa-solid fa-arrow-left"></i> Back to Public Portal</a>
-    <div style="display: flex; align-items: center; gap: 12px; margin-top: 12px;">
+    <div style="display: flex; align-items: center; gap: 8px; margin-top: 12px; flex-wrap: wrap;">
+        {% if program.result_number %}
+        <span class="badge" style="background: rgba(245, 158, 11, 0.2); color: var(--accent-amber); font-weight: 800; font-size: 0.85rem;">
+            Result #{{ program.result_number }}
+        </span>
+        {% endif %}
         <span class="badge badge-approved" style="font-size: 0.85rem;">{{ program.category.name }}</span>
         <span class="badge badge-pending">{% if program.is_group %}Group Event{% else %}Single Event{% endif %}</span>
     </div>

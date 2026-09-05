@@ -1420,14 +1420,24 @@ def announce_results_view(request, institution_slug, program_id):
 
     # Toggle announcement status
     program.is_announced = True
-    program.announced_at = timezone.now()
-    program.save()
+    if not program.announced_at:
+        program.announced_at = timezone.now()
+    if not program.result_number:
+        from django.db.models import Max
+        max_num = Program.objects.filter(
+            institution=institution,
+            competition=program.competition,
+            is_announced=True,
+            result_number__isnull=False
+        ).exclude(id=program.id).aggregate(Max('result_number'))['result_number__max'] or 0
+        program.result_number = max_num + 1
+    program.save(update_fields=['is_announced', 'announced_at', 'result_number'])
 
     # Recalculate team points upon publishing
     from .services import recalculate_team_points
     recalculate_team_points(institution)
 
-    messages.success(request, f"Results for '{program.name}' published publicly and live team leaderboard updated!")
+    messages.success(request, f"📢 Results for '{program.name}' published publicly (Result #{program.result_number}) and live team leaderboard updated!")
     return redirect('core:scoring_program_list', institution_slug=institution.slug)
 
 
@@ -2658,7 +2668,7 @@ def download_all_results_pdf_view(request, institution_slug):
     programs = Program.objects.filter(institution=institution, is_announced=True).select_related('category')
     if category_id and str(category_id).isdigit():
         programs = programs.filter(category_id=int(category_id))
-    programs = programs.order_by('category__name', 'name')
+    programs = programs.order_by('result_number', 'announced_at', 'id')
 
     results_data = []
     for prog in programs:
@@ -2958,25 +2968,6 @@ def program_results_view(request, institution_slug):
     
     category_id = request.GET.get('category')
     view_mode = request.GET.get('view', 'announced')
-    
-    # Auto-assign result_number to any completed program missing one (1 for first entry, 2, 3...)
-    from django.db.models import Max
-    unassigned_progs = Program.objects.filter(
-        institution=institution,
-        result_number__isnull=True
-    ).filter(
-        Q(single_participations__marks__isnull=False) | Q(group_participations__marks__isnull=False)
-    ).distinct().order_by('id')
-
-    if unassigned_progs.exists():
-        max_num = Program.objects.filter(
-            institution=institution,
-            result_number__isnull=False
-        ).aggregate(Max('result_number'))['result_number__max'] or 0
-        for up in unassigned_progs:
-            max_num += 1
-            up.result_number = max_num
-            up.save(update_fields=['result_number'])
 
     programs = Program.objects.filter(institution=institution).select_related('category')
     if category_id:
@@ -2984,9 +2975,9 @@ def program_results_view(request, institution_slug):
     if view_mode == 'announced':
         programs = programs.filter(is_announced=True).order_by('result_number', 'announced_at', 'id')
     elif view_mode == 'draft':
-        programs = programs.filter(is_announced=False).order_by('result_number', 'id')
+        programs = programs.filter(is_announced=False).order_by('category__name', 'name')
     else:
-        programs = programs.order_by('result_number', 'id')
+        programs = programs.order_by('category__name', 'name')
 
     program_results = []
     for prog in programs:
@@ -3153,14 +3144,21 @@ def manage_announcements_view(request, institution_slug):
         messages.error(request, "Permission Denied: Judges cannot access the Public Announcement Hub.")
         return redirect('core:scoring_program_list', institution_slug=institution.slug)
 
-    if request.method == 'POST' and request.POST.get('action') == 'toggle_public_suspended':
-        institution.is_public_suspended = not institution.is_public_suspended
-        institution.save(update_fields=['is_public_suspended'])
-        if institution.is_public_suspended:
-            messages.warning(request, "⏸️ Public Portal Link has been SUSPENDED. External visitors cannot access live results until enabled.")
-        else:
-            messages.success(request, "✅ Public Portal Link is now ACTIVE & LIVE for all visitors.")
-        return redirect('core:manage_announcements', institution_slug=institution.slug)
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        if action == 'toggle_public_suspended':
+            institution.is_public_suspended = not institution.is_public_suspended
+            institution.save(update_fields=['is_public_suspended'])
+            if institution.is_public_suspended:
+                messages.warning(request, "⏸️ Public Portal Link has been SUSPENDED. External visitors cannot access live results until enabled.")
+            else:
+                messages.success(request, "✅ Public Portal Link is now ACTIVE & LIVE for all visitors.")
+            return redirect('core:manage_announcements', institution_slug=institution.slug)
+        elif action == 'resequence_results':
+            from .services import resequence_announced_results
+            resequence_announced_results(institution)
+            messages.success(request, "⚡ Result numbers have been re-sequenced strictly in order of their announcement time!")
+            return redirect('core:manage_announcements', institution_slug=institution.slug)
 
     programs = Program.objects.filter(institution=institution).select_related('category').order_by('category__name', 'name')
 
@@ -3208,19 +3206,26 @@ def toggle_program_announcement_view(request, institution_slug, program_id):
 
     program.is_announced = not program.is_announced
     if program.is_announced:
-        program.announced_at = timezone.now()
+        if not program.announced_at:
+            program.announced_at = timezone.now()
         if not program.result_number:
             from django.db.models import Max
             max_num = Program.objects.filter(
                 institution=institution,
                 competition=program.competition,
+                is_announced=True,
                 result_number__isnull=False
-            ).aggregate(Max('result_number'))['result_number__max'] or 0
+            ).exclude(id=program.id).aggregate(Max('result_number'))['result_number__max'] or 0
             program.result_number = max_num + 1
+        program.save(update_fields=['is_announced', 'announced_at', 'result_number'])
         messages.success(request, f"📢 Results for '{program.name}' are now PUBLICLY ANNOUNCED (Result #{program.result_number})!")
     else:
+        program.result_number = None
+        program.announced_at = None
+        program.save(update_fields=['is_announced', 'announced_at', 'result_number'])
+        from .services import resequence_announced_results
+        resequence_announced_results(institution, program.competition)
         messages.info(request, f"🔒 Results for '{program.name}' are now hidden from public view.")
-    program.save()
 
     from .services import recalculate_team_points
     recalculate_team_points(institution)

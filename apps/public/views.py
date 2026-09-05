@@ -24,7 +24,7 @@ def public_home_view(request, institution_slug):
     standings = get_team_standings(institution, announced_only=True) if competition else []
     top_teams = standings[:5]
 
-    announced_programs = Program.objects.filter(institution=institution, is_announced=True).order_by('-announced_at')[:8]
+    announced_programs = Program.objects.filter(institution=institution, is_announced=True).select_related('category').order_by('-announced_at', '-result_number', '-id')[:8]
     announcements = Announcement.objects.filter(institution=institution, is_public=True)[:5]
 
     context = {
