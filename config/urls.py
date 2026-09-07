@@ -4,11 +4,17 @@ from django.conf import settings
 from django.conf.urls.static import static
 from apps.tenants import views as tenant_views
 
+from apps.core import views as core_views
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     
     # Public SaaS Landing page & Application
     path('', tenant_views.landing_page_view, name='landing_page'),
+    
+    # Global Direct PDF routes (supports both namespaced & non-namespaced reverses)
+    path('portal/<slug:institution_slug>/reports/pdf/schedule/', core_views.download_schedule_pdf_view, name='download_schedule_pdf'),
+    path('portal/<slug:institution_slug>/reports/pdf/programs/', core_views.download_programs_pdf_view, name='download_programs_pdf'),
     
     # Apps routing
     path('auth/', include('apps.users.urls')),
