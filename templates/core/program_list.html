@@ -343,17 +343,18 @@ Category: Junior Category
      ========================================== -->
 <div id="tab-content-list" style="display: none;">
     <div class="glass-card" style="padding: 24px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 14px;">
+        <!-- TOP CONTROLS & STATS -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; flex-wrap: wrap; gap: 14px;">
             <div>
                 <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--accent-cyan); margin: 0; display: flex; align-items: center; gap: 8px;">
-                    <i class="fa-solid fa-list-check"></i> Registered Programs List ({{ programs|length }})
+                    <i class="fa-solid fa-list-check"></i> Registered Programs List ({{ total_count }})
                 </h3>
                 <div style="color: var(--text-muted); font-size: 0.84rem; margin-top: 2px;">
-                    മത്സര ഇനങ്ങളുടെ കാറ്റഗറി, സിംഗിൾ/ഗ്രൂപ്പ്, സ്‌റ്റേജ് വിവരങ്ങൾ.
+                    മത്സര ഇനങ്ങൾ തരംതിരിച്ചു കാണാനും എഡിറ്റ് ചെയ്യാനും (സിംഗിൾ & ഗ്രൂപ്പ് മത്സരങ്ങൾ പ്രത്യേകം).
                 </div>
             </div>
 
-            <div style="display: flex; gap: 10px; align-items: center;">
+            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
                 <div style="position: relative;">
                     <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 0.85rem;"></i>
                     <input type="text" id="programSearchInput" onkeyup="filterProgramsList()" placeholder="Search programs..." class="form-control" style="padding-left: 34px; width: 220px; font-size: 0.85rem; background: rgba(0,0,0,0.3); color: #fff;">
@@ -364,118 +365,255 @@ Category: Junior Category
             </div>
         </div>
 
-        <!-- DESKTOP TABLE VIEW -->
-        <div class="table-responsive desktop-table-view">
-            <table class="custom-table" id="programsTable" style="width: 100%; border-collapse: separate; border-spacing: 0;">
-                <thead>
-                    <tr style="background: rgba(15, 23, 42, 0.9);">
-                        <th style="width: 50px; padding: 12px 14px;">#</th>
-                        <th style="padding: 12px 14px;">Program Name</th>
-                        <th style="padding: 12px 14px;">Category</th>
-                        <th style="text-align: center; padding: 12px 14px;">Format</th>
-                        <th style="text-align: center; padding: 12px 14px;">Stage Type</th>
-                        <th style="text-align: center; padding: 12px 14px;">Duration</th>
-                        <th style="text-align: right; padding: 12px 14px; width: 140px;">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for p in programs %}
-                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-                        <td style="padding: 12px 14px;"><strong>{{ forloop.counter }}</strong></td>
-                        <td style="padding: 12px 14px;">
-                            <strong style="font-size: 1.02rem; color: #f8fafc;">{{ p.name }}</strong>
-                        </td>
-                        <td style="padding: 12px 14px;">
-                            <span class="badge badge-approved" style="font-size: 0.82rem; padding: 4px 10px;">
-                                {{ p.category.name }}
-                            </span>
-                        </td>
-                        <td style="text-align: center; padding: 12px 14px;">
-                            {% if p.is_group %}
-                            <span class="badge" style="background: rgba(168, 85, 247, 0.2); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.4); font-size: 0.78rem; padding: 4px 10px;">
-                                👥 Group Event
-                            </span>
-                            {% else %}
-                            <span class="badge badge-pending" style="font-size: 0.78rem; padding: 4px 10px;">
-                                👤 Single Event
-                            </span>
-                            {% endif %}
-                        </td>
-                        <td style="text-align: center; padding: 12px 14px;">
-                            {% if p.program_type == 'OFF_STAGE' %}
-                            <span class="badge" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); font-size: 0.78rem; padding: 4px 10px;">
-                                📝 Off-Stage
-                            </span>
-                            {% else %}
-                            <span class="badge" style="background: rgba(56, 189, 248, 0.15); color: var(--accent-cyan); border: 1px solid rgba(56, 189, 248, 0.3); font-size: 0.78rem; padding: 4px 10px;">
-                                🎭 Stage Event
-                            </span>
-                            {% endif %}
-                        </td>
-                        <td style="text-align: center; font-weight: 700; color: #cbd5e1; font-size: 0.88rem; padding: 12px 14px;">
-                            {{ p.duration_per_participant|default:5 }} mins
-                        </td>
-                        <td style="text-align: right; padding: 12px 14px; white-space: nowrap;">
-                            <a href="{% url 'core:program_edit' institution.slug p.id %}" style="padding: 5px 12px; font-size: 0.8rem; font-weight: 700; border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; background: linear-gradient(135deg, rgba(56, 189, 248, 0.22), rgba(14, 165, 233, 0.4)); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.5); box-shadow: 0 4px 12px rgba(56, 189, 248, 0.15); transition: all 0.2s;" title="Edit Program">
-                                <i class="fa-solid fa-pen-to-square"></i> Edit
-                            </a>
-                            <a href="{% url 'core:program_delete' institution.slug p.id %}" onclick="return confirm('Are you sure you want to delete program \'{{ p.name|escapejs }}\'?');" style="padding: 5px 12px; font-size: 0.8rem; font-weight: 700; border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; background: linear-gradient(135deg, rgba(244, 63, 94, 0.2), rgba(225, 29, 72, 0.35)); color: #fb7185; border: 1px solid rgba(244, 63, 94, 0.45); box-shadow: 0 4px 12px rgba(244, 63, 94, 0.12); transition: all 0.2s;" title="Delete Program">
-                                <i class="fa-solid fa-trash-can"></i> Delete
-                            </a>
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 40px;">
-                            No programs added yet. Click 'Add Programs' button above to create items.
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+        <!-- QUICK FILTER PILLS -->
+        <div style="display: flex; gap: 10px; margin-bottom: 24px; flex-wrap: wrap; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 14px;">
+            <button type="button" id="pill-filter-all" onclick="filterProgramType('all')" class="btn-primary" style="padding: 7px 16px; font-size: 0.84rem; font-weight: 700; border-radius: 20px; background: linear-gradient(135deg, var(--accent-cyan), #0284c7); border: 1px solid var(--accent-cyan); color: #fff; cursor: pointer; transition: all 0.2s;">
+                <i class="fa-solid fa-layer-group"></i> All Programs ({{ total_count }})
+            </button>
+            <button type="button" id="pill-filter-single" onclick="filterProgramType('single')" class="btn-primary" style="padding: 7px 16px; font-size: 0.84rem; font-weight: 700; border-radius: 20px; background: rgba(255,255,255,0.06); color: #cbd5e1; border: 1px solid rgba(255,255,255,0.12); cursor: pointer; transition: all 0.2s;">
+                <i class="fa-solid fa-user"></i> Single Programs ({{ single_count }})
+            </button>
+            <button type="button" id="pill-filter-group" onclick="filterProgramType('group')" class="btn-primary" style="padding: 7px 16px; font-size: 0.84rem; font-weight: 700; border-radius: 20px; background: rgba(255,255,255,0.06); color: #cbd5e1; border: 1px solid rgba(255,255,255,0.12); cursor: pointer; transition: all 0.2s;">
+                <i class="fa-solid fa-users"></i> Group Programs ({{ group_count }})
+            </button>
         </div>
 
-        <!-- MOBILE CARD LIST -->
-        <div class="mobile-card-list-view">
-            {% for p in programs %}
-            <div class="program-mobile-card" style="background: rgba(255,255,255,0.02); padding: 16px; border-radius: 14px; border: 1px solid var(--border-color); margin-bottom: 12px;">
-                <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;">
-                    <div>
-                        <strong style="font-size: 1.05rem; color: var(--accent-cyan); display: block; margin-bottom: 4px;">
-                            #{{ forloop.counter }} {{ p.name }}
-                        </strong>
-                        <span class="badge badge-approved" style="font-size: 0.76rem; padding: 3px 8px;">
-                            {{ p.category.name }}
-                        </span>
-                    </div>
-                    <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
-                        {% if p.is_group %}
-                        <span class="badge" style="background: rgba(168, 85, 247, 0.2); color: #c084fc; font-size: 0.72rem; padding: 2px 8px;">👥 Group</span>
-                        {% else %}
-                        <span class="badge badge-pending" style="font-size: 0.72rem; padding: 2px 8px;">👤 Single</span>
-                        {% endif %}
 
-                        {% if p.program_type == 'OFF_STAGE' %}
-                        <span class="badge" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24; font-size: 0.72rem; padding: 2px 8px;">📝 Off-Stage</span>
-                        {% else %}
-                        <span class="badge" style="background: rgba(56, 189, 248, 0.15); color: var(--accent-cyan); font-size: 0.72rem; padding: 2px 8px;">🎭 Stage</span>
-                        {% endif %}
+        <!-- ==========================================
+             SECTION A: SINGLE PROGRAMS
+             ========================================== -->
+        <div id="section-single-programs" class="program-type-section" style="margin-bottom: 32px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid rgba(56, 189, 248, 0.25);">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div style="width: 34px; height: 34px; border-radius: 8px; background: rgba(56, 189, 248, 0.18); display: flex; align-items: center; justify-content: center; color: var(--accent-cyan); font-size: 1.1rem;">
+                        <i class="fa-solid fa-user"></i>
+                    </div>
+                    <div>
+                        <h4 style="font-size: 1.12rem; font-weight: 800; color: #f8fafc; margin: 0;">
+                            1. Single Programs (വ്യക്തിഗത മത്സരങ്ങൾ)
+                        </h4>
+                        <div style="font-size: 0.76rem; color: var(--text-muted); margin-top: 1px;">ഓരോ വ്യക്തികൾ പങ്കെടുക്കുന്ന മത്സര ഇനങ്ങൾ</div>
                     </div>
                 </div>
-                <div style="display: flex; gap: 8px; margin-top: 12px; justify-content: flex-end; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px;">
-                    <a href="{% url 'core:program_edit' institution.slug p.id %}" style="padding: 5px 12px; font-size: 0.78rem; font-weight: 700; border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; background: linear-gradient(135deg, rgba(56, 189, 248, 0.22), rgba(14, 165, 233, 0.4)); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.5);">
-                        <i class="fa-solid fa-pen-to-square"></i> Edit
-                    </a>
-                    <a href="{% url 'core:program_delete' institution.slug p.id %}" onclick="return confirm('Are you sure you want to delete program \'{{ p.name|escapejs }}\'?');" style="padding: 5px 12px; font-size: 0.78rem; font-weight: 700; border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; background: linear-gradient(135deg, rgba(244, 63, 94, 0.2), rgba(225, 29, 72, 0.35)); color: #fb7185; border: 1px solid rgba(244, 63, 94, 0.45);">
-                        <i class="fa-solid fa-trash-can"></i> Delete
-                    </a>
+                <span class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); font-size: 0.82rem; padding: 4px 12px; font-weight: 800;">
+                    {{ single_count }} Programs
+                </span>
+            </div>
+
+            <!-- DESKTOP TABLE VIEW - SINGLE -->
+            <div class="table-responsive desktop-table-view">
+                <table class="custom-table" id="singleProgramsTable" style="width: 100%; border-collapse: separate; border-spacing: 0;">
+                    <thead>
+                        <tr style="background: rgba(15, 23, 42, 0.9);">
+                            <th style="width: 50px; padding: 12px 14px;">#</th>
+                            <th style="padding: 12px 14px;">Program Name</th>
+                            <th style="padding: 12px 14px;">Category</th>
+                            <th style="text-align: center; padding: 12px 14px;">Stage Type</th>
+                            <th style="text-align: center; padding: 12px 14px;">Duration</th>
+                            <th style="text-align: right; padding: 12px 14px; width: 140px;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in single_programs %}
+                        <tr class="program-table-row" style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                            <td style="padding: 12px 14px;"><strong>{{ forloop.counter }}</strong></td>
+                            <td style="padding: 12px 14px;">
+                                <strong style="font-size: 1.02rem; color: #f8fafc;">{{ p.name }}</strong>
+                            </td>
+                            <td style="padding: 12px 14px;">
+                                <span class="badge badge-approved" style="font-size: 0.82rem; padding: 4px 10px;">
+                                    {{ p.category.name }}
+                                </span>
+                            </td>
+                            <td style="text-align: center; padding: 12px 14px;">
+                                {% if p.program_type == 'OFF_STAGE' %}
+                                <span class="badge" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); font-size: 0.78rem; padding: 4px 10px;">
+                                    📝 Off-Stage
+                                </span>
+                                {% else %}
+                                <span class="badge" style="background: rgba(56, 189, 248, 0.15); color: var(--accent-cyan); border: 1px solid rgba(56, 189, 248, 0.3); font-size: 0.78rem; padding: 4px 10px;">
+                                    🎭 Stage Event
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td style="text-align: center; font-weight: 700; color: #cbd5e1; font-size: 0.88rem; padding: 12px 14px;">
+                                {{ p.duration_per_participant|default:5 }} mins
+                            </td>
+                            <td style="text-align: right; padding: 12px 14px; white-space: nowrap;">
+                                <a href="{% url 'core:program_edit' institution.slug p.id %}" style="padding: 5px 12px; font-size: 0.8rem; font-weight: 700; border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; background: linear-gradient(135deg, rgba(56, 189, 248, 0.22), rgba(14, 165, 233, 0.4)); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.5); box-shadow: 0 4px 12px rgba(56, 189, 248, 0.15); transition: all 0.2s;" title="Edit Program">
+                                    <i class="fa-solid fa-pen-to-square"></i> Edit
+                                </a>
+                                <a href="{% url 'core:program_delete' institution.slug p.id %}" onclick="return confirm('Are you sure you want to delete program \'{{ p.name|escapejs }}\'?');" style="padding: 5px 12px; font-size: 0.8rem; font-weight: 700; border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; background: linear-gradient(135deg, rgba(244, 63, 94, 0.2), rgba(225, 29, 72, 0.35)); color: #fb7185; border: 1px solid rgba(244, 63, 94, 0.45); box-shadow: 0 4px 12px rgba(244, 63, 94, 0.12); transition: all 0.2s;" title="Delete Program">
+                                    <i class="fa-solid fa-trash-can"></i> Delete
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 30px;">
+                                No single programs added yet.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- MOBILE CARD LIST - SINGLE -->
+            <div class="mobile-card-list-view">
+                {% for p in single_programs %}
+                <div class="program-mobile-card" style="background: rgba(255,255,255,0.02); padding: 16px; border-radius: 14px; border: 1px solid var(--border-color); margin-bottom: 12px;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;">
+                        <div>
+                            <strong style="font-size: 1.05rem; color: var(--accent-cyan); display: block; margin-bottom: 4px;">
+                                #{{ forloop.counter }} {{ p.name }}
+                            </strong>
+                            <span class="badge badge-approved" style="font-size: 0.76rem; padding: 3px 8px;">
+                                {{ p.category.name }}
+                            </span>
+                        </div>
+                        <div>
+                            {% if p.program_type == 'OFF_STAGE' %}
+                            <span class="badge" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24; font-size: 0.72rem; padding: 2px 8px;">📝 Off-Stage</span>
+                            {% else %}
+                            <span class="badge" style="background: rgba(56, 189, 248, 0.15); color: var(--accent-cyan); font-size: 0.72rem; padding: 2px 8px;">🎭 Stage</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 8px; margin-top: 12px; justify-content: flex-end; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px;">
+                        <a href="{% url 'core:program_edit' institution.slug p.id %}" style="padding: 5px 12px; font-size: 0.78rem; font-weight: 700; border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; background: linear-gradient(135deg, rgba(56, 189, 248, 0.22), rgba(14, 165, 233, 0.4)); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.5);">
+                            <i class="fa-solid fa-pen-to-square"></i> Edit
+                        </a>
+                        <a href="{% url 'core:program_delete' institution.slug p.id %}" onclick="return confirm('Are you sure you want to delete program \'{{ p.name|escapejs }}\'?');" style="padding: 5px 12px; font-size: 0.78rem; font-weight: 700; border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; background: linear-gradient(135deg, rgba(244, 63, 94, 0.2), rgba(225, 29, 72, 0.35)); color: #fb7185; border: 1px solid rgba(244, 63, 94, 0.45);">
+                            <i class="fa-solid fa-trash-can"></i> Delete
+                        </a>
+                    </div>
                 </div>
+                {% empty %}
+                <div style="text-align: center; color: var(--text-muted); padding: 20px;">
+                    No single programs added yet.
+                </div>
+                {% endfor %}
             </div>
-            {% empty %}
-            <div style="text-align: center; color: var(--text-muted); padding: 30px;">
-                No programs added yet.
+        </div>
+
+
+        <!-- ==========================================
+             SECTION B: GROUP PROGRAMS
+             ========================================== -->
+        <div id="section-group-programs" class="program-type-section" style="margin-bottom: 12px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid rgba(168, 85, 247, 0.25);">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div style="width: 34px; height: 34px; border-radius: 8px; background: rgba(168, 85, 247, 0.18); display: flex; align-items: center; justify-content: center; color: #c084fc; font-size: 1.1rem;">
+                        <i class="fa-solid fa-users"></i>
+                    </div>
+                    <div>
+                        <h4 style="font-size: 1.12rem; font-weight: 800; color: #f8fafc; margin: 0;">
+                            2. Group Programs (ഗ്രൂപ്പ് മത്സരങ്ങൾ)
+                        </h4>
+                        <div style="font-size: 0.76rem; color: var(--text-muted); margin-top: 1px;">ടീമുകളായി പങ്കെടുക്കുന്ന മത്സര ഇനങ്ങൾ</div>
+                    </div>
+                </div>
+                <span class="badge" style="background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.35); font-size: 0.82rem; padding: 4px 12px; font-weight: 800;">
+                    {{ group_count }} Programs
+                </span>
             </div>
-            {% endfor %}
+
+            <!-- DESKTOP TABLE VIEW - GROUP -->
+            <div class="table-responsive desktop-table-view">
+                <table class="custom-table" id="groupProgramsTable" style="width: 100%; border-collapse: separate; border-spacing: 0;">
+                    <thead>
+                        <tr style="background: rgba(15, 23, 42, 0.9);">
+                            <th style="width: 50px; padding: 12px 14px;">#</th>
+                            <th style="padding: 12px 14px;">Program Name</th>
+                            <th style="padding: 12px 14px;">Category</th>
+                            <th style="text-align: center; padding: 12px 14px;">Stage Type</th>
+                            <th style="text-align: center; padding: 12px 14px;">Duration</th>
+                            <th style="text-align: right; padding: 12px 14px; width: 140px;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in group_programs %}
+                        <tr class="program-table-row" style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                            <td style="padding: 12px 14px;"><strong>{{ forloop.counter }}</strong></td>
+                            <td style="padding: 12px 14px;">
+                                <strong style="font-size: 1.02rem; color: #f8fafc;">{{ p.name }}</strong>
+                            </td>
+                            <td style="padding: 12px 14px;">
+                                <span class="badge badge-approved" style="font-size: 0.82rem; padding: 4px 10px;">
+                                    {{ p.category.name }}
+                                </span>
+                            </td>
+                            <td style="text-align: center; padding: 12px 14px;">
+                                {% if p.program_type == 'OFF_STAGE' %}
+                                <span class="badge" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); font-size: 0.78rem; padding: 4px 10px;">
+                                    📝 Off-Stage
+                                </span>
+                                {% else %}
+                                <span class="badge" style="background: rgba(56, 189, 248, 0.15); color: var(--accent-cyan); border: 1px solid rgba(56, 189, 248, 0.3); font-size: 0.78rem; padding: 4px 10px;">
+                                    🎭 Stage Event
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td style="text-align: center; font-weight: 700; color: #cbd5e1; font-size: 0.88rem; padding: 12px 14px;">
+                                {{ p.duration_per_participant|default:5 }} mins
+                            </td>
+                            <td style="text-align: right; padding: 12px 14px; white-space: nowrap;">
+                                <a href="{% url 'core:program_edit' institution.slug p.id %}" style="padding: 5px 12px; font-size: 0.8rem; font-weight: 700; border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; background: linear-gradient(135deg, rgba(56, 189, 248, 0.22), rgba(14, 165, 233, 0.4)); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.5); box-shadow: 0 4px 12px rgba(56, 189, 248, 0.15); transition: all 0.2s;" title="Edit Program">
+                                    <i class="fa-solid fa-pen-to-square"></i> Edit
+                                </a>
+                                <a href="{% url 'core:program_delete' institution.slug p.id %}" onclick="return confirm('Are you sure you want to delete program \'{{ p.name|escapejs }}\'?');" style="padding: 5px 12px; font-size: 0.8rem; font-weight: 700; border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; background: linear-gradient(135deg, rgba(244, 63, 94, 0.2), rgba(225, 29, 72, 0.35)); color: #fb7185; border: 1px solid rgba(244, 63, 94, 0.45); box-shadow: 0 4px 12px rgba(244, 63, 94, 0.12); transition: all 0.2s;" title="Delete Program">
+                                    <i class="fa-solid fa-trash-can"></i> Delete
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 30px;">
+                                No group programs added yet.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- MOBILE CARD LIST - GROUP -->
+            <div class="mobile-card-list-view">
+                {% for p in group_programs %}
+                <div class="program-mobile-card" style="background: rgba(255,255,255,0.02); padding: 16px; border-radius: 14px; border: 1px solid var(--border-color); margin-bottom: 12px;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;">
+                        <div>
+                            <strong style="font-size: 1.05rem; color: #c084fc; display: block; margin-bottom: 4px;">
+                                #{{ forloop.counter }} {{ p.name }}
+                            </strong>
+                            <span class="badge badge-approved" style="font-size: 0.76rem; padding: 3px 8px;">
+                                {{ p.category.name }}
+                            </span>
+                        </div>
+                        <div>
+                            {% if p.program_type == 'OFF_STAGE' %}
+                            <span class="badge" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24; font-size: 0.72rem; padding: 2px 8px;">📝 Off-Stage</span>
+                            {% else %}
+                            <span class="badge" style="background: rgba(56, 189, 248, 0.15); color: var(--accent-cyan); font-size: 0.72rem; padding: 2px 8px;">🎭 Stage</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 8px; margin-top: 12px; justify-content: flex-end; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px;">
+                        <a href="{% url 'core:program_edit' institution.slug p.id %}" style="padding: 5px 12px; font-size: 0.78rem; font-weight: 700; border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; background: linear-gradient(135deg, rgba(56, 189, 248, 0.22), rgba(14, 165, 233, 0.4)); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.5);">
+                            <i class="fa-solid fa-pen-to-square"></i> Edit
+                        </a>
+                        <a href="{% url 'core:program_delete' institution.slug p.id %}" onclick="return confirm('Are you sure you want to delete program \'{{ p.name|escapejs }}\'?');" style="padding: 5px 12px; font-size: 0.78rem; font-weight: 700; border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; background: linear-gradient(135deg, rgba(244, 63, 94, 0.2), rgba(225, 29, 72, 0.35)); color: #fb7185; border: 1px solid rgba(244, 63, 94, 0.45);">
+                            <i class="fa-solid fa-trash-can"></i> Delete
+                        </a>
+                    </div>
+                </div>
+                {% empty %}
+                <div style="text-align: center; color: var(--text-muted); padding: 20px;">
+                    No group programs added yet.
+                </div>
+                {% endfor %}
+            </div>
         </div>
     </div>
 </div>
@@ -686,25 +824,67 @@ Category: Junior Category
         });
     }
 
-    function filterProgramsList() {
-        const input = document.getElementById('programSearchInput');
-        const filter = input.value.toLowerCase();
-        const table = document.getElementById('programsTable');
-        if (table) {
-            const tr = table.getElementsByTagName('tr');
-            for (let i = 1; i < tr.length; i++) {
-                const td = tr[i].getElementsByTagName('td')[1];
-                if (td) {
-                    const txtValue = td.textContent || td.innerText;
-                    tr[i].style.display = txtValue.toLowerCase().indexOf(filter) > -1 ? '' : 'none';
+    let currentProgramType = 'all';
+
+    function filterProgramType(type) {
+        currentProgramType = type;
+        const types = ['all', 'single', 'group'];
+        types.forEach(t => {
+            const pill = document.getElementById(`pill-filter-${t}`);
+            if (pill) {
+                if (t === type) {
+                    pill.style.background = 'linear-gradient(135deg, var(--accent-cyan), #0284c7)';
+                    pill.style.borderColor = 'var(--accent-cyan)';
+                    pill.style.color = '#fff';
+                } else {
+                    pill.style.background = 'rgba(255,255,255,0.06)';
+                    pill.style.borderColor = 'rgba(255,255,255,0.12)';
+                    pill.style.color = '#cbd5e1';
                 }
             }
+        });
+
+        const singleSec = document.getElementById('section-single-programs');
+        const groupSec = document.getElementById('section-group-programs');
+
+        if (type === 'all') {
+            if (singleSec) singleSec.style.display = 'block';
+            if (groupSec) groupSec.style.display = 'block';
+        } else if (type === 'single') {
+            if (singleSec) singleSec.style.display = 'block';
+            if (groupSec) groupSec.style.display = 'none';
+        } else if (type === 'group') {
+            if (singleSec) singleSec.style.display = 'none';
+            if (groupSec) groupSec.style.display = 'block';
         }
+
+        filterProgramsList();
+    }
+
+    function filterProgramsList() {
+        const input = document.getElementById('programSearchInput');
+        const filter = (input ? input.value : '').toLowerCase().trim();
+
+        const tables = ['singleProgramsTable', 'groupProgramsTable'];
+        tables.forEach(tableId => {
+            const table = document.getElementById(tableId);
+            if (table) {
+                const trs = table.querySelectorAll('tbody tr.program-table-row');
+                trs.forEach(tr => {
+                    const nameTd = tr.querySelector('td:nth-child(2)');
+                    const catTd = tr.querySelector('td:nth-child(3)');
+                    const nameTxt = nameTd ? (nameTd.textContent || nameTd.innerText) : '';
+                    const catTxt = catTd ? (catTd.textContent || catTd.innerText) : '';
+                    const combined = (nameTxt + ' ' + catTxt).toLowerCase();
+                    tr.style.display = (!filter || combined.indexOf(filter) > -1) ? '' : 'none';
+                });
+            }
+        });
 
         const cards = document.querySelectorAll('.program-mobile-card');
         cards.forEach(card => {
-            const text = card.innerText.toLowerCase();
-            card.style.display = text.indexOf(filter) > -1 ? '' : 'none';
+            const text = (card.textContent || card.innerText).toLowerCase();
+            card.style.display = (!filter || text.indexOf(filter) > -1) ? '' : 'none';
         });
     }
 </script>

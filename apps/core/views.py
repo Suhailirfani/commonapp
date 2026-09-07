@@ -353,10 +353,18 @@ def program_list_view(request, institution_slug):
             else:
                 messages.error(request, "Could not parse any valid programs from the provided WhatsApp text. Please check format.")
 
-    programs = Program.objects.filter(institution=institution).select_related('category', 'competition').order_by('category__name', 'name')
+    single_programs = list(Program.objects.filter(institution=institution, is_group=False).select_related('category', 'competition').order_by('program_type', 'category__name', 'name'))
+    group_programs = list(Program.objects.filter(institution=institution, is_group=True).select_related('category', 'competition').order_by('program_type', 'category__name', 'name'))
+    programs = single_programs + group_programs
+
     return render(request, 'core/program_list.html', {
         'institution': institution,
         'programs': programs,
+        'single_programs': single_programs,
+        'group_programs': group_programs,
+        'single_count': len(single_programs),
+        'group_count': len(group_programs),
+        'total_count': len(programs),
         'competitions': competitions,
         'categories': categories,
     })
@@ -2260,11 +2268,18 @@ def render_to_pdf(template_src, context_dict={}, filename="document.pdf", reques
 @login_required
 def download_programs_pdf_view(request, institution_slug):
     institution = get_object_or_404(Institution, slug=institution_slug)
-    programs = Program.objects.filter(institution=institution).select_related('category', 'competition').order_by('category__name', 'name')
+    single_programs = list(Program.objects.filter(institution=institution, is_group=False).select_related('category', 'competition').order_by('program_type', 'category__name', 'name'))
+    group_programs = list(Program.objects.filter(institution=institution, is_group=True).select_related('category', 'competition').order_by('program_type', 'category__name', 'name'))
+    programs = single_programs + group_programs
     
     context = {
         'institution': institution,
         'programs': programs,
+        'single_programs': single_programs,
+        'group_programs': group_programs,
+        'single_count': len(single_programs),
+        'group_count': len(group_programs),
+        'total_count': len(programs),
         'generated_at': timezone.now()
     }
     filename = f"{institution.slug}_programs_list.pdf"
