@@ -41,6 +41,7 @@ urlpatterns = [
     
     # PDF Reports
     path('portal/<slug:institution_slug>/reports/pdf/programs/', views.download_programs_pdf_view, name='download_programs_pdf'),
+    path('portal/<slug:institution_slug>/reports/pdf/schedule/', views.download_schedule_pdf_view, name='download_schedule_pdf'),
     path('portal/<slug:institution_slug>/reports/pdf/contestants-teamwise/', views.download_contestants_teamwise_pdf_view, name='download_contestants_teamwise_pdf'),
     path('portal/<slug:institution_slug>/reports/pdf/assigned-programs-teamwise/', views.download_assigned_programs_teamwise_pdf_view, name='download_assigned_programs_teamwise_pdf'),
     path('portal/<slug:institution_slug>/programs/<int:program_id>/pdf/green-room/', views.download_green_room_pdf_view, name='download_green_room_pdf'),

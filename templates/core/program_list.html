@@ -730,9 +730,29 @@ Category: Junior Category
                 </div>
                 <div style="display: flex; gap: 8px; align-items: center;">
                     <a href="{% url 'core:download_programs_pdf' institution.slug %}" onclick="triggerPdfDownload(event, this)" class="btn-primary" style="flex: 1; padding: 10px; font-size: 0.85rem; justify-content: center; background: linear-gradient(135deg, var(--accent-indigo), #4f46e5); text-decoration: none;">
-                        <i class="fa-solid fa-file-pdf"></i> Download Whole Programs PDF
+                        <i class="fa-solid fa-file-pdf"></i> Download Programs PDF
                     </a>
                     <a href="{% url 'core:download_programs_pdf' institution.slug %}?preview=1" target="_blank" class="btn-primary" style="padding: 10px 14px; font-size: 0.85rem; justify-content: center; background: rgba(255,255,255,0.12); color: #fff; text-decoration: none; border: 1px solid rgba(255,255,255,0.25);" title="Preview Whole Programs PDF">
+                        <i class="fa-solid fa-eye"></i> Preview
+                    </a>
+                </div>
+            </div>
+
+            <!-- DOWNLOAD FEST SCHEDULE PDF REPORT -->
+            <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); padding: 20px; border-radius: 14px; display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
+                    <h4 style="font-size: 1.05rem; font-weight: 800; color: #f8fafc; margin-bottom: 6px; display: flex; align-items: center; gap: 8px;">
+                        <i class="fa-solid fa-calendar-days" style="color: var(--accent-cyan);"></i> Fest Schedule & Timetable PDF
+                    </h4>
+                    <p style="color: var(--text-muted); font-size: 0.82rem; margin-bottom: 16px; line-height: 1.5;">
+                        ഫെസ്റ്റ് ദിവസങ്ങൾ, വേദികൾ, സമയക്രമം എന്നിവ അടങ്ങിയ ടൈംടേബിൾ PDF ഡൗൺലോഡ് ചെയ്യുക.
+                    </p>
+                </div>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <a href="{% url 'core:download_schedule_pdf' institution.slug %}" onclick="triggerPdfDownload(event, this)" class="btn-primary" style="flex: 1; padding: 10px; font-size: 0.85rem; justify-content: center; background: linear-gradient(135deg, var(--accent-cyan), #0284c7); text-decoration: none;">
+                        <i class="fa-solid fa-file-pdf"></i> Download Schedule PDF
+                    </a>
+                    <a href="{% url 'core:download_schedule_pdf' institution.slug %}?preview=1" target="_blank" class="btn-primary" style="padding: 10px 14px; font-size: 0.85rem; justify-content: center; background: rgba(255,255,255,0.12); color: #fff; text-decoration: none; border: 1px solid rgba(255,255,255,0.25);" title="Preview Schedule PDF">
                         <i class="fa-solid fa-eye"></i> Preview
                     </a>
                 </div>

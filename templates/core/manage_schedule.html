@@ -3,22 +3,32 @@
 {% block title %}Smart Auto-Scheduler & Timetable - {{ institution.name }}{% endblock %}
 
 {% block content %}
-<div class="page-header">
+<div class="page-header" style="flex-wrap: wrap; gap: 12px;">
     <div>
         <a href="{% url 'core:dashboard' institution.slug %}" style="color: var(--text-muted); text-decoration: none;"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</a>
         <h2 style="font-size: 1.8rem; font-weight: 800; margin-top: 4px;"><i class="fa-solid fa-calendar-days" style="color: var(--accent-cyan);"></i> Schedule & Timetable Engine</h2>
     </div>
-    <div>
+    <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;" class="no-print">
+        <a href="{% url 'core:download_schedule_pdf' institution.slug %}" onclick="triggerPdfDownload(event, this)" class="btn-primary" style="background: linear-gradient(135deg, var(--accent-cyan), #0284c7); text-decoration: none; padding: 8px 14px; font-size: 0.85rem;" title="Download PDF Report">
+            <i class="fa-solid fa-file-pdf"></i> Download PDF
+        </a>
+        <a href="{% url 'core:download_schedule_pdf' institution.slug %}?preview=1" target="_blank" class="btn-primary" style="background: rgba(255,255,255,0.12); color: #fff; border: 1px solid rgba(255,255,255,0.25); text-decoration: none; padding: 8px 12px; font-size: 0.85rem;" title="Preview PDF Schedule">
+            <i class="fa-solid fa-eye"></i> Preview
+        </a>
+        <button type="button" onclick="printScheduleTimetable()" class="btn-primary" style="background: rgba(255,255,255,0.12); color: #fff; border: 1px solid rgba(255,255,255,0.25); padding: 8px 14px; font-size: 0.85rem;" title="Print Timetable from Browser">
+            <i class="fa-solid fa-print"></i> Print
+        </button>
+
         <form method="POST" action="{% url 'core:run_auto_scheduler' institution.slug %}" style="display: inline;">
             {% csrf_token %}
-            <button type="submit" class="btn-primary" style="background: linear-gradient(135deg, var(--accent-emerald), #059669);">
-                <i class="fa-solid fa-wand-magic-sparkles"></i> Run AI Auto-Scheduler
+            <button type="submit" class="btn-primary" style="background: linear-gradient(135deg, var(--accent-emerald), #059669); padding: 8px 14px; font-size: 0.85rem;">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> Auto-Scheduler
             </button>
         </form>
 
         <form method="POST" action="{% url 'core:clear_all_schedules' institution.slug %}" style="display: inline;">
             {% csrf_token %}
-            <button type="submit" class="btn-danger" onclick="return confirm('Are you sure you want to CLEAR ALL scheduled program slots?');">
+            <button type="submit" class="btn-danger" onclick="return confirm('Are you sure you want to CLEAR ALL scheduled program slots?');" style="padding: 8px 12px; font-size: 0.85rem;">
                 <i class="fa-solid fa-trash-can"></i> Clear All
             </button>
         </form>
@@ -549,6 +559,13 @@ function closeManualSlotModal() {
     document.getElementById('manualSlotModal').style.display = 'none';
 }
 
+function printScheduleTimetable() {
+    showTab('timetable-tab', document.getElementById('btn-timetable-tab'));
+    setTimeout(function() {
+        window.print();
+    }, 150);
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     const urlParams = new URLSearchParams(window.location.search);
     const paramTab = urlParams.get('tab');
@@ -559,4 +576,70 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
+
+<style>
+@media print {
+    /* Hide unwanted UI elements when printing */
+    .sidebar, .top-navbar, .nav-header, .page-header a, .page-header form, .no-print,
+    .dashboard-stats-grid, #manual-tab, #setup-tab, .tab-btn, .glass-card button,
+    form[action*="delete_program_schedule"], #manualSlotModal {
+        display: none !important;
+    }
+
+    body, .main-content, .content-wrapper, .page-container {
+        background: #ffffff !important;
+        color: #000000 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    .page-header {
+        border-bottom: 2px solid #0284c7 !important;
+        margin-bottom: 15px !important;
+        padding-bottom: 10px !important;
+    }
+
+    .page-header h2 {
+        color: #0f172a !important;
+        font-size: 1.4rem !important;
+    }
+
+    #timetable-tab {
+        display: block !important;
+    }
+
+    .glass-card {
+        background: #ffffff !important;
+        border: 1px solid #cbd5e1 !important;
+        color: #000000 !important;
+        box-shadow: none !important;
+        page-break-inside: avoid;
+    }
+
+    .glass-card h4 {
+        color: #0f172a !important;
+        border-bottom: 1px solid #cbd5e1 !important;
+    }
+
+    div[style*="background: rgba(255,255,255,0.03)"] {
+        background: #f8fafc !important;
+        border: 1px solid #cbd5e1 !important;
+    }
+
+    div[style*="background: rgba(0,0,0,0.3)"] {
+        background: #ffffff !important;
+        border: 1px solid #e2e8f0 !important;
+    }
+
+    strong {
+        color: #0f172a !important;
+    }
+
+    .badge {
+        border: 1px solid #94a3b8 !important;
+        color: #0f172a !important;
+        background: #f1f5f9 !important;
+    }
+}
+</style>
 {% endblock %}

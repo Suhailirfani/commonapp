@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Fest Schedule & Timetable - {{ institution.name }}</title>
+    <style>
+        @page {
+            size: a4 portrait;
+            margin: 0.8cm;
+        }
+        body {
+            font-family: Helvetica, Arial, sans-serif;
+            font-size: 8.5pt;
+            color: #1e293b;
+            line-height: 1.25;
+        }
+        .header {
+            border-bottom: 2px solid #0284c7;
+            padding-bottom: 6px;
+            margin-bottom: 10px;
+        }
+        .header h1 {
+            font-size: 15pt;
+            margin: 0;
+            color: #0f172a;
+            font-weight: bold;
+        }
+        .header h3 {
+            font-size: 10.5pt;
+            margin: 2px 0 0 0;
+            color: #0284c7;
+        }
+        .meta-bar {
+            margin-top: 4px;
+            font-size: 7.5pt;
+            color: #64748b;
+        }
+        .day-header {
+            background-color: #0f172a;
+            color: #ffffff;
+            font-size: 9.5pt;
+            font-weight: bold;
+            padding: 6px 8px;
+            margin-top: 14px;
+            margin-bottom: 6px;
+        }
+        .stage-header {
+            background-color: #e0f2fe;
+            color: #0369a1;
+            font-size: 8.5pt;
+            font-weight: bold;
+            padding: 4px 8px;
+            margin-top: 8px;
+            margin-bottom: 4px;
+            border-left: 3px solid #0284c7;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 10px;
+        }
+        th {
+            background-color: #f1f5f9;
+            color: #0f172a;
+            font-size: 8pt;
+            font-weight: bold;
+            padding: 4px 6px;
+            text-align: left;
+            border: 1px solid #cbd5e1;
+        }
+        td {
+            padding: 4px 6px;
+            border: 1px solid #cbd5e1;
+            font-size: 8pt;
+            vertical-align: middle;
+        }
+        tr:nth-child(even) {
+            background-color: #f8fafc;
+        }
+        .time-badge {
+            font-weight: bold;
+            color: #0284c7;
+        }
+        .cat-badge {
+            color: #334155;
+            font-weight: bold;
+        }
+        .format-group {
+            color: #7e22ce;
+            font-weight: bold;
+        }
+        .format-single {
+            color: #059669;
+            font-weight: bold;
+        }
+        .type-offstage {
+            color: #b45309;
+        }
+        .type-stage {
+            color: #0284c7;
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>{{ institution.name }}</h1>
+    <h3>Official Fest Schedule & Timetable</h3>
+    <div class="meta-bar">
+        Generated: {{ generated_at|date:"d M Y, h:i A" }} &nbsp;|&nbsp;
+        Total Scheduled Events: <strong>{{ total_scheduled_events }}</strong> &nbsp;|&nbsp;
+        Fest Days: <strong>{{ fest_days|length }}</strong> &nbsp;|&nbsp;
+        Venues / Stages: <strong>{{ stages|length }}</strong>
+    </div>
+</div>
+
+{% if timetable_by_day %}
+    {% for day_item in timetable_by_day %}
+    <div class="day-header">
+        Fest Day #{{ day_item.day.day_number }} {% if day_item.day.name %}- {{ day_item.day.name }}{% endif %}
+        {% if day_item.day.date %}({{ day_item.day.date|date:"D, d M Y" }}){% endif %}
+        &nbsp;|&nbsp; {{ day_item.day.start_time|time:"h:i A" }} to {{ day_item.day.end_time|time:"h:i A" }}
+        <span style="font-size: 8pt; font-weight: normal; float: right;">({{ day_item.total_events }} Events)</span>
+    </div>
+
+    {% for stage_item in day_item.stages %}
+    <div class="stage-header">
+        Venue: {{ stage_item.stage.name }}
+        <span style="font-size: 7.5pt; font-weight: normal; color: #64748b;">
+            ({% if stage_item.stage.stage_type == 'STAGE' %}Main Stage{% else %}Off-Stage / Classroom{% endif %}) - {{ stage_item.count }} event(s)
+        </span>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 6%; text-align: center;">#</th>
+                <th style="width: 22%;">Time Slot</th>
+                <th style="width: 36%;">Program / Competition</th>
+                <th style="width: 20%;">Category</th>
+                <th style="width: 16%; text-align: center;">Format</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for s in stage_item.schedules %}
+            <tr>
+                <td style="text-align: center; font-weight: bold;">{{ forloop.counter }}</td>
+                <td>
+                    <span class="time-badge">{{ s.start_time|time:"h:i A" }} – {{ s.end_time|time:"h:i A" }}</span>
+                    <span style="color: #64748b; font-size: 7pt;">({{ s.total_duration_minutes }}m)</span>
+                </td>
+                <td>
+                    <strong>{{ s.program.name }}</strong>
+                </td>
+                <td>
+                    <span class="cat-badge">{{ s.program.category.name }}</span>
+                    {% if s.program.category.is_common %}
+                    <span style="font-size: 7pt; color: #b45309; font-style: italic;">(Combined)</span>
+                    {% endif %}
+                </td>
+                <td style="text-align: center;">
+                    {% if s.program.is_group %}
+                    <span class="format-group">Group</span>
+                    {% else %}
+                    <span class="format-single">Single</span>
+                    {% endif %}
+                    &bull;
+                    {% if s.program.program_type == 'OFF_STAGE' %}
+                    <span class="type-offstage">Off-Stage</span>
+                    {% else %}
+                    <span class="type-stage">Stage</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5" style="text-align: center; color: #64748b; padding: 6px;">No events scheduled on this venue for this day.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endfor %}
+    {% endfor %}
+{% else %}
+    <div style="text-align: center; padding: 30px; color: #64748b; border: 1px solid #cbd5e1; margin-top: 20px;">
+        <h3>No Program Schedules Generated Yet</h3>
+        <p style="font-size: 8.5pt;">Please configure Fest Days, Stages, and run the Auto-Scheduler or assign slots manually from the admin portal.</p>
+    </div>
+{% endif %}
+
+</body>
+</html>

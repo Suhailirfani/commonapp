@@ -2287,6 +2287,55 @@ def download_programs_pdf_view(request, institution_slug):
 
 
 @login_required
+def download_schedule_pdf_view(request, institution_slug):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    fest_days = FestDay.objects.filter(institution=institution).order_by('day_number')
+    stages = Stage.objects.filter(institution=institution).order_by('stage_type', 'name')
+
+    all_schedules = list(ProgramSchedule.objects.filter(institution=institution).select_related(
+        'program', 'program__category', 'fest_day', 'stage'
+    ).order_by('fest_day__day_number', 'stage__name', 'start_time'))
+
+    schedule_map = {}
+    for s in all_schedules:
+        schedule_map.setdefault((s.fest_day_id, s.stage_id), []).append(s)
+
+    timetable_by_day = []
+    total_scheduled_events = len(all_schedules)
+
+    for day in fest_days:
+        day_stages = []
+        day_event_count = 0
+        for stage in stages:
+            schedules = sorted(schedule_map.get((day.id, stage.id), []), key=lambda x: x.start_time)
+            if schedules:
+                day_event_count += len(schedules)
+                day_stages.append({
+                    'stage': stage,
+                    'schedules': schedules,
+                    'count': len(schedules)
+                })
+        if day_stages:
+            timetable_by_day.append({
+                'day': day,
+                'stages': day_stages,
+                'total_events': day_event_count
+            })
+
+    context = {
+        'institution': institution,
+        'fest_days': fest_days,
+        'stages': stages,
+        'all_schedules': all_schedules,
+        'timetable_by_day': timetable_by_day,
+        'total_scheduled_events': total_scheduled_events,
+        'generated_at': timezone.now()
+    }
+    filename = f"{institution.slug}_fest_schedule.pdf"
+    return render_to_pdf('pdf/schedule_pdf.html', context, filename, request=request)
+
+
+@login_required
 def download_contestants_teamwise_pdf_view(request, institution_slug):
     institution = get_object_or_404(Institution, slug=institution_slug)
     
