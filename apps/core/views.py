@@ -1963,6 +1963,8 @@ def program_assign_contestants_view(request, institution_slug, program_id):
     institution = get_object_or_404(Institution, slug=institution_slug)
     program = get_object_or_404(Program, id=program_id, institution=institution)
 
+    managed_team = getattr(request.user, 'managed_team', None) if request.user.is_team_leader else None
+
     eligible_cats = program.category.get_eligible_categories()
 
     eligible_contestants = Contestant.objects.filter(
@@ -1970,10 +1972,19 @@ def program_assign_contestants_view(request, institution_slug, program_id):
         category__in=eligible_cats
     ).select_related('team', 'category')
 
+    if managed_team:
+        eligible_contestants = eligible_contestants.filter(team=managed_team)
+
     if program.is_group:
-        existing_part_ids = set(GroupParticipation.objects.filter(program=program).values_list('team_id', flat=True))
+        gp_qs = GroupParticipation.objects.filter(program=program)
+        if managed_team:
+            gp_qs = gp_qs.filter(team=managed_team)
+        existing_part_ids = set(gp_qs.values_list('team_id', flat=True))
     else:
-        existing_part_ids = set(Participation.objects.filter(program=program).values_list('contestant_id', flat=True))
+        p_qs = Participation.objects.filter(program=program)
+        if managed_team:
+            p_qs = p_qs.filter(contestant__team=managed_team)
+        existing_part_ids = set(p_qs.values_list('contestant_id', flat=True))
 
     if request.method == 'POST':
         if not institution.allows_program_assignment:
@@ -1984,14 +1995,26 @@ def program_assign_contestants_view(request, institution_slug, program_id):
         selected_ids_set = set(int(x) for x in selected_ids if str(x).isdigit())
 
         if program.is_group:
+            if managed_team:
+                selected_ids_set = {managed_team.id} if managed_team.id in selected_ids_set else set()
+
             for team_id in selected_ids_set:
                 GroupParticipation.objects.get_or_create(
                     institution=institution,
                     program=program,
                     team_id=team_id
                 )
-            GroupParticipation.objects.filter(program=program).exclude(team_id__in=selected_ids_set).delete()
+            
+            # Delete only within the user's scope (their own team if team leader, or all teams if admin)
+            delete_gp_qs = GroupParticipation.objects.filter(program=program)
+            if managed_team:
+                delete_gp_qs = delete_gp_qs.filter(team=managed_team)
+            delete_gp_qs.exclude(team_id__in=selected_ids_set).delete()
         else:
+            if managed_team:
+                valid_contestant_ids = set(Contestant.objects.filter(id__in=selected_ids_set, team=managed_team, institution=institution).values_list('id', flat=True))
+                selected_ids_set = valid_contestant_ids
+
             comp = program.competition
             if comp and (comp.has_single_limit or comp.has_total_limit):
                 overlimit_errors = []
@@ -2033,12 +2056,19 @@ def program_assign_contestants_view(request, institution_slug, program_id):
                     program=program,
                     contestant_id=contestant_id
                 )
-            Participation.objects.filter(program=program).exclude(contestant_id__in=selected_ids_set).delete()
+
+            # Delete only within the user's scope (their own team contestants if team leader, or all if admin)
+            delete_p_qs = Participation.objects.filter(program=program)
+            if managed_team:
+                delete_p_qs = delete_p_qs.filter(contestant__team=managed_team)
+            delete_p_qs.exclude(contestant_id__in=selected_ids_set).delete()
 
         messages.success(request, f"Assigned participants updated for program '{program.name}'!")
-        return redirect(f"{reverse('core:assignment_hub', kwargs={'institution_slug': institution.slug})}?program_id={program.id}")
+        return redirect(f"{reverse('core:assignment_hub', kwargs={'institution_slug': institution.slug})}?program_id={program.id}#way2_assign_section")
 
     teams = Team.objects.filter(institution=institution) if program.is_group else None
+    if teams and managed_team:
+        teams = teams.filter(id=managed_team.id)
 
     return render(request, 'core/program_assign.html', {
         'institution': institution,
@@ -2046,6 +2076,7 @@ def program_assign_contestants_view(request, institution_slug, program_id):
         'eligible_contestants': eligible_contestants,
         'existing_part_ids': existing_part_ids,
         'teams': teams,
+        'managed_team': managed_team,
     })
 
 
@@ -2179,10 +2210,16 @@ def assignment_hub_view(request, institution_slug):
                 eligible_contestants = eligible_contestants.filter(team=managed_team)
 
             if selected_program.is_group:
-                existing_part_ids = set(GroupParticipation.objects.filter(program=selected_program).values_list('team_id', flat=True))
+                gp_qs = GroupParticipation.objects.filter(program=selected_program)
+                if managed_team:
+                    gp_qs = gp_qs.filter(team=managed_team)
+                existing_part_ids = set(gp_qs.values_list('team_id', flat=True))
                 program_teams = teams
             else:
-                existing_part_ids = set(Participation.objects.filter(program=selected_program).values_list('contestant_id', flat=True))
+                p_qs = Participation.objects.filter(program=selected_program)
+                if managed_team:
+                    p_qs = p_qs.filter(contestant__team=managed_team)
+                existing_part_ids = set(p_qs.values_list('contestant_id', flat=True))
 
     return render(request, 'core/assignment_hub.html', {
         'institution': institution,
@@ -2202,28 +2239,54 @@ def assignment_hub_view(request, institution_slug):
 def assigned_programs_list_view(request, institution_slug):
     institution = get_object_or_404(Institution, slug=institution_slug)
     view_mode = request.GET.get('view', 'category')
+    managed_team = getattr(request.user, 'managed_team', None) if request.user.is_team_leader else None
 
-    categories = Category.objects.filter(institution=institution).prefetch_related(
-        'programs', 
-        'programs__single_participations__contestant',
-        'programs__single_participations__contestant__team'
-    )
-    teams = Team.objects.filter(institution=institution).prefetch_related(
-        'contestants', 
-        'contestants__participations__program'
-    )
-    programs = Program.objects.filter(institution=institution).select_related(
-        'category', 'competition'
-    ).prefetch_related(
-        'single_participations__contestant',
-        'single_participations__contestant__team',
-        'group_participations__team'
-    )
-    contestants = Contestant.objects.filter(institution=institution).select_related(
-        'team', 'category'
-    ).prefetch_related(
-        'participations__program'
-    )
+    from django.db.models import Prefetch
+
+    if managed_team:
+        teams = Team.objects.filter(id=managed_team.id).prefetch_related(
+            'contestants', 
+            'contestants__participations__program'
+        )
+        contestants = Contestant.objects.filter(institution=institution, team=managed_team).select_related(
+            'team', 'category'
+        ).prefetch_related(
+            'participations__program'
+        )
+        programs = Program.objects.filter(institution=institution).select_related(
+            'category', 'competition'
+        ).prefetch_related(
+            Prefetch('single_participations', queryset=Participation.objects.filter(contestant__team=managed_team).select_related('contestant', 'contestant__team')),
+            Prefetch('group_participations', queryset=GroupParticipation.objects.filter(team=managed_team).select_related('team', 'captain'))
+        )
+        categories = Category.objects.filter(institution=institution).prefetch_related(
+            'programs',
+            Prefetch('programs__single_participations', queryset=Participation.objects.filter(contestant__team=managed_team).select_related('contestant', 'contestant__team')),
+            Prefetch('programs__group_participations', queryset=GroupParticipation.objects.filter(team=managed_team).select_related('team', 'captain'))
+        )
+    else:
+        categories = Category.objects.filter(institution=institution).prefetch_related(
+            'programs', 
+            'programs__single_participations__contestant',
+            'programs__single_participations__contestant__team',
+            'programs__group_participations__team'
+        )
+        teams = Team.objects.filter(institution=institution).prefetch_related(
+            'contestants', 
+            'contestants__participations__program'
+        )
+        programs = Program.objects.filter(institution=institution).select_related(
+            'category', 'competition'
+        ).prefetch_related(
+            'single_participations__contestant',
+            'single_participations__contestant__team',
+            'group_participations__team'
+        )
+        contestants = Contestant.objects.filter(institution=institution).select_related(
+            'team', 'category'
+        ).prefetch_related(
+            'participations__program'
+        )
 
     return render(request, 'core/assigned_programs_list.html', {
         'institution': institution,
@@ -2232,6 +2295,7 @@ def assigned_programs_list_view(request, institution_slug):
         'teams': teams,
         'programs': programs,
         'contestants': contestants,
+        'managed_team': managed_team,
     })
 
 

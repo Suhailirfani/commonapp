@@ -133,7 +133,7 @@
         <form method="GET" action="{% url 'core:assignment_hub' institution.slug %}">
             <div class="form-group">
                 <label class="form-label">Pick Program</label>
-                <select name="program_id" class="form-control" onchange="this.form.submit()">
+                <select name="program_id" class="form-control" onchange="if(this.value){ window.location.href='{% url 'core:assignment_hub' institution.slug %}?program_id=' + this.value + '#way2_assign_section'; } else { this.form.submit(); }">
                     <option value="">-- Choose Program / Event --</option>
                     {% for p in programs %}
                     <option value="{{ p.id }}" {% if selected_program and selected_program.id == p.id %}selected{% endif %}>
@@ -163,7 +163,7 @@
 
 <!-- Way 2 Interactive Contestant Checklist (If Program Selected) -->
 {% if selected_program %}
-<div class="glass-card" style="margin-top: 24px;">
+<div class="glass-card" id="way2_assign_section" style="margin-top: 24px; scroll-margin-top: 80px;">
     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
         <div>
             <h3 style="font-size: 1.3rem; font-weight: 800;">
@@ -363,5 +363,16 @@ function toggleAll(status) {
     var checks = document.querySelectorAll('.assign-check');
     checks.forEach(function(c) { c.checked = status; });
 }
+
+{% if selected_program %}
+document.addEventListener('DOMContentLoaded', function() {
+    var way2Elem = document.getElementById('way2_assign_section');
+    if (way2Elem) {
+        setTimeout(function() {
+            way2Elem.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 150);
+    }
+});
+{% endif %}
 </script>
 {% endblock %}
