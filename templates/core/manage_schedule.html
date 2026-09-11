@@ -144,10 +144,65 @@
 <!-- TAB 2: MANUAL SLOT ALLOCATOR & PROGRAM SETTINGS TABLE -->
 <div id="manual-tab" class="tab-pane" style="display: none;">
     <div class="glass-card" style="padding: 16px;">
-        <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 12px;"><i class="fa-solid fa-clock" style="color: var(--accent-cyan);"></i> Manual Slot Allocator & Duration Settings</h3>
-        <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 16px;">
-            Set manual time slots for specific programs or adjust per-participant duration, buffer time, and stage priorities.
-        </p>
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; margin-bottom: 12px;">
+            <div>
+                <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 4px;"><i class="fa-solid fa-clock" style="color: var(--accent-cyan);"></i> Manual Slot Allocator & Duration Settings</h3>
+                <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 0;">
+                    Set manual time slots for specific programs or adjust per-participant duration, buffer time, and stage priorities.
+                </p>
+            </div>
+        </div>
+
+        <!-- SEARCH & FILTER TOOLBAR -->
+        <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 12px; padding: 10px 14px; margin-bottom: 14px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between;">
+            <!-- Search Input -->
+            <div style="position: relative; flex: 1; min-width: 240px; max-width: 380px;">
+                <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 0.85rem;"></i>
+                <input type="text" id="manualScheduleSearch" oninput="filterManualScheduleList()" placeholder="Search program, category, stage..." class="form-control" style="padding-left: 36px; padding-right: 32px; width: 100%; font-size: 0.85rem; background: rgba(0,0,0,0.3); color: #fff; height: 36px;">
+                <button type="button" id="clearManualSearchBtn" onclick="clearManualSearch()" style="display: none; position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 4px;" title="Clear search">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Quick Filter Selects -->
+            <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+                <!-- Status Filter -->
+                <select id="manualStatusFilter" onchange="filterManualScheduleList()" class="form-control" style="font-size: 0.8rem; padding: 4px 10px; width: auto; background: rgba(0,0,0,0.3); color: #fff; height: 36px;">
+                    <option value="ALL">All Status</option>
+                    <option value="SCHEDULED">Scheduled</option>
+                    <option value="UNSCHEDULED">Unscheduled</option>
+                </select>
+
+                <!-- Category Filter -->
+                {% if categories %}
+                <select id="manualCategoryFilter" onchange="filterManualScheduleList()" class="form-control" style="font-size: 0.8rem; padding: 4px 10px; width: auto; background: rgba(0,0,0,0.3); color: #fff; height: 36px;">
+                    <option value="ALL">All Categories</option>
+                    {% for cat in categories %}
+                    <option value="{{ cat.name|lower }}">{{ cat.name }}</option>
+                    {% endfor %}
+                </select>
+                {% endif %}
+
+                <!-- Venue Type Filter -->
+                <select id="manualTypeFilter" onchange="filterManualScheduleList()" class="form-control" style="font-size: 0.8rem; padding: 4px 10px; width: auto; background: rgba(0,0,0,0.3); color: #fff; height: 36px;">
+                    <option value="ALL">All Types</option>
+                    <option value="STAGE">Stage Only</option>
+                    <option value="OFF_STAGE">Off-Stage Only</option>
+                </select>
+
+                <!-- Reset Button -->
+                <button type="button" onclick="resetManualFilters()" class="btn-primary" style="background: rgba(255,255,255,0.08); box-shadow: none; border: 1px solid rgba(255,255,255,0.15); padding: 6px 12px; font-size: 0.8rem; height: 36px; color: var(--text-muted);" title="Reset filters">
+                    <i class="fa-solid fa-rotate-left"></i> Reset
+                </button>
+            </div>
+        </div>
+
+        <!-- LIVE RESULT COUNTER -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding: 0 4px;">
+            <div style="font-size: 0.8rem; color: var(--text-muted);">
+                Showing <strong id="manualMatchCount" style="color: var(--accent-cyan);">{{ program_list|length }}</strong> of {{ program_list|length }} programs
+            </div>
+        </div>
 
         <!-- DESKTOP TABLE VIEW (Compact Non-Scrolling Layout) -->
         <div class="desktop-table-view">
@@ -164,7 +219,7 @@
                 </thead>
                 <tbody>
                     {% for item in program_list %}
-                    <tr>
+                    <tr class="manual-prog-row" data-name="{{ item.program.name|lower }}" data-category="{{ item.program.category.name|lower }}" data-status="{% if item.has_schedule %}scheduled{% else %}unscheduled{% endif %}" data-type="{{ item.program.program_type|lower }}" data-stage="{% if item.has_schedule %}{{ item.schedule.stage.name|lower }}{% endif %}">
                         <td style="padding: 8px 10px;">
                             <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
                                 <strong style="font-size: 0.88rem; color: #fff;">{{ item.program.name }}</strong>
@@ -225,6 +280,13 @@
                         </td>
                     </tr>
                     {% endfor %}
+                    <!-- EMPTY SEARCH RESULT ROW -->
+                    <tr id="manualTableEmptyRow" style="display: none;">
+                        <td colspan="6" style="text-align: center; padding: 30px 15px; color: var(--text-muted);">
+                            <i class="fa-solid fa-magnifying-glass" style="font-size: 1.6rem; opacity: 0.4; margin-bottom: 8px; display: block;"></i>
+                            No programs match your search or filter criteria.
+                        </td>
+                    </tr>
                 </tbody>
             </table>
         </div>
@@ -232,7 +294,7 @@
         <!-- MOBILE CARD LIST VIEW -->
         <div class="mobile-card-list-view">
             {% for item in program_list %}
-            <div style="background: rgba(255,255,255,0.02); padding: 12px; border-radius: 12px; border: 1px solid var(--border-color); margin-bottom: 10px;">
+            <div class="manual-prog-card" data-name="{{ item.program.name|lower }}" data-category="{{ item.program.category.name|lower }}" data-status="{% if item.has_schedule %}scheduled{% else %}unscheduled{% endif %}" data-type="{{ item.program.program_type|lower }}" data-stage="{% if item.has_schedule %}{{ item.schedule.stage.name|lower }}{% endif %}" style="background: rgba(255,255,255,0.02); padding: 12px; border-radius: 12px; border: 1px solid var(--border-color); margin-bottom: 10px;">
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
                     <div>
                         <strong style="font-size: 1rem; color: var(--text-main); display: block;">{{ item.program.name }}</strong>
@@ -308,6 +370,11 @@
                 </div>
             </div>
             {% endfor %}
+            <!-- EMPTY SEARCH RESULT CARD FOR MOBILE -->
+            <div id="manualCardEmptyState" style="display: none; text-align: center; padding: 30px 15px; color: var(--text-muted);">
+                <i class="fa-solid fa-magnifying-glass" style="font-size: 1.6rem; opacity: 0.4; margin-bottom: 8px; display: block;"></i>
+                No programs match your search or filter criteria.
+            </div>
         </div>
 
     </div>
@@ -564,6 +631,99 @@ function printScheduleTimetable() {
     setTimeout(function() {
         window.print();
     }, 150);
+}
+
+function filterManualScheduleList() {
+    const searchInput = document.getElementById('manualScheduleSearch');
+    const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
+    const statusVal = document.getElementById('manualStatusFilter') ? document.getElementById('manualStatusFilter').value : 'ALL';
+    const catVal = document.getElementById('manualCategoryFilter') ? document.getElementById('manualCategoryFilter').value.toLowerCase() : 'ALL';
+    const typeVal = document.getElementById('manualTypeFilter') ? document.getElementById('manualTypeFilter').value.toLowerCase() : 'ALL';
+
+    const clearBtn = document.getElementById('clearManualSearchBtn');
+    if (clearBtn) {
+        clearBtn.style.display = query.length > 0 ? 'block' : 'none';
+    }
+
+    let matchCount = 0;
+
+    // Filter Desktop rows
+    const tableRows = document.querySelectorAll('.manual-prog-row');
+    tableRows.forEach(row => {
+        const name = row.getAttribute('data-name') || '';
+        const cat = row.getAttribute('data-category') || '';
+        const status = row.getAttribute('data-status') || '';
+        const type = row.getAttribute('data-type') || '';
+        const stage = row.getAttribute('data-stage') || '';
+
+        const matchesQuery = !query || name.includes(query) || cat.includes(query) || stage.includes(query) || status.includes(query) || type.includes(query);
+        const matchesStatus = (statusVal === 'ALL') || (statusVal === 'SCHEDULED' && status === 'scheduled') || (statusVal === 'UNSCHEDULED' && status === 'unscheduled');
+        const matchesCat = (catVal === 'ALL') || (cat === catVal);
+        const matchesType = (typeVal === 'ALL') || (type === typeVal);
+
+        if (matchesQuery && matchesStatus && matchesCat && matchesType) {
+            row.style.display = '';
+            matchCount++;
+        } else {
+            row.style.display = 'none';
+        }
+    });
+
+    // Filter Mobile cards
+    const cards = document.querySelectorAll('.manual-prog-card');
+    cards.forEach(card => {
+        const name = card.getAttribute('data-name') || '';
+        const cat = card.getAttribute('data-category') || '';
+        const status = card.getAttribute('data-status') || '';
+        const type = card.getAttribute('data-type') || '';
+        const stage = card.getAttribute('data-stage') || '';
+
+        const matchesQuery = !query || name.includes(query) || cat.includes(query) || stage.includes(query) || status.includes(query) || type.includes(query);
+        const matchesStatus = (statusVal === 'ALL') || (statusVal === 'SCHEDULED' && status === 'scheduled') || (statusVal === 'UNSCHEDULED' && status === 'unscheduled');
+        const matchesCat = (catVal === 'ALL') || (cat === catVal);
+        const matchesType = (typeVal === 'ALL') || (type === typeVal);
+
+        if (matchesQuery && matchesStatus && matchesCat && matchesType) {
+            card.style.display = '';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+
+    // Update match counter
+    const countEl = document.getElementById('manualMatchCount');
+    if (countEl) countEl.innerText = matchCount;
+
+    // Show/hide empty state
+    const emptyRow = document.getElementById('manualTableEmptyRow');
+    if (emptyRow) {
+        emptyRow.style.display = (matchCount === 0 && tableRows.length > 0) ? '' : 'none';
+    }
+    const emptyCard = document.getElementById('manualCardEmptyState');
+    if (emptyCard) {
+        emptyCard.style.display = (matchCount === 0 && cards.length > 0) ? 'block' : 'none';
+    }
+}
+
+function clearManualSearch() {
+    const searchInput = document.getElementById('manualScheduleSearch');
+    if (searchInput) {
+        searchInput.value = '';
+        searchInput.focus();
+    }
+    filterManualScheduleList();
+}
+
+function resetManualFilters() {
+    const searchInput = document.getElementById('manualScheduleSearch');
+    if (searchInput) searchInput.value = '';
+    const statusFilter = document.getElementById('manualStatusFilter');
+    if (statusFilter) statusFilter.value = 'ALL';
+    const catFilter = document.getElementById('manualCategoryFilter');
+    if (catFilter) catFilter.value = 'ALL';
+    const typeFilter = document.getElementById('manualTypeFilter');
+    if (typeFilter) typeFilter.value = 'ALL';
+    filterManualScheduleList();
 }
 
 document.addEventListener('DOMContentLoaded', function() {

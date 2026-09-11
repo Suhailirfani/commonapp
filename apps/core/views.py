@@ -4143,10 +4143,13 @@ def manage_schedule_view(request, institution_slug):
 
     next_times_json = json.dumps(next_times_map)
 
+    categories = Category.objects.filter(institution=institution).order_by('name')
+
     return render(request, 'core/manage_schedule.html', {
         'institution': institution,
         'fest_days': fest_days,
         'stages': stages,
+        'categories': categories,
         'program_list': program_list,
         'total_programs': len(programs),
         'scheduled_count': scheduled_count,
