@@ -178,7 +178,7 @@
                 <select id="manualCategoryFilter" onchange="filterManualScheduleList()" class="form-control" style="font-size: 0.8rem; padding: 4px 10px; width: auto; background: rgba(0,0,0,0.3); color: #fff; height: 36px;">
                     <option value="ALL">All Categories</option>
                     {% for cat in categories %}
-                    <option value="{{ cat.name|lower }}">{{ cat.name }}</option>
+                    <option value="{{ cat.name }}">{{ cat.name }}</option>
                     {% endfor %}
                 </select>
                 {% endif %}
@@ -636,9 +636,15 @@ function printScheduleTimetable() {
 function filterManualScheduleList() {
     const searchInput = document.getElementById('manualScheduleSearch');
     const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
-    const statusVal = document.getElementById('manualStatusFilter') ? document.getElementById('manualStatusFilter').value : 'ALL';
-    const catVal = document.getElementById('manualCategoryFilter') ? document.getElementById('manualCategoryFilter').value.toLowerCase().trim() : 'ALL';
-    const typeVal = document.getElementById('manualTypeFilter') ? document.getElementById('manualTypeFilter').value.toLowerCase().trim() : 'ALL';
+
+    const statusSelect = document.getElementById('manualStatusFilter');
+    const statusVal = statusSelect ? statusSelect.value.trim() : 'ALL';
+
+    const catSelect = document.getElementById('manualCategoryFilter');
+    const catVal = catSelect ? catSelect.value.trim() : 'ALL';
+
+    const typeSelect = document.getElementById('manualTypeFilter');
+    const typeVal = typeSelect ? typeSelect.value.trim() : 'ALL';
 
     const clearBtn = document.getElementById('clearManualSearchBtn');
     if (clearBtn) {
@@ -655,14 +661,18 @@ function filterManualScheduleList() {
         const type = (el.getAttribute('data-type') || '').toLowerCase();
         const stage = (el.getAttribute('data-stage') || '').toLowerCase();
 
+        // 1. Text search matching
         const combined = name + ' ' + cat + ' ' + status + ' ' + type + ' ' + stage + ' ' + rawText;
-
         const matchesQuery = queryWords.length === 0 || queryWords.every(word => combined.includes(word));
-        const matchesStatus = (statusVal === 'ALL') || 
-                              (statusVal === 'SCHEDULED' && status === 'scheduled') || 
-                              (statusVal === 'UNSCHEDULED' && status === 'unscheduled');
-        const matchesCat = (catVal === 'ALL') || (cat === catVal) || cat.includes(catVal);
-        const matchesType = (typeVal === 'ALL') || (type === typeVal);
+
+        // 2. Status filter matching
+        const matchesStatus = (statusVal === 'ALL') || (status === statusVal.toLowerCase());
+
+        // 3. Category filter matching
+        const matchesCat = (catVal === 'ALL') || (cat === catVal.toLowerCase()) || cat.includes(catVal.toLowerCase());
+
+        // 4. Venue Type filter matching
+        const matchesType = (typeVal === 'ALL') || (type === typeVal.toLowerCase());
 
         return matchesQuery && matchesStatus && matchesCat && matchesType;
     }
