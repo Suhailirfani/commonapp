@@ -158,7 +158,7 @@
             <!-- Search Input -->
             <div style="position: relative; flex: 1; min-width: 240px; max-width: 380px;">
                 <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 0.85rem;"></i>
-                <input type="text" id="manualScheduleSearch" oninput="filterManualScheduleList()" placeholder="Search program, category, stage..." class="form-control" style="padding-left: 36px; padding-right: 32px; width: 100%; font-size: 0.85rem; background: rgba(0,0,0,0.3); color: #fff; height: 36px;">
+                <input type="text" id="manualScheduleSearch" oninput="filterManualScheduleList()" onkeyup="filterManualScheduleList()" autocomplete="off" spellcheck="false" placeholder="Search program, category, stage..." class="form-control" style="padding-left: 36px; padding-right: 32px; width: 100%; font-size: 0.85rem; background: rgba(0,0,0,0.3); color: #fff; height: 36px;">
                 <button type="button" id="clearManualSearchBtn" onclick="clearManualSearch()" style="display: none; position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 4px;" title="Clear search">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
@@ -637,12 +637,34 @@ function filterManualScheduleList() {
     const searchInput = document.getElementById('manualScheduleSearch');
     const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
     const statusVal = document.getElementById('manualStatusFilter') ? document.getElementById('manualStatusFilter').value : 'ALL';
-    const catVal = document.getElementById('manualCategoryFilter') ? document.getElementById('manualCategoryFilter').value.toLowerCase() : 'ALL';
-    const typeVal = document.getElementById('manualTypeFilter') ? document.getElementById('manualTypeFilter').value.toLowerCase() : 'ALL';
+    const catVal = document.getElementById('manualCategoryFilter') ? document.getElementById('manualCategoryFilter').value.toLowerCase().trim() : 'ALL';
+    const typeVal = document.getElementById('manualTypeFilter') ? document.getElementById('manualTypeFilter').value.toLowerCase().trim() : 'ALL';
 
     const clearBtn = document.getElementById('clearManualSearchBtn');
     if (clearBtn) {
         clearBtn.style.display = query.length > 0 ? 'block' : 'none';
+    }
+
+    const queryWords = query.split(/\s+/).filter(Boolean);
+
+    function checkMatches(el) {
+        const rawText = (el.textContent || el.innerText || '').toLowerCase();
+        const name = (el.getAttribute('data-name') || '').toLowerCase();
+        const cat = (el.getAttribute('data-category') || '').toLowerCase();
+        const status = (el.getAttribute('data-status') || '').toLowerCase();
+        const type = (el.getAttribute('data-type') || '').toLowerCase();
+        const stage = (el.getAttribute('data-stage') || '').toLowerCase();
+
+        const combined = name + ' ' + cat + ' ' + status + ' ' + type + ' ' + stage + ' ' + rawText;
+
+        const matchesQuery = queryWords.length === 0 || queryWords.every(word => combined.includes(word));
+        const matchesStatus = (statusVal === 'ALL') || 
+                              (statusVal === 'SCHEDULED' && status === 'scheduled') || 
+                              (statusVal === 'UNSCHEDULED' && status === 'unscheduled');
+        const matchesCat = (catVal === 'ALL') || (cat === catVal) || cat.includes(catVal);
+        const matchesType = (typeVal === 'ALL') || (type === typeVal);
+
+        return matchesQuery && matchesStatus && matchesCat && matchesType;
     }
 
     let matchCount = 0;
@@ -650,18 +672,7 @@ function filterManualScheduleList() {
     // Filter Desktop rows
     const tableRows = document.querySelectorAll('.manual-prog-row');
     tableRows.forEach(row => {
-        const name = row.getAttribute('data-name') || '';
-        const cat = row.getAttribute('data-category') || '';
-        const status = row.getAttribute('data-status') || '';
-        const type = row.getAttribute('data-type') || '';
-        const stage = row.getAttribute('data-stage') || '';
-
-        const matchesQuery = !query || name.includes(query) || cat.includes(query) || stage.includes(query) || status.includes(query) || type.includes(query);
-        const matchesStatus = (statusVal === 'ALL') || (statusVal === 'SCHEDULED' && status === 'scheduled') || (statusVal === 'UNSCHEDULED' && status === 'unscheduled');
-        const matchesCat = (catVal === 'ALL') || (cat === catVal);
-        const matchesType = (typeVal === 'ALL') || (type === typeVal);
-
-        if (matchesQuery && matchesStatus && matchesCat && matchesType) {
+        if (checkMatches(row)) {
             row.style.display = '';
             matchCount++;
         } else {
@@ -672,18 +683,7 @@ function filterManualScheduleList() {
     // Filter Mobile cards
     const cards = document.querySelectorAll('.manual-prog-card');
     cards.forEach(card => {
-        const name = card.getAttribute('data-name') || '';
-        const cat = card.getAttribute('data-category') || '';
-        const status = card.getAttribute('data-status') || '';
-        const type = card.getAttribute('data-type') || '';
-        const stage = card.getAttribute('data-stage') || '';
-
-        const matchesQuery = !query || name.includes(query) || cat.includes(query) || stage.includes(query) || status.includes(query) || type.includes(query);
-        const matchesStatus = (statusVal === 'ALL') || (statusVal === 'SCHEDULED' && status === 'scheduled') || (statusVal === 'UNSCHEDULED' && status === 'unscheduled');
-        const matchesCat = (catVal === 'ALL') || (cat === catVal);
-        const matchesType = (typeVal === 'ALL') || (type === typeVal);
-
-        if (matchesQuery && matchesStatus && matchesCat && matchesType) {
+        if (checkMatches(card)) {
             card.style.display = '';
         } else {
             card.style.display = 'none';
