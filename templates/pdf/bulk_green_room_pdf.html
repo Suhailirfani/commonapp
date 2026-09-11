@@ -6,22 +6,32 @@
     <style>
         @page {
             size: A4 portrait;
-            margin: 0.8cm;
+            margin: 0.45cm 0.55cm;
         }
         body {
             font-family: Helvetica, Arial, sans-serif;
-            font-size: 8.5pt;
+            font-size: 11pt;
             line-height: 1.15;
             color: #000000;
             background: #ffffff;
         }
-        .program-page {
+        .program-block {
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 2px dashed #475569;
+        }
+        .program-block.no-border {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        .page-break {
             page-break-after: always;
         }
         .header {
             text-align: center;
-            margin-bottom: 8px;
-            padding-bottom: 4px;
+            margin-bottom: 3px;
+            padding-bottom: 2px;
             border-bottom: 2px solid #000000;
         }
         .header h1 {
@@ -29,82 +39,96 @@
             color: #000000;
             font-size: 15pt;
             font-weight: bold;
-            letter-spacing: 1px;
+            letter-spacing: 0.5px;
         }
         .header .program-name {
             color: #000000;
-            font-size: 11pt;
-            margin: 2px 0;
+            font-size: 13.5pt;
+            margin: 1px 0;
+            font-weight: bold;
+        }
+        .header .subtitle {
+            font-size: 10pt;
+            color: #1e293b;
+            margin: 0;
             font-weight: bold;
         }
         .info-section {
-            background-color: #ffffff;
-            padding: 6px 8px;
-            margin-bottom: 8px;
-            border: 1px solid #000000;
-            font-size: 8pt;
+            background-color: #f8fafc;
+            padding: 4px 8px;
+            margin-bottom: 4px;
+            border: 1.5px solid #000000;
+            font-size: 10.5pt;
             color: #000000;
         }
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 6px;
+            margin-top: 4px;
         }
         th {
-            background-color: #ffffff;
+            background-color: #f1f5f9;
             color: #000000;
-            font-size: 8.5pt;
+            font-size: 12pt;
             font-weight: bold;
-            padding: 5px;
+            padding: 6px 4px;
             text-align: center;
-            border: 1px solid #000000;
+            border: 1.5px solid #000000;
         }
         td {
-            border: 1px solid #000000;
-            padding: 4px;
-            font-size: 8.5pt;
+            border: 1.5px solid #000000;
+            padding: 6px 6px;
+            font-size: 12pt;
             color: #000000;
         }
         .row-number {
             width: 8%;
             text-align: center;
-            background-color: #ffffff;
             font-weight: bold;
+            font-size: 12pt;
         }
         .chest-no {
-            width: 15%;
+            width: 16%;
             font-weight: bold;
             text-align: center;
+            font-size: 13pt;
         }
         .participant-name {
-            width: 37%;
+            width: 38%;
             font-weight: bold;
+            font-size: 12pt;
         }
         .code-letter {
-            width: 15%;
+            width: 14%;
             text-align: center;
-            background-color: #ffffff;
+            font-size: 12pt;
+            font-weight: bold;
         }
         .signature {
-            width: 25%;
+            width: 24%;
             text-align: center;
-            height: 20px;
+            height: 25px;
+        }
+        .timing-section {
+            margin-top: 5px;
+            font-size: 10.5pt;
+            font-weight: bold;
         }
         .footer {
-            margin-top: 10px;
+            margin-top: 3px;
             text-align: center;
-            font-size: 7.5pt;
-            color: #000000;
+            font-size: 8.5pt;
+            color: #475569;
         }
     </style>
 </head>
 <body>
     {% for pdata in programs_data %}
-    <div class="{% if not forloop.last %}program-page{% endif %}">
+    <div class="program-block {% if forloop.counter|divisibleby:2 or forloop.last %}no-border{% endif %}">
         <div class="header">
             <h1>GREEN ROOM SIGN SHEET</h1>
             <div class="program-name">{{ pdata.program.name|upper }}</div>
-            <div style="font-size: 8.5pt; color: #475569;">
+            <div class="subtitle">
                 Category: {{ pdata.program.category.name }} | Institution: {{ institution.name }}
             </div>
         </div>
@@ -137,21 +161,10 @@
                             <td class="signature"></td>
                         </tr>
                     {% endfor %}
-                    
-                    <!-- Blank rows for extra entries -->
-                    {% for i in "12345" %}
-                        <tr>
-                            <td class="row-number">{{ pdata.participants|length|add:forloop.counter }}</td>
-                            <td class="chest-no"></td>
-                            <td class="participant-name"></td>
-                            <td class="code-letter"></td>
-                            <td class="signature"></td>
-                        </tr>
-                    {% endfor %}
                 </tbody>
             </table>
 
-            <div style="margin-top: 10px; font-size: 8pt;">
+            <div class="timing-section">
                 Time Started: __________ AM/PM &nbsp;&nbsp;&nbsp;&nbsp; Time Completed: __________ AM/PM
             </div>
         {% else %}
@@ -164,6 +177,10 @@
             <p>Generated on {% now 'F d, Y' %} &nbsp; | &nbsp; {{ pdata.program.name }} Green Room Sign Sheet</p>
         </div>
     </div>
+
+    {% if forloop.counter|divisibleby:2 and not forloop.last %}
+    <div class="page-break"></div>
+    {% endif %}
     {% endfor %}
 </body>
 </html>

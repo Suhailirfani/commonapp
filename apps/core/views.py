@@ -2565,20 +2565,17 @@ def download_green_room_pdf_view(request, institution_slug, program_id):
     program = get_object_or_404(Program, id=program_id, institution=institution)
     
     if program.is_group:
-        participants = GroupParticipation.objects.filter(program=program).select_related('team', 'captain')
+        participants = list(GroupParticipation.objects.filter(program=program).select_related('team', 'captain'))
     else:
-        participants = Contestant.objects.filter(
+        participants = list(Contestant.objects.filter(
             participations__program=program
-        ).select_related('team', 'category').order_by('chest_no')
+        ).select_related('team', 'category').order_by('chest_no'))
 
-    context = {
-        'institution': institution,
-        'program': program,
-        'participants': participants,
-        'generated_at': timezone.now()
-    }
+    from .pdf_generators import build_green_room_pdf, reportlab_pdf_response
+    programs_data = [{'program': program, 'participants': participants}]
+    pdf_bytes = build_green_room_pdf(programs_data, institution.name, is_bulk=False)
     filename = f"{program.name}_green_room.pdf"
-    return render_to_pdf('pdf/green_room_pdf.html', context, filename, request=request)
+    return reportlab_pdf_response(pdf_bytes, filename, request=request)
 
 
 @login_required
@@ -2660,13 +2657,10 @@ def download_bulk_green_room_pdf_view(request, institution_slug):
             'participants': participants
         })
 
-    context = {
-        'institution': institution,
-        'programs_data': programs_data,
-        'generated_at': timezone.now()
-    }
+    from .pdf_generators import build_green_room_pdf, reportlab_pdf_response
+    pdf_bytes = build_green_room_pdf(programs_data, institution.name, is_bulk=True)
     filename = f"{institution.slug}_all_green_room_sheets.pdf"
-    return render_to_pdf('pdf/bulk_green_room_pdf.html', context, filename, request=request)
+    return reportlab_pdf_response(pdf_bytes, filename, request=request)
 
 
 @login_required
