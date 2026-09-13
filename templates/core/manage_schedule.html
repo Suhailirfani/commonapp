@@ -35,16 +35,146 @@
     </div>
 </div>
 
-<!-- Clash Detection Alert Banner -->
+<!-- Clash Detection Alert & Detailed List -->
 {% if clash_data.total_clash_count > 0 %}
-<div class="glass-card" style="border-left: 4px solid var(--accent-rose); background: rgba(225, 29, 72, 0.1); margin-bottom: 20px; padding: 14px;">
-    <div>
-        <h4 style="color: var(--accent-rose); font-size: 1.05rem; font-weight: 700;">
-            <i class="fa-solid fa-triangle-exclamation"></i> {{ clash_data.total_clash_count }} Schedule Conflict(s) Detected!
-        </h4>
-        <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">
-            Stage Overlaps: {{ clash_data.stage_clashes|length }} | Student Clashes: {{ clash_data.participant_clashes|length }} | Venue Mismatches: {{ clash_data.venue_mismatches|length }}
-        </p>
+<div class="glass-card" style="border-left: 4px solid var(--accent-rose); background: rgba(225, 29, 72, 0.08); margin-bottom: 20px; padding: 16px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <div>
+            <h4 style="color: var(--accent-rose); font-size: 1.1rem; font-weight: 700; margin-bottom: 4px; display: flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-triangle-exclamation"></i> {{ clash_data.total_clash_count }} Schedule Conflict(s) Detected!
+            </h4>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px;">
+                {% if clash_data.stage_clashes %}
+                <span class="badge" style="background: rgba(225, 29, 72, 0.2); color: #fecdd3; border: 1px solid rgba(225, 29, 72, 0.4); font-size: 0.75rem;">
+                    <i class="fa-solid fa-masks-theater"></i> Stage Overlaps: {{ clash_data.stage_clashes|length }}
+                </span>
+                {% endif %}
+                {% if clash_data.participant_clashes %}
+                <span class="badge" style="background: rgba(245, 158, 11, 0.2); color: #fde68a; border: 1px solid rgba(245, 158, 11, 0.4); font-size: 0.75rem;">
+                    <i class="fa-solid fa-user-group"></i> Student Clashes: {{ clash_data.participant_clashes|length }}
+                </span>
+                {% endif %}
+                {% if clash_data.venue_mismatches %}
+                <span class="badge" style="background: rgba(14, 165, 233, 0.2); color: #bae6fd; border: 1px solid rgba(14, 165, 233, 0.4); font-size: 0.75rem;">
+                    <i class="fa-solid fa-map-location-dot"></i> Venue Mismatches: {{ clash_data.venue_mismatches|length }}
+                </span>
+                {% endif %}
+            </div>
+        </div>
+        <button type="button" onclick="toggleClashDetails()" id="btnToggleClashes" class="btn-primary" style="background: rgba(225, 29, 72, 0.25); border: 1px solid rgba(225, 29, 72, 0.5); color: #fff; font-size: 0.8rem; padding: 6px 12px;">
+            <i class="fa-solid fa-list-check"></i> <span id="lblToggleClashes">Hide Clash List</span>
+        </button>
+    </div>
+
+    <!-- EXPANDABLE CLASH LIST BREAKDOWN -->
+    <div id="clashDetailsContainer" style="margin-top: 14px; border-top: 1px solid rgba(225, 29, 72, 0.2); padding-top: 14px;">
+
+        <!-- 1. STAGE OVERLAPS -->
+        {% if clash_data.stage_clashes %}
+        <div style="margin-bottom: 16px;">
+            <div style="font-size: 0.85rem; font-weight: 700; color: #fda4af; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+                <i class="fa-solid fa-masks-theater"></i> Stage Overlaps (Same Venue & Overlapping Time)
+            </div>
+            <div style="display: grid; gap: 8px;">
+                {% for c in clash_data.stage_clashes %}
+                <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(225, 29, 72, 0.25); border-radius: 8px; padding: 10px 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                    <div style="flex: 1; min-width: 260px;">
+                        <div style="font-size: 0.88rem; font-weight: 700; color: #fff;">
+                            <span style="color: #fda4af;">{{ c.schedule1.program.name }}</span>
+                            <span style="color: var(--text-muted); font-weight: 400;"> vs </span>
+                            <span style="color: #fda4af;">{{ c.schedule2.program.name }}</span>
+                        </div>
+                        <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">
+                            <i class="fa-solid fa-location-dot"></i> Day {{ c.fest_day.day_number }} @ <strong>{{ c.stage.name }}</strong>
+                            &nbsp;|&nbsp;
+                            <span style="color: #f87171;">Conflict Window: <strong>{{ c.overlap_range }}</strong></span>
+                        </div>
+                        <div style="font-size: 0.72rem; color: #94a3b8; margin-top: 2px;">
+                            • {{ c.schedule1.program.name }}: {{ c.schedule1.start_time|time:"h:i A" }} - {{ c.schedule1.end_time|time:"h:i A" }}
+                            <br>
+                            • {{ c.schedule2.program.name }}: {{ c.schedule2.start_time|time:"h:i A" }} - {{ c.schedule2.end_time|time:"h:i A" }}
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 6px; align-items: center;">
+                        <button type="button" class="btn-primary" style="padding: 4px 8px; font-size: 0.72rem;" onclick="openManualSlotModal('{{ c.schedule1.program.id }}', '{{ c.schedule1.program.name|escapejs }}', '{{ c.schedule1.program.program_type }}', '{{ c.schedule1.stage_id }}')" title="Reschedule {{ c.schedule1.program.name }}">
+                            <i class="fa-solid fa-clock"></i> Fix {{ c.schedule1.program.name|truncatechars:12 }}
+                        </button>
+                        <button type="button" class="btn-primary" style="padding: 4px 8px; font-size: 0.72rem;" onclick="openManualSlotModal('{{ c.schedule2.program.id }}', '{{ c.schedule2.program.name|escapejs }}', '{{ c.schedule2.program.program_type }}', '{{ c.schedule2.stage_id }}')" title="Reschedule {{ c.schedule2.program.name }}">
+                            <i class="fa-solid fa-clock"></i> Fix {{ c.schedule2.program.name|truncatechars:12 }}
+                        </button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- 2. PARTICIPANT CLASHES -->
+        {% if clash_data.participant_clashes %}
+        <div style="margin-bottom: 16px;">
+            <div style="font-size: 0.85rem; font-weight: 700; color: #fde68a; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+                <i class="fa-solid fa-user-group"></i> Student / Contestant Clashes (Simultaneous Programs)
+            </div>
+            <div style="display: grid; gap: 8px;">
+                {% for c in clash_data.participant_clashes %}
+                <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: 8px; padding: 10px 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                    <div style="flex: 1; min-width: 260px;">
+                        <div style="font-size: 0.88rem; font-weight: 700; color: #fff;">
+                            <span style="color: #fcd34d;">👤 {{ c.contestant.name }}</span>
+                            {% if c.contestant.chest_no %}<span style="font-size: 0.78rem; color: var(--text-muted);"> (#{{ c.contestant.chest_no }})</span>{% endif %}
+                            {% if c.contestant.team %}<span class="badge" style="background: rgba(255,255,255,0.08); font-size: 0.68rem; margin-left: 4px;">{{ c.contestant.team.name }}</span>{% endif %}
+                        </div>
+                        <div style="font-size: 0.78rem; color: #fde68a; margin-top: 3px;">
+                            Day {{ c.fest_day.day_number }} overlap: <strong>{{ c.schedule1.program.name }}</strong> &amp; <strong>{{ c.schedule2.program.name }}</strong>
+                        </div>
+                        <div style="font-size: 0.72rem; color: #94a3b8; margin-top: 2px;">
+                            • {{ c.schedule1.program.name }} @ {{ c.schedule1.stage.name }} ({{ c.schedule1.start_time|time:"h:i A" }} - {{ c.schedule1.end_time|time:"h:i A" }})
+                            <br>
+                            • {{ c.schedule2.program.name }} @ {{ c.schedule2.stage.name }} ({{ c.schedule2.start_time|time:"h:i A" }} - {{ c.schedule2.end_time|time:"h:i A" }})
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 6px; align-items: center;">
+                        <button type="button" class="btn-primary" style="padding: 4px 8px; font-size: 0.72rem;" onclick="openManualSlotModal('{{ c.schedule1.program.id }}', '{{ c.schedule1.program.name|escapejs }}', '{{ c.schedule1.program.program_type }}', '{{ c.schedule1.stage_id }}')" title="Reschedule {{ c.schedule1.program.name }}">
+                            <i class="fa-solid fa-clock"></i> Move {{ c.schedule1.program.name|truncatechars:12 }}
+                        </button>
+                        <button type="button" class="btn-primary" style="padding: 4px 8px; font-size: 0.72rem;" onclick="openManualSlotModal('{{ c.schedule2.program.id }}', '{{ c.schedule2.program.name|escapejs }}', '{{ c.schedule2.program.program_type }}', '{{ c.schedule2.stage_id }}')" title="Reschedule {{ c.schedule2.program.name }}">
+                            <i class="fa-solid fa-clock"></i> Move {{ c.schedule2.program.name|truncatechars:12 }}
+                        </button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- 3. VENUE TYPE MISMATCHES -->
+        {% if clash_data.venue_mismatches %}
+        <div>
+            <div style="font-size: 0.85rem; font-weight: 700; color: #bae6fd; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+                <i class="fa-solid fa-map-location-dot"></i> Venue Type Inconsistencies
+            </div>
+            <div style="display: grid; gap: 8px;">
+                {% for c in clash_data.venue_mismatches %}
+                <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(14, 165, 233, 0.25); border-radius: 8px; padding: 10px 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                    <div>
+                        <div style="font-size: 0.88rem; font-weight: 700; color: #fff;">
+                            {{ c.program.name }}
+                        </div>
+                        <div style="font-size: 0.78rem; color: #7dd3fc; margin-top: 2px;">
+                            Program type is <strong>{{ c.program_type }}</strong>, but assigned to <strong>{{ c.stage.name }}</strong> ({{ c.stage_type }}).
+                        </div>
+                    </div>
+                    <div>
+                        <button type="button" class="btn-primary" style="padding: 4px 8px; font-size: 0.72rem;" onclick="openManualSlotModal('{{ c.program.id }}', '{{ c.program.name|escapejs }}', '{{ c.program.program_type }}', '')" title="Change Venue">
+                            <i class="fa-solid fa-location-dot"></i> Reassign Venue
+                        </button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
     </div>
 </div>
 {% endif %}
@@ -734,6 +864,19 @@ function resetManualFilters() {
     const typeFilter = document.getElementById('manualTypeFilter');
     if (typeFilter) typeFilter.value = 'ALL';
     filterManualScheduleList();
+}
+
+function toggleClashDetails() {
+    const container = document.getElementById('clashDetailsContainer');
+    const lbl = document.getElementById('lblToggleClashes');
+    if (!container) return;
+    if (container.style.display === 'none') {
+        container.style.display = 'block';
+        if (lbl) lbl.innerText = 'Hide Clash List';
+    } else {
+        container.style.display = 'none';
+        if (lbl) lbl.innerText = 'Show Clash List';
+    }
 }
 
 document.addEventListener('DOMContentLoaded', function() {
