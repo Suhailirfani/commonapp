@@ -94,11 +94,11 @@ def auto_generate_all_chest_numbers(institution, overwrite=False):
 def calculate_program_results(program):
     """
     Auto-calculates Ranks, Grades, and Team Points for a given program.
+    Uses program-specific points/grade rules if customized, else institution default.
     """
     institution = program.institution
-    config = PointsConfig.objects.filter(institution=institution).first()
-    if not config:
-        config = PointsConfig.objects.create(institution=institution)
+    p_cfg = program.get_points_config()
+    has_grades = p_cfg.get('enable_grades', True)
 
     if program.is_group:
         GroupParticipation.objects.filter(program=program, marks__isnull=True).update(rank=None, grade=None)
@@ -119,14 +119,17 @@ def calculate_program_results(program):
             part.rank = idx + 1
 
         # Grade calculation with A+ support
-        if part.marks >= config.grade_aplus_threshold:
-            part.grade = 'A+'
-        elif part.marks >= config.grade_a_threshold:
-            part.grade = 'A'
-        elif part.marks >= config.grade_b_threshold:
-            part.grade = 'B'
-        elif part.marks >= config.grade_c_threshold:
-            part.grade = 'C'
+        if has_grades:
+            if part.marks >= p_cfg['grade_aplus_threshold']:
+                part.grade = 'A+'
+            elif part.marks >= p_cfg['grade_a_threshold']:
+                part.grade = 'A'
+            elif part.marks >= p_cfg['grade_b_threshold']:
+                part.grade = 'B'
+            elif part.marks >= p_cfg['grade_c_threshold']:
+                part.grade = 'C'
+            else:
+                part.grade = None
         else:
             part.grade = None
 

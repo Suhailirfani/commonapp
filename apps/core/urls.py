@@ -106,6 +106,7 @@ urlpatterns = [
     path('portal/<slug:institution_slug>/schedule/auto-run/', views.run_auto_scheduler_view, name='run_auto_scheduler'),
     path('portal/<slug:institution_slug>/schedule/clear-all/', views.clear_all_schedules_view, name='clear_all_schedules'),
     path('portal/<slug:institution_slug>/points-config/', views.points_config_view, name='points_config'),
+    path('portal/<slug:institution_slug>/points-config/program/<int:program_id>/', views.program_points_config_api, name='program_points_config_api'),
     path('portal/<slug:institution_slug>/settings/', views.settings_view, name='settings'),
     path('portal/<slug:institution_slug>/settings/fests/', views.settings_fests_view, name='settings_fests'),
     path('portal/<slug:institution_slug>/settings/participation-limits/', views.settings_participation_limits_view, name='settings_participation_limits'),

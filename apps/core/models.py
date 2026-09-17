@@ -317,6 +317,92 @@ class Program(TenantBaseModel):
             })
         return slots
 
+    def get_points_config(self):
+        """
+        Returns a dict of effective point and grading rules for this program.
+        If custom config exists and is_custom is True, returns those custom values.
+        Otherwise falls back to institution PointsConfig (single vs group values).
+        """
+        try:
+            custom = getattr(self, 'custom_points_config', None)
+        except Exception:
+            custom = None
+
+        if custom and custom.is_custom:
+            return {
+                'is_custom': True,
+                'enable_grades': custom.enable_grades,
+                'rank_1_points': custom.rank_1_points,
+                'rank_2_points': custom.rank_2_points,
+                'rank_3_points': custom.rank_3_points,
+                'grade_aplus_points': custom.grade_aplus_points,
+                'grade_a_points': custom.grade_a_points,
+                'grade_b_points': custom.grade_b_points,
+                'grade_c_points': custom.grade_c_points,
+                'grade_aplus_threshold': custom.grade_aplus_threshold,
+                'grade_a_threshold': custom.grade_a_threshold,
+                'grade_b_threshold': custom.grade_b_threshold,
+                'grade_c_threshold': custom.grade_c_threshold,
+            }
+
+        # Fallback to institution PointsConfig
+        config = PointsConfig.objects.filter(institution=self.institution).first()
+        enable_grades = config.enable_grades if config else True
+
+        if self.is_group:
+            r1 = config.group_rank_1_points if config else 10
+            r2 = config.group_rank_2_points if config else 6
+            r3 = config.group_rank_3_points if config else 3
+            gap = config.group_grade_aplus_points if config else 6
+            ga = config.group_grade_a_points if config else 5
+            gb = config.group_grade_b_points if config else 3
+            gc = config.group_grade_c_points if config else 1
+        else:
+            r1 = config.single_rank_1_points if config else 5
+            r2 = config.single_rank_2_points if config else 3
+            r3 = config.single_rank_3_points if config else 1
+            gap = config.single_grade_aplus_points if config else 6
+            ga = config.single_grade_a_points if config else 5
+            gb = config.single_grade_b_points if config else 3
+            gc = config.single_grade_c_points if config else 1
+
+        return {
+            'is_custom': False,
+            'enable_grades': enable_grades,
+            'rank_1_points': r1,
+            'rank_2_points': r2,
+            'rank_3_points': r3,
+            'grade_aplus_points': gap,
+            'grade_a_points': ga,
+            'grade_b_points': gb,
+            'grade_c_points': gc,
+            'grade_aplus_threshold': config.grade_aplus_threshold if config else 90,
+            'grade_a_threshold': config.grade_a_threshold if config else 80,
+            'grade_b_threshold': config.grade_b_threshold if config else 70,
+            'grade_c_threshold': config.grade_c_threshold if config else 60,
+        }
+
+    @property
+    def has_grades(self):
+        return self.get_points_config().get('enable_grades', True)
+
+    @property
+    def has_custom_points(self):
+        try:
+            custom = getattr(self, 'custom_points_config', None)
+            return bool(custom and custom.is_custom)
+        except Exception:
+            return False
+
+    @property
+    def points_summary_label(self):
+        cfg = self.get_points_config()
+        if cfg['is_custom']:
+            if not cfg['enable_grades']:
+                return f"Custom Ranks ({cfg['rank_1_points']},{cfg['rank_2_points']},{cfg['rank_3_points']})"
+            return f"Custom ({cfg['rank_1_points']},{cfg['rank_2_points']},{cfg['rank_3_points']} pts)"
+        return "Default Rules"
+
 
 # ----------------- Program Schedule -----------------
 class ProgramSchedule(TenantBaseModel):
@@ -462,15 +548,26 @@ class Participation(TenantBaseModel):
 
     @property
     def total_points(self):
-        config = PointsConfig.objects.filter(institution=self.institution).first()
-        r1 = config.single_rank_1_points if config else 5
-        r2 = config.single_rank_2_points if config else 3
-        r3 = config.single_rank_3_points if config else 1
-        has_grades = config.enable_grades if config else True
-        gap = (config.single_grade_aplus_points if config else 6) if has_grades else 0
-        ga = (config.single_grade_a_points if config else 5) if has_grades else 0
-        gb = (config.single_grade_b_points if config else 3) if has_grades else 0
-        gc = (config.single_grade_c_points if config else 1) if has_grades else 0
+        p_cfg = self.program.get_points_config() if self.program else None
+        if not p_cfg:
+            config = PointsConfig.objects.filter(institution=self.institution).first()
+            r1 = config.single_rank_1_points if config else 5
+            r2 = config.single_rank_2_points if config else 3
+            r3 = config.single_rank_3_points if config else 1
+            has_grades = config.enable_grades if config else True
+            gap = (config.single_grade_aplus_points if config else 6) if has_grades else 0
+            ga = (config.single_grade_a_points if config else 5) if has_grades else 0
+            gb = (config.single_grade_b_points if config else 3) if has_grades else 0
+            gc = (config.single_grade_c_points if config else 1) if has_grades else 0
+        else:
+            r1 = p_cfg['rank_1_points']
+            r2 = p_cfg['rank_2_points']
+            r3 = p_cfg['rank_3_points']
+            has_grades = p_cfg['enable_grades']
+            gap = p_cfg['grade_aplus_points'] if has_grades else 0
+            ga = p_cfg['grade_a_points'] if has_grades else 0
+            gb = p_cfg['grade_b_points'] if has_grades else 0
+            gc = p_cfg['grade_c_points'] if has_grades else 0
 
         pts = 0
         if self.rank == 1: pts += r1
@@ -535,15 +632,26 @@ class GroupParticipation(TenantBaseModel):
 
     @property
     def total_points(self):
-        config = PointsConfig.objects.filter(institution=self.institution).first()
-        r1 = config.group_rank_1_points if config else 10
-        r2 = config.group_rank_2_points if config else 6
-        r3 = config.group_rank_3_points if config else 3
-        has_grades = config.enable_grades if config else True
-        gap = (config.group_grade_aplus_points if config else 6) if has_grades else 0
-        ga = (config.group_grade_a_points if config else 5) if has_grades else 0
-        gb = (config.group_grade_b_points if config else 3) if has_grades else 0
-        gc = (config.group_grade_c_points if config else 1) if has_grades else 0
+        p_cfg = self.program.get_points_config() if self.program else None
+        if not p_cfg:
+            config = PointsConfig.objects.filter(institution=self.institution).first()
+            r1 = config.group_rank_1_points if config else 10
+            r2 = config.group_rank_2_points if config else 6
+            r3 = config.group_rank_3_points if config else 3
+            has_grades = config.enable_grades if config else True
+            gap = (config.group_grade_aplus_points if config else 6) if has_grades else 0
+            ga = (config.group_grade_a_points if config else 5) if has_grades else 0
+            gb = (config.group_grade_b_points if config else 3) if has_grades else 0
+            gc = (config.group_grade_c_points if config else 1) if has_grades else 0
+        else:
+            r1 = p_cfg['rank_1_points']
+            r2 = p_cfg['rank_2_points']
+            r3 = p_cfg['rank_3_points']
+            has_grades = p_cfg['enable_grades']
+            gap = p_cfg['grade_aplus_points'] if has_grades else 0
+            ga = p_cfg['grade_a_points'] if has_grades else 0
+            gb = p_cfg['grade_b_points'] if has_grades else 0
+            gc = p_cfg['grade_c_points'] if has_grades else 0
 
         pts = 0
         if self.rank == 1: pts += r1
@@ -612,6 +720,38 @@ class PointsConfig(TenantBaseModel):
     def grade_b_points(self): return self.group_grade_b_points
     @property
     def grade_c_points(self): return self.group_grade_c_points
+
+
+# ----------------- Program-Specific Points Configuration Override -----------------
+class ProgramPointsConfig(TenantBaseModel):
+    program = models.OneToOneField(Program, on_delete=models.CASCADE, related_name='custom_points_config')
+    is_custom = models.BooleanField(default=False, help_text="Set to True if this program has custom scoring rules")
+    enable_grades = models.BooleanField(default=True, help_text="Enable Grades for this specific program")
+
+    # Rank Points
+    rank_1_points = models.IntegerField(default=5)
+    rank_2_points = models.IntegerField(default=3)
+    rank_3_points = models.IntegerField(default=1)
+
+    # Grade Points
+    grade_aplus_points = models.IntegerField(default=6)
+    grade_a_points = models.IntegerField(default=5)
+    grade_b_points = models.IntegerField(default=3)
+    grade_c_points = models.IntegerField(default=1)
+
+    # Grade Thresholds (Out of 100)
+    grade_aplus_threshold = models.IntegerField(default=90)
+    grade_a_threshold = models.IntegerField(default=80)
+    grade_b_threshold = models.IntegerField(default=70)
+    grade_c_threshold = models.IntegerField(default=60)
+
+    class Meta:
+        verbose_name = "Program Points Configuration"
+        verbose_name_plural = "Program Points Configurations"
+
+    def __str__(self):
+        status = "Custom" if self.is_custom else "Default"
+        return f"{self.program.name} ({status})"
 
 
 # ----------------- Announcement -----------------

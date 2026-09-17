@@ -458,4 +458,75 @@ class ParticipationLimitsTestCase(TestCase):
         self.assertEqual(res.status_code, 200)
         self.assertEqual(res['Content-Type'], 'application/pdf')
 
+    def test_program_specific_points_override_and_api(self):
+        from apps.core.models import PointsConfig, ProgramPointsConfig, Participation
+        prog = self.single_programs[0]
+        
+        # Fest default: 5 pts for 1st rank, 6 pts for A+
+        config, _ = PointsConfig.objects.get_or_create(
+            institution=self.institution,
+            defaults={'single_rank_1_points': 5, 'single_grade_aplus_points': 6, 'enable_grades': True}
+        )
+        
+        p = Participation.objects.create(
+            institution=self.institution,
+            program=prog,
+            contestant=self.contestant,
+            rank=1,
+            grade='A+'
+        )
+        
+        # Initially uses default: 5 + 6 = 11 pts
+        self.assertEqual(p.total_points, 11)
+        self.assertFalse(prog.has_custom_points)
+        self.assertEqual(prog.points_summary_label, "Default Rules")
+
+        # Test API GET
+        api_url = reverse('core:program_points_config_api', kwargs={'institution_slug': self.institution.slug, 'program_id': prog.id})
+        res = self.client.get(api_url)
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertEqual(data['status'], 'success')
+        self.assertFalse(data['custom']['is_custom'])
+
+        # Test API POST Custom Points (e.g. 1st rank = 15, A+ = 10)
+        post_data = {
+            'is_custom': '1',
+            'enable_grades': '1',
+            'rank_1_points': 15,
+            'rank_2_points': 10,
+            'rank_3_points': 5,
+            'grade_aplus_points': 10,
+            'grade_a_points': 8,
+            'grade_b_points': 5,
+            'grade_c_points': 2,
+            'grade_aplus_threshold': 95,
+            'grade_a_threshold': 85,
+            'grade_b_threshold': 75,
+            'grade_c_threshold': 65,
+        }
+        res = self.client.post(api_url, post_data)
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertEqual(data['status'], 'success')
+        self.assertTrue(data['is_custom'])
+
+        prog.refresh_from_db()
+        self.assertTrue(prog.has_custom_points)
+        
+        # With custom points: 15 rank pts + 10 grade pts = 25 pts
+        self.assertEqual(p.total_points, 25)
+
+        # Test API POST Reset to Default
+        res = self.client.post(api_url, {'action': 'reset_default'})
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertEqual(data['status'], 'success')
+        self.assertFalse(data['is_custom'])
+
+        prog.refresh_from_db()
+        self.assertFalse(prog.has_custom_points)
+        self.assertEqual(p.total_points, 11)
+
+
 

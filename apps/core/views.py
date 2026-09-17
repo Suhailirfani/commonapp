@@ -1,6 +1,7 @@
 import json
 from datetime import datetime, timedelta, time
 from django.shortcuts import render, redirect, get_object_or_404
+from django.http import JsonResponse, HttpResponse
 from django.urls import reverse
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -11,7 +12,8 @@ from apps.users.models import User
 from .models import (
     Competition, Category, Program, Team, Stage, 
     FestDay, Contestant, Participation, GroupParticipation, 
-    PointsConfig, ProgramSchedule, CertificateConfig
+    PointsConfig, ProgramSchedule, CertificateConfig,
+    ProgramPointsConfig
 )
 
 @login_required
@@ -1529,12 +1531,154 @@ def points_config_view(request, institution_slug):
         config.grade_c_threshold = int(request.POST.get('grade_c_threshold', 60))
 
         config.save()
+
+        # Recalculate results for programs relying on default points and update standings
+        from .services import calculate_program_results, recalculate_team_points
+        scored_progs = Program.objects.filter(
+            institution=institution
+        ).filter(
+            Q(single_participations__marks__isnull=False) | Q(group_participations__marks__isnull=False)
+        ).distinct()
+        for prog in scored_progs:
+            calculate_program_results(prog)
+        recalculate_team_points(institution)
+
         if enable_grades:
             messages.success(request, "Points & grade rules for Single and Group items updated successfully!")
         else:
             messages.success(request, "⚡ Ranks-Only Mode Active: Points awarded for 1st, 2nd & 3rd ranks only. Grade columns are hidden.")
 
-    return render(request, 'core/points_config.html', {'institution': institution, 'config': config})
+    programs = Program.objects.filter(institution=institution).select_related('category', 'competition', 'custom_points_config').order_by('category__name', 'name')
+    categories = Category.objects.filter(institution=institution).order_by('name')
+
+    return render(request, 'core/points_config.html', {
+        'institution': institution, 
+        'config': config,
+        'programs': programs,
+        'categories': categories,
+    })
+
+
+@login_required
+def program_points_config_api(request, institution_slug, program_id):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    if request.user.is_judge:
+        return JsonResponse({'status': 'error', 'message': 'Permission Denied: Judges cannot modify points configuration.'}, status=403)
+
+    program = get_object_or_404(Program, id=program_id, institution=institution)
+    custom_config, created = ProgramPointsConfig.objects.get_or_create(
+        program=program,
+        defaults={'institution': institution}
+    )
+
+    if request.method == 'GET':
+        default_cfg = PointsConfig.objects.filter(institution=institution).first()
+        is_group = program.is_group
+
+        if is_group:
+            def_r1 = default_cfg.group_rank_1_points if default_cfg else 10
+            def_r2 = default_cfg.group_rank_2_points if default_cfg else 6
+            def_r3 = default_cfg.group_rank_3_points if default_cfg else 3
+            def_gap = default_cfg.group_grade_aplus_points if default_cfg else 6
+            def_ga = default_cfg.group_grade_a_points if default_cfg else 5
+            def_gb = default_cfg.group_grade_b_points if default_cfg else 3
+            def_gc = default_cfg.group_grade_c_points if default_cfg else 1
+        else:
+            def_r1 = default_cfg.single_rank_1_points if default_cfg else 5
+            def_r2 = default_cfg.single_rank_2_points if default_cfg else 3
+            def_r3 = default_cfg.single_rank_3_points if default_cfg else 1
+            def_gap = default_cfg.single_grade_aplus_points if default_cfg else 6
+            def_ga = default_cfg.single_grade_a_points if default_cfg else 5
+            def_gb = default_cfg.single_grade_b_points if default_cfg else 3
+            def_gc = default_cfg.single_grade_c_points if default_cfg else 1
+
+        def_grades = default_cfg.enable_grades if default_cfg else True
+        def_aplus_th = default_cfg.grade_aplus_threshold if default_cfg else 90
+        def_a_th = default_cfg.grade_a_threshold if default_cfg else 80
+        def_b_th = default_cfg.grade_b_threshold if default_cfg else 70
+        def_c_th = default_cfg.grade_c_threshold if default_cfg else 60
+
+        data = {
+            'status': 'success',
+            'program': {
+                'id': program.id,
+                'name': program.name,
+                'category': program.category.name if program.category else 'General',
+                'is_group': program.is_group,
+                'type_label': 'Group Event' if program.is_group else 'Single Event',
+            },
+            'defaults': {
+                'enable_grades': def_grades,
+                'rank_1_points': def_r1,
+                'rank_2_points': def_r2,
+                'rank_3_points': def_r3,
+                'grade_aplus_points': def_gap,
+                'grade_a_points': def_ga,
+                'grade_b_points': def_gb,
+                'grade_c_points': def_gc,
+                'grade_aplus_threshold': def_aplus_th,
+                'grade_a_threshold': def_a_th,
+                'grade_b_threshold': def_b_th,
+                'grade_c_threshold': def_c_th,
+            },
+            'custom': {
+                'is_custom': custom_config.is_custom,
+                'enable_grades': custom_config.enable_grades,
+                'rank_1_points': custom_config.rank_1_points,
+                'rank_2_points': custom_config.rank_2_points,
+                'rank_3_points': custom_config.rank_3_points,
+                'grade_aplus_points': custom_config.grade_aplus_points,
+                'grade_a_points': custom_config.grade_a_points,
+                'grade_b_points': custom_config.grade_b_points,
+                'grade_c_points': custom_config.grade_c_points,
+                'grade_aplus_threshold': custom_config.grade_aplus_threshold,
+                'grade_a_threshold': custom_config.grade_a_threshold,
+                'grade_b_threshold': custom_config.grade_b_threshold,
+                'grade_c_threshold': custom_config.grade_c_threshold,
+            },
+            'summary_label': program.points_summary_label
+        }
+        return JsonResponse(data)
+
+    elif request.method == 'POST':
+        action = request.POST.get('action')
+        if action == 'reset_default':
+            custom_config.is_custom = False
+            custom_config.save()
+            msg = f"Points rules for '{program.name}' reset to Common Fest Defaults!"
+        else:
+            is_custom = request.POST.get('is_custom') in ['1', 'true', 'on', True]
+            custom_config.is_custom = is_custom
+            if is_custom:
+                custom_config.enable_grades = request.POST.get('enable_grades') in ['1', 'true', 'on', True]
+                custom_config.rank_1_points = int(request.POST.get('rank_1_points', 5))
+                custom_config.rank_2_points = int(request.POST.get('rank_2_points', 3))
+                custom_config.rank_3_points = int(request.POST.get('rank_3_points', 1))
+                custom_config.grade_aplus_points = int(request.POST.get('grade_aplus_points', 6))
+                custom_config.grade_a_points = int(request.POST.get('grade_a_points', 5))
+                custom_config.grade_b_points = int(request.POST.get('grade_b_points', 3))
+                custom_config.grade_c_points = int(request.POST.get('grade_c_points', 1))
+                custom_config.grade_aplus_threshold = int(request.POST.get('grade_aplus_threshold', 90))
+                custom_config.grade_a_threshold = int(request.POST.get('grade_a_threshold', 80))
+                custom_config.grade_b_threshold = int(request.POST.get('grade_b_threshold', 70))
+                custom_config.grade_c_threshold = int(request.POST.get('grade_c_threshold', 60))
+            custom_config.save()
+            msg = f"Custom points rules for '{program.name}' updated successfully!"
+
+        # Recalculate results for this program if marks exist
+        from .services import calculate_program_results, recalculate_team_points
+        if program.single_participations.filter(marks__isnull=False).exists() or program.group_participations.filter(marks__isnull=False).exists():
+            calculate_program_results(program)
+        recalculate_team_points(institution)
+
+        program.refresh_from_db()
+        return JsonResponse({
+            'status': 'success',
+            'message': msg,
+            'is_custom': custom_config.is_custom,
+            'summary_label': program.points_summary_label,
+            'program_id': program.id
+        })
 
 
 @login_required

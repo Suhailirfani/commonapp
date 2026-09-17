@@ -1,40 +1,45 @@
 {% extends 'base.html' %}
 
-{% block title %}Points Rules - {{ institution.name }}{% endblock %}
+{% block title %}Points & Grading Rules - {{ institution.name }}{% endblock %}
 
 {% block content %}
-<div class="page-header" style="margin-bottom: 24px;">
+<div class="page-header" style="margin-bottom: 20px;">
     <div>
-        <a href="{% url 'core:settings' institution.slug %}" style="color: var(--accent-cyan); text-decoration: none; font-size: 0.9rem; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; margin-bottom: 8px;">
+        <a href="{% url 'core:settings' institution.slug %}" style="color: var(--accent-cyan); text-decoration: none; font-size: 0.88rem; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; margin-bottom: 8px;">
             <i class="fa-solid fa-arrow-left"></i> Back to Settings Hub
         </a>
-        <h2 style="font-size: 1.8rem; font-weight: 800; margin: 0;"><i class="fa-solid fa-sliders" style="color: var(--accent-cyan);"></i> Points & Grading System Rules</h2>
-        <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 4px;">Choose your evaluation mode (Ranks & Grades OR Ranks-Only) and set point values for positions.</p>
+        <h2 style="font-size: 1.65rem; font-weight: 800; margin: 0;"><i class="fa-solid fa-sliders" style="color: var(--accent-cyan);"></i> Points & Grading System Rules</h2>
+        <p style="color: var(--text-muted); font-size: 0.88rem; margin-top: 4px;">Set common default evaluation rules for all programs, or customize points and grade rules for specific individual programs.</p>
     </div>
 </div>
 
-<form method="POST">
+<!-- SECTION 1: COMMON FEST DEFAULTS -->
+<form method="POST" id="defaultPointsForm">
     {% csrf_token %}
     <input type="hidden" name="action" value="update_points">
 
     <!-- Mode Selector Card: Ranks & Grades vs Ranks Only -->
-    <div class="glass-card" style="margin-bottom: 24px; border: 1px solid rgba(255,255,255,0.18); background: linear-gradient(145deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.95));">
-        <h3 style="font-size: 1.2rem; font-weight: 800; color: #fff; margin: 0 0 12px 0; display: flex; align-items: center; gap: 8px;">
-            <i class="fa-solid fa-scale-balanced" style="color: var(--accent-amber);"></i> Evaluation & Scoring Mode
-        </h3>
-        <p style="color: #cbd5e1; font-size: 0.88rem; margin: 0 0 16px 0;">
+    <div class="glass-card" style="margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.18); background: linear-gradient(145deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.95));">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+            <h3 style="font-size: 1.15rem; font-weight: 800; color: #fff; margin: 0; display: flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-scale-balanced" style="color: var(--accent-amber);"></i> 1. Common Evaluation & Scoring Mode (Fest Default)
+            </h3>
+            <span class="badge badge-cyan" style="font-size: 0.78rem; padding: 4px 10px;">
+                Applies to all programs by default
+            </span>
+        </div>
+        <p style="color: #cbd5e1; font-size: 0.85rem; margin: 0 0 14px 0;">
             ഗ്രേഡുകൾക്ക് പോയിന്റുകൾ നൽകാത്ത സ്ഥാപനങ്ങൾക്ക് <strong>"Ranks Only Mode"</strong> തിരഞ്ഞെടുക്കാവുന്നതാണ്. ഈ മോഡിൽ റിസൾട്ട് ഷീറ്റുകളിലും പബ്ലിക് പോർട്ടലിലും ഗ്രേഡ് കോളം ഉണ്ടാവില്ല.
         </p>
 
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
-            
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px;">
             <!-- Option 1: Standard Mode (Ranks + Grades) -->
             <label class="mode-card {% if config.enable_grades %}active-mode{% endif %}" id="mode_card_standard">
-                <div style="display: flex; align-items: flex-start; gap: 12px;">
+                <div style="display: flex; align-items: flex-start; gap: 10px;">
                     <input type="radio" name="enable_grades" value="1" {% if config.enable_grades %}checked{% endif %} onchange="toggleGradingMode(true)" style="margin-top: 4px; accent-color: var(--accent-cyan);">
                     <div>
-                        <strong style="color: #fff; font-size: 1rem; display: block;">🏆 Ranks + Grades Mode (Default)</strong>
-                        <span style="font-size: 0.82rem; color: #94a3b8; line-height: 1.4; display: block; margin-top: 4px;">
+                        <strong style="color: #fff; font-size: 0.95rem; display: block;">🏆 Ranks + Grades Mode (Default)</strong>
+                        <span style="font-size: 0.8rem; color: #94a3b8; line-height: 1.35; display: block; margin-top: 3px;">
                             Awards points for 1st, 2nd, 3rd ranks + Letter Grades (A+, A, B, C). Grade columns are displayed in results & PDF sheets.
                         </span>
                     </div>
@@ -43,62 +48,60 @@
 
             <!-- Option 2: Ranks Only Mode (No Grades) -->
             <label class="mode-card {% if not config.enable_grades %}active-mode{% endif %}" id="mode_card_ranksonly">
-                <div style="display: flex; align-items: flex-start; gap: 12px;">
+                <div style="display: flex; align-items: flex-start; gap: 10px;">
                     <input type="radio" name="enable_grades" value="0" {% if not config.enable_grades %}checked{% endif %} onchange="toggleGradingMode(false)" style="margin-top: 4px; accent-color: var(--accent-amber);">
                     <div>
-                        <strong style="color: #fbbf24; font-size: 1rem; display: block;">⚡ Ranks Only Mode (No Grade Points)</strong>
-                        <span style="font-size: 0.82rem; color: #cbd5e1; line-height: 1.4; display: block; margin-top: 4px;">
+                        <strong style="color: #fbbf24; font-size: 0.95rem; display: block;">⚡ Ranks Only Mode (No Grade Points)</strong>
+                        <span style="font-size: 0.8rem; color: #cbd5e1; line-height: 1.35; display: block; margin-top: 3px;">
                             Only 1st, 2nd & 3rd ranks receive points. <strong>No Grade column</strong> is shown on result sheets, PDFs, or public portals.
                         </span>
                     </div>
                 </div>
             </label>
-
         </div>
     </div>
 
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px;">
-
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
         <!-- Single Items (Individual Events) -->
         <div class="glass-card">
-            <h3 style="font-size: 1.2rem; font-weight: 700; color: var(--accent-emerald); margin-bottom: 16px;">
-                <i class="fa-solid fa-user"></i> Single Items (Individual Events)
+            <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--accent-emerald); margin-bottom: 14px;">
+                <i class="fa-solid fa-user"></i> Single Items (Individual Events) Default
             </h3>
             
-            <h5 style="color: #fff; margin-bottom: 8px; font-size: 0.9rem;">Rank Points</h5>
+            <h5 style="color: #fff; margin-bottom: 6px; font-size: 0.85rem;">Rank Points</h5>
             <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
-                <div class="form-group">
-                    <label class="form-label">1st Rank</label>
+                <div class="form-group" style="margin-bottom: 6px;">
+                    <label class="form-label" style="font-size: 0.78rem;">1st Rank</label>
                     <input type="number" name="single_rank_1_points" class="form-control" value="{{ config.single_rank_1_points }}" required min="0">
                 </div>
-                <div class="form-group">
-                    <label class="form-label">2nd Rank</label>
+                <div class="form-group" style="margin-bottom: 6px;">
+                    <label class="form-label" style="font-size: 0.78rem;">2nd Rank</label>
                     <input type="number" name="single_rank_2_points" class="form-control" value="{{ config.single_rank_2_points }}" required min="0">
                 </div>
-                <div class="form-group">
-                    <label class="form-label">3rd Rank</label>
+                <div class="form-group" style="margin-bottom: 6px;">
+                    <label class="form-label" style="font-size: 0.78rem;">3rd Rank</label>
                     <input type="number" name="single_rank_3_points" class="form-control" value="{{ config.single_rank_3_points }}" required min="0">
                 </div>
             </div>
 
             <!-- Single Grade Points Block -->
             <div id="single_grade_block" class="grade-section" style="{% if not config.enable_grades %}opacity: 0.35; pointer-events: none;{% endif %}">
-                <h5 style="color: #fff; margin: 18px 0 8px 0; font-size: 0.9rem;">Grade Points</h5>
-                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px;">
-                    <div class="form-group">
-                        <label class="form-label">A+ Grade</label>
+                <h5 style="color: #fff; margin: 12px 0 6px 0; font-size: 0.85rem;">Grade Points</h5>
+                <div class="responsive-4col-grid">
+                    <div class="form-group" style="margin-bottom: 6px;">
+                        <label class="form-label" style="font-size: 0.78rem;">A+ Grade</label>
                         <input type="number" name="single_grade_aplus_points" id="s_aplus" class="form-control" value="{{ config.single_grade_aplus_points }}" required min="0">
                     </div>
-                    <div class="form-group">
-                        <label class="form-label">A Grade</label>
+                    <div class="form-group" style="margin-bottom: 6px;">
+                        <label class="form-label" style="font-size: 0.78rem;">A Grade</label>
                         <input type="number" name="single_grade_a_points" id="s_a" class="form-control" value="{{ config.single_grade_a_points }}" required min="0">
                     </div>
-                    <div class="form-group">
-                        <label class="form-label">B Grade</label>
+                    <div class="form-group" style="margin-bottom: 6px;">
+                        <label class="form-label" style="font-size: 0.78rem;">B Grade</label>
                         <input type="number" name="single_grade_b_points" id="s_b" class="form-control" value="{{ config.single_grade_b_points }}" required min="0">
                     </div>
-                    <div class="form-group">
-                        <label class="form-label">C Grade</label>
+                    <div class="form-group" style="margin-bottom: 6px;">
+                        <label class="form-label" style="font-size: 0.78rem;">C Grade</label>
                         <input type="number" name="single_grade_c_points" id="s_c" class="form-control" value="{{ config.single_grade_c_points }}" required min="0">
                     </div>
                 </div>
@@ -107,44 +110,44 @@
 
         <!-- Group Items (Team Events) -->
         <div class="glass-card">
-            <h3 style="font-size: 1.2rem; font-weight: 700; color: var(--accent-amber); margin-bottom: 16px;">
-                <i class="fa-solid fa-people-group"></i> Group Items (Team Events)
+            <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--accent-amber); margin-bottom: 14px;">
+                <i class="fa-solid fa-people-group"></i> Group Items (Team Events) Default
             </h3>
             
-            <h5 style="color: #fff; margin-bottom: 8px; font-size: 0.9rem;">Rank Points</h5>
+            <h5 style="color: #fff; margin-bottom: 6px; font-size: 0.85rem;">Rank Points</h5>
             <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
-                <div class="form-group">
-                    <label class="form-label">1st Rank</label>
+                <div class="form-group" style="margin-bottom: 6px;">
+                    <label class="form-label" style="font-size: 0.78rem;">1st Rank</label>
                     <input type="number" name="group_rank_1_points" class="form-control" value="{{ config.group_rank_1_points }}" required min="0">
                 </div>
-                <div class="form-group">
-                    <label class="form-label">2nd Rank</label>
+                <div class="form-group" style="margin-bottom: 6px;">
+                    <label class="form-label" style="font-size: 0.78rem;">2nd Rank</label>
                     <input type="number" name="group_rank_2_points" class="form-control" value="{{ config.group_rank_2_points }}" required min="0">
                 </div>
-                <div class="form-group">
-                    <label class="form-label">3rd Rank</label>
+                <div class="form-group" style="margin-bottom: 6px;">
+                    <label class="form-label" style="font-size: 0.78rem;">3rd Rank</label>
                     <input type="number" name="group_rank_3_points" class="form-control" value="{{ config.group_rank_3_points }}" required min="0">
                 </div>
             </div>
 
             <!-- Group Grade Points Block -->
             <div id="group_grade_block" class="grade-section" style="{% if not config.enable_grades %}opacity: 0.35; pointer-events: none;{% endif %}">
-                <h5 style="color: #fff; margin: 18px 0 8px 0; font-size: 0.9rem;">Grade Points</h5>
-                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px;">
-                    <div class="form-group">
-                        <label class="form-label">A+ Grade</label>
+                <h5 style="color: #fff; margin: 12px 0 6px 0; font-size: 0.85rem;">Grade Points</h5>
+                <div class="responsive-4col-grid">
+                    <div class="form-group" style="margin-bottom: 6px;">
+                        <label class="form-label" style="font-size: 0.78rem;">A+ Grade</label>
                         <input type="number" name="group_grade_aplus_points" id="g_aplus" class="form-control" value="{{ config.group_grade_aplus_points }}" required min="0">
                     </div>
-                    <div class="form-group">
-                        <label class="form-label">A Grade</label>
+                    <div class="form-group" style="margin-bottom: 6px;">
+                        <label class="form-label" style="font-size: 0.78rem;">A Grade</label>
                         <input type="number" name="group_grade_a_points" id="g_a" class="form-control" value="{{ config.group_grade_a_points }}" required min="0">
                     </div>
-                    <div class="form-group">
-                        <label class="form-label">B Grade</label>
+                    <div class="form-group" style="margin-bottom: 6px;">
+                        <label class="form-label" style="font-size: 0.78rem;">B Grade</label>
                         <input type="number" name="group_grade_b_points" id="g_b" class="form-control" value="{{ config.group_grade_b_points }}" required min="0">
                     </div>
-                    <div class="form-group">
-                        <label class="form-label">C Grade</label>
+                    <div class="form-group" style="margin-bottom: 6px;">
+                        <label class="form-label" style="font-size: 0.78rem;">C Grade</label>
                         <input type="number" name="group_grade_c_points" id="g_c" class="form-control" value="{{ config.group_grade_c_points }}" required min="0">
                     </div>
                 </div>
@@ -153,50 +156,324 @@
 
         <!-- Grade Cutoff Thresholds -->
         <div class="glass-card" id="cutoff_threshold_card" style="grid-column: 1 / -1; {% if not config.enable_grades %}opacity: 0.35; pointer-events: none;{% endif %}">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--accent-indigo); margin: 0;">
-                    <i class="fa-solid fa-chart-line"></i> Grade Cutoff Threshold Marks (Out of 100)
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 6px;">
+                <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--accent-indigo); margin: 0;">
+                    <i class="fa-solid fa-chart-line"></i> Default Grade Cutoff Threshold Marks (Out of 100)
                 </h3>
                 <span id="grade_status_badge" class="badge {% if config.enable_grades %}badge-approved{% else %}badge-rejected{% endif %}">
                     {% if config.enable_grades %}Grades Active{% else %}Grades Disabled (Ranks Only){% endif %}
                 </span>
             </div>
             
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px;">
-                <div class="form-group">
-                    <label class="form-label">A+ Cutoff (e.g. 90+)</label>
+            <div class="responsive-4col-grid">
+                <div class="form-group" style="margin-bottom: 6px;">
+                    <label class="form-label" style="font-size: 0.78rem;">A+ Cutoff (e.g. 90+)</label>
                     <input type="number" name="grade_aplus_threshold" class="form-control" value="{{ config.grade_aplus_threshold }}" required min="0" max="100">
                 </div>
-                <div class="form-group">
-                    <label class="form-label">A Cutoff (e.g. 80+)</label>
+                <div class="form-group" style="margin-bottom: 6px;">
+                    <label class="form-label" style="font-size: 0.78rem;">A Cutoff (e.g. 80+)</label>
                     <input type="number" name="grade_a_threshold" class="form-control" value="{{ config.grade_a_threshold }}" required min="0" max="100">
                 </div>
-                <div class="form-group">
-                    <label class="form-label">B Cutoff (e.g. 70+)</label>
+                <div class="form-group" style="margin-bottom: 6px;">
+                    <label class="form-label" style="font-size: 0.78rem;">B Cutoff (e.g. 70+)</label>
                     <input type="number" name="grade_b_threshold" class="form-control" value="{{ config.grade_b_threshold }}" required min="0" max="100">
                 </div>
-                <div class="form-group">
-                    <label class="form-label">C Cutoff (e.g. 60+)</label>
+                <div class="form-group" style="margin-bottom: 6px;">
+                    <label class="form-label" style="font-size: 0.78rem;">C Cutoff (e.g. 60+)</label>
                     <input type="number" name="grade_c_threshold" class="form-control" value="{{ config.grade_c_threshold }}" required min="0" max="100">
                 </div>
             </div>
         </div>
-
     </div>
 
-    <div style="display: flex; justify-content: flex-end; margin-top: 24px;">
-        <button type="submit" class="btn-primary" style="font-size: 1.05rem; padding: 12px 32px; font-weight: 700;">
-            <i class="fa-solid fa-floppy-disk"></i> Save Scoring Rules
+    <div style="display: flex; justify-content: flex-end; margin-top: 16px; margin-bottom: 30px;">
+        <button type="submit" class="btn-primary" style="font-size: 1rem; padding: 10px 28px; font-weight: 700;">
+            <i class="fa-solid fa-floppy-disk"></i> Save Common Default Rules
         </button>
     </div>
 </form>
 
+<hr style="border: 0; border-top: 1px dashed rgba(255,255,255,0.15); margin: 24px 0;">
+
+<!-- SECTION 2: PROGRAM-SPECIFIC OVERRIDES -->
+<div class="page-section" id="programOverridesSection">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+        <div>
+            <h3 style="font-size: 1.3rem; font-weight: 800; color: #fff; margin: 0; display: flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-diagram-project" style="color: var(--accent-cyan);"></i> 2. Program-Specific Points & Grading Overrides
+            </h3>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin: 3px 0 0 0;">
+                Click any program button below to set custom points, switch to Ranks Only mode, or adjust cutoff marks for that program.
+            </p>
+        </div>
+        <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+            <span class="badge" style="background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); font-size: 0.78rem; padding: 4px 10px;">
+                <i class="fa-solid fa-star"></i> Custom Points
+            </span>
+            <span class="badge" style="background: rgba(148, 163, 184, 0.15); color: #cbd5e1; border: 1px solid rgba(148, 163, 184, 0.25); font-size: 0.78rem; padding: 4px 10px;">
+                <i class="fa-solid fa-circle-check"></i> Default
+            </span>
+        </div>
+    </div>
+
+    <!-- Filter & Search Toolbar -->
+    <div class="glass-card" style="padding: 12px 14px; margin-bottom: 16px; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255,255,255,0.08);">
+        <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center; justify-content: space-between;">
+            
+            <!-- Search Box -->
+            <div style="flex: 1; min-width: 200px; position: relative;">
+                <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 0.85rem;"></i>
+                <input type="text" id="progSearchInput" placeholder="Search programs..." 
+                       style="width: 100%; padding: 7px 10px 7px 32px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; color: #fff; font-size: 0.85rem;"
+                       onkeyup="filterProgramButtons()">
+            </div>
+
+            <!-- Filter Pills -->
+            <div style="display: flex; gap: 6px; flex-wrap: wrap;" id="filterPillsContainer">
+                <button type="button" class="filter-pill active" onclick="setProgramFilter('all', this)">All ({{ programs|length }})</button>
+                <button type="button" class="filter-pill" onclick="setProgramFilter('custom', this)">⭐ Custom Only</button>
+                <button type="button" class="filter-pill" onclick="setProgramFilter('single', this)">Single Items</button>
+                <button type="button" class="filter-pill" onclick="setProgramFilter('group', this)">Group Items</button>
+                
+                {% for cat in categories %}
+                <button type="button" class="filter-pill" onclick="setProgramFilter('cat-{{ cat.id }}', this)">{{ cat.name }}</button>
+                {% endfor %}
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Programs Buttons Grid: 10 per row on Computer / Large Screens, 3 per row on Mobile -->
+    {% if programs %}
+    <div class="program-buttons-grid" id="programButtonsGrid">
+        {% for prog in programs %}
+        <button type="button" 
+                class="prog-card-btn {% if prog.has_custom_points %}has-custom-points{% endif %}" 
+                id="prog_btn_{{ prog.id }}"
+                data-id="{{ prog.id }}"
+                data-name="{{ prog.name|lower }}"
+                data-type="{% if prog.is_group %}group{% else %}single{% endif %}"
+                data-cat="cat-{{ prog.category.id }}"
+                data-custom="{% if prog.has_custom_points %}custom{% else %}default{% endif %}"
+                onclick="openProgramConfigModal({{ prog.id }})"
+                title="{{ prog.name }} ({{ prog.category.name|default:'General' }}) - Click to configure scoring">
+            
+            <div class="prog-btn-top">
+                <span class="prog-type-badge {% if prog.is_group %}badge-group{% else %}badge-single{% endif %}">
+                    {% if prog.is_group %}Grp{% else %}Sngl{% endif %}
+                </span>
+                <span class="prog-cat-badge">
+                    {{ prog.category.name|default:"General" }}
+                </span>
+            </div>
+
+            <div class="prog-btn-title">
+                {{ prog.name }}
+            </div>
+
+            <div class="prog-btn-status" id="prog_badge_{{ prog.id }}">
+                {% if prog.has_custom_points %}
+                    <span class="status-pill custom-active">
+                        <i class="fa-solid fa-star"></i> {{ prog.points_summary_label }}
+                    </span>
+                {% else %}
+                    <span class="status-pill default-rule">
+                        <i class="fa-solid fa-gear"></i> Default
+                    </span>
+                {% endif %}
+            </div>
+
+        </button>
+        {% endfor %}
+    </div>
+    <div id="noProgramsMatch" style="display: none; text-align: center; padding: 30px; color: var(--text-muted);">
+        <i class="fa-solid fa-circle-info" style="font-size: 1.5rem; margin-bottom: 6px; display: block;"></i>
+        No programs match the selected filter or search term.
+    </div>
+    {% else %}
+    <div class="glass-card" style="text-align: center; padding: 30px; color: var(--text-muted);">
+        <i class="fa-solid fa-folder-open" style="font-size: 2rem; margin-bottom: 10px; display: block; color: var(--accent-cyan);"></i>
+        No programs created yet for this institution. Add programs in Program Management first.
+    </div>
+    {% endif %}
+
+</div>
+
+<!-- INTERACTIVE MODAL FOR PROGRAM POINTS CONFIGURATION -->
+<div class="modal-backdrop" id="progModalBackdrop" style="display: none;" onclick="closeProgramConfigModal(event)">
+    <div class="prog-modal-dialog" onclick="event.stopPropagation()">
+        
+        <!-- Modal Header -->
+        <div class="prog-modal-header">
+            <div>
+                <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+                    <span id="modalProgTypeBadge" class="badge badge-cyan" style="font-size: 0.72rem;">Single Event</span>
+                    <span id="modalProgCatBadge" class="badge" style="background: rgba(255,255,255,0.1); color: #cbd5e1; font-size: 0.72rem;">Category</span>
+                </div>
+                <h3 id="modalProgName" style="font-size: 1.2rem; font-weight: 800; color: #fff; margin: 0; word-break: break-word;">Program Name</h3>
+            </div>
+            <button type="button" class="prog-modal-close" onclick="closeProgramConfigModal()">&times;</button>
+        </div>
+
+        <!-- Loading State -->
+        <div id="modalLoadingState" style="text-align: center; padding: 36px;">
+            <i class="fa-solid fa-circle-notch fa-spin" style="font-size: 2rem; color: var(--accent-cyan);"></i>
+            <p style="color: var(--text-muted); margin-top: 10px; font-size: 0.88rem;">Loading scoring configuration...</p>
+        </div>
+
+        <!-- Modal Form Body -->
+        <form id="programCustomPointsForm" onsubmit="submitProgramPointsConfig(event)" style="display: none;">
+            <input type="hidden" id="modalProgId" name="program_id">
+            
+            <div class="prog-modal-body">
+                
+                <!-- Toggle: Default vs Custom -->
+                <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255,255,255,0.12); border-radius: 12px; padding: 14px; margin-bottom: 16px;">
+                    <label style="font-size: 0.88rem; font-weight: 700; color: #fff; display: block; margin-bottom: 10px;">
+                        Scoring Rule Type for this Program
+                    </label>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <label class="modal-choice-card" id="choice_default_card">
+                            <input type="radio" name="is_custom" value="0" id="radio_use_default" onchange="toggleModalCustomMode(false)">
+                            <div>
+                                <strong style="color: #fff; font-size: 0.88rem; display: block;">⚙️ Fest Defaults</strong>
+                                <span style="font-size: 0.75rem; color: #94a3b8; display: block; margin-top: 2px;" id="modalDefaultSummaryPreview">
+                                    Inherit common rules
+                                </span>
+                            </div>
+                        </label>
+                        <label class="modal-choice-card" id="choice_custom_card">
+                            <input type="radio" name="is_custom" value="1" id="radio_use_custom" onchange="toggleModalCustomMode(true)">
+                            <div>
+                                <strong style="color: #34d399; font-size: 0.88rem; display: block;">⭐ Custom Points</strong>
+                                <span style="font-size: 0.75rem; color: #cbd5e1; display: block; margin-top: 2px;">
+                                    Override rules
+                                </span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Custom Configuration Fields Wrapper -->
+                <div id="modalCustomSettingsFields">
+                    
+                    <!-- Program Scoring Mode -->
+                    <div style="margin-bottom: 14px;">
+                        <label style="font-size: 0.85rem; font-weight: 700; color: #cbd5e1; display: block; margin-bottom: 6px;">
+                            Evaluation Mode for this Program
+                        </label>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                            <label class="modal-mode-pill" id="modal_mode_grades_pill">
+                                <input type="radio" name="enable_grades" value="1" id="modal_enable_grades_1" onchange="toggleModalGrades(true)" style="accent-color: var(--accent-cyan);">
+                                <span>🏆 Ranks + Grades</span>
+                            </label>
+                            <label class="modal-mode-pill" id="modal_mode_ranks_pill">
+                                <input type="radio" name="enable_grades" value="0" id="modal_enable_grades_0" onchange="toggleModalGrades(false)" style="accent-color: var(--accent-amber);">
+                                <span>⚡ Ranks Only</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Rank Points Grid -->
+                    <div style="background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 12px; margin-bottom: 12px;">
+                        <h6 style="color: var(--accent-cyan); font-size: 0.82rem; font-weight: 700; margin: 0 0 8px 0; display: flex; align-items: center; gap: 6px;">
+                            <i class="fa-solid fa-trophy"></i> Rank Points
+                        </h6>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
+                            <div class="form-group" style="margin: 0;">
+                                <label class="form-label" style="font-size: 0.75rem;">1st Rank</label>
+                                <input type="number" name="rank_1_points" id="modal_r1" class="form-control form-control-sm" required min="0">
+                            </div>
+                            <div class="form-group" style="margin: 0;">
+                                <label class="form-label" style="font-size: 0.75rem;">2nd Rank</label>
+                                <input type="number" name="rank_2_points" id="modal_r2" class="form-control form-control-sm" required min="0">
+                            </div>
+                            <div class="form-group" style="margin: 0;">
+                                <label class="form-label" style="font-size: 0.75rem;">3rd Rank</label>
+                                <input type="number" name="rank_3_points" id="modal_r3" class="form-control form-control-sm" required min="0">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Grade Points Grid -->
+                    <div id="modalGradePointsSection" style="background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 12px; margin-bottom: 12px;">
+                        <h6 style="color: var(--accent-amber); font-size: 0.82rem; font-weight: 700; margin: 0 0 8px 0; display: flex; align-items: center; gap: 6px;">
+                            <i class="fa-solid fa-award"></i> Grade Points
+                        </h6>
+                        <div class="responsive-4col-grid">
+                            <div class="form-group" style="margin: 0;">
+                                <label class="form-label" style="font-size: 0.75rem;">A+ Grade</label>
+                                <input type="number" name="grade_aplus_points" id="modal_gap" class="form-control form-control-sm" required min="0">
+                            </div>
+                            <div class="form-group" style="margin: 0;">
+                                <label class="form-label" style="font-size: 0.75rem;">A Grade</label>
+                                <input type="number" name="grade_a_points" id="modal_ga" class="form-control form-control-sm" required min="0">
+                            </div>
+                            <div class="form-group" style="margin: 0;">
+                                <label class="form-label" style="font-size: 0.75rem;">B Grade</label>
+                                <input type="number" name="grade_b_points" id="modal_gb" class="form-control form-control-sm" required min="0">
+                            </div>
+                            <div class="form-group" style="margin: 0;">
+                                <label class="form-label" style="font-size: 0.75rem;">C Grade</label>
+                                <input type="number" name="grade_c_points" id="modal_gc" class="form-control form-control-sm" required min="0">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Grade Threshold Cutoffs Grid -->
+                    <div id="modalGradeCutoffsSection" style="background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 12px; margin-bottom: 8px;">
+                        <h6 style="color: var(--accent-indigo); font-size: 0.82rem; font-weight: 700; margin: 0 0 8px 0; display: flex; align-items: center; gap: 6px;">
+                            <i class="fa-solid fa-chart-line"></i> Grade Cutoff Marks (Out of 100)
+                        </h6>
+                        <div class="responsive-4col-grid">
+                            <div class="form-group" style="margin: 0;">
+                                <label class="form-label" style="font-size: 0.75rem;">A+ Cutoff</label>
+                                <input type="number" name="grade_aplus_threshold" id="modal_th_aplus" class="form-control form-control-sm" required min="0" max="100">
+                            </div>
+                            <div class="form-group" style="margin: 0;">
+                                <label class="form-label" style="font-size: 0.75rem;">A Cutoff</label>
+                                <input type="number" name="grade_a_threshold" id="modal_th_a" class="form-control form-control-sm" required min="0" max="100">
+                            </div>
+                            <div class="form-group" style="margin: 0;">
+                                <label class="form-label" style="font-size: 0.75rem;">B Cutoff</label>
+                                <input type="number" name="grade_b_threshold" id="modal_th_b" class="form-control form-control-sm" required min="0" max="100">
+                            </div>
+                            <div class="form-group" style="margin: 0;">
+                                <label class="form-label" style="font-size: 0.75rem;">C Cutoff</label>
+                                <input type="number" name="grade_c_threshold" id="modal_th_c" class="form-control form-control-sm" required min="0" max="100">
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- Modal Footer Actions -->
+            <div class="prog-modal-footer">
+                <button type="button" class="btn-secondary" onclick="closeProgramConfigModal()" style="font-size: 0.85rem; padding: 7px 14px;">
+                    Cancel
+                </button>
+                <button type="button" id="modalResetBtn" class="btn-danger-subtle" onclick="resetProgramToDefaults()" style="display: none; font-size: 0.85rem; padding: 7px 14px;">
+                    <i class="fa-solid fa-rotate-left"></i> Reset to Default
+                </button>
+                <button type="submit" id="modalSubmitBtn" class="btn-primary" style="font-weight: 700; font-size: 0.85rem; padding: 7px 18px;">
+                    <i class="fa-solid fa-check"></i> Save Rules
+                </button>
+            </div>
+        </form>
+
+    </div>
+</div>
+
+<!-- STYLES -->
 <style>
+/* Mode Cards */
 .mode-card {
     background: rgba(15, 23, 42, 0.6);
     border: 2px solid rgba(255, 255, 255, 0.1);
     border-radius: 12px;
-    padding: 16px;
+    padding: 14px;
     cursor: pointer;
     transition: all 0.2s;
     display: block;
@@ -215,9 +492,325 @@
     background: rgba(245, 158, 11, 0.12);
     box-shadow: 0 4px 18px rgba(245, 158, 11, 0.2);
 }
+
+/* 4-column responsive grid */
+.responsive-4col-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+}
+@media (max-width: 600px) {
+    .responsive-4col-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+    }
+}
+
+/* Filter Pills */
+.filter-pill {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: #cbd5e1;
+    padding: 5px 11px;
+    border-radius: 20px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.18s ease;
+    white-space: nowrap;
+}
+.filter-pill:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.25);
+}
+.filter-pill.active {
+    background: var(--accent-cyan);
+    color: #0f172a;
+    border-color: var(--accent-cyan);
+    box-shadow: 0 2px 10px rgba(6, 182, 212, 0.3);
+}
+
+/* Program Buttons Grid: 
+   - 10 buttons per row on Computer / Large Screens (>= 1100px)
+   - 6-8 buttons per row on medium desktop / tablet landscape (768px - 1099px)
+   - 3 buttons per row on Mobile (< 768px)
+*/
+.program-buttons-grid {
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    gap: 8px;
+    width: 100%;
+}
+
+@media (max-width: 1400px) and (min-width: 1100px) {
+    .program-buttons-grid {
+        grid-template-columns: repeat(10, 1fr);
+        gap: 6px;
+    }
+}
+
+@media (max-width: 1099px) and (min-width: 768px) {
+    .program-buttons-grid {
+        grid-template-columns: repeat(6, 1fr);
+        gap: 6px;
+    }
+}
+
+@media (max-width: 767px) {
+    .program-buttons-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 6px;
+    }
+}
+
+.prog-card-btn {
+    background: linear-gradient(145deg, rgba(30, 41, 59, 0.85), rgba(15, 23, 42, 0.95));
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+    padding: 7px 8px;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.16s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 76px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.prog-card-btn:hover {
+    transform: translateY(-2px);
+    border-color: var(--accent-cyan);
+    box-shadow: 0 4px 16px rgba(6, 182, 212, 0.3);
+    background: linear-gradient(145deg, rgba(30, 41, 59, 0.98), rgba(15, 23, 42, 0.98));
+    z-index: 2;
+}
+
+.prog-card-btn.has-custom-points {
+    border-color: rgba(16, 185, 129, 0.55);
+    background: linear-gradient(145deg, rgba(6, 78, 59, 0.45), rgba(15, 23, 42, 0.92));
+}
+.prog-card-btn.has-custom-points:hover {
+    border-color: #34d399;
+    box-shadow: 0 4px 16px rgba(16, 185, 129, 0.4);
+}
+
+.prog-btn-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 3px;
+    margin-bottom: 4px;
+}
+.prog-type-badge {
+    font-size: 0.62rem;
+    font-weight: 700;
+    padding: 1px 4px;
+    border-radius: 4px;
+    letter-spacing: 0.2px;
+    text-transform: uppercase;
+    white-space: nowrap;
+    line-height: 1.2;
+}
+.prog-type-badge.badge-single {
+    background: rgba(6, 182, 212, 0.15);
+    color: var(--accent-cyan);
+    border: 1px solid rgba(6, 182, 212, 0.3);
+}
+.prog-type-badge.badge-group {
+    background: rgba(245, 158, 11, 0.15);
+    color: var(--accent-amber);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+}
+.prog-cat-badge {
+    font-size: 0.62rem;
+    color: #94a3b8;
+    background: rgba(255,255,255,0.06);
+    padding: 1px 4px;
+    border-radius: 3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 60px;
+    line-height: 1.2;
+}
+
+.prog-btn-title {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1.2;
+    margin-bottom: 6px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    word-break: break-word;
+}
+
+.status-pill {
+    font-size: 0.65rem;
+    font-weight: 600;
+    padding: 1px 5px;
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    line-height: 1.3;
+}
+.status-pill.default-rule {
+    background: rgba(148, 163, 184, 0.12);
+    color: #94a3b8;
+    border: 1px solid rgba(148, 163, 184, 0.2);
+}
+.status-pill.custom-active {
+    background: rgba(16, 185, 129, 0.22);
+    color: #34d399;
+    border: 1px solid rgba(16, 185, 129, 0.45);
+}
+
+/* Modal Dialog */
+.modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.78);
+    backdrop-filter: blur(6px);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
+}
+
+.prog-modal-dialog {
+    background: linear-gradient(145deg, #1e293b, #0f172a);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 14px;
+    width: 100%;
+    max-width: 540px;
+    max-height: 92vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+    animation: modalPop 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modalPop {
+    from { opacity: 0; transform: scale(0.96) translateY(8px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.prog-modal-header {
+    padding: 14px 18px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.prog-modal-close {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 1.5rem;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0;
+    margin: -2px -2px 0 0;
+    transition: color 0.15s;
+}
+.prog-modal-close:hover {
+    color: #fff;
+}
+
+.prog-modal-body {
+    padding: 16px 18px;
+}
+
+.prog-modal-footer {
+    padding: 12px 18px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 8px;
+    background: rgba(0, 0, 0, 0.25);
+    flex-wrap: wrap;
+}
+
+.modal-choice-card {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1.5px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    transition: all 0.2s;
+}
+.modal-choice-card.active {
+    border-color: var(--accent-cyan);
+    background: rgba(6, 182, 212, 0.12);
+}
+#choice_custom_card.active {
+    border-color: #34d399;
+    background: rgba(16, 185, 129, 0.12);
+}
+
+.modal-mode-pill {
+    background: rgba(0,0,0,0.3);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px;
+    padding: 7px 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #cbd5e1;
+    transition: all 0.18s;
+}
+.modal-mode-pill.active {
+    border-color: var(--accent-cyan);
+    background: rgba(6, 182, 212, 0.15);
+    color: #fff;
+}
+
+.btn-danger-subtle {
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #f87171;
+    padding: 7px 14px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.btn-danger-subtle:hover {
+    background: rgba(239, 68, 68, 0.25);
+    color: #fff;
+    border-color: #ef4444;
+}
 </style>
 
+<!-- SCRIPTS -->
 <script>
+// Toggle Common Fest Default Grading Mode
 function toggleGradingMode(enable) {
     const cardStd = document.getElementById('mode_card_standard');
     const cardRankOnly = document.getElementById('mode_card_ranksonly');
@@ -253,6 +846,316 @@ function toggleGradingMode(enable) {
             badge.innerText = 'Grades Disabled (Ranks Only)';
         }
     }
+}
+
+// Program Filter & Search
+let currentFilter = 'all';
+
+function setProgramFilter(filterKey, element) {
+    currentFilter = filterKey;
+    document.querySelectorAll('#filterPillsContainer .filter-pill').forEach(pill => pill.classList.remove('active'));
+    if (element) element.classList.add('active');
+    filterProgramButtons();
+}
+
+function filterProgramButtons() {
+    const query = (document.getElementById('progSearchInput').value || '').trim().toLowerCase();
+    const cards = document.querySelectorAll('#programButtonsGrid .prog-card-btn');
+    let visibleCount = 0;
+
+    cards.forEach(card => {
+        const name = card.dataset.name || '';
+        const type = card.dataset.type || '';
+        const cat = card.dataset.cat || '';
+        const custom = card.dataset.custom || '';
+
+        let matchesFilter = true;
+        if (currentFilter === 'custom' && custom !== 'custom') matchesFilter = false;
+        else if (currentFilter === 'single' && type !== 'single') matchesFilter = false;
+        else if (currentFilter === 'group' && type !== 'group') matchesFilter = false;
+        else if (currentFilter.startsWith('cat-') && cat !== currentFilter) matchesFilter = false;
+
+        const matchesQuery = !query || name.includes(query);
+
+        if (matchesFilter && matchesQuery) {
+            card.style.display = 'flex';
+            visibleCount++;
+        } else {
+            card.style.display = 'none';
+        }
+    });
+
+    const noMatch = document.getElementById('noProgramsMatch');
+    if (noMatch) {
+        noMatch.style.display = visibleCount === 0 ? 'block' : 'none';
+    }
+}
+
+// Program Points Modal Handling
+let cachedProgramData = null;
+
+function openProgramConfigModal(programId) {
+    const modal = document.getElementById('progModalBackdrop');
+    const loading = document.getElementById('modalLoadingState');
+    const form = document.getElementById('programCustomPointsForm');
+    
+    modal.style.display = 'flex';
+    loading.style.display = 'block';
+    form.style.display = 'none';
+
+    // Fetch Program configuration via API
+    fetch(`/portal/{{ institution.slug }}/points-config/program/${programId}/`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success') {
+                cachedProgramData = data;
+                populateModal(data);
+                loading.style.display = 'none';
+                form.style.display = 'block';
+            } else {
+                alert(data.message || 'Failed to load program configuration');
+                closeProgramConfigModal();
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            alert('An error occurred while loading program details.');
+            closeProgramConfigModal();
+        });
+}
+
+function populateModal(data) {
+    document.getElementById('modalProgId').value = data.program.id;
+    document.getElementById('modalProgName').innerText = data.program.name;
+    
+    const typeBadge = document.getElementById('modalProgTypeBadge');
+    typeBadge.innerText = data.program.type_label;
+    typeBadge.className = `badge ${data.program.is_group ? 'badge-amber' : 'badge-cyan'}`;
+
+    const catBadge = document.getElementById('modalProgCatBadge');
+    catBadge.innerText = data.program.category;
+
+    const defPreview = document.getElementById('modalDefaultSummaryPreview');
+    if (data.defaults.enable_grades) {
+        defPreview.innerText = `Ranks (${data.defaults.rank_1_points}, ${data.defaults.rank_2_points}, ${data.defaults.rank_3_points} pts) + Grades`;
+    } else {
+        defPreview.innerText = `Ranks Only (${data.defaults.rank_1_points}, ${data.defaults.rank_2_points}, ${data.defaults.rank_3_points} pts)`;
+    }
+
+    const isCustom = data.custom.is_custom;
+    document.getElementById('radio_use_default').checked = !isCustom;
+    document.getElementById('radio_use_custom').checked = isCustom;
+
+    // Prefill custom values if present, else defaults
+    const vals = isCustom ? data.custom : data.defaults;
+
+    const enableGrades = isCustom ? data.custom.enable_grades : data.defaults.enable_grades;
+    document.getElementById('modal_enable_grades_1').checked = enableGrades;
+    document.getElementById('modal_enable_grades_0').checked = !enableGrades;
+
+    document.getElementById('modal_r1').value = vals.rank_1_points;
+    document.getElementById('modal_r2').value = vals.rank_2_points;
+    document.getElementById('modal_r3').value = vals.rank_3_points;
+
+    document.getElementById('modal_gap').value = vals.grade_aplus_points;
+    document.getElementById('modal_ga').value = vals.grade_a_points;
+    document.getElementById('modal_gb').value = vals.grade_b_points;
+    document.getElementById('modal_gc').value = vals.grade_c_points;
+
+    document.getElementById('modal_th_aplus').value = vals.grade_aplus_threshold;
+    document.getElementById('modal_th_a').value = vals.grade_a_threshold;
+    document.getElementById('modal_th_b').value = vals.grade_b_threshold;
+    document.getElementById('modal_th_c').value = vals.grade_c_threshold;
+
+    // Show/Hide Reset Button
+    const resetBtn = document.getElementById('modalResetBtn');
+    resetBtn.style.display = isCustom ? 'inline-flex' : 'none';
+
+    toggleModalCustomMode(isCustom);
+    toggleModalGrades(enableGrades);
+}
+
+function toggleModalCustomMode(isCustom) {
+    const cardDef = document.getElementById('choice_default_card');
+    const cardCust = document.getElementById('choice_custom_card');
+    const fields = document.getElementById('modalCustomSettingsFields');
+
+    if (isCustom) {
+        cardCust.classList.add('active');
+        cardDef.classList.remove('active');
+        fields.style.opacity = '1';
+        fields.style.pointerEvents = 'auto';
+    } else {
+        cardDef.classList.add('active');
+        cardCust.classList.remove('active');
+        fields.style.opacity = '0.4';
+        fields.style.pointerEvents = 'none';
+    }
+}
+
+function toggleModalGrades(enable) {
+    const pillGrades = document.getElementById('modal_mode_grades_pill');
+    const pillRanks = document.getElementById('modal_mode_ranks_pill');
+    const gradePts = document.getElementById('modalGradePointsSection');
+    const gradeCutoffs = document.getElementById('modalGradeCutoffsSection');
+
+    if (enable) {
+        pillGrades.classList.add('active');
+        pillRanks.classList.remove('active');
+        gradePts.style.opacity = '1';
+        gradePts.style.pointerEvents = 'auto';
+        gradeCutoffs.style.opacity = '1';
+        gradeCutoffs.style.pointerEvents = 'auto';
+    } else {
+        pillRanks.classList.add('active');
+        pillGrades.classList.remove('active');
+        gradePts.style.opacity = '0.35';
+        gradePts.style.pointerEvents = 'none';
+        gradeCutoffs.style.opacity = '0.35';
+        gradeCutoffs.style.pointerEvents = 'none';
+    }
+}
+
+function closeProgramConfigModal(e) {
+    if (!e || e.target.id === 'progModalBackdrop' || e.target.classList.contains('prog-modal-close') || e.target.classList.contains('btn-secondary')) {
+        document.getElementById('progModalBackdrop').style.display = 'none';
+    }
+}
+
+function submitProgramPointsConfig(e) {
+    e.preventDefault();
+    const progId = document.getElementById('modalProgId').value;
+    const form = document.getElementById('programCustomPointsForm');
+    const formData = new FormData(form);
+    
+    const submitBtn = document.getElementById('modalSubmitBtn');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Saving...';
+
+    fetch(`/portal/{{ institution.slug }}/points-config/program/${progId}/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
+        if (data.status === 'success') {
+            updateProgramCardUI(data.program_id, data.is_custom, data.summary_label);
+            closeProgramConfigModal();
+            showToastMessage(data.message);
+        } else {
+            alert(data.message || 'Failed to save configuration.');
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
+        alert('An error occurred while saving.');
+    });
+}
+
+function resetProgramToDefaults() {
+    if (!confirm('Are you sure you want to reset this program to Fest Default Rules?')) return;
+    const progId = document.getElementById('modalProgId').value;
+    const formData = new FormData();
+    formData.append('action', 'reset_default');
+
+    const resetBtn = document.getElementById('modalResetBtn');
+    resetBtn.disabled = true;
+
+    fetch(`/portal/{{ institution.slug }}/points-config/program/${progId}/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        resetBtn.disabled = false;
+        if (data.status === 'success') {
+            updateProgramCardUI(data.program_id, false, data.summary_label);
+            closeProgramConfigModal();
+            showToastMessage(data.message);
+        } else {
+            alert(data.message || 'Failed to reset configuration.');
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        resetBtn.disabled = false;
+        alert('An error occurred while resetting.');
+    });
+}
+
+function updateProgramCardUI(progId, isCustom, summaryLabel) {
+    const card = document.getElementById(`prog_btn_${progId}`);
+    const badgeContainer = document.getElementById(`prog_badge_${progId}`);
+    if (!card || !badgeContainer) return;
+
+    card.dataset.custom = isCustom ? 'custom' : 'default';
+
+    if (isCustom) {
+        card.classList.add('has-custom-points');
+        badgeContainer.innerHTML = `
+            <span class="status-pill custom-active">
+                <i class="fa-solid fa-star"></i> ${summaryLabel}
+            </span>
+        `;
+    } else {
+        card.classList.remove('has-custom-points');
+        badgeContainer.innerHTML = `
+            <span class="status-pill default-rule">
+                <i class="fa-solid fa-gear"></i> Default
+            </span>
+        `;
+    }
+}
+
+function showToastMessage(msg) {
+    const toast = document.createElement('div');
+    toast.style.position = 'fixed';
+    toast.style.bottom = '20px';
+    toast.style.right = '20px';
+    toast.style.background = 'linear-gradient(135deg, #059669, #10b981)';
+    toast.style.color = '#fff';
+    toast.style.padding = '10px 20px';
+    toast.style.borderRadius = '8px';
+    toast.style.boxShadow = '0 10px 25px rgba(0,0,0,0.4)';
+    toast.style.zIndex = '100000';
+    toast.style.fontWeight = '600';
+    toast.style.display = 'flex';
+    toast.style.alignItems = 'center';
+    toast.style.gap = '8px';
+    toast.style.fontSize = '0.88rem';
+    toast.innerHTML = `<i class="fa-solid fa-circle-check" style="font-size: 1rem;"></i> ${msg}`;
+    document.body.appendChild(toast);
+    setTimeout(() => {
+        toast.style.transition = 'opacity 0.4s ease';
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 400);
+    }, 3200);
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
 }
 </script>
 {% endblock %}
