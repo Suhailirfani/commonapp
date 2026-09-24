@@ -1,0 +1,313 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Prize Distribution Stage Call Sheet - {{ institution.name }}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @page {
+            size: A4 portrait;
+            margin: 12mm 12mm 12mm 12mm;
+        }
+
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: #fff;
+            color: #111;
+            margin: 0;
+            padding: 15px;
+            font-size: 11pt;
+            line-height: 1.35;
+        }
+
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #000;
+            padding-bottom: 8px;
+            margin-bottom: 14px;
+        }
+
+        .inst-title {
+            font-size: 16pt;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin: 0;
+        }
+
+        .doc-title {
+            font-size: 13pt;
+            font-weight: 700;
+            margin: 4px 0 0 0;
+            color: #333;
+        }
+
+        .meta-bar {
+            display: flex;
+            justify-content: space-between;
+            font-size: 9pt;
+            color: #555;
+            margin-top: 6px;
+        }
+
+        .program-block {
+            border: 1px solid #444;
+            border-radius: 6px;
+            margin-bottom: 12px;
+            page-break-inside: avoid;
+            overflow: hidden;
+        }
+
+        .program-header {
+            background-color: #f1f5f9;
+            border-bottom: 1px solid #cbd5e1;
+            padding: 6px 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .program-title {
+            font-size: 11pt;
+            font-weight: 800;
+            margin: 0;
+        }
+
+        .winner-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 10pt;
+        }
+
+        .winner-table th {
+            background-color: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 5px 8px;
+            text-align: left;
+            font-size: 8.5pt;
+            text-transform: uppercase;
+            color: #475569;
+        }
+
+        .winner-table td {
+            padding: 6px 8px;
+            border-bottom: 1px solid #f1f5f9;
+            vertical-align: middle;
+        }
+
+        .rank-tag {
+            font-weight: 800;
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 8.5pt;
+        }
+
+        .rank-1 { background-color: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+        .rank-2 { background-color: #f1f5f9; color: #334155; border: 1px solid #e2e8f0; }
+        .rank-3 { background-color: #ffedd5; color: #9a3412; border: 1px solid #fed7aa; }
+
+        .checkbox-cell {
+            width: 32px;
+            text-align: center;
+        }
+
+        .checkbox-box {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 1.5px solid #333;
+            border-radius: 3px;
+        }
+
+        .multi-tag {
+            background-color: #ede9fe;
+            color: #5b21b6;
+            border: 1px solid #ddd6fe;
+            border-radius: 3px;
+            padding: 1px 4px;
+            font-size: 7.5pt;
+            font-weight: 700;
+            margin-left: 4px;
+        }
+
+        .earlier-tag {
+            background-color: #ecfdf5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+            border-radius: 3px;
+            padding: 1px 4px;
+            font-size: 7.5pt;
+            font-weight: 600;
+            margin-left: 4px;
+        }
+
+        .other-prizes-subtext {
+            font-size: 8pt;
+            color: #6b21a8;
+            margin-top: 2px;
+            font-weight: 600;
+        }
+
+        .no-print {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #1e293b;
+            color: #fff;
+            padding: 10px 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+        }
+
+        .btn {
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-weight: 700;
+            font-size: 9pt;
+            cursor: pointer;
+            border: none;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn-print { background: #10b981; color: #fff; }
+        .btn-back { background: #475569; color: #fff; }
+
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+            body {
+                padding: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="no-print">
+        <div>
+            <strong>STAGE CALL SHEET: PRIZE DISTRIBUTION</strong>
+            <span style="color: #94a3b8; font-size: 9pt; margin-left: 10px;">Showing Ranks 1 to {{ rank_limit }}</span>
+        </div>
+        <div style="display: flex; gap: 8px;">
+            <button onclick="window.print()" class="btn btn-print"><i class="fa-solid fa-print"></i> Print Now</button>
+            <a href="{% url 'core:prize_distribution' institution.slug %}" class="btn btn-back"><i class="fa-solid fa-arrow-left"></i> Back to Hub</a>
+        </div>
+    </div>
+
+    <div class="header">
+        <h1 class="inst-title">{{ institution.name }}</h1>
+        <h2 class="doc-title">
+            {% if competition %}{{ competition.name }} - {% endif %}Official Prize Distribution Call Sheet
+        </h2>
+        <div class="meta-bar">
+            <span><strong>Rank Filter:</strong> Up to Rank {{ rank_limit }}</span>
+            <span><strong>Total Eligible Prizes:</strong> {{ total_eligible_prizes }}</span>
+            <span><strong>Multi-Prize Winners:</strong> {{ multi_prize_contestants_count }}</span>
+            <span><strong>Printed At:</strong> {% now "d M Y, h:i A" %}</span>
+        </div>
+    </div>
+
+    {% for item in program_queue %}
+    {% with prog=item.program singles=item.singles groups=item.groups %}
+    <div class="program-block">
+        <div class="program-header">
+            <div class="program-title">
+                #{{ prog.result_number|default:forloop.counter }}. {{ prog.name }}
+                {% if prog.code %}<span style="color: #64748b; font-size: 9pt;">({{ prog.code }})</span>{% endif %}
+            </div>
+            <div style="font-size: 8.5pt; color: #475569; font-weight: 600;">
+                {{ prog.category.name|default:"General" }} • {% if prog.is_group %}Group Event{% else %}Single Event{% endif %}
+            </div>
+        </div>
+
+        <table class="winner-table">
+            <thead>
+                <tr>
+                    <th class="checkbox-cell">Handed</th>
+                    <th style="width: 70px;">Rank</th>
+                    <th style="width: 80px;">Chest No</th>
+                    <th>Winner / Team Name</th>
+                    <th>Team</th>
+                    <th style="width: 60px;">Grade</th>
+                    <th style="width: 140px;">Stage Handover Note</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for sp in singles %}
+                <tr>
+                    <td class="checkbox-cell">
+                        <span class="checkbox-box">{% if sp.prize_distributed %}&#10003;{% endif %}</span>
+                    </td>
+                    <td>
+                        <span class="rank-tag rank-{{ sp.rank }}">Rank {{ sp.rank }}</span>
+                    </td>
+                    <td><strong>{{ sp.contestant.chest_no }}</strong></td>
+                    <td>
+                        <strong>{{ sp.contestant.name }}</strong>
+                        {% if sp.has_multiple_prizes %}
+                            {% if sp.is_first_call %}
+                            <span class="multi-tag">★ 1ST CALL ({{ sp.total_prizes_count }} Prizes)</span>
+                            <div class="other-prizes-subtext">
+                                Hand over all {{ sp.total_prizes_count }} prizes together:
+                                {% for op in sp.other_prizes %}
+                                [{{ op.program.name }} - R{{ op.rank }}]{% if not forloop.last %}, {% endif %}
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <span class="earlier-tag">✓ Called Earlier in {{ sp.first_call_program.name }}</span>
+                            {% endif %}
+                        {% endif %}
+                    </td>
+                    <td>{{ sp.contestant.team.name|default:"-" }}</td>
+                    <td>{{ sp.grade|default:"-" }}</td>
+                    <td style="font-size: 8pt; color: #666;">
+                        {% if sp.prize_distributed %}
+                            Distributed
+                        {% else %}
+                            _________________
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+
+                {% for gp in groups %}
+                <tr>
+                    <td class="checkbox-cell">
+                        <span class="checkbox-box">{% if gp.prize_distributed %}&#10003;{% endif %}</span>
+                    </td>
+                    <td>
+                        <span class="rank-tag rank-{{ gp.rank }}">Rank {{ gp.rank }}</span>
+                    </td>
+                    <td>-</td>
+                    <td>
+                        <strong>{{ gp.team.name }}</strong>
+                        {% if gp.group_name %}<span style="color: #555;">({{ gp.group_name }})</span>{% endif %}
+                        <div style="font-size: 8pt; color: #666;">
+                            {% if gp.captain %}Captain: {{ gp.captain.name }} (Chest: {{ gp.captain.chest_no }}) • {% endif %}
+                            {{ gp.contestants.count }} Members
+                        </div>
+                    </td>
+                    <td>{{ gp.team.name }}</td>
+                    <td>{{ gp.grade|default:"-" }}</td>
+                    <td style="font-size: 8pt; color: #666;">
+                        {% if gp.prize_distributed %}
+                            Distributed
+                        {% else %}
+                            _________________
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endwith %}
+    {% endfor %}
+
+</body>
+</html>

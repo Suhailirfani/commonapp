@@ -460,6 +460,62 @@ class Contestant(TenantBaseModel):
     def total_programs_count(self):
         return self.single_programs_count + self.group_programs_count
 
+    @property
+    def all_assigned_programs(self):
+        """
+        Returns a list of dictionaries with unified program details for both single and group participations.
+        """
+        results = []
+        seen_prog_ids = set()
+
+        # 1. Single participations
+        for part in self.participations.all():
+            if part.program_id not in seen_prog_ids:
+                seen_prog_ids.add(part.program_id)
+                results.append({
+                    'id': part.program.id,
+                    'name': part.program.name,
+                    'program': part.program,
+                    'is_group': False,
+                    'role': 'Single',
+                    'badge_label': 'Single',
+                    'type_display': part.program.get_program_type_display(),
+                    'code_letter': part.code_letter,
+                })
+
+        # 2. Group participations as captain
+        for gp in self.captain_groups.all():
+            if gp.program_id not in seen_prog_ids:
+                seen_prog_ids.add(gp.program_id)
+                results.append({
+                    'id': gp.program.id,
+                    'name': gp.program.name,
+                    'program': gp.program,
+                    'is_group': True,
+                    'role': 'Captain',
+                    'badge_label': 'Group (Captain)',
+                    'type_display': gp.program.get_program_type_display(),
+                    'code_letter': gp.code_letter,
+                })
+
+        # 3. Group participations as member
+        for gp in self.group_entries.all():
+            if gp.program_id not in seen_prog_ids:
+                seen_prog_ids.add(gp.program_id)
+                is_capt = (gp.captain_id == self.id)
+                results.append({
+                    'id': gp.program.id,
+                    'name': gp.program.name,
+                    'program': gp.program,
+                    'is_group': True,
+                    'role': 'Captain' if is_capt else 'Group Member',
+                    'badge_label': 'Group (Captain)' if is_capt else 'Group',
+                    'type_display': gp.program.get_program_type_display(),
+                    'code_letter': gp.code_letter,
+                })
+
+        return results
+
     def can_enroll_single(self, additional=1):
         """Checks if contestant can enroll in additional single program(s). Returns (can_enroll: bool, reason: str)."""
         comp = self.competition
@@ -521,6 +577,9 @@ class Participation(TenantBaseModel):
     grade = models.CharField(max_length=2, null=True, blank=True)
     points_awarded = models.BooleanField(default=False)
     marks_added_at = models.DateTimeField(default=timezone.now, null=True, blank=True)
+    prize_distributed = models.BooleanField(default=False)
+    prize_distributed_at = models.DateTimeField(null=True, blank=True)
+    prize_distributed_notes = models.CharField(max_length=255, blank=True, default='')
 
     class Meta:
         unique_together = ('program', 'contestant')
@@ -596,6 +655,9 @@ class GroupParticipation(TenantBaseModel):
     grade = models.CharField(max_length=2, null=True, blank=True)
     points_awarded = models.BooleanField(default=False)
     marks_added_at = models.DateTimeField(default=timezone.now, null=True, blank=True)
+    prize_distributed = models.BooleanField(default=False)
+    prize_distributed_at = models.DateTimeField(null=True, blank=True)
+    prize_distributed_notes = models.CharField(max_length=255, blank=True, default='')
 
     class Meta:
         ordering = ['program', 'rank', '-marks']
@@ -701,6 +763,12 @@ class PointsConfig(TenantBaseModel):
     grade_a_threshold = models.IntegerField(default=80)
     grade_b_threshold = models.IntegerField(default=70)
     grade_c_threshold = models.IntegerField(default=60)
+
+    # Prize Distribution Settings
+    prize_rank_limit = models.PositiveIntegerField(
+        default=3, 
+        help_text="Default rank cutoff for prize distribution (e.g. 1 for 1st only, 2 for 1st & 2nd, 3 for 1st, 2nd & 3rd)"
+    )
 
     class Meta:
         unique_together = ('institution',)

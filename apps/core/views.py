@@ -4,6 +4,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse, HttpResponse
 from django.urls import reverse
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
 from django.contrib import messages
 from django.utils import timezone
 from django.db.models import Q, Count
@@ -1530,6 +1531,13 @@ def points_config_view(request, institution_slug):
         config.grade_b_threshold = int(request.POST.get('grade_b_threshold', 70))
         config.grade_c_threshold = int(request.POST.get('grade_c_threshold', 60))
 
+        # Prize Rank Limit
+        if request.POST.get('prize_rank_limit'):
+            try:
+                config.prize_rank_limit = int(request.POST.get('prize_rank_limit', 3))
+            except (ValueError, TypeError):
+                pass
+
         config.save()
 
         # Recalculate results for programs relying on default points and update standings
@@ -2390,12 +2398,17 @@ def assigned_programs_list_view(request, institution_slug):
     if managed_team:
         teams = Team.objects.filter(id=managed_team.id).prefetch_related(
             'contestants', 
-            'contestants__participations__program'
+            'contestants__category',
+            'contestants__participations__program',
+            'contestants__captain_groups__program',
+            'contestants__group_entries__program',
         )
         contestants = Contestant.objects.filter(institution=institution, team=managed_team).select_related(
             'team', 'category'
         ).prefetch_related(
-            'participations__program'
+            'participations__program',
+            'captain_groups__program',
+            'group_entries__program',
         )
         programs = Program.objects.filter(institution=institution).select_related(
             'category', 'competition'
@@ -2413,23 +2426,30 @@ def assigned_programs_list_view(request, institution_slug):
             'programs', 
             'programs__single_participations__contestant',
             'programs__single_participations__contestant__team',
-            'programs__group_participations__team'
+            'programs__group_participations__team',
+            'programs__group_participations__captain',
         )
         teams = Team.objects.filter(institution=institution).prefetch_related(
             'contestants', 
-            'contestants__participations__program'
+            'contestants__category',
+            'contestants__participations__program',
+            'contestants__captain_groups__program',
+            'contestants__group_entries__program',
         )
         programs = Program.objects.filter(institution=institution).select_related(
             'category', 'competition'
         ).prefetch_related(
             'single_participations__contestant',
             'single_participations__contestant__team',
-            'group_participations__team'
+            'group_participations__team',
+            'group_participations__captain',
         )
         contestants = Contestant.objects.filter(institution=institution).select_related(
             'team', 'category'
         ).prefetch_related(
-            'participations__program'
+            'participations__program',
+            'captain_groups__program',
+            'group_entries__program',
         )
 
     return render(request, 'core/assigned_programs_list.html', {
@@ -2682,7 +2702,13 @@ def download_assigned_programs_teamwise_pdf_view(request, institution_slug):
     team_data = []
     for team in teams:
         categories_dict = {}
-        contestants = Contestant.objects.filter(institution=institution, team=team).select_related('category').prefetch_related('participations__program').order_by('category__name', 'chest_no')
+        contestants = Contestant.objects.filter(
+            institution=institution, team=team
+        ).select_related('category').prefetch_related(
+            'participations__program',
+            'captain_groups__program',
+            'group_entries__program'
+        ).order_by('category__name', 'chest_no')
         
         for contestant in contestants:
             cat_name = contestant.category.name
@@ -3400,6 +3426,366 @@ def toppers_list_view(request, institution_slug):
         'overall_champion': overall_champion,
         'cat_champions': cat_champions,
         'view_mode': view_mode
+    })
+
+
+# ==============================================================================
+# PRIZE DISTRIBUTION MANAGEMENT HUB
+# ==============================================================================
+
+@login_required
+def prize_distribution_view(request, institution_slug):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    categories = Category.objects.filter(institution=institution).order_by('name')
+    teams = Team.objects.filter(institution=institution).order_by('name')
+    config, _ = PointsConfig.objects.get_or_create(institution=institution)
+
+    # Rank cutoff setting: from GET param or institution config
+    saved_rank_limit = config.prize_rank_limit or 3
+    rank_limit_param = request.GET.get('rank_limit')
+    
+    if rank_limit_param:
+        if rank_limit_param == 'all':
+            rank_limit = 'all'
+            rank_cutoff = 9999
+        else:
+            try:
+                rank_cutoff = int(rank_limit_param)
+                rank_limit = rank_cutoff
+            except (ValueError, TypeError):
+                rank_limit = saved_rank_limit
+                rank_cutoff = saved_rank_limit
+    else:
+        rank_limit = saved_rank_limit
+        rank_cutoff = saved_rank_limit
+
+    # Filter parameters
+    category_id = request.GET.get('category')
+    team_id = request.GET.get('team')
+    status_filter = request.GET.get('status', 'all')  # all, pending, distributed, multiple
+    search_query = request.GET.get('q', '').strip().lower()
+    view_mode = request.GET.get('view', 'queue')  # queue, student, print
+    include_draft = request.GET.get('include_draft') == '1'
+
+    # Base programs queryset
+    programs_qs = Program.objects.filter(institution=institution).select_related('category', 'preferred_stage')
+    if not include_draft:
+        programs_qs = programs_qs.filter(is_announced=True)
+    else:
+        programs_qs = programs_qs.filter(
+            Q(single_participations__marks__isnull=False) | Q(group_participations__marks__isnull=False)
+        ).distinct()
+    
+    programs = list(programs_qs.order_by('result_number', 'announced_at', 'id'))
+
+    # All eligible single participations
+    single_parts_qs = Participation.objects.filter(
+        program__in=programs,
+        rank__isnull=False,
+        rank__lte=rank_cutoff
+    ).select_related('contestant', 'contestant__team', 'contestant__category', 'program', 'program__category').order_by('program__result_number', 'program__announced_at', 'program__id', 'rank', '-marks')
+
+    # All eligible group participations
+    group_parts_qs = GroupParticipation.objects.filter(
+        program__in=programs,
+        rank__isnull=False,
+        rank__lte=rank_cutoff
+    ).select_related('team', 'captain', 'program', 'program__category').prefetch_related('contestants').order_by('program__result_number', 'program__announced_at', 'program__id', 'rank', '-marks')
+
+    # Build contestant multi-prize index
+    from collections import defaultdict
+    contestant_prizes_map = defaultdict(list)
+    for sp in single_parts_qs:
+        contestant_prizes_map[sp.contestant_id].append(sp)
+
+    # Decorate single participations with multi-prize & first call intelligence
+    for sp in single_parts_qs:
+        c_prizes = contestant_prizes_map[sp.contestant_id]
+        sp.total_prizes_count = len(c_prizes)
+        sp.has_multiple_prizes = (len(c_prizes) > 1)
+        # Is this the first program where this contestant is called in stage sequence?
+        sp.is_first_call = (c_prizes[0].id == sp.id)
+        sp.first_call_program = c_prizes[0].program
+        sp.other_prizes = [other for other in c_prizes if other.id != sp.id]
+        sp.other_pending_prizes = [other for other in sp.other_prizes if not other.prize_distributed]
+        sp.all_prizes_distributed = all(other.prize_distributed for other in c_prizes)
+
+    # Build Program-wise Queue structure
+    program_queue = []
+    total_eligible_prizes = 0
+    total_distributed_prizes = 0
+
+    for prog in programs:
+        prog_singles = [sp for sp in single_parts_qs if sp.program_id == prog.id]
+        prog_groups = [gp for gp in group_parts_qs if gp.program_id == prog.id]
+
+        # Apply category / team / search / status filter per program
+        filtered_singles = []
+        for sp in prog_singles:
+            match = True
+            if category_id and str(prog.category_id) != str(category_id):
+                match = False
+            if team_id and sp.contestant and str(sp.contestant.team_id) != str(team_id):
+                match = False
+            if status_filter == 'pending' and sp.prize_distributed:
+                match = False
+            elif status_filter == 'distributed' and not sp.prize_distributed:
+                match = False
+            elif status_filter == 'multiple' and not sp.has_multiple_prizes:
+                match = False
+            if search_query:
+                q_match = (
+                    search_query in sp.contestant.name.lower() or
+                    str(sp.contestant.chest_no).lower() == search_query or
+                    search_query in str(sp.contestant.chest_no).lower() or
+                    search_query in prog.name.lower() or
+                    (sp.contestant.team and search_query in sp.contestant.team.name.lower())
+                )
+                if not q_match:
+                    match = False
+            if match:
+                filtered_singles.append(sp)
+
+        filtered_groups = []
+        for gp in prog_groups:
+            match = True
+            if category_id and str(prog.category_id) != str(category_id):
+                match = False
+            if team_id and str(gp.team_id) != str(team_id):
+                match = False
+            if status_filter == 'pending' and gp.prize_distributed:
+                match = False
+            elif status_filter == 'distributed' and not gp.prize_distributed:
+                match = False
+            elif status_filter == 'multiple':
+                match = False
+            if search_query:
+                q_match = (
+                    search_query in (gp.team.name.lower() if gp.team else '') or
+                    search_query in prog.name.lower() or
+                    search_query in (gp.captain.name.lower() if gp.captain else '') or
+                    search_query in (gp.group_name.lower() if gp.group_name else '')
+                )
+                if not q_match:
+                    match = False
+            if match:
+                filtered_groups.append(gp)
+
+        total_eligible_prizes += len(prog_singles) + len(prog_groups)
+        total_distributed_prizes += sum(1 for sp in prog_singles if sp.prize_distributed) + sum(1 for gp in prog_groups if gp.prize_distributed)
+
+        if filtered_singles or filtered_groups or (not category_id and not team_id and not search_query and status_filter == 'all'):
+            if filtered_singles or filtered_groups:
+                prog_all_count = len(prog_singles) + len(prog_groups)
+                prog_dist_count = sum(1 for sp in prog_singles if sp.prize_distributed) + sum(1 for gp in prog_groups if gp.prize_distributed)
+                program_queue.append({
+                    'program': prog,
+                    'singles': filtered_singles,
+                    'groups': filtered_groups,
+                    'total_count': prog_all_count,
+                    'distributed_count': prog_dist_count,
+                    'is_all_distributed': (prog_all_count > 0 and prog_dist_count == prog_all_count),
+                })
+
+    # Build Student-centric Summary List
+    student_summary = []
+    for c_id, prizes in contestant_prizes_map.items():
+        contestant = prizes[0].contestant
+        match = True
+        if category_id and contestant.category_id and str(contestant.category_id) != str(category_id):
+            match = False
+        if team_id and contestant.team_id and str(contestant.team_id) != str(team_id):
+            match = False
+        
+        tot = len(prizes)
+        dist = sum(1 for p in prizes if p.prize_distributed)
+        pend = tot - dist
+
+        if status_filter == 'pending' and dist == tot:
+            match = False
+        elif status_filter == 'distributed' and dist == 0:
+            match = False
+        elif status_filter == 'multiple' and tot <= 1:
+            match = False
+
+        if search_query:
+            q_match = (
+                search_query in contestant.name.lower() or
+                str(contestant.chest_no).lower() == search_query or
+                search_query in str(contestant.chest_no).lower() or
+                (contestant.team and search_query in contestant.team.name.lower()) or
+                any(search_query in p.program.name.lower() for p in prizes)
+            )
+            if not q_match:
+                match = False
+
+        if match:
+            student_summary.append({
+                'contestant': contestant,
+                'prizes': prizes,
+                'total_prizes': tot,
+                'distributed_count': dist,
+                'pending_count': pend,
+                'is_all_distributed': (dist == tot and tot > 0),
+                'has_multiple': tot > 1,
+            })
+
+    student_summary.sort(key=lambda x: (-x['total_prizes'], x['contestant'].chest_no if x['contestant'].chest_no else 999999, x['contestant'].name))
+
+    # Overall calculation for stats
+    total_pending_prizes = max(0, total_eligible_prizes - total_distributed_prizes)
+    completion_percentage = int(round((total_distributed_prizes / total_eligible_prizes) * 100)) if total_eligible_prizes > 0 else 0
+    multi_prize_contestants_count = sum(1 for pz in contestant_prizes_map.values() if len(pz) > 1)
+
+    competition = Competition.objects.filter(institution=institution, is_active=True).first() or Competition.objects.filter(institution=institution).first()
+
+    context = {
+        'institution': institution,
+        'competition': competition,
+        'categories': categories,
+        'teams': teams,
+        'config': config,
+        'saved_rank_limit': saved_rank_limit,
+        'rank_limit': rank_limit,
+        'rank_cutoff': rank_cutoff,
+        'selected_category_id': category_id,
+        'selected_team_id': team_id,
+        'status_filter': status_filter,
+        'search_query': search_query,
+        'view_mode': view_mode,
+        'include_draft': include_draft,
+        'program_queue': program_queue,
+        'student_summary': student_summary,
+        'total_eligible_prizes': total_eligible_prizes,
+        'total_distributed_prizes': total_distributed_prizes,
+        'total_pending_prizes': total_pending_prizes,
+        'completion_percentage': completion_percentage,
+        'multi_prize_contestants_count': multi_prize_contestants_count,
+    }
+
+    if view_mode == 'print':
+        return render(request, 'core/prize_distribution_print.html', context)
+    return render(request, 'core/prize_distribution.html', context)
+
+
+@login_required
+@require_POST
+def prize_distribution_toggle_view(request, institution_slug):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    part_type = request.POST.get('type', 'single')
+    part_id = request.POST.get('id')
+
+    if not part_id:
+        return JsonResponse({'status': 'error', 'message': 'Missing participation ID.'}, status=400)
+
+    now = timezone.now()
+
+    if part_type == 'group':
+        gp = get_object_or_404(GroupParticipation, id=part_id, institution=institution)
+        gp.prize_distributed = not gp.prize_distributed
+        if gp.prize_distributed:
+            gp.prize_distributed_at = now
+            gp.prize_distributed_notes = "Distributed on stage"
+        else:
+            gp.prize_distributed_at = None
+            gp.prize_distributed_notes = ""
+        gp.save(update_fields=['prize_distributed', 'prize_distributed_at', 'prize_distributed_notes'])
+        
+        return JsonResponse({
+            'status': 'success',
+            'type': 'group',
+            'id': gp.id,
+            'is_distributed': gp.prize_distributed,
+            'distributed_at': gp.prize_distributed_at.strftime('%I:%M %p') if gp.prize_distributed_at else '',
+            'notes': gp.prize_distributed_notes,
+            'message': f"Prize marked as {'Distributed' if gp.prize_distributed else 'Pending'} for {gp.team.name}."
+        })
+    else:
+        sp = get_object_or_404(Participation, id=part_id, institution=institution)
+        sp.prize_distributed = not sp.prize_distributed
+        if sp.prize_distributed:
+            sp.prize_distributed_at = now
+            sp.prize_distributed_notes = "Distributed on stage"
+        else:
+            sp.prize_distributed_at = None
+            sp.prize_distributed_notes = ""
+        sp.save(update_fields=['prize_distributed', 'prize_distributed_at', 'prize_distributed_notes'])
+
+        return JsonResponse({
+            'status': 'success',
+            'type': 'single',
+            'id': sp.id,
+            'contestant_id': sp.contestant_id,
+            'is_distributed': sp.prize_distributed,
+            'distributed_at': sp.prize_distributed_at.strftime('%I:%M %p') if sp.prize_distributed_at else '',
+            'notes': sp.prize_distributed_notes,
+            'message': f"Prize marked as {'Distributed' if sp.prize_distributed else 'Pending'} for {sp.contestant.name}."
+        })
+
+
+@login_required
+@require_POST
+def prize_distribution_distribute_all_view(request, institution_slug):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    contestant_id = request.POST.get('contestant_id')
+    current_prog_name = request.POST.get('current_program_name', '')
+
+    if not contestant_id:
+        return JsonResponse({'status': 'error', 'message': 'Missing contestant ID.'}, status=400)
+
+    contestant = get_object_or_404(Contestant, id=contestant_id, institution=institution)
+    now = timezone.now()
+
+    note = f"Distributed with {current_prog_name}" if current_prog_name else "Distributed on stage (All Prizes)"
+
+    parts = Participation.objects.filter(
+        contestant=contestant,
+        rank__isnull=False
+    )
+    
+    updated_ids = []
+    for p in parts:
+        p.prize_distributed = True
+        p.prize_distributed_at = now
+        p.prize_distributed_notes = note
+        p.save(update_fields=['prize_distributed', 'prize_distributed_at', 'prize_distributed_notes'])
+        updated_ids.append(p.id)
+
+    return JsonResponse({
+        'status': 'success',
+        'contestant_id': contestant.id,
+        'contestant_name': contestant.name,
+        'updated_count': len(updated_ids),
+        'updated_ids': updated_ids,
+        'distributed_at': now.strftime('%I:%M %p'),
+        'notes': note,
+        'message': f"🎉 All {len(updated_ids)} prizes successfully marked as Distributed for {contestant.name}!"
+    })
+
+
+@login_required
+@require_POST
+def prize_distribution_update_rank_limit_view(request, institution_slug):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    if request.user.is_judge:
+        return JsonResponse({'status': 'error', 'message': 'Permission Denied.'}, status=403)
+
+    rank_limit_str = request.POST.get('rank_limit', '3')
+    try:
+        rank_limit = int(rank_limit_str)
+        if rank_limit < 1 or rank_limit > 10:
+            rank_limit = 3
+    except (ValueError, TypeError):
+        rank_limit = 3
+
+    config, _ = PointsConfig.objects.get_or_create(institution=institution)
+    config.prize_rank_limit = rank_limit
+    config.save(update_fields=['prize_rank_limit'])
+
+    return JsonResponse({
+        'status': 'success',
+        'rank_limit': rank_limit,
+        'message': f"Default Prize Distribution Rank limit updated to Top {rank_limit} for this institution."
     })
 
 

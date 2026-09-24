@@ -122,8 +122,8 @@
                 <td><strong>#{{ contestant.chest_no }}</strong></td>
                 <td><strong>{{ contestant.name }}</strong></td>
                 <td>
-                    {% for part in contestant.participations.all %}
-                    <span class="prog-item">• {{ part.program.name }} ({{ part.program.get_program_type_display }})</span>
+                    {% for prog_item in contestant.all_assigned_programs %}
+                    <span class="prog-item">• {{ prog_item.name }} ({% if prog_item.is_group %}Group{% if prog_item.role == 'Captain' %} - Captain{% endif %}{% else %}{{ prog_item.type_display }}{% endif %})</span>
                     {% empty %}
                     <span style="color: #94a3b8; font-style: italic;">No programs assigned</span>
                     {% endfor %}

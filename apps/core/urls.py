@@ -83,6 +83,12 @@ urlpatterns = [
     path('portal/<slug:institution_slug>/certificates/', views.certificate_studio_view, name='certificate_studio'),
     path('portal/<slug:institution_slug>/certificates/download/', views.download_certificate_pdf_view, name='download_certificate_pdf'),
     path('portal/<slug:institution_slug>/certificates/print/', views.print_certificates_view, name='print_certificates'),
+    
+    # Prize Distribution Management Hub
+    path('portal/<slug:institution_slug>/prize-distribution/', views.prize_distribution_view, name='prize_distribution'),
+    path('portal/<slug:institution_slug>/prize-distribution/toggle/', views.prize_distribution_toggle_view, name='prize_distribution_toggle'),
+    path('portal/<slug:institution_slug>/prize-distribution/distribute-all/', views.prize_distribution_distribute_all_view, name='prize_distribution_distribute_all'),
+    path('portal/<slug:institution_slug>/prize-distribution/update-rank-limit/', views.prize_distribution_update_rank_limit_view, name='prize_distribution_update_rank_limit'),
 
     
     # Public Announcement Control & Score Balancer AI

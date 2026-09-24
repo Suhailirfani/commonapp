@@ -528,5 +528,52 @@ class ParticipationLimitsTestCase(TestCase):
         self.assertFalse(prog.has_custom_points)
         self.assertEqual(p.total_points, 11)
 
+    def test_assigned_programs_includes_group_events_and_captains(self):
+        # Create group program and enroll contestant as captain and in another as member
+        group_prog = self.group_programs[0]
+        gp = GroupParticipation.objects.create(
+            institution=self.institution,
+            program=group_prog,
+            team=self.team,
+            captain=self.contestant,
+            group_name="Super Stars"
+        )
+        gp.contestants.add(self.contestant)
+
+        # Single program participation
+        single_prog = self.single_programs[0]
+        Participation.objects.create(
+            institution=self.institution,
+            program=single_prog,
+            contestant=self.contestant
+        )
+
+        # Verify all_assigned_programs contains both single and group
+        assigned = self.contestant.all_assigned_programs
+        self.assertEqual(len(assigned), 2)
+        prog_ids = [item['id'] for item in assigned]
+        self.assertIn(single_prog.id, prog_ids)
+        self.assertIn(group_prog.id, prog_ids)
+
+        # Check captain role on group program
+        group_item = next(item for item in assigned if item['id'] == group_prog.id)
+        self.assertTrue(group_item['is_group'])
+        self.assertEqual(group_item['role'], 'Captain')
+
+        # Test assigned programs list view (web)
+        url_web = reverse('core:assigned_programs_list', kwargs={'institution_slug': self.institution.slug})
+        res_web = self.client.get(url_web)
+        self.assertEqual(res_web.status_code, 200)
+        self.assertContains(res_web, self.contestant.name)
+        self.assertContains(res_web, group_prog.name)
+        self.assertContains(res_web, self.team.name)
+
+        # Test assigned programs PDF download
+        url_pdf = reverse('core:download_assigned_programs_teamwise_pdf', kwargs={'institution_slug': self.institution.slug})
+        res_pdf = self.client.get(url_pdf)
+        self.assertEqual(res_pdf.status_code, 200)
+        self.assertEqual(res_pdf['Content-Type'], 'application/pdf')
+
+
 
 
