@@ -14,7 +14,11 @@
 <div class="glass-card">
     <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 20px;">
         <i class="fa-solid fa-circle-info"></i> Fill out multiple programs below on a single page. Click <strong>"+ Add Another Program Row"</strong> to add more rows dynamically.
-    </p>
+    {% if active_fest %}
+    <div style="display: inline-flex; align-items: center; gap: 8px; margin-bottom: 16px; padding: 8px 14px; background: rgba(14, 165, 233, 0.12); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 8px; font-size: 0.85rem; color: #38bdf8;">
+        <i class="fa-solid fa-layer-group"></i> Active Fest: <strong>{{ active_fest.name }}</strong>
+    </div>
+    {% endif %}
 
     <form method="POST">
         {% csrf_token %}
@@ -22,13 +26,12 @@
             <table class="custom-table" id="batchTable">
                 <thead>
                     <tr>
-                        <th style="width: 18%;">Fest</th>
-                        <th style="width: 18%;">Category</th>
-                        <th style="width: 22%;">Program / Event Name</th>
-                        <th style="width: 12%;">Event Type</th>
-                        <th style="width: 10%;">Format</th>
-                        <th style="width: 12%;">Mode (SEQ/SIM)</th>
-                        <th style="width: 8%;">Duration (Mins)</th>
+                        <th style="width: 22%;">Category</th>
+                        <th style="width: 26%;">Program / Event Name</th>
+                        <th style="width: 13%;">Event Type</th>
+                        <th style="width: 11%;">Format</th>
+                        <th style="width: 13%;">Mode (SEQ/SIM)</th>
+                        <th style="width: 9%;">Duration (Mins)</th>
                         <th>Action</th>
                     </tr>
                 </thead>
@@ -36,13 +39,6 @@
                     <!-- Pre-loaded 5 initial rows -->
                     {% for i in "12345" %}
                     <tr>
-                        <td>
-                            <select name="competition_id[]" class="form-control" style="min-width: 130px;">
-                                {% for comp in competitions %}
-                                <option value="{{ comp.id }}">{{ comp.name }}</option>
-                                {% endfor %}
-                            </select>
-                        </td>
                         <td>
                             <select name="category_id[]" class="form-control" style="min-width: 130px;">
                                 {% for cat in categories %}

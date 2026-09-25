@@ -333,6 +333,41 @@
     </div>
 </div>
 
+<!-- ACTIVE FEST SELECTOR / HERO BANNER -->
+<div class="glass-card" style="background: linear-gradient(135deg, rgba(14, 165, 233, 0.12), rgba(99, 102, 241, 0.12)); border: 1px solid rgba(56, 189, 248, 0.3); margin-bottom: 24px; padding: 18px 22px; border-radius: 16px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+        <div style="display: flex; align-items: center; gap: 14px;">
+            <div style="width: 46px; height: 46px; border-radius: 12px; background: rgba(14, 165, 233, 0.2); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: #38bdf8;">
+                <i class="fa-solid fa-layer-group"></i>
+            </div>
+            <div>
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    <span style="font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: #38bdf8; background: rgba(14, 165, 233, 0.18); padding: 2px 8px; border-radius: 6px;">CURRENT ACTIVE FEST</span>
+                    <h3 style="font-size: 1.3rem; font-weight: 800; margin: 0; color: #fff;">{{ active_fest.name|default:"Main Fest" }}</h3>
+                    <span class="badge badge-approved" style="font-size: 0.75rem;">{{ active_fest.year|default:"2026" }}</span>
+                </div>
+                <p style="color: var(--text-muted); font-size: 0.82rem; margin: 3px 0 0 0;">
+                    All operations below (Programs, Contestants, Teams, Schedule, Results) are automatically scoped to this fest.
+                </p>
+            </div>
+        </div>
+
+        {% if all_institution_fests|length > 1 or all_institution_fests %}
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            {% for fest in all_institution_fests %}
+            <a href="{% url 'core:switch_fest' institution.slug fest.id %}" style="display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 10px; font-size: 0.82rem; font-weight: 700; text-decoration: none; transition: all 0.2s; {% if active_fest.id == fest.id %}background: linear-gradient(135deg, #0284c7, #0369a1); color: #fff; box-shadow: 0 4px 12px rgba(2, 132, 199, 0.4); border: 1px solid #38bdf8;{% else %}background: rgba(255,255,255,0.06); color: #cbd5e1; border: 1px solid rgba(255,255,255,0.1);{% endif %}">
+                <i class="fa-solid {% if active_fest.id == fest.id %}fa-circle-check{% else %}fa-circle{% endif %}" style="font-size: 0.65rem;"></i>
+                {{ fest.name }}
+            </a>
+            {% endfor %}
+            <a href="{% url 'core:competition_create' institution.slug %}" class="btn-secondary" style="font-size: 0.8rem; padding: 7px 12px; border-radius: 10px; text-decoration: none;" title="Create another Fest">
+                <i class="fa-solid fa-plus"></i> New Fest
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
 <!-- Stats Grid -->
 <div class="dashboard-stats-grid">
     <div class="glass-card">

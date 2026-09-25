@@ -50,16 +50,22 @@ def get_next_chest_number(category):
     return candidate
 
 
-def auto_generate_all_chest_numbers(institution, overwrite=False):
+def auto_generate_all_chest_numbers(institution, competition=None, overwrite=False):
     """
     Sequentially generates/assigns chest numbers for all contestants category by category,
     starting from each category's start_chest_no or default range (1001, 2001, 3001...).
-    Uses a 2-pass institution-wide update to eliminate database UNIQUE constraint collisions.
+    Uses a 2-pass update to eliminate database UNIQUE constraint collisions.
     """
     from apps.core.models import Category, Contestant
 
-    categories = list(Category.objects.filter(institution=institution, is_common=False).order_by('id'))
-    all_contestants = list(Contestant.objects.filter(institution=institution).order_by('id'))
+    cats_qs = Category.objects.filter(institution=institution, is_common=False)
+    contestants_qs = Contestant.objects.filter(institution=institution)
+    if competition:
+        cats_qs = cats_qs.filter(competition=competition)
+        contestants_qs = contestants_qs.filter(competition=competition)
+    
+    categories = list(cats_qs.order_by('id'))
+    all_contestants = list(contestants_qs.order_by('id'))
 
     if not all_contestants:
         return 0
@@ -185,15 +191,20 @@ def resequence_announced_results(institution, competition=None):
                 prog.save(update_fields=['announced_at'])
 
 
-def get_team_standings(institution, announced_only=True, limit_n_results=None):
+def get_team_standings(institution, competition=None, announced_only=True, limit_n_results=None):
     """
     Computes exact team standings, total points, 1st/2nd/3rd win counts, and positions.
     Guarantees 100% mathematical consistency between Admin Portal and Public Leaderboard.
-    Optionally limits calculation to the first N results announced or marked.
+    Optionally limits calculation to the first N results announced or marked,
+    and isolates to a specific Competition (Fest) when provided.
     """
     from django.db.models import Q
     from apps.core.models import Program
-    teams = list(Team.objects.filter(institution=institution).order_by('name'))
+    
+    teams_qs = Team.objects.filter(institution=institution)
+    if competition:
+        teams_qs = teams_qs.filter(competition=competition)
+    teams = list(teams_qs.order_by('name'))
     team_data = []
 
     allowed_program_ids = None
@@ -202,6 +213,8 @@ def get_team_standings(institution, announced_only=True, limit_n_results=None):
             n_val = int(limit_n_results)
             if n_val > 0:
                 prog_qs = Program.objects.filter(institution=institution)
+                if competition:
+                    prog_qs = prog_qs.filter(competition=competition)
                 if announced_only:
                     prog_qs = prog_qs.filter(is_announced=True)
                     allowed_program_ids = set(
@@ -228,6 +241,8 @@ def get_team_standings(institution, announced_only=True, limit_n_results=None):
             contestant__team=team,
             marks__isnull=False
         )
+        if competition:
+            parts = parts.filter(program__competition=competition)
         if announced_only:
             parts = parts.filter(program__is_announced=True)
         if allowed_program_ids is not None:
@@ -243,6 +258,8 @@ def get_team_standings(institution, announced_only=True, limit_n_results=None):
             team=team,
             marks__isnull=False
         )
+        if competition:
+            gps = gps.filter(program__competition=competition)
         if announced_only:
             gps = gps.filter(program__is_announced=True)
         if allowed_program_ids is not None:
@@ -258,6 +275,8 @@ def get_team_standings(institution, announced_only=True, limit_n_results=None):
             contestant__team=team,
             marks__isnull=False
         )
+        if competition:
+            all_parts = all_parts.filter(program__competition=competition)
         if announced_only:
             all_parts = all_parts.filter(program__is_announced=True)
         if allowed_program_ids is not None:
@@ -272,8 +291,12 @@ def get_team_standings(institution, announced_only=True, limit_n_results=None):
             team=team,
             marks__isnull=False
         )
+        if competition:
+            all_gps = all_gps.filter(program__competition=competition)
         if announced_only:
             all_gps = all_gps.filter(program__is_announced=True)
+        if allowed_program_ids is not None:
+            all_gps = all_gps.filter(program_id__in=allowed_program_ids)
         if allowed_program_ids is not None:
             all_gps = all_gps.filter(program_id__in=allowed_program_ids)
 

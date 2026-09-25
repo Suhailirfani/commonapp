@@ -42,16 +42,18 @@ def times_overlap(start1, end1, start2, end2):
     """Return True if time range [start1, end1] overlaps with [start2, end2]."""
     return max(start1, start2) < min(end1, end2)
 
-def detect_all_clashes(institution):
+def detect_all_clashes(institution, competition=None):
     """
     Analyzes all ProgramSchedules for an institution and returns a breakdown of:
     - stage_clashes: Same day & stage overlapping programs
     - participant_clashes: Same contestant in overlapping programs on the same day
     - venue_mismatches: STAGE program on OFF_STAGE venue or vice versa
     """
-    schedules = list(ProgramSchedule.objects.filter(
-        institution=institution
-    ).select_related('program', 'fest_day', 'stage', 'program__category').all())
+    qs = ProgramSchedule.objects.filter(institution=institution)
+    if competition:
+        qs = qs.filter(program__competition=competition)
+    
+    schedules = list(qs.select_related('program', 'fest_day', 'stage', 'program__category').all())
     
     stage_clashes = []
     participant_clashes = []
@@ -120,20 +122,28 @@ def detect_all_clashes(institution):
         'total_clash_count': total_clash_count
     }
 
-def generate_smart_auto_schedule(institution, buffer_between_programs_mins=5):
+def generate_smart_auto_schedule(institution, competition=None, buffer_between_programs_mins=5):
     """
     Auto-schedules all unscheduled programs for an institution across available FestDays and Stages.
     """
-    fest_days = list(FestDay.objects.filter(institution=institution).order_by('day_number'))
+    fest_day_qs = FestDay.objects.filter(institution=institution)
+    if competition:
+        fest_day_qs = fest_day_qs.filter(competition=competition)
+    fest_days = list(fest_day_qs.order_by('day_number'))
     stages = list(Stage.objects.filter(institution=institution).prefetch_related('reserved_days').order_by('stage_type', 'name'))
 
     if not fest_days or not stages:
         return {'error': 'Please add at least one Fest Day and one Stage before running Auto-Scheduler.'}
 
-    scheduled_prog_ids = ProgramSchedule.objects.filter(institution=institution).values_list('program_id', flat=True)
+    sched_qs = ProgramSchedule.objects.filter(institution=institution)
+    prog_qs = Program.objects.filter(institution=institution)
+    if competition:
+        sched_qs = sched_qs.filter(program__competition=competition)
+        prog_qs = prog_qs.filter(competition=competition)
+
+    scheduled_prog_ids = sched_qs.values_list('program_id', flat=True)
     unscheduled_programs = list(
-        Program.objects.filter(institution=institution)
-        .exclude(id__in=scheduled_prog_ids)
+        prog_qs.exclude(id__in=scheduled_prog_ids)
         .select_related('category', 'preferred_stage')
         .order_by('-preferred_stage_id', 'id')
     )
@@ -148,7 +158,7 @@ def generate_smart_auto_schedule(institution, buffer_between_programs_mins=5):
 
     contestant_bookings = {}
 
-    for existing_sched in ProgramSchedule.objects.filter(institution=institution):
+    for existing_sched in sched_qs.select_related('program'):
         d_id = existing_sched.fest_day_id
         st_id = existing_sched.stage_id
         s_dt = datetime.combine(datetime.today(), existing_sched.start_time)

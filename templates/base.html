@@ -46,6 +46,36 @@
                 <i class="fa-solid fa-screwdriver-wrench"></i> Django Admin
             </a>
             {% elif request.user.institution %}
+            {% if active_fest %}
+            <div class="fest-switcher-wrapper" style="position: relative; display: inline-flex; align-items: center; margin-right: 4px;">
+                <button type="button" class="btn-fest-switcher" onclick="toggleFestDropdown(event)" id="festDropdownBtn" style="background: rgba(14, 165, 233, 0.15); border: 1px solid rgba(56, 189, 248, 0.35); color: #38bdf8; padding: 6px 14px; border-radius: 9999px; font-size: 0.82rem; font-weight: 700; display: inline-flex; align-items: center; gap: 7px; cursor: pointer; transition: all 0.2s ease;">
+                    <i class="fa-solid fa-layer-group" style="color: #38bdf8; font-size: 0.85rem;"></i>
+                    <span style="max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ active_fest.name }}</span>
+                    {% if all_institution_fests|length > 1 %}
+                    <i class="fa-solid fa-chevron-down" style="font-size: 0.68rem; opacity: 0.8;"></i>
+                    {% endif %}
+                </button>
+                {% if all_institution_fests|length > 1 or request.user.is_admin or not request.user.is_contestant and not request.user.is_judge %}
+                <div id="festDropdownMenu" style="display: none; position: absolute; top: calc(100% + 8px); left: 0; min-width: 230px; background: #0f172a; border: 1px solid rgba(255,255,255,0.12); border-radius: 12px; box-shadow: 0 12px 30px -5px rgba(0,0,0,0.7); padding: 8px; z-index: 2000;">
+                    <div style="padding: 4px 10px 8px; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8; font-weight: 700; border-bottom: 1px solid rgba(255,255,255,0.06); margin-bottom: 6px;">Active Fest</div>
+                    {% for fest in all_institution_fests %}
+                    <a href="{% url 'core:switch_fest' request.user.institution.slug fest.id %}" style="display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; border-radius: 8px; text-decoration: none; font-size: 0.82rem; color: {% if fest.id == active_fest.id %}#38bdf8{% else %}#e2e8f0{% endif %}; background: {% if fest.id == active_fest.id %}rgba(14, 165, 233, 0.18){% else %}transparent{% endif %}; margin-bottom: 3px; transition: background 0.15s ease;">
+                        <span style="display: flex; align-items: center; gap: 8px; font-weight: {% if fest.id == active_fest.id %}700{% else %}500{% endif %};">
+                            <i class="fa-solid {% if fest.id == active_fest.id %}fa-circle-check{% else %}fa-circle-dot{% endif %}" style="font-size: 0.75rem; color: {% if fest.id == active_fest.id %}#38bdf8{% else %}#64748b{% endif %};"></i>
+                            {{ fest.name }}
+                        </span>
+                        <span style="font-size: 0.7rem; color: #94a3b8;">{{ fest.year }}</span>
+                    </a>
+                    {% endfor %}
+                    <div style="border-top: 1px solid rgba(255,255,255,0.08); margin-top: 6px; padding-top: 6px;">
+                        <a href="{% url 'core:competition_list' request.user.institution.slug %}" style="display: flex; align-items: center; gap: 7px; padding: 6px 10px; border-radius: 6px; text-decoration: none; font-size: 0.78rem; color: #94a3b8; font-weight: 600; transition: color 0.15s ease;">
+                            <i class="fa-solid fa-gear"></i> Manage / Create Fests
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
             {% if request.user.is_contestant %}
             <a href="{% url 'core:contestant_personal_dashboard' request.user.institution.slug %}" class="nav-link"
                 style="color: var(--accent-cyan); font-weight: 700;"><i class="fa-solid fa-graduation-cap"></i> My
@@ -116,6 +146,22 @@
             var links = document.getElementById('navLinks');
             links.classList.toggle('active');
         }
+
+        function toggleFestDropdown(e) {
+            e.stopPropagation();
+            var menu = document.getElementById('festDropdownMenu');
+            if (menu) {
+                menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+            }
+        }
+
+        document.addEventListener('click', function(e) {
+            var menu = document.getElementById('festDropdownMenu');
+            var btn = document.getElementById('festDropdownBtn');
+            if (menu && menu.style.display === 'block' && (!btn || !btn.contains(e.target)) && !menu.contains(e.target)) {
+                menu.style.display = 'none';
+            }
+        });
 
         // Auto-disappear flash alerts after 5 seconds
         document.addEventListener('DOMContentLoaded', function () {

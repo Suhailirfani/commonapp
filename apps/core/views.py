@@ -17,33 +17,94 @@ from .models import (
     ProgramPointsConfig
 )
 
+def get_active_fest(request, institution):
+    """
+    Resolves the currently active fest for the session/institution.
+    Fallback order:
+    1. request.session['active_fest_<institution.id>']
+    2. Competition.objects.filter(institution=institution, is_active=True).first()
+    3. Competition.objects.filter(institution=institution).order_by('-year', '-created_at', '-id').first()
+    """
+    if not institution:
+        return None
+    session_key = f'active_fest_{institution.id}'
+    fest_id = request.session.get(session_key) if hasattr(request, 'session') else None
+    if fest_id:
+        fest = Competition.objects.filter(id=fest_id, institution=institution).first()
+        if fest:
+            return fest
+            
+    fest = Competition.objects.filter(institution=institution, is_active=True).first()
+    if not fest:
+        fest = Competition.objects.filter(institution=institution).order_by('-year', '-created_at', '-id').first()
+    if fest and hasattr(request, 'session'):
+        request.session[session_key] = fest.id
+    return fest
+
+
+@login_required
+def switch_fest_view(request, institution_slug, fest_id):
+    """
+    Switches the active fest in the session for the given institution.
+    """
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    fest = get_object_or_404(Competition, id=fest_id, institution=institution)
+    
+    request.session[f'active_fest_{institution.id}'] = fest.id
+    
+    # Synchronize the active flag
+    Competition.objects.filter(institution=institution, is_active=True).update(is_active=False)
+    fest.is_active = True
+    fest.save(update_fields=['is_active'])
+
+    messages.success(request, f"✨ Switched active fest to '{fest.name}' ({fest.year})")
+
+    next_url = request.GET.get('next') or request.META.get('HTTP_REFERER')
+    if next_url and 'switch-fest' not in next_url:
+        return redirect(next_url)
+    return redirect('core:dashboard', institution_slug=institution.slug)
+
+
 @login_required
 def dashboard_view(request, institution_slug):
     institution = get_object_or_404(Institution, slug=institution_slug)
     if request.user.is_judge and not request.user.is_developer:
         return redirect('core:judge_dashboard', institution_slug=institution.slug)
 
-    competitions = Competition.objects.filter(institution=institution)
-    teams = Team.objects.filter(institution=institution)
-    programs = Program.objects.filter(institution=institution)
+    active_fest = get_active_fest(request, institution)
+    competitions = list(Competition.objects.filter(institution=institution).order_by('-year', '-created_at', '-id'))
+
+    if active_fest:
+        teams = Team.objects.filter(institution=institution, competition=active_fest)
+        programs = Program.objects.filter(institution=institution, competition=active_fest)
+        contestants = Contestant.objects.filter(institution=institution, competition=active_fest)
+        categories = Category.objects.filter(institution=institution, competition=active_fest)
+    else:
+        teams = Team.objects.filter(institution=institution)
+        programs = Program.objects.filter(institution=institution)
+        contestants = Contestant.objects.filter(institution=institution)
+        categories = Category.objects.filter(institution=institution)
 
     if request.user.is_team_leader and not request.user.is_developer:
         team = getattr(request.user, 'managed_team', None)
-        if not team:
+        if not team and active_fest:
             team = teams.first()
 
         team_contestants = Contestant.objects.filter(institution=institution, team=team) if team else Contestant.objects.none()
+        if active_fest:
+            team_contestants = team_contestants.filter(competition=active_fest)
 
-        # Category wise members count for this team
         category_wise_members = []
         base_cats = Category.objects.filter(institution=institution, is_common=False)
+        if active_fest:
+            base_cats = base_cats.filter(competition=active_fest)
+            
         for cat in base_cats:
             cnt = team_contestants.filter(category=cat).count() if team else 0
             category_wise_members.append({'category': cat, 'count': cnt})
 
-        # Announced points & rank from services
         from .services import get_team_standings
-        standings = get_team_standings(institution, announced_only=True)
+        standings = get_team_standings(institution, competition=active_fest, announced_only=True)
         team_points = 0
         team_rank = "-"
         for s in standings:
@@ -52,15 +113,16 @@ def dashboard_view(request, institution_slug):
                 team_rank = s['position']
                 break
 
-        # Assigned programs count for this team's contestants
-        assigned_single_count = Participation.objects.filter(contestant__team=team).values('program').distinct().count() if team else 0
-        assigned_group_count = GroupParticipation.objects.filter(team=team).values('program').distinct().count() if team else 0
+        assigned_single_count = Participation.objects.filter(contestant__team=team, contestant__competition=active_fest).values('program').distinct().count() if team else 0
+        assigned_group_count = GroupParticipation.objects.filter(team=team, team__competition=active_fest).values('program').distinct().count() if team else 0
         total_assignments = assigned_single_count + assigned_group_count
 
         context = {
             'institution': institution,
             'is_team_leader_dashboard': True,
             'team': team,
+            'active_fest': active_fest,
+            'all_institution_fests': competitions,
             'total_members_count': team_contestants.count(),
             'category_wise_members': category_wise_members,
             'team_points': team_points,
@@ -70,14 +132,22 @@ def dashboard_view(request, institution_slug):
         }
         return render(request, 'core/dashboard.html', context)
 
-    contestants = Contestant.objects.filter(institution=institution)
+    total_announced_programs = programs.filter(is_announced=True).count()
+    from .services import get_team_standings
+    standings = get_team_standings(institution, competition=active_fest, announced_only=True)
+    top_teams = standings[:3] if standings else []
 
     context = {
         'institution': institution,
-        'competitions_count': competitions.count(),
+        'active_fest': active_fest,
+        'all_institution_fests': competitions,
+        'competitions_count': len(competitions),
         'teams_count': teams.count(),
         'programs_count': programs.count(),
         'contestants_count': contestants.count(),
+        'categories_count': categories.count(),
+        'total_announced_programs': total_announced_programs,
+        'top_teams': top_teams,
         'recent_competitions': competitions[:5],
     }
     return render(request, 'core/dashboard.html', context)
@@ -86,8 +156,13 @@ def dashboard_view(request, institution_slug):
 @login_required
 def competition_list_view(request, institution_slug):
     institution = get_object_or_404(Institution, slug=institution_slug)
-    competitions = Competition.objects.filter(institution=institution)
-    return render(request, 'core/competition_list.html', {'institution': institution, 'competitions': competitions})
+    competitions = Competition.objects.filter(institution=institution).order_by('-year', '-created_at', '-id')
+    active_fest = get_active_fest(request, institution)
+    return render(request, 'core/competition_list.html', {
+        'institution': institution, 
+        'competitions': competitions,
+        'active_fest': active_fest,
+    })
 
 
 @login_required
@@ -104,21 +179,30 @@ def competition_create_view(request, institution_slug):
         max_total = int(request.POST.get('max_total_programs_per_contestant', 0) or 0)
         max_team_single = int(request.POST.get('max_team_participants_per_single_program', 0) or 0)
         max_team_group = int(request.POST.get('max_team_entries_per_group_program', 0) or 0)
-        Competition.objects.create(
+        
+        # Deactivate other competitions and activate new one
+        Competition.objects.filter(institution=institution, is_active=True).update(is_active=False)
+        
+        new_comp = Competition.objects.create(
             institution=institution,
             name=name,
             type=comp_type,
             year=year,
             logo=logo,
             name_image=name_image,
+            is_active=True,
             max_single_programs_per_contestant=max_single,
             max_group_programs_per_contestant=max_group,
             max_total_programs_per_contestant=max_total,
             max_team_participants_per_single_program=max_team_single,
             max_team_entries_per_group_program=max_team_group,
         )
-        messages.success(request, f"Fest '{name}' created successfully!")
-        return redirect('core:competition_list', institution_slug=institution.slug)
+        
+        # Set in session as active fest
+        request.session[f'active_fest_{institution.id}'] = new_comp.id
+        
+        messages.success(request, f"Fest '{name}' ({year}) created and set as active fest!")
+        return redirect('core:dashboard', institution_slug=institution.slug)
     return render(request, 'core/competition_create.html', {'institution': institution})
 
 
@@ -200,7 +284,8 @@ def competition_delete_view(request, institution_slug, comp_id):
 @login_required
 def category_list_view(request, institution_slug):
     institution = get_object_or_404(Institution, slug=institution_slug)
-    competitions = Competition.objects.filter(institution=institution)
+    active_fest = get_active_fest(request, institution)
+    competitions = Competition.objects.filter(institution=institution).order_by('-year', '-created_at', '-id')
     
     if request.method == 'POST':
         if not institution.allows_category_management:
@@ -213,9 +298,11 @@ def category_list_view(request, institution_slug):
         is_common = request.POST.get('is_common') == '1'
         inc_cat_ids = request.POST.getlist('included_categories[]')
 
-        comp = Competition.objects.filter(id=comp_id, institution=institution).first()
+        comp = None
+        if comp_id:
+            comp = Competition.objects.filter(id=comp_id, institution=institution).first()
         if not comp:
-            comp = competitions.first()
+            comp = active_fest or competitions.first()
 
         if comp and name:
             cat = Category.objects.create(
@@ -234,21 +321,29 @@ def category_list_view(request, institution_slug):
             return redirect('core:category_list', institution_slug=institution.slug)
 
     categories = Category.objects.filter(institution=institution).prefetch_related('included_categories')
+    if active_fest:
+        categories = categories.filter(competition=active_fest)
     base_categories = categories.filter(is_common=False)
 
     return render(request, 'core/category_list.html', {
         'institution': institution,
         'categories': categories,
         'base_categories': base_categories,
-        'competitions': competitions
+        'competitions': competitions,
+        'active_fest': active_fest,
     })
 
 
 @login_required
 def program_list_view(request, institution_slug):
     institution = get_object_or_404(Institution, slug=institution_slug)
-    competitions = list(Competition.objects.filter(institution=institution))
-    categories = list(Category.objects.filter(institution=institution))
+    active_fest = get_active_fest(request, institution)
+    competitions = list(Competition.objects.filter(institution=institution).order_by('-year', '-created_at', '-id'))
+    
+    cats_qs = Category.objects.filter(institution=institution)
+    if active_fest:
+        cats_qs = cats_qs.filter(competition=active_fest)
+    categories = list(cats_qs.order_by('name'))
 
     if request.method == 'POST':
         if not institution.allows_program_management:
@@ -267,9 +362,11 @@ def program_list_view(request, institution_slug):
             p_mode = request.POST.get('presentation_mode', 'SEQUENTIAL')
             duration = request.POST.get('duration_per_participant', 5)
 
-            comp = Competition.objects.filter(id=comp_id, institution=institution).first()
-            if not comp and competitions:
-                comp = competitions[0]
+            comp = None
+            if comp_id:
+                comp = Competition.objects.filter(id=comp_id, institution=institution).first()
+            if not comp:
+                comp = active_fest or (competitions[0] if competitions else None)
             cat = Category.objects.filter(id=cat_id, institution=institution).first()
 
             if comp and cat and name:
@@ -286,7 +383,7 @@ def program_list_view(request, institution_slug):
                 messages.success(request, f"Program '{name}' created successfully!")
                 return redirect(f"{reverse('core:program_list', kwargs={'institution_slug': institution.slug})}?tab=list")
             else:
-                messages.error(request, "Failed to create program. Program Name, Fest and Category are required.")
+                messages.error(request, "Failed to create program. Program Name and Category are required.")
 
         # Action 2: WhatsApp Text Bulk Import
         elif action == 'whatsapp_import':
@@ -294,9 +391,11 @@ def program_list_view(request, institution_slug):
             default_cat_id = request.POST.get('default_category_id')
             comp_id = request.POST.get('competition_id')
 
-            comp = Competition.objects.filter(id=comp_id, institution=institution).first()
-            if not comp and competitions:
-                comp = competitions[0]
+            comp = None
+            if comp_id:
+                comp = Competition.objects.filter(id=comp_id, institution=institution).first()
+            if not comp:
+                comp = active_fest or (competitions[0] if competitions else None)
 
             default_cat = Category.objects.filter(id=default_cat_id, institution=institution).first()
             current_cat = default_cat
@@ -308,7 +407,6 @@ def program_list_view(request, institution_slug):
                 if not line_str:
                     continue
 
-                # Skip titles/headers
                 clean_upper = line_str.upper().strip('*#=- ')
                 if clean_upper in ['PROGRAM LIST', 'PROGRAMS LIST', 'PROGRAMS', 'ITEMS LIST', 'EVENT LIST', 'SCHEDULE']:
                     continue
@@ -316,7 +414,10 @@ def program_list_view(request, institution_slug):
                 if 'category' in line_str.lower() or line_str.lower().startswith('cat:'):
                     cat_name = re.sub(r'^(category|cat)[\s\:\-]*', '', line_str, flags=re.IGNORECASE).strip('* ').strip()
                     if cat_name:
-                        cat_obj = Category.objects.filter(institution=institution, name__iexact=cat_name).first()
+                        cat_obj = Category.objects.filter(institution=institution, name__iexact=cat_name)
+                        if comp:
+                            cat_obj = cat_obj.filter(competition=comp)
+                        cat_obj = cat_obj.first()
                         if not cat_obj and comp:
                             cat_obj = Category.objects.create(institution=institution, competition=comp, name=cat_name)
                         if cat_obj:
@@ -335,7 +436,10 @@ def program_list_view(request, institution_slug):
                 p_type = 'OFF_STAGE' if is_offstage else 'STAGE'
 
                 if not current_cat:
-                    current_cat = Category.objects.filter(institution=institution).first()
+                    current_cat = Category.objects.filter(institution=institution)
+                    if comp:
+                        current_cat = current_cat.filter(competition=comp)
+                    current_cat = current_cat.first()
                     if not current_cat and comp:
                         current_cat = Category.objects.create(institution=institution, competition=comp, name='General Category')
 
@@ -356,8 +460,12 @@ def program_list_view(request, institution_slug):
             else:
                 messages.error(request, "Could not parse any valid programs from the provided WhatsApp text. Please check format.")
 
-    single_programs = list(Program.objects.filter(institution=institution, is_group=False).select_related('category', 'competition').order_by('program_type', 'category__name', 'name'))
-    group_programs = list(Program.objects.filter(institution=institution, is_group=True).select_related('category', 'competition').order_by('program_type', 'category__name', 'name'))
+    progs_qs = Program.objects.filter(institution=institution)
+    if active_fest:
+        progs_qs = progs_qs.filter(competition=active_fest)
+
+    single_programs = list(progs_qs.filter(is_group=False).select_related('category', 'competition').order_by('program_type', 'category__name', 'name'))
+    group_programs = list(progs_qs.filter(is_group=True).select_related('category', 'competition').order_by('program_type', 'category__name', 'name'))
     programs = single_programs + group_programs
 
     return render(request, 'core/program_list.html', {
@@ -370,14 +478,20 @@ def program_list_view(request, institution_slug):
         'total_count': len(programs),
         'competitions': competitions,
         'categories': categories,
+        'active_fest': active_fest,
     })
 
 
 @login_required
 def program_create_view(request, institution_slug):
     institution = get_object_or_404(Institution, slug=institution_slug)
-    competitions = Competition.objects.filter(institution=institution)
-    categories = Category.objects.filter(institution=institution)
+    active_fest = get_active_fest(request, institution)
+    competitions = Competition.objects.filter(institution=institution).order_by('-year', '-created_at', '-id')
+    
+    cats_qs = Category.objects.filter(institution=institution)
+    if active_fest:
+        cats_qs = cats_qs.filter(competition=active_fest)
+    categories = list(cats_qs.order_by('name'))
     
     if request.method == 'POST':
         if not institution.allows_program_management:
@@ -391,7 +505,13 @@ def program_create_view(request, institution_slug):
         p_type = request.POST.get('program_type', 'STAGE')
         p_mode = request.POST.get('presentation_mode', 'SEQUENTIAL')
         duration = request.POST.get('duration_per_participant', 5)
-        comp = get_object_or_404(Competition, id=comp_id, institution=institution)
+        
+        comp = None
+        if comp_id:
+            comp = Competition.objects.filter(id=comp_id, institution=institution).first()
+        if not comp:
+            comp = active_fest or competitions.first()
+            
         cat = get_object_or_404(Category, id=cat_id, institution=institution)
         max_team = int(request.POST.get('max_participants_per_team', 0) or 0)
 
@@ -412,15 +532,21 @@ def program_create_view(request, institution_slug):
     return render(request, 'core/program_create.html', {
         'institution': institution, 
         'competitions': competitions, 
-        'categories': categories
+        'categories': categories,
+        'active_fest': active_fest,
     })
 
 
 @login_required
 def program_batch_create_view(request, institution_slug):
     institution = get_object_or_404(Institution, slug=institution_slug)
-    competitions = Competition.objects.filter(institution=institution)
-    categories = Category.objects.filter(institution=institution)
+    active_fest = get_active_fest(request, institution)
+    competitions = Competition.objects.filter(institution=institution).order_by('-year', '-created_at', '-id')
+    
+    cats_qs = Category.objects.filter(institution=institution)
+    if active_fest:
+        cats_qs = cats_qs.filter(competition=active_fest)
+    categories = list(cats_qs.order_by('name'))
 
     if request.method == 'POST':
         comp_ids = request.POST.getlist('competition_id[]')
@@ -438,7 +564,7 @@ def program_batch_create_view(request, institution_slug):
             if not prog_name:
                 continue
 
-            comp_id = comp_ids[i] if i < len(comp_ids) else None
+            comp_id = comp_ids[i] if i < len(comp_ids) and comp_ids[i] else None
             cat_id = cat_ids[i] if i < len(cat_ids) else None
             p_type = p_types[i] if i < len(p_types) else 'STAGE'
             is_group_val = (is_groups[i] == '1' or is_groups[i] == 'true' or is_groups[i] == 'on') if i < len(is_groups) else False
@@ -446,7 +572,9 @@ def program_batch_create_view(request, institution_slug):
             duration_val = int(durations[i]) if i < len(durations) and str(durations[i]).isdigit() else 5
             max_team_val = int(team_limits[i]) if i < len(team_limits) and str(team_limits[i]).isdigit() else 0
 
-            comp = Competition.objects.filter(id=comp_id, institution=institution).first()
+            comp = Competition.objects.filter(id=comp_id, institution=institution).first() if comp_id else None
+            if not comp:
+                comp = active_fest or competitions.first()
             cat = Category.objects.filter(id=cat_id, institution=institution).first()
 
             if comp and cat:
@@ -470,6 +598,7 @@ def program_batch_create_view(request, institution_slug):
         'institution': institution,
         'competitions': competitions,
         'categories': categories,
+        'active_fest': active_fest,
     })
 
 
@@ -593,7 +722,8 @@ def program_bulk_upload_view(request, institution_slug):
 @login_required
 def team_list_view(request, institution_slug):
     institution = get_object_or_404(Institution, slug=institution_slug)
-    competitions = Competition.objects.filter(institution=institution)
+    active_fest = get_active_fest(request, institution)
+    competitions = Competition.objects.filter(institution=institution).order_by('-year', '-created_at', '-id')
     team_leaders = User.objects.filter(institution=institution, role='TEAM_LEADER')
     
     if request.method == 'POST':
@@ -607,9 +737,9 @@ def team_list_view(request, institution_slug):
         leader_id = request.POST.get('leader_id')
         logo = request.FILES.get('logo')
 
-        comp = Competition.objects.filter(id=comp_id, institution=institution).first()
+        comp = Competition.objects.filter(id=comp_id, institution=institution).first() if comp_id else None
         if not comp:
-            comp = competitions.first()
+            comp = active_fest or competitions.first()
 
         if comp and name:
             team = Team.objects.create(
@@ -629,22 +759,29 @@ def team_list_view(request, institution_slug):
             messages.success(request, f"Team '{name}' created successfully!")
             return redirect('core:team_list', institution_slug=institution.slug)
         else:
-            messages.error(request, "Failed to create team. Name and competition are required.")
+            messages.error(request, "Failed to create team. Name is required.")
 
-    teams = Team.objects.filter(institution=institution).select_related('competition', 'user')
+    teams_qs = Team.objects.filter(institution=institution).select_related('competition', 'user')
+    if active_fest:
+        teams_qs = teams_qs.filter(competition=active_fest)
+    teams = list(teams_qs)
 
     return render(request, 'core/team_list.html', {
         'institution': institution,
         'teams': teams,
         'competitions': competitions,
-        'team_leaders': team_leaders
+        'team_leaders': team_leaders,
+        'active_fest': active_fest,
     })
 
 
 @login_required
 def contestant_list_view(request, institution_slug):
     institution = get_object_or_404(Institution, slug=institution_slug)
-    contestants = Contestant.objects.filter(institution=institution).select_related('team', 'category')
+    active_fest = get_active_fest(request, institution)
+    contestants = Contestant.objects.filter(institution=institution).select_related('team', 'category', 'competition')
+    if active_fest:
+        contestants = contestants.filter(competition=active_fest)
     managed_team = None
 
     if request.user.is_team_leader:
@@ -661,15 +798,24 @@ def contestant_list_view(request, institution_slug):
         'contestants': contestants,
         'managed_team': managed_team,
         'has_contestant_addon': has_contestant_addon,
+        'active_fest': active_fest,
     })
 
 
 @login_required
 def contestant_create_view(request, institution_slug):
     institution = get_object_or_404(Institution, slug=institution_slug)
-    competitions = Competition.objects.filter(institution=institution)
-    categories = Category.objects.filter(institution=institution, is_common=False)
-    teams = Team.objects.filter(institution=institution)
+    active_fest = get_active_fest(request, institution)
+    competitions = Competition.objects.filter(institution=institution).order_by('-year', '-created_at', '-id')
+    
+    cats_qs = Category.objects.filter(institution=institution, is_common=False)
+    teams_qs = Team.objects.filter(institution=institution)
+    if active_fest:
+        cats_qs = cats_qs.filter(competition=active_fest)
+        teams_qs = teams_qs.filter(competition=active_fest)
+
+    categories = list(cats_qs.order_by('name'))
+    teams = list(teams_qs.order_by('name'))
 
     if request.method == 'POST':
         if not institution.allows_contestant_registration:
@@ -682,7 +828,10 @@ def contestant_create_view(request, institution_slug):
         name = request.POST.get('name')
         wa_num = request.POST.get('whatsapp_number', '').strip()
 
-        comp = get_object_or_404(Competition, id=comp_id, institution=institution)
+        comp = Competition.objects.filter(id=comp_id, institution=institution).first() if comp_id else None
+        if not comp:
+            comp = active_fest or competitions.first()
+
         team = get_object_or_404(Team, id=team_id, institution=institution)
         cat = get_object_or_404(Category, id=cat_id, institution=institution)
 
@@ -705,16 +854,25 @@ def contestant_create_view(request, institution_slug):
         'institution': institution,
         'competitions': competitions,
         'categories': categories,
-        'teams': teams
+        'teams': teams,
+        'active_fest': active_fest,
     })
 
 
 @login_required
 def contestant_batch_create_view(request, institution_slug):
     institution = get_object_or_404(Institution, slug=institution_slug)
-    competitions = Competition.objects.filter(institution=institution)
-    categories = Category.objects.filter(institution=institution, is_common=False)
-    teams = Team.objects.filter(institution=institution)
+    active_fest = get_active_fest(request, institution)
+    competitions = Competition.objects.filter(institution=institution).order_by('-year', '-created_at', '-id')
+    
+    cats_qs = Category.objects.filter(institution=institution, is_common=False)
+    teams_qs = Team.objects.filter(institution=institution)
+    if active_fest:
+        cats_qs = cats_qs.filter(competition=active_fest)
+        teams_qs = teams_qs.filter(competition=active_fest)
+
+    categories = list(cats_qs.order_by('name'))
+    teams = list(teams_qs.order_by('name'))
 
     if request.method == 'POST':
         if not institution.allows_contestant_registration:
@@ -733,12 +891,15 @@ def contestant_batch_create_view(request, institution_slug):
             if not c_name:
                 continue
 
-            comp_id = comp_ids[i] if i < len(comp_ids) else None
+            comp_id = comp_ids[i] if i < len(comp_ids) and comp_ids[i] else None
             team_id = team_ids[i] if i < len(team_ids) else None
             cat_id = cat_ids[i] if i < len(cat_ids) else None
             wa_num = wa_numbers[i].strip() if i < len(wa_numbers) else ''
 
-            comp = Competition.objects.filter(id=comp_id, institution=institution).first()
+            comp = Competition.objects.filter(id=comp_id, institution=institution).first() if comp_id else None
+            if not comp:
+                comp = active_fest or competitions.first()
+
             team = Team.objects.filter(id=team_id, institution=institution).first()
             cat = Category.objects.filter(id=cat_id, institution=institution, is_common=False).first()
 
@@ -761,6 +922,7 @@ def contestant_batch_create_view(request, institution_slug):
         'competitions': competitions,
         'categories': categories,
         'teams': teams,
+        'active_fest': active_fest,
     })
 
 
@@ -938,6 +1100,7 @@ def judge_dashboard_view(request, institution_slug):
 @login_required
 def scoring_program_list_view(request, institution_slug):
     institution = get_object_or_404(Institution, slug=institution_slug)
+    active_fest = get_active_fest(request, institution)
     programs = Program.objects.filter(institution=institution).select_related('category', 'competition')
     categories = Category.objects.filter(institution=institution)
 
@@ -952,6 +1115,9 @@ def scoring_program_list_view(request, institution_slug):
             programs = programs.filter(id__in=judge_progs)
         else:
             programs = Program.objects.none()
+    elif active_fest:
+        programs = programs.filter(competition=active_fest)
+        categories = categories.filter(competition=active_fest)
 
     for p in programs:
         if p.is_group:
@@ -963,6 +1129,7 @@ def scoring_program_list_view(request, institution_slug):
         'institution': institution,
         'programs': programs,
         'categories': categories,
+        'active_fest': active_fest,
     })
 
 
@@ -1556,14 +1723,21 @@ def points_config_view(request, institution_slug):
         else:
             messages.success(request, "⚡ Ranks-Only Mode Active: Points awarded for 1st, 2nd & 3rd ranks only. Grade columns are hidden.")
 
-    programs = Program.objects.filter(institution=institution).select_related('category', 'competition', 'custom_points_config').order_by('category__name', 'name')
-    categories = Category.objects.filter(institution=institution).order_by('name')
+    active_fest = get_active_fest(request, institution)
+    progs_qs = Program.objects.filter(institution=institution).select_related('category', 'competition', 'custom_points_config').order_by('category__name', 'name')
+    cats_qs = Category.objects.filter(institution=institution).order_by('name')
+    if active_fest:
+        progs_qs = progs_qs.filter(competition=active_fest)
+        cats_qs = cats_qs.filter(competition=active_fest)
+    programs = list(progs_qs)
+    categories = list(cats_qs)
 
     return render(request, 'core/points_config.html', {
         'institution': institution, 
         'config': config,
         'programs': programs,
         'categories': categories,
+        'active_fest': active_fest,
     })
 
 
@@ -1872,6 +2046,7 @@ def settings_fests_view(request, institution_slug):
 @login_required
 def settings_participation_limits_view(request, institution_slug):
     institution = get_object_or_404(Institution, slug=institution_slug)
+    active_fest = get_active_fest(request, institution)
     competitions = Competition.objects.filter(institution=institution).order_by('-year', '-id')
 
     if request.method == 'POST':
@@ -1879,6 +2054,8 @@ def settings_participation_limits_view(request, institution_slug):
         target_comps = Competition.objects.filter(institution=institution)
         if comp_id and str(comp_id).isdigit():
             target_comps = target_comps.filter(id=comp_id)
+        elif active_fest:
+            target_comps = target_comps.filter(id=active_fest.id)
 
         max_single = int(request.POST.get('max_single_programs_per_contestant', 0) or 0)
         max_group = int(request.POST.get('max_group_programs_per_contestant', 0) or 0)
@@ -1911,16 +2088,21 @@ def settings_participation_limits_view(request, institution_slug):
     return render(request, 'core/settings/settings_participation_limits.html', {
         'institution': institution,
         'competitions': competitions,
+        'active_fest': active_fest,
     })
 
 
 @login_required
 def settings_chest_numbers_view(request, institution_slug):
     institution = get_object_or_404(Institution, slug=institution_slug)
+    active_fest = get_active_fest(request, institution)
+    
     if request.method == 'POST':
         action = request.POST.get('action')
         if action == 'update_chest_ranges':
             base_cats = Category.objects.filter(institution=institution, is_common=False)
+            if active_fest:
+                base_cats = base_cats.filter(competition=active_fest)
             for cat in base_cats:
                 val = request.POST.get(f'start_chest_no_{cat.id}')
                 if val and str(val).isdigit():
@@ -1929,11 +2111,16 @@ def settings_chest_numbers_view(request, institution_slug):
             messages.success(request, "Chest number starting ranges updated successfully!")
         elif action == 'auto_generate_chest_nos':
             from .services import auto_generate_all_chest_numbers
-            count = auto_generate_all_chest_numbers(institution, overwrite=True)
-            messages.success(request, f"🔄 Successfully re-generated sequential chest numbers for {count} contestants across categories!")
+            count = auto_generate_all_chest_numbers(institution, competition=active_fest, overwrite=True)
+            fest_label = f" for '{active_fest.name}'" if active_fest else ""
+            messages.success(request, f"🔄 Successfully re-generated sequential chest numbers for {count} contestants{fest_label} across categories!")
         return redirect('core:settings_chest_numbers', institution_slug=institution.slug)
 
-    base_categories = Category.objects.filter(institution=institution, is_common=False).order_by('id')
+    base_categories = Category.objects.filter(institution=institution, is_common=False)
+    if active_fest:
+        base_categories = base_categories.filter(competition=active_fest)
+    base_categories = base_categories.order_by('id')
+    
     from .services import get_default_start_chest_no_for_category
     for cat in base_categories:
         cat.suggested_start_chest_no = get_default_start_chest_no_for_category(cat)
@@ -1941,6 +2128,7 @@ def settings_chest_numbers_view(request, institution_slug):
     return render(request, 'core/settings/settings_chest_numbers.html', {
         'institution': institution,
         'base_categories': base_categories,
+        'active_fest': active_fest,
     })
 
 
@@ -2332,10 +2520,23 @@ def contestant_assign_programs_view(request, institution_slug, contestant_id):
 @login_required
 def assignment_hub_view(request, institution_slug):
     institution = get_object_or_404(Institution, slug=institution_slug)
-    programs = Program.objects.filter(institution=institution).select_related('category', 'competition')
-    categories = Category.objects.filter(institution=institution).prefetch_related('included_categories')
-    teams = Team.objects.filter(institution=institution)
-    contestants = Contestant.objects.filter(institution=institution).select_related('team', 'category')
+    active_fest = get_active_fest(request, institution)
+    
+    programs_qs = Program.objects.filter(institution=institution).select_related('category', 'competition')
+    cats_qs = Category.objects.filter(institution=institution).prefetch_related('included_categories')
+    teams_qs = Team.objects.filter(institution=institution)
+    contestants_qs = Contestant.objects.filter(institution=institution).select_related('team', 'category')
+    
+    if active_fest:
+        programs_qs = programs_qs.filter(competition=active_fest)
+        cats_qs = cats_qs.filter(competition=active_fest)
+        teams_qs = teams_qs.filter(competition=active_fest)
+        contestants_qs = contestants_qs.filter(competition=active_fest)
+
+    programs = programs_qs
+    categories = cats_qs
+    teams = teams_qs
+    contestants = contestants_qs
     
     managed_team = getattr(request.user, 'managed_team', None) if request.user.is_team_leader else None
 
@@ -2384,12 +2585,14 @@ def assignment_hub_view(request, institution_slug):
         'existing_part_ids': existing_part_ids,
         'program_teams': program_teams,
         'managed_team': managed_team,
+        'active_fest': active_fest,
     })
 
 
 @login_required
 def assigned_programs_list_view(request, institution_slug):
     institution = get_object_or_404(Institution, slug=institution_slug)
+    active_fest = get_active_fest(request, institution)
     view_mode = request.GET.get('view', 'category')
     managed_team = getattr(request.user, 'managed_team', None) if request.user.is_team_leader else None
 
@@ -2403,40 +2606,43 @@ def assigned_programs_list_view(request, institution_slug):
             'contestants__captain_groups__program',
             'contestants__group_entries__program',
         )
-        contestants = Contestant.objects.filter(institution=institution, team=managed_team).select_related(
+        contestants_qs = Contestant.objects.filter(institution=institution, team=managed_team).select_related(
             'team', 'category'
         ).prefetch_related(
             'participations__program',
             'captain_groups__program',
             'group_entries__program',
         )
-        programs = Program.objects.filter(institution=institution).select_related(
+        progs_qs = Program.objects.filter(institution=institution).select_related(
             'category', 'competition'
         ).prefetch_related(
             Prefetch('single_participations', queryset=Participation.objects.filter(contestant__team=managed_team).select_related('contestant', 'contestant__team')),
             Prefetch('group_participations', queryset=GroupParticipation.objects.filter(team=managed_team).select_related('team', 'captain'))
         )
-        categories = Category.objects.filter(institution=institution).prefetch_related(
+        cats_qs = Category.objects.filter(institution=institution).prefetch_related(
             'programs',
             Prefetch('programs__single_participations', queryset=Participation.objects.filter(contestant__team=managed_team).select_related('contestant', 'contestant__team')),
             Prefetch('programs__group_participations', queryset=GroupParticipation.objects.filter(team=managed_team).select_related('team', 'captain'))
         )
     else:
-        categories = Category.objects.filter(institution=institution).prefetch_related(
+        cats_qs = Category.objects.filter(institution=institution).prefetch_related(
             'programs', 
             'programs__single_participations__contestant',
             'programs__single_participations__contestant__team',
             'programs__group_participations__team',
             'programs__group_participations__captain',
         )
-        teams = Team.objects.filter(institution=institution).prefetch_related(
+        teams = Team.objects.filter(institution=institution)
+        if active_fest:
+            teams = teams.filter(competition=active_fest)
+        teams = teams.prefetch_related(
             'contestants', 
             'contestants__category',
             'contestants__participations__program',
             'contestants__captain_groups__program',
             'contestants__group_entries__program',
         )
-        programs = Program.objects.filter(institution=institution).select_related(
+        progs_qs = Program.objects.filter(institution=institution).select_related(
             'category', 'competition'
         ).prefetch_related(
             'single_participations__contestant',
@@ -2444,13 +2650,22 @@ def assigned_programs_list_view(request, institution_slug):
             'group_participations__team',
             'group_participations__captain',
         )
-        contestants = Contestant.objects.filter(institution=institution).select_related(
+        contestants_qs = Contestant.objects.filter(institution=institution).select_related(
             'team', 'category'
         ).prefetch_related(
             'participations__program',
             'captain_groups__program',
             'group_entries__program',
         )
+
+    if active_fest:
+        cats_qs = cats_qs.filter(competition=active_fest)
+        progs_qs = progs_qs.filter(competition=active_fest)
+        contestants_qs = contestants_qs.filter(competition=active_fest)
+
+    categories = cats_qs
+    programs = progs_qs
+    contestants = contestants_qs
 
     return render(request, 'core/assigned_programs_list.html', {
         'institution': institution,
@@ -2460,6 +2675,7 @@ def assigned_programs_list_view(request, institution_slug):
         'programs': programs,
         'contestants': contestants,
         'managed_team': managed_team,
+        'active_fest': active_fest,
     })
 
 
@@ -2496,8 +2712,12 @@ def render_to_pdf(template_src, context_dict={}, filename="document.pdf", reques
 @login_required
 def download_programs_pdf_view(request, institution_slug):
     institution = get_object_or_404(Institution, slug=institution_slug)
-    single_programs = list(Program.objects.filter(institution=institution, is_group=False).select_related('category', 'competition').order_by('program_type', 'category__name', 'name'))
-    group_programs = list(Program.objects.filter(institution=institution, is_group=True).select_related('category', 'competition').order_by('program_type', 'category__name', 'name'))
+    active_fest = get_active_fest(request, institution)
+    progs_qs = Program.objects.filter(institution=institution)
+    if active_fest:
+        progs_qs = progs_qs.filter(competition=active_fest)
+    single_programs = list(progs_qs.filter(is_group=False).select_related('category', 'competition').order_by('program_type', 'category__name', 'name'))
+    group_programs = list(progs_qs.filter(is_group=True).select_related('category', 'competition').order_by('program_type', 'category__name', 'name'))
     programs = single_programs + group_programs
     
     context = {
@@ -2508,6 +2728,7 @@ def download_programs_pdf_view(request, institution_slug):
         'single_count': len(single_programs),
         'group_count': len(group_programs),
         'total_count': len(programs),
+        'active_fest': active_fest,
         'generated_at': timezone.now()
     }
     filename = f"{institution.slug}_programs_list.pdf"
@@ -2517,10 +2738,18 @@ def download_programs_pdf_view(request, institution_slug):
 @login_required
 def download_schedule_pdf_view(request, institution_slug):
     institution = get_object_or_404(Institution, slug=institution_slug)
-    fest_days = FestDay.objects.filter(institution=institution).order_by('day_number')
-    stages = Stage.objects.filter(institution=institution).order_by('stage_type', 'name')
+    active_fest = get_active_fest(request, institution)
+    fest_days_qs = FestDay.objects.filter(institution=institution)
+    stages_qs = Stage.objects.filter(institution=institution)
+    schedules_qs = ProgramSchedule.objects.filter(institution=institution)
+    if active_fest:
+        fest_days_qs = fest_days_qs.filter(competition=active_fest)
+        schedules_qs = schedules_qs.filter(program__competition=active_fest)
 
-    all_schedules = list(ProgramSchedule.objects.filter(institution=institution).select_related(
+    fest_days = fest_days_qs.order_by('day_number')
+    stages = stages_qs.order_by('stage_type', 'name')
+
+    all_schedules = list(schedules_qs.select_related(
         'program', 'program__category', 'fest_day', 'stage'
     ).order_by('fest_day__day_number', 'stage__name', 'start_time'))
 
@@ -2557,6 +2786,7 @@ def download_schedule_pdf_view(request, institution_slug):
         'all_schedules': all_schedules,
         'timetable_by_day': timetable_by_day,
         'total_scheduled_events': total_scheduled_events,
+        'active_fest': active_fest,
         'generated_at': timezone.now()
     }
     filename = f"{institution.slug}_fest_schedule.pdf"
@@ -2566,6 +2796,7 @@ def download_schedule_pdf_view(request, institution_slug):
 @login_required
 def download_contestants_teamwise_pdf_view(request, institution_slug):
     institution = get_object_or_404(Institution, slug=institution_slug)
+    active_fest = get_active_fest(request, institution)
     
     if request.user.is_team_leader:
         managed_team = getattr(request.user, 'managed_team', None)
@@ -2579,18 +2810,22 @@ def download_contestants_teamwise_pdf_view(request, institution_slug):
             filename = f"{institution.slug}_contestants.pdf"
         unassigned_contestants = []
     else:
-        teams = Team.objects.filter(institution=institution).prefetch_related(
+        teams_qs = Team.objects.filter(institution=institution)
+        unassigned_qs = Contestant.objects.filter(institution=institution, team__isnull=True)
+        if active_fest:
+            teams_qs = teams_qs.filter(competition=active_fest)
+            unassigned_qs = unassigned_qs.filter(competition=active_fest)
+        teams = teams_qs.prefetch_related(
             'contestants', 'contestants__category'
         ).order_by('name')
         filename = f"{institution.slug}_contestants_teamwise.pdf"
-        unassigned_contestants = Contestant.objects.filter(
-            institution=institution, team__isnull=True
-        ).select_related('category').order_by('chest_no')
+        unassigned_contestants = unassigned_qs.select_related('category').order_by('chest_no')
 
     context = {
         'institution': institution,
         'teams': teams,
         'unassigned_contestants': unassigned_contestants,
+        'active_fest': active_fest,
         'generated_at': timezone.now()
     }
     return render_to_pdf('pdf/contestants_teamwise_pdf.html', context, filename, request=request)
@@ -2599,7 +2834,11 @@ def download_contestants_teamwise_pdf_view(request, institution_slug):
 @login_required
 def download_team_results_pdf_view(request, institution_slug, team_id=None):
     institution = get_object_or_404(Institution, slug=institution_slug)
-    all_teams = Team.objects.filter(institution=institution)
+    active_fest = get_active_fest(request, institution)
+    all_teams_qs = Team.objects.filter(institution=institution)
+    if active_fest:
+        all_teams_qs = all_teams_qs.filter(competition=active_fest)
+    all_teams = all_teams_qs
     
     is_team_leader = request.user.is_team_leader and hasattr(request.user, 'managed_team') and request.user.managed_team
     if is_team_leader:
@@ -2613,19 +2852,24 @@ def download_team_results_pdf_view(request, institution_slug, team_id=None):
         messages.error(request, "No team found.")
         return redirect('core:dashboard', institution_slug=institution.slug)
 
-    single_parts = Participation.objects.filter(
+    single_parts_qs = Participation.objects.filter(
         institution=institution,
         contestant__team=team,
         program__is_announced=True,
         marks__isnull=False
-    ).select_related('program', 'program__category', 'contestant', 'contestant__team').order_by('program__category__name', 'program__name')
-
-    group_parts = GroupParticipation.objects.filter(
+    )
+    group_parts_qs = GroupParticipation.objects.filter(
         institution=institution,
         team=team,
         program__is_announced=True,
         marks__isnull=False
-    ).select_related('program', 'program__category', 'captain', 'team').prefetch_related('contestants').order_by('program__category__name', 'program__name')
+    )
+    if active_fest:
+        single_parts_qs = single_parts_qs.filter(program__competition=active_fest)
+        group_parts_qs = group_parts_qs.filter(program__competition=active_fest)
+
+    single_parts = single_parts_qs.select_related('program', 'program__category', 'contestant', 'contestant__team').order_by('program__category__name', 'program__name')
+    group_parts = group_parts_qs.select_related('program', 'program__category', 'captain', 'team').prefetch_related('contestants').order_by('program__category__name', 'program__name')
 
     detailed_rows = []
     total_announced_points = 0
@@ -2664,7 +2908,7 @@ def download_team_results_pdf_view(request, institution_slug, team_id=None):
             })
 
     from .services import get_team_standings
-    standings = get_team_standings(institution, announced_only=True)
+    standings = get_team_standings(institution, announced_only=True, competition=active_fest)
     team_position = None
     for s in standings:
         if s['team'].id == team.id:
@@ -2677,6 +2921,7 @@ def download_team_results_pdf_view(request, institution_slug, team_id=None):
         'detailed_rows': detailed_rows,
         'total_announced_points': total_announced_points,
         'team_position': team_position,
+        'active_fest': active_fest,
         'generated_at': timezone.now()
     }
     filename = f"{team.name}_detailed_points.pdf"
@@ -2686,6 +2931,7 @@ def download_team_results_pdf_view(request, institution_slug, team_id=None):
 @login_required
 def download_assigned_programs_teamwise_pdf_view(request, institution_slug):
     institution = get_object_or_404(Institution, slug=institution_slug)
+    active_fest = get_active_fest(request, institution)
     
     if request.user.is_team_leader:
         managed_team = getattr(request.user, 'managed_team', None)
@@ -2696,15 +2942,21 @@ def download_assigned_programs_teamwise_pdf_view(request, institution_slug):
             teams = Team.objects.none()
             filename = f"{institution.slug}_assigned_programs.pdf"
     else:
-        teams = Team.objects.filter(institution=institution).order_by('name')
+        teams_qs = Team.objects.filter(institution=institution)
+        if active_fest:
+            teams_qs = teams_qs.filter(competition=active_fest)
+        teams = teams_qs.order_by('name')
         filename = f"{institution.slug}_assigned_programs_teamwise.pdf"
 
     team_data = []
     for team in teams:
         categories_dict = {}
-        contestants = Contestant.objects.filter(
+        contestants_qs = Contestant.objects.filter(
             institution=institution, team=team
-        ).select_related('category').prefetch_related(
+        )
+        if active_fest:
+            contestants_qs = contestants_qs.filter(competition=active_fest)
+        contestants = contestants_qs.select_related('category').prefetch_related(
             'participations__program',
             'captain_groups__program',
             'group_entries__program'
@@ -2724,6 +2976,7 @@ def download_assigned_programs_teamwise_pdf_view(request, institution_slug):
     context = {
         'institution': institution,
         'team_data': team_data,
+        'active_fest': active_fest,
         'generated_at': timezone.now()
     }
     return render_to_pdf('pdf/assigned_programs_teamwise_pdf.html', context, filename, request=request)
@@ -2793,9 +3046,12 @@ def download_valuation_form_pdf_view(request, institution_slug, program_id):
 @login_required
 def download_bulk_green_room_pdf_view(request, institution_slug):
     institution = get_object_or_404(Institution, slug=institution_slug)
+    active_fest = get_active_fest(request, institution)
     category_id = request.GET.get('category_id')
 
     programs = Program.objects.filter(institution=institution).select_related('category')
+    if active_fest:
+        programs = programs.filter(competition=active_fest)
     if category_id and str(category_id).isdigit():
         programs = programs.filter(category_id=int(category_id))
     programs = programs.order_by('category__name', 'name')
@@ -2804,6 +3060,8 @@ def download_bulk_green_room_pdf_view(request, institution_slug):
     single_parts = Participation.objects.filter(
         institution=institution
     ).select_related('contestant', 'contestant__team', 'contestant__category').order_by('contestant__chest_no')
+    if active_fest:
+        single_parts = single_parts.filter(program__competition=active_fest)
 
     single_by_program = {}
     for p in single_parts:
@@ -2814,6 +3072,8 @@ def download_bulk_green_room_pdf_view(request, institution_slug):
     group_parts = GroupParticipation.objects.filter(
         institution=institution
     ).select_related('team', 'captain')
+    if active_fest:
+        group_parts = group_parts.filter(program__competition=active_fest)
 
     group_by_program = {}
     for gp in group_parts:
@@ -2836,9 +3096,12 @@ def download_bulk_green_room_pdf_view(request, institution_slug):
 @login_required
 def download_bulk_call_list_pdf_view(request, institution_slug):
     institution = get_object_or_404(Institution, slug=institution_slug)
+    active_fest = get_active_fest(request, institution)
     category_id = request.GET.get('category_id')
 
     programs = Program.objects.filter(institution=institution).select_related('category')
+    if active_fest:
+        programs = programs.filter(competition=active_fest)
     if category_id and str(category_id).isdigit():
         programs = programs.filter(category_id=int(category_id))
     programs = programs.order_by('category__name', 'name')
@@ -2847,6 +3110,8 @@ def download_bulk_call_list_pdf_view(request, institution_slug):
     single_parts = Participation.objects.filter(
         institution=institution
     ).select_related('contestant', 'contestant__team', 'contestant__category').order_by('contestant__chest_no')
+    if active_fest:
+        single_parts = single_parts.filter(program__competition=active_fest)
 
     single_by_program = {}
     for p in single_parts:
@@ -2857,6 +3122,8 @@ def download_bulk_call_list_pdf_view(request, institution_slug):
     group_parts = GroupParticipation.objects.filter(
         institution=institution
     ).select_related('team', 'captain')
+    if active_fest:
+        group_parts = group_parts.filter(program__competition=active_fest)
 
     group_by_program = {}
     for gp in group_parts:
@@ -2873,6 +3140,7 @@ def download_bulk_call_list_pdf_view(request, institution_slug):
     context = {
         'institution': institution,
         'programs_data': programs_data,
+        'active_fest': active_fest,
         'generated_at': timezone.now()
     }
     filename = f"{institution.slug}_all_call_lists.pdf"
@@ -2882,9 +3150,12 @@ def download_bulk_call_list_pdf_view(request, institution_slug):
 @login_required
 def download_bulk_valuation_form_pdf_view(request, institution_slug):
     institution = get_object_or_404(Institution, slug=institution_slug)
+    active_fest = get_active_fest(request, institution)
     category_id = request.GET.get('category_id')
 
     programs = Program.objects.filter(institution=institution).select_related('category')
+    if active_fest:
+        programs = programs.filter(competition=active_fest)
     if category_id and str(category_id).isdigit():
         programs = programs.filter(category_id=int(category_id))
     programs = programs.order_by('category__name', 'name')
@@ -2893,6 +3164,8 @@ def download_bulk_valuation_form_pdf_view(request, institution_slug):
     single_parts = Participation.objects.filter(
         institution=institution
     ).select_related('program', 'contestant', 'contestant__team').order_by('contestant__chest_no')
+    if active_fest:
+        single_parts = single_parts.filter(program__competition=active_fest)
 
     single_by_program = {}
     for p in single_parts:
@@ -2902,6 +3175,8 @@ def download_bulk_valuation_form_pdf_view(request, institution_slug):
     group_parts = GroupParticipation.objects.filter(
         institution=institution
     ).select_related('team', 'captain')
+    if active_fest:
+        group_parts = group_parts.filter(program__competition=active_fest)
 
     group_by_program = {}
     for gp in group_parts:
@@ -2918,6 +3193,7 @@ def download_bulk_valuation_form_pdf_view(request, institution_slug):
     context = {
         'institution': institution,
         'programs_data': programs_data,
+        'active_fest': active_fest,
         'generated_at': timezone.now()
     }
     filename = f"{institution.slug}_all_valuation_forms.pdf"
@@ -2955,9 +3231,12 @@ def download_single_result_pdf_view(request, institution_slug, program_id):
 @login_required
 def download_all_results_pdf_view(request, institution_slug):
     institution = get_object_or_404(Institution, slug=institution_slug)
+    active_fest = get_active_fest(request, institution)
     category_id = request.GET.get('category_id') or request.GET.get('category')
 
     programs = Program.objects.filter(institution=institution, is_announced=True).select_related('category')
+    if active_fest:
+        programs = programs.filter(competition=active_fest)
     if category_id and str(category_id).isdigit():
         programs = programs.filter(category_id=int(category_id))
     programs = programs.order_by('result_number', 'announced_at', 'id')
@@ -3256,12 +3535,18 @@ def contestant_delete_view(request, institution_slug, contestant_id):
 @login_required
 def program_results_view(request, institution_slug):
     institution = get_object_or_404(Institution, slug=institution_slug)
-    categories = Category.objects.filter(institution=institution)
+    active_fest = get_active_fest(request, institution)
+    cats_qs = Category.objects.filter(institution=institution)
+    if active_fest:
+        cats_qs = cats_qs.filter(competition=active_fest)
+    categories = list(cats_qs)
     
     category_id = request.GET.get('category')
     view_mode = request.GET.get('view', 'announced')
 
     programs = Program.objects.filter(institution=institution).select_related('category')
+    if active_fest:
+        programs = programs.filter(competition=active_fest)
     if category_id:
         programs = programs.filter(category_id=category_id)
     if view_mode == 'announced':
@@ -3297,13 +3582,15 @@ def program_results_view(request, institution_slug):
         'categories': categories,
         'selected_category_id': category_id,
         'view_mode': view_mode,
-        'program_results': program_results
+        'program_results': program_results,
+        'active_fest': active_fest,
     })
 
 
 @login_required
 def team_standings_view(request, institution_slug):
     institution = get_object_or_404(Institution, slug=institution_slug)
+    active_fest = get_active_fest(request, institution)
     view_mode = request.GET.get('view', 'announced')
     announced_only = (view_mode == 'announced')
 
@@ -3313,10 +3600,13 @@ def team_standings_view(request, institution_slug):
         limit_n = int(n_param)
 
     from .services import get_team_standings
-    team_data = get_team_standings(institution, announced_only=announced_only, limit_n_results=limit_n)
+    team_data = get_team_standings(institution, announced_only=announced_only, limit_n_results=limit_n, competition=active_fest)
 
-    total_announced_programs = Program.objects.filter(institution=institution, is_announced=True).count()
-    total_completed_programs = Program.objects.filter(institution=institution).filter(
+    progs_count_qs = Program.objects.filter(institution=institution)
+    if active_fest:
+        progs_count_qs = progs_count_qs.filter(competition=active_fest)
+    total_announced_programs = progs_count_qs.filter(is_announced=True).count()
+    total_completed_programs = progs_count_qs.filter(
         Q(single_participations__marks__isnull=False) | Q(group_participations__marks__isnull=False)
     ).distinct().count()
     max_results = total_announced_programs if announced_only else total_completed_programs
@@ -3333,24 +3623,28 @@ def team_standings_view(request, institution_slug):
         'total_announced_programs': total_announced_programs,
         'total_completed_programs': total_completed_programs,
         'n_presets': n_presets,
+        'active_fest': active_fest,
     })
 
 
 @login_required
 def team_points_cards_view(request, institution_slug):
     institution = get_object_or_404(Institution, slug=institution_slug)
+    active_fest = get_active_fest(request, institution)
     n_param = request.GET.get('n_results') or request.GET.get('n')
     limit_n = None
     if n_param and n_param.isdigit():
         limit_n = int(n_param)
 
     from .services import get_team_standings
-    team_data = get_team_standings(institution, announced_only=True, limit_n_results=limit_n)
+    team_data = get_team_standings(institution, announced_only=True, limit_n_results=limit_n, competition=active_fest)
 
-    total_announced_programs = Program.objects.filter(institution=institution, is_announced=True).count()
+    progs_count_qs = Program.objects.filter(institution=institution)
+    if active_fest:
+        progs_count_qs = progs_count_qs.filter(competition=active_fest)
+    total_announced_programs = progs_count_qs.filter(is_announced=True).count()
 
-    comp = Competition.objects.filter(institution=institution, is_active=True).first()
-    fest_title = comp.name if comp else institution.name
+    fest_title = active_fest.name if active_fest else institution.name
 
     n_presets = [opt for opt in [5, 10, 15, 20, 25, 30, 40, 50] if opt < total_announced_programs]
 
@@ -3363,19 +3657,27 @@ def team_points_cards_view(request, institution_slug):
         'total_announced_programs': total_announced_programs,
         'fest_title': fest_title,
         'n_presets': n_presets,
+        'active_fest': active_fest,
     })
 
 
 @login_required
 def toppers_list_view(request, institution_slug):
     institution = get_object_or_404(Institution, slug=institution_slug)
-    categories = Category.objects.filter(institution=institution)
+    active_fest = get_active_fest(request, institution)
+    cats_qs = Category.objects.filter(institution=institution)
+    if active_fest:
+        cats_qs = cats_qs.filter(competition=active_fest)
+    categories = list(cats_qs)
+    
     category_id = request.GET.get('category')
     stage_type = request.GET.get('stage_type')
     view_mode = request.GET.get('view', 'announced')
     announced_only = (view_mode == 'announced')
 
     contestants_qs = Contestant.objects.filter(institution=institution).select_related('team', 'category')
+    if active_fest:
+        contestants_qs = contestants_qs.filter(competition=active_fest)
     if category_id:
         contestants_qs = contestants_qs.filter(category_id=category_id)
 
@@ -3425,7 +3727,8 @@ def toppers_list_view(request, institution_slug):
         'toppers': toppers_data,
         'overall_champion': overall_champion,
         'cat_champions': cat_champions,
-        'view_mode': view_mode
+        'view_mode': view_mode,
+        'active_fest': active_fest,
     })
 
 
@@ -3436,8 +3739,14 @@ def toppers_list_view(request, institution_slug):
 @login_required
 def prize_distribution_view(request, institution_slug):
     institution = get_object_or_404(Institution, slug=institution_slug)
-    categories = Category.objects.filter(institution=institution).order_by('name')
-    teams = Team.objects.filter(institution=institution).order_by('name')
+    active_fest = get_active_fest(request, institution)
+    cats_qs = Category.objects.filter(institution=institution)
+    teams_qs = Team.objects.filter(institution=institution)
+    if active_fest:
+        cats_qs = cats_qs.filter(competition=active_fest)
+        teams_qs = teams_qs.filter(competition=active_fest)
+    categories = cats_qs.order_by('name')
+    teams = teams_qs.order_by('name')
     config, _ = PointsConfig.objects.get_or_create(institution=institution)
 
     # Rank cutoff setting: from GET param or institution config
@@ -3469,6 +3778,8 @@ def prize_distribution_view(request, institution_slug):
 
     # Base programs queryset
     programs_qs = Program.objects.filter(institution=institution).select_related('category', 'preferred_stage')
+    if active_fest:
+        programs_qs = programs_qs.filter(competition=active_fest)
     if not include_draft:
         programs_qs = programs_qs.filter(is_announced=True)
     else:
@@ -3792,6 +4103,7 @@ def prize_distribution_update_rank_limit_view(request, institution_slug):
 @login_required
 def manage_announcements_view(request, institution_slug):
     institution = get_object_or_404(Institution, slug=institution_slug)
+    active_fest = get_active_fest(request, institution)
     if request.user.is_judge:
         messages.error(request, "Permission Denied: Judges cannot access the Public Announcement Hub.")
         return redirect('core:scoring_program_list', institution_slug=institution.slug)
@@ -3808,11 +4120,14 @@ def manage_announcements_view(request, institution_slug):
             return redirect('core:manage_announcements', institution_slug=institution.slug)
         elif action == 'resequence_results':
             from .services import resequence_announced_results
-            resequence_announced_results(institution)
+            resequence_announced_results(institution, competition=active_fest)
             messages.success(request, "⚡ Result numbers have been re-sequenced strictly in order of their announcement time!")
             return redirect('core:manage_announcements', institution_slug=institution.slug)
 
-    programs = Program.objects.filter(institution=institution).select_related('category').order_by('category__name', 'name')
+    progs_qs = Program.objects.filter(institution=institution).select_related('category')
+    if active_fest:
+        progs_qs = progs_qs.filter(competition=active_fest)
+    programs = progs_qs.order_by('category__name', 'name')
 
     for p in programs:
         if p.is_group:
@@ -3825,14 +4140,15 @@ def manage_announcements_view(request, institution_slug):
     announced_count = programs.filter(is_announced=True).count()
     total_programs = programs.count()
 
-    suggested_announcements = get_top_5_balancing_announcement_suggestions(institution)
+    suggested_announcements = get_top_5_balancing_announcement_suggestions(institution, competition=active_fest)
 
     return render(request, 'core/manage_announcements.html', {
         'institution': institution,
         'programs': programs,
         'announced_count': announced_count,
         'total_programs': total_programs,
-        'suggested_announcements': suggested_announcements
+        'suggested_announcements': suggested_announcements,
+        'active_fest': active_fest,
     })
 
 
@@ -3925,28 +4241,42 @@ def update_program_result_number_view(request, institution_slug, program_id):
     })
 
 
-def get_top_5_balancing_announcement_suggestions(institution):
+def get_top_5_balancing_announcement_suggestions(institution, competition=None):
     """
     Calculates top 5 unannounced completed programs that best balance 
     the current public team scores and create maximum suspense on the public leaderboard.
     """
-    teams = list(Team.objects.filter(institution=institution))
+    teams_qs = Team.objects.filter(institution=institution)
+    if competition:
+        teams_qs = teams_qs.filter(competition=competition)
+    teams = list(teams_qs)
     if not teams:
         return []
 
     public_team_scores = {}
     for t in teams:
         pts = 0
-        for c in Contestant.objects.filter(institution=institution, team=t):
+        c_qs = Contestant.objects.filter(institution=institution, team=t)
+        if competition:
+            c_qs = c_qs.filter(competition=competition)
+        for c in c_qs:
             parts = Participation.objects.filter(contestant=c, marks__isnull=False, program__is_announced=True)
+            if competition:
+                parts = parts.filter(program__competition=competition)
             pts += sum(p.total_points for p in parts if p.rank or p.grade)
-        for gp in GroupParticipation.objects.filter(team=t, marks__isnull=False, program__is_announced=True):
+        gp_qs = GroupParticipation.objects.filter(team=t, marks__isnull=False, program__is_announced=True)
+        if competition:
+            gp_qs = gp_qs.filter(program__competition=competition)
+        for gp in gp_qs:
             pts += gp.total_points
         public_team_scores[t.id] = pts
 
-    unannounced_programs = Program.objects.filter(
+    unannounced_programs_qs = Program.objects.filter(
         institution=institution, is_announced=False
-    ).filter(
+    )
+    if competition:
+        unannounced_programs_qs = unannounced_programs_qs.filter(competition=competition)
+    unannounced_programs = unannounced_programs_qs.filter(
         Q(single_participations__marks__isnull=False) | Q(group_participations__marks__isnull=False)
     ).distinct()
 
@@ -3999,18 +4329,20 @@ def get_top_5_balancing_announcement_suggestions(institution):
 @login_required
 def announcement_balancer_view(request, institution_slug):
     institution = get_object_or_404(Institution, slug=institution_slug)
+    active_fest = get_active_fest(request, institution)
     if request.user.is_judge:
         messages.error(request, "Permission Denied: Judges cannot access the Score Balancer AI.")
         return redirect('core:scoring_program_list', institution_slug=institution.slug)
 
-    suggested_announcements = get_top_5_balancing_announcement_suggestions(institution)
+    suggested_announcements = get_top_5_balancing_announcement_suggestions(institution, competition=active_fest)
 
-    public_team_scores = get_team_standings(institution, announced_only=True)
+    public_team_scores = get_team_standings(institution, announced_only=True, competition=active_fest)
 
     return render(request, 'core/announcement_balancer.html', {
         'institution': institution,
         'suggested_announcements': suggested_announcements,
-        'public_team_scores': public_team_scores
+        'public_team_scores': public_team_scores,
+        'active_fest': active_fest,
     })
 
 
@@ -4019,7 +4351,8 @@ def shareable_results_view(request, institution_slug):
     from .models import CustomResultTemplate
 
     institution = get_object_or_404(Institution, slug=institution_slug)
-    comp = Competition.objects.filter(institution=institution, is_active=True).first() or Competition.objects.filter(institution=institution).first()
+    active_fest = get_active_fest(request, institution)
+    comp = active_fest or Competition.objects.filter(institution=institution, is_active=True).first() or Competition.objects.filter(institution=institution).first()
 
     if request.method == 'POST':
         action = request.POST.get('action')
@@ -4051,7 +4384,10 @@ def shareable_results_view(request, institution_slug):
 
     custom_templates = list(CustomResultTemplate.objects.filter(competition=comp)) if comp else []
 
-    announced_progs = list(Program.objects.filter(institution=institution, is_announced=True).select_related('category', 'competition').distinct().order_by('result_number', 'announced_at', 'id'))
+    announced_progs_qs = Program.objects.filter(institution=institution, is_announced=True).select_related('category', 'competition')
+    if comp:
+        announced_progs_qs = announced_progs_qs.filter(competition=comp)
+    announced_progs = list(announced_progs_qs.distinct().order_by('result_number', 'announced_at', 'id'))
     
     # Auto-assign result_number if any program is missing one
     assigned_nums = set(p.result_number for p in announced_progs if p.result_number)
@@ -4113,7 +4449,8 @@ def shareable_results_view(request, institution_slug):
         'institution': institution,
         'cards_data': cards_data,
         'competition': comp,
-        'custom_templates': custom_templates
+        'custom_templates': custom_templates,
+        'active_fest': active_fest,
     })
 
 
@@ -4323,7 +4660,8 @@ def _get_certificate_winners_data(institution, competition, config, category_id=
 @login_required
 def certificate_studio_view(request, institution_slug):
     institution = get_object_or_404(Institution, slug=institution_slug)
-    comp = Competition.objects.filter(institution=institution, is_active=True).first() or Competition.objects.filter(institution=institution).first()
+    active_fest = get_active_fest(request, institution)
+    comp = active_fest or Competition.objects.filter(institution=institution, is_active=True).first() or Competition.objects.filter(institution=institution).first()
     has_cert_addon = institution.has_add_on('certificate-generation') or request.user.is_superuser or (hasattr(request.user, 'is_developer') and request.user.is_developer)
     cert_addon = AddOn.objects.filter(code='certificate-generation', is_active=True).first()
 
@@ -4438,8 +4776,14 @@ def certificate_studio_view(request, institution_slug):
     program_id = request.GET.get('program')
     place_filter = request.GET.get('place')
 
-    categories = Category.objects.filter(institution=institution).order_by('name')
+    cats_qs = Category.objects.filter(institution=institution)
+    if active_fest:
+        cats_qs = cats_qs.filter(competition=active_fest)
+    categories = cats_qs.order_by('name')
+
     programs_qs = Program.objects.filter(institution=institution, is_announced=True).select_related('category')
+    if comp:
+        programs_qs = programs_qs.filter(competition=comp)
     if category_id and str(category_id).isdigit():
         programs_qs = programs_qs.filter(category_id=category_id)
     programs = list(programs_qs.order_by('name'))
@@ -4519,6 +4863,7 @@ def certificate_studio_view(request, institution_slug):
         'selected_category_id': int(category_id) if category_id and str(category_id).isdigit() else '',
         'selected_program_id': int(program_id) if program_id and str(program_id).isdigit() else '',
         'selected_place': int(place_filter) if place_filter and str(place_filter).isdigit() else '',
+        'active_fest': active_fest,
     }
     return render(request, 'core/certificate_studio.html', context)
 
@@ -4536,7 +4881,8 @@ def download_certificate_pdf_view(request, institution_slug):
 @login_required
 def print_certificates_view(request, institution_slug):
     institution = get_object_or_404(Institution, slug=institution_slug)
-    comp = Competition.objects.filter(institution=institution, is_active=True).first() or Competition.objects.filter(institution=institution).first()
+    active_fest = get_active_fest(request, institution)
+    comp = active_fest or Competition.objects.filter(institution=institution, is_active=True).first() or Competition.objects.filter(institution=institution).first()
     config, _ = CertificateConfig.objects.get_or_create(institution=institution, defaults={'competition': comp})
 
     has_cert_addon = institution.has_add_on('certificate-generation') or request.user.is_superuser or (hasattr(request.user, 'is_developer') and request.user.is_developer)
@@ -4572,6 +4918,7 @@ def print_certificates_view(request, institution_slug):
         'config': config,
         'certificates': certificates,
         'autoprint': autoprint,
+        'active_fest': active_fest,
     }
     return render(request, 'core/certificate_print_view.html', context)
 
@@ -4592,20 +4939,35 @@ from .schedule_utils import (
 @login_required
 def manage_schedule_view(request, institution_slug):
     institution = get_object_or_404(Institution, slug=institution_slug)
+    active_fest = get_active_fest(request, institution)
 
-    fest_days = FestDay.objects.filter(institution=institution).order_by('day_number')
+    fest_day_qs = FestDay.objects.filter(institution=institution)
+    if active_fest:
+        fest_day_qs = fest_day_qs.filter(competition=active_fest)
+    fest_days = fest_day_qs.order_by('day_number')
+    
     stages = Stage.objects.filter(institution=institution).prefetch_related('reserved_days').order_by('stage_type', 'name')
-    programs = Program.objects.filter(institution=institution).select_related('category', 'schedule', 'schedule__fest_day', 'schedule__stage').all()
+    
+    prog_qs = Program.objects.filter(institution=institution)
+    if active_fest:
+        prog_qs = prog_qs.filter(competition=active_fest)
+    programs = prog_qs.select_related('category', 'schedule', 'schedule__fest_day', 'schedule__stage').all()
 
     # Pre-cache participant counts to eliminate N+1 queries
+    part_qs = Participation.objects.filter(institution=institution)
+    grp_qs = GroupParticipation.objects.filter(institution=institution)
+    if active_fest:
+        part_qs = part_qs.filter(program__competition=active_fest)
+        grp_qs = grp_qs.filter(program__competition=active_fest)
+
     part_counts = dict(
-        Participation.objects.filter(institution=institution)
+        part_qs
         .values('program_id')
         .annotate(c=Count('id'))
         .values_list('program_id', 'c')
     )
     group_counts = dict(
-        GroupParticipation.objects.filter(institution=institution)
+        grp_qs
         .values('program_id')
         .annotate(c=Count('id'))
         .values_list('program_id', 'c')
@@ -4636,10 +4998,13 @@ def manage_schedule_view(request, institution_slug):
             'schedule': p.schedule if has_sched else None
         })
 
-    clash_data = detect_all_clashes(institution)
+    clash_data = detect_all_clashes(institution, competition=active_fest)
 
     # Bulk fetch timetable schedules to prevent N+1 query loops
-    all_schedules = list(ProgramSchedule.objects.filter(institution=institution).select_related('program', 'program__category'))
+    sched_qs = ProgramSchedule.objects.filter(institution=institution)
+    if active_fest:
+        sched_qs = sched_qs.filter(program__competition=active_fest)
+    all_schedules = list(sched_qs.select_related('program', 'program__category'))
     schedule_map = {}
     for s in all_schedules:
         schedule_map.setdefault((s.fest_day_id, s.stage_id), []).append(s)
@@ -4673,7 +5038,10 @@ def manage_schedule_view(request, institution_slug):
 
     next_times_json = json.dumps(next_times_map)
 
-    categories = Category.objects.filter(institution=institution).order_by('name')
+    cat_qs = Category.objects.filter(institution=institution)
+    if active_fest:
+        cat_qs = cat_qs.filter(competition=active_fest)
+    categories = cat_qs.order_by('name')
 
     return render(request, 'core/manage_schedule.html', {
         'institution': institution,
@@ -4692,6 +5060,7 @@ def manage_schedule_view(request, institution_slug):
 @login_required
 def add_fest_day_view(request, institution_slug):
     institution = get_object_or_404(Institution, slug=institution_slug)
+    active_fest = get_active_fest(request, institution)
     if request.method == 'POST':
         day_number = request.POST.get('day_number')
         date_str = request.POST.get('date')
@@ -4717,7 +5086,7 @@ def add_fest_day_view(request, institution_slug):
             except ValueError:
                 en_time = time(21, 0)
 
-            comp = Competition.objects.filter(institution=institution, is_active=True).first() or Competition.objects.filter(institution=institution).first()
+            comp = active_fest or Competition.objects.filter(institution=institution, is_active=True).first() or Competition.objects.filter(institution=institution).first()
             if not comp:
                 comp = Competition.objects.create(institution=institution, name="Main Fest", type="ON", year=2026)
 
@@ -4960,8 +5329,9 @@ def delete_program_schedule_view(request, institution_slug, schedule_id):
 @login_required
 def run_auto_scheduler_view(request, institution_slug):
     institution = get_object_or_404(Institution, slug=institution_slug)
+    active_fest = get_active_fest(request, institution)
     if request.method == 'POST':
-        res = generate_smart_auto_schedule(institution)
+        res = generate_smart_auto_schedule(institution, competition=active_fest)
         if 'error' in res:
             messages.error(request, res['error'])
         else:
@@ -4977,9 +5347,13 @@ def run_auto_scheduler_view(request, institution_slug):
 @login_required
 def clear_all_schedules_view(request, institution_slug):
     institution = get_object_or_404(Institution, slug=institution_slug)
+    active_fest = get_active_fest(request, institution)
     if request.method == 'POST':
-        count = ProgramSchedule.objects.filter(institution=institution).count()
-        ProgramSchedule.objects.filter(institution=institution).delete()
+        qs = ProgramSchedule.objects.filter(institution=institution)
+        if active_fest:
+            qs = qs.filter(program__competition=active_fest)
+        count = qs.count()
+        qs.delete()
         messages.success(request, f"Cleared all {count} program schedules.")
 
     return redirect(f"{reverse('core:manage_schedule', kwargs={'institution_slug': institution.slug})}?tab=timetable-tab")
@@ -5027,14 +5401,22 @@ from django.urls import reverse
 @login_required
 def group_assign_view(request, institution_slug, program_id=None):
     institution = get_object_or_404(Institution, slug=institution_slug)
-    group_programs = Program.objects.filter(institution=institution, is_group=True).select_related('category', 'competition')
+    active_fest = get_active_fest(request, institution)
+
+    prog_qs = Program.objects.filter(institution=institution, is_group=True)
+    team_qs = Team.objects.filter(institution=institution)
+    if active_fest:
+        prog_qs = prog_qs.filter(competition=active_fest)
+        team_qs = team_qs.filter(competition=active_fest)
+
+    group_programs = prog_qs.select_related('category', 'competition')
     
     managed_team = getattr(request.user, 'managed_team', None) if request.user.is_team_leader else None
 
     if managed_team:
         teams = Team.objects.filter(id=managed_team.id)
     else:
-        teams = Team.objects.filter(institution=institution)
+        teams = team_qs
     
     req_program_id = request.GET.get('program_id') or program_id
     selected_program = None
@@ -5052,10 +5434,13 @@ def group_assign_view(request, institution_slug, program_id=None):
     eligible_contestants = []
     if selected_program:
         eligible_cats = selected_program.category.get_eligible_categories()
-        eligible_contestants = Contestant.objects.filter(
+        c_qs = Contestant.objects.filter(
             institution=institution,
             category__in=eligible_cats
-        ).select_related('team', 'category')
+        )
+        if active_fest:
+            c_qs = c_qs.filter(competition=active_fest)
+        eligible_contestants = c_qs.select_related('team', 'category')
         if selected_team:
             eligible_contestants = eligible_contestants.filter(team=selected_team)
 
@@ -5175,7 +5560,12 @@ def api_get_next_chest_no_view(request, institution_slug):
 @login_required
 def team_results_view(request, institution_slug, team_id=None):
     institution = get_object_or_404(Institution, slug=institution_slug)
-    all_teams = Team.objects.filter(institution=institution)
+    active_fest = get_active_fest(request, institution)
+    
+    team_qs = Team.objects.filter(institution=institution)
+    if active_fest:
+        team_qs = team_qs.filter(competition=active_fest)
+    all_teams = team_qs
     
     is_team_leader = request.user.is_team_leader and hasattr(request.user, 'managed_team') and request.user.managed_team
     if is_team_leader:
@@ -5190,20 +5580,26 @@ def team_results_view(request, institution_slug, team_id=None):
         return redirect('core:dashboard', institution_slug=institution.slug)
 
     # 1. Single Participations (Announced Only)
-    single_parts = Participation.objects.filter(
+    single_parts_qs = Participation.objects.filter(
         institution=institution,
         contestant__team=team,
         program__is_announced=True,
         marks__isnull=False
-    ).select_related('program', 'program__category', 'contestant', 'contestant__team').order_by('program__category__name', 'program__name')
+    )
+    if active_fest:
+        single_parts_qs = single_parts_qs.filter(program__competition=active_fest)
+    single_parts = single_parts_qs.select_related('program', 'program__category', 'contestant', 'contestant__team').order_by('program__category__name', 'program__name')
 
     # 2. Group Participations (Announced Only)
-    group_parts = GroupParticipation.objects.filter(
+    group_parts_qs = GroupParticipation.objects.filter(
         institution=institution,
         team=team,
         program__is_announced=True,
         marks__isnull=False
-    ).select_related('program', 'program__category', 'captain', 'team').prefetch_related('contestants').order_by('program__category__name', 'program__name')
+    )
+    if active_fest:
+        group_parts_qs = group_parts_qs.filter(program__competition=active_fest)
+    group_parts = group_parts_qs.select_related('program', 'program__category', 'captain', 'team').prefetch_related('contestants').order_by('program__category__name', 'program__name')
 
     detailed_rows = []
     total_announced_points = 0

@@ -28,14 +28,11 @@
             <input type="text" name="whatsapp_number" class="form-control" value="{{ contestant.whatsapp_number|default:'' }}" placeholder="e.g. +91 9876543210">
         </div>
 
-        <div class="form-group">
-            <label class="form-label">Fest</label>
-            <select name="competition_id" class="form-control" required>
-                {% for comp in competitions %}
-                <option value="{{ comp.id }}" {% if comp.id == contestant.competition.id %}selected{% endif %}>{{ comp.name }} ({{ comp.year }})</option>
-                {% endfor %}
-            </select>
+        {% if contestant.competition %}
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px; padding: 8px 12px; background: rgba(14, 165, 233, 0.1); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 8px; font-size: 0.82rem; color: #38bdf8;">
+            <i class="fa-solid fa-layer-group"></i> Fest: <strong>{{ contestant.competition.name }} ({{ contestant.competition.year }})</strong>
         </div>
+        {% endif %}
 
         <div class="form-group">
             <label class="form-label">Team / House</label>

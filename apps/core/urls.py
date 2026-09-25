@@ -6,6 +6,7 @@ app_name = 'core'
 urlpatterns = [
     # Dashboard & Competitions
     path('portal/<slug:institution_slug>/dashboard/', views.dashboard_view, name='dashboard'),
+    path('portal/<slug:institution_slug>/switch-fest/<int:fest_id>/', views.switch_fest_view, name='switch_fest'),
     path('portal/<slug:institution_slug>/judge-dashboard/', views.judge_dashboard_view, name='judge_dashboard'),
     path('portal/<slug:institution_slug>/help/', views.help_guide_view, name='help_guide'),
     path('portal/<slug:institution_slug>/competitions/', views.competition_list_view, name='competition_list'),

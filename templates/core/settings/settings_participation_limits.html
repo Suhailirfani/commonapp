@@ -23,27 +23,16 @@
     <form method="POST">
         {% csrf_token %}
 
-        {% if competitions.count > 1 %}
-        <div class="form-group" style="margin-bottom: 20px; max-width: 440px;">
-            <label class="form-label" style="font-weight: 700; color: var(--accent-amber); font-size: 0.95rem;">Select Fest / Competition to Configure</label>
-            <select name="competition_id" class="form-control" onchange="syncCompetitionLimits(this)">
-                {% for comp in competitions %}
-                <option value="{{ comp.id }}" 
-                        data-single="{{ comp.max_single_programs_per_contestant|default:0 }}"
-                        data-group="{{ comp.max_group_programs_per_contestant|default:0 }}"
-                        data-total="{{ comp.max_total_programs_per_contestant|default:0 }}"
-                        data-team-single="{{ comp.max_team_participants_per_single_program|default:0 }}"
-                        data-team-group="{{ comp.max_team_entries_per_group_program|default:0 }}">
-                    {{ comp.name }} ({{ comp.year }})
-                </option>
-                {% endfor %}
-            </select>
+        {% if active_fest %}
+        <input type="hidden" name="competition_id" value="{{ active_fest.id }}">
+        <div style="display: inline-flex; align-items: center; gap: 8px; margin-bottom: 20px; padding: 8px 14px; background: rgba(14, 165, 233, 0.12); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 8px; font-size: 0.85rem; color: #38bdf8;">
+            <i class="fa-solid fa-layer-group"></i> Configuring Limits for Active Fest: <strong>{{ active_fest.name }} ({{ active_fest.year }})</strong>
         </div>
         {% elif competitions.first %}
         <input type="hidden" name="competition_id" value="{{ competitions.first.id }}">
         {% endif %}
 
-        {% with current_comp=competitions.first %}
+        {% with current_comp=active_fest|default:competitions.first %}
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; background: rgba(0,0,0,0.2); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color);">
             
             <!-- Contestant Limit: Single Programs -->
