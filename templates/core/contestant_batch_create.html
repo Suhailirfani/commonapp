@@ -38,11 +38,18 @@
                     {% for i in "12345" %}
                     <tr>
                         <td>
+                            {% if managed_team %}
+                            <div style="padding: 8px 10px; background: rgba(14, 165, 233, 0.12); border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 8px; color: #38bdf8; font-weight: 700; font-size: 0.85rem; white-space: nowrap;">
+                                <i class="fa-solid fa-people-group"></i> {{ managed_team.name }}
+                            </div>
+                            <input type="hidden" name="team_id[]" value="{{ managed_team.id }}">
+                            {% else %}
                             <select name="team_id[]" class="form-control" style="min-width: 140px;">
                                 {% for team in teams %}
                                 <option value="{{ team.id }}">{{ team.name }}</option>
                                 {% endfor %}
                             </select>
+                            {% endif %}
                         </td>
                         <td>
                             <select name="category_id[]" class="form-control" style="min-width: 140px;">

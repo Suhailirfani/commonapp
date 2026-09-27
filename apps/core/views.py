@@ -21,12 +21,21 @@ def get_active_fest(request, institution):
     """
     Resolves the currently active fest for the session/institution.
     Fallback order:
-    1. request.session['active_fest_<institution.id>']
-    2. Competition.objects.filter(institution=institution, is_active=True).first()
-    3. Competition.objects.filter(institution=institution).order_by('-year', '-created_at', '-id').first()
+    1. If user is a Team Leader with an allocated team, return their team's competition.
+    2. request.session['active_fest_<institution.id>']
+    3. Competition.objects.filter(institution=institution, is_active=True).first()
+    4. Competition.objects.filter(institution=institution).order_by('-year', '-created_at', '-id').first()
     """
     if not institution:
         return None
+
+    # Team leader user is allocated with a team - their fest is exclusively their team's fest
+    if hasattr(request, 'user') and request.user.is_authenticated:
+        if getattr(request.user, 'is_team_leader', False) and not getattr(request.user, 'is_developer', False):
+            managed_team = getattr(request.user, 'managed_team', None)
+            if managed_team and managed_team.competition:
+                return managed_team.competition
+
     session_key = f'active_fest_{institution.id}'
     fest_id = request.session.get(session_key) if hasattr(request, 'session') else None
     if fest_id:
@@ -48,6 +57,12 @@ def switch_fest_view(request, institution_slug, fest_id):
     Switches the active fest in the session for the given institution.
     """
     institution = get_object_or_404(Institution, slug=institution_slug)
+
+    # Team leaders cannot switch fests because they are allocated to a specific fest team
+    if request.user.is_team_leader and not request.user.is_developer:
+        messages.warning(request, "As a Team Leader, your account is allocated to your specific team and fest.")
+        return redirect('core:dashboard', institution_slug=institution.slug)
+
     fest = get_object_or_404(Competition, id=fest_id, institution=institution)
     
     request.session[f'active_fest_{institution.id}'] = fest.id
@@ -122,7 +137,7 @@ def dashboard_view(request, institution_slug):
             'is_team_leader_dashboard': True,
             'team': team,
             'active_fest': active_fest,
-            'all_institution_fests': competitions,
+            'all_institution_fests': [active_fest] if active_fest else [],
             'total_members_count': team_contestants.count(),
             'category_wise_members': category_wise_members,
             'team_points': team_points,
@@ -727,6 +742,10 @@ def team_list_view(request, institution_slug):
     team_leaders = User.objects.filter(institution=institution, role='TEAM_LEADER')
     
     if request.method == 'POST':
+        if request.user.is_team_leader and not request.user.is_developer:
+            messages.error(request, "Permission Denied: Team Leaders cannot create new teams.")
+            return redirect('core:dashboard', institution_slug=institution.slug)
+
         if not institution.allows_team_management:
             messages.error(request, "🔒 Team creation and editing is currently locked in Settings.")
             return redirect('core:team_list', institution_slug=institution.slug)
@@ -814,6 +833,19 @@ def contestant_create_view(request, institution_slug):
         cats_qs = cats_qs.filter(competition=active_fest)
         teams_qs = teams_qs.filter(competition=active_fest)
 
+    is_tl = request.user.is_team_leader and not request.user.is_developer
+    managed_team = getattr(request.user, 'managed_team', None) if is_tl else None
+    if is_tl and not managed_team:
+        messages.error(request, "Permission Denied: No team is allocated to your team leader account.")
+        return redirect('core:dashboard', institution_slug=institution.slug)
+
+    if is_tl and managed_team:
+        teams_qs = Team.objects.filter(id=managed_team.id)
+        if managed_team.competition:
+            active_fest = managed_team.competition
+            competitions = Competition.objects.filter(id=managed_team.competition_id)
+            cats_qs = cats_qs.filter(competition=managed_team.competition)
+
     categories = list(cats_qs.order_by('name'))
     teams = list(teams_qs.order_by('name'))
 
@@ -828,11 +860,15 @@ def contestant_create_view(request, institution_slug):
         name = request.POST.get('name')
         wa_num = request.POST.get('whatsapp_number', '').strip()
 
-        comp = Competition.objects.filter(id=comp_id, institution=institution).first() if comp_id else None
-        if not comp:
-            comp = active_fest or competitions.first()
+        if is_tl and managed_team:
+            team = managed_team
+            comp = managed_team.competition
+        else:
+            comp = Competition.objects.filter(id=comp_id, institution=institution).first() if comp_id else None
+            if not comp:
+                comp = active_fest or competitions.first()
+            team = get_object_or_404(Team, id=team_id, institution=institution)
 
-        team = get_object_or_404(Team, id=team_id, institution=institution)
         cat = get_object_or_404(Category, id=cat_id, institution=institution)
 
         if cat.is_common:
@@ -856,6 +892,7 @@ def contestant_create_view(request, institution_slug):
         'categories': categories,
         'teams': teams,
         'active_fest': active_fest,
+        'managed_team': managed_team,
     })
 
 
@@ -870,6 +907,19 @@ def contestant_batch_create_view(request, institution_slug):
     if active_fest:
         cats_qs = cats_qs.filter(competition=active_fest)
         teams_qs = teams_qs.filter(competition=active_fest)
+
+    is_tl = request.user.is_team_leader and not request.user.is_developer
+    managed_team = getattr(request.user, 'managed_team', None) if is_tl else None
+    if is_tl and not managed_team:
+        messages.error(request, "Permission Denied: No team is allocated to your team leader account.")
+        return redirect('core:dashboard', institution_slug=institution.slug)
+
+    if is_tl and managed_team:
+        teams_qs = Team.objects.filter(id=managed_team.id)
+        if managed_team.competition:
+            active_fest = managed_team.competition
+            competitions = Competition.objects.filter(id=managed_team.competition_id)
+            cats_qs = cats_qs.filter(competition=managed_team.competition)
 
     categories = list(cats_qs.order_by('name'))
     teams = list(teams_qs.order_by('name'))
@@ -891,16 +941,19 @@ def contestant_batch_create_view(request, institution_slug):
             if not c_name:
                 continue
 
-            comp_id = comp_ids[i] if i < len(comp_ids) and comp_ids[i] else None
-            team_id = team_ids[i] if i < len(team_ids) else None
+            if is_tl and managed_team:
+                comp = managed_team.competition
+                team = managed_team
+            else:
+                comp_id = comp_ids[i] if i < len(comp_ids) and comp_ids[i] else None
+                team_id = team_ids[i] if i < len(team_ids) else None
+                comp = Competition.objects.filter(id=comp_id, institution=institution).first() if comp_id else None
+                if not comp:
+                    comp = active_fest or competitions.first()
+                team = Team.objects.filter(id=team_id, institution=institution).first()
+
             cat_id = cat_ids[i] if i < len(cat_ids) else None
             wa_num = wa_numbers[i].strip() if i < len(wa_numbers) else ''
-
-            comp = Competition.objects.filter(id=comp_id, institution=institution).first() if comp_id else None
-            if not comp:
-                comp = active_fest or competitions.first()
-
-            team = Team.objects.filter(id=team_id, institution=institution).first()
             cat = Category.objects.filter(id=cat_id, institution=institution, is_common=False).first()
 
             if comp and team and cat:
@@ -923,6 +976,7 @@ def contestant_batch_create_view(request, institution_slug):
         'categories': categories,
         'teams': teams,
         'active_fest': active_fest,
+        'managed_team': managed_team,
     })
 
 
@@ -969,6 +1023,11 @@ def contestant_download_template_view(request, institution_slug):
 def contestant_bulk_upload_view(request, institution_slug):
     import openpyxl
     institution = get_object_or_404(Institution, slug=institution_slug)
+    is_tl = request.user.is_team_leader and not request.user.is_developer
+    managed_team = getattr(request.user, 'managed_team', None) if is_tl else None
+    if is_tl and not managed_team:
+        messages.error(request, "Permission Denied: No team is allocated to your team leader account.")
+        return redirect('core:contestant_list', institution_slug=institution.slug)
 
     if request.method == 'POST' and request.FILES.get('excel_file'):
         if not institution.allows_contestant_registration:
@@ -1004,17 +1063,20 @@ def contestant_bulk_upload_view(request, institution_slug):
                 wa_num_raw = row[5] if len(row) > 5 and row[5] else ""
                 wa_num = str(wa_num_raw).strip() if wa_num_raw else ""
 
-                comp, _ = Competition.objects.get_or_create(
-                    institution=institution,
-                    name=comp_name,
-                    defaults={'type': 'ON', 'year': 2026}
-                )
-
-                team, _ = Team.objects.get_or_create(
-                    institution=institution,
-                    competition=comp,
-                    name=team_name
-                )
+                if is_tl and managed_team:
+                    team = managed_team
+                    comp = managed_team.competition
+                else:
+                    comp, _ = Competition.objects.get_or_create(
+                        institution=institution,
+                        name=comp_name,
+                        defaults={'type': 'ON', 'year': 2026}
+                    )
+                    team, _ = Team.objects.get_or_create(
+                        institution=institution,
+                        competition=comp,
+                        name=team_name
+                    )
 
                 cat, _ = Category.objects.get_or_create(
                     institution=institution,
@@ -3333,6 +3395,10 @@ def category_delete_view(request, institution_slug, category_id):
 @login_required
 def team_edit_view(request, institution_slug, team_id):
     institution = get_object_or_404(Institution, slug=institution_slug)
+    if request.user.is_team_leader and not request.user.is_developer:
+        messages.error(request, "Permission Denied: Team Leaders cannot modify team configurations.")
+        return redirect('core:dashboard', institution_slug=institution.slug)
+
     team = get_object_or_404(Team, id=team_id, institution=institution)
     competitions = Competition.objects.filter(institution=institution)
     team_leaders = User.objects.filter(institution=institution, role='TEAM_LEADER')
@@ -3380,6 +3446,10 @@ def team_edit_view(request, institution_slug, team_id):
 @login_required
 def team_delete_view(request, institution_slug, team_id):
     institution = get_object_or_404(Institution, slug=institution_slug)
+    if request.user.is_team_leader and not request.user.is_developer:
+        messages.error(request, "Permission Denied: Team Leaders cannot delete teams.")
+        return redirect('core:dashboard', institution_slug=institution.slug)
+
     team = get_object_or_404(Team, id=team_id, institution=institution)
     if not institution.allows_team_management:
         messages.error(request, "🔒 Team creation and editing is currently locked in Settings.")
@@ -3457,9 +3527,21 @@ def program_delete_view(request, institution_slug, program_id):
 def contestant_edit_view(request, institution_slug, contestant_id):
     institution = get_object_or_404(Institution, slug=institution_slug)
     contestant = get_object_or_404(Contestant, id=contestant_id, institution=institution)
-    competitions = Competition.objects.filter(institution=institution)
-    categories = Category.objects.filter(institution=institution, is_common=False)
-    teams = Team.objects.filter(institution=institution)
+    
+    is_tl = request.user.is_team_leader and not request.user.is_developer
+    managed_team = getattr(request.user, 'managed_team', None) if is_tl else None
+    
+    if is_tl:
+        if not managed_team or contestant.team_id != managed_team.id:
+            messages.error(request, "Permission Denied: You cannot edit contestants belonging to another team.")
+            return redirect('core:contestant_list', institution_slug=institution.slug)
+        competitions = Competition.objects.filter(id=managed_team.competition_id)
+        teams = Team.objects.filter(id=managed_team.id)
+        categories = Category.objects.filter(institution=institution, competition=managed_team.competition, is_common=False)
+    else:
+        competitions = Competition.objects.filter(institution=institution)
+        categories = Category.objects.filter(institution=institution, is_common=False)
+        teams = Team.objects.filter(institution=institution)
 
     if request.method == 'POST':
         if not institution.allows_contestant_registration:
@@ -3472,8 +3554,13 @@ def contestant_edit_view(request, institution_slug, contestant_id):
         team_id = request.POST.get('team_id')
         cat_id = request.POST.get('category_id')
 
-        comp = get_object_or_404(Competition, id=comp_id, institution=institution)
-        team = get_object_or_404(Team, id=team_id, institution=institution)
+        if is_tl and managed_team:
+            comp = managed_team.competition
+            team = managed_team
+        else:
+            comp = get_object_or_404(Competition, id=comp_id, institution=institution)
+            team = get_object_or_404(Team, id=team_id, institution=institution)
+
         cat = get_object_or_404(Category, id=cat_id, institution=institution)
 
         if cat.is_common:
@@ -3509,7 +3596,8 @@ def contestant_edit_view(request, institution_slug, contestant_id):
         'contestant': contestant,
         'competitions': competitions,
         'categories': categories,
-        'teams': teams
+        'teams': teams,
+        'managed_team': managed_team,
     })
 
 
@@ -3517,6 +3605,14 @@ def contestant_edit_view(request, institution_slug, contestant_id):
 def contestant_delete_view(request, institution_slug, contestant_id):
     institution = get_object_or_404(Institution, slug=institution_slug)
     contestant = get_object_or_404(Contestant, id=contestant_id, institution=institution)
+    
+    is_tl = request.user.is_team_leader and not request.user.is_developer
+    if is_tl:
+        managed_team = getattr(request.user, 'managed_team', None)
+        if not managed_team or contestant.team_id != managed_team.id:
+            messages.error(request, "Permission Denied: You cannot delete contestants belonging to another team.")
+            return redirect('core:contestant_list', institution_slug=institution.slug)
+
     if not institution.allows_contestant_registration:
         messages.error(request, "🔒 Contestant registration, editing, and bulk upload are currently locked in Settings.")
         return redirect('core:contestant_list', institution_slug=institution.slug)
@@ -5535,6 +5631,13 @@ def group_assign_view(request, institution_slug, program_id=None):
 def delete_group_participation_view(request, institution_slug, group_part_id):
     institution = get_object_or_404(Institution, slug=institution_slug)
     gp = get_object_or_404(GroupParticipation, id=group_part_id, institution=institution)
+    
+    if request.user.is_team_leader and not request.user.is_developer:
+        managed_team = getattr(request.user, 'managed_team', None)
+        if not managed_team or gp.team_id != managed_team.id:
+            messages.error(request, "Permission Denied: You cannot delete group entries belonging to another team.")
+            return redirect('core:group_assign', institution_slug=institution.slug)
+
     prog_id = gp.program.id
     disp_name = gp.display_name
     gp.delete()

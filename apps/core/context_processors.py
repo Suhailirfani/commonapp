@@ -19,8 +19,19 @@ def active_fest_context(request):
         return {}
 
     from apps.core.views import get_active_fest
-    all_fests = list(Competition.objects.filter(institution=institution).order_by('-year', '-created_at', '-id'))
     active_fest = get_active_fest(request, institution)
+
+    # Team leaders are tied strictly to their assigned team's fest
+    if request.user.is_authenticated and getattr(request.user, 'is_team_leader', False) and not getattr(request.user, 'is_developer', False):
+        all_fests = [active_fest] if active_fest else []
+        return {
+            'active_fest': active_fest,
+            'active_competition': active_fest,
+            'all_institution_fests': all_fests,
+            'has_multiple_fests': False,
+        }
+
+    all_fests = list(Competition.objects.filter(institution=institution).order_by('-year', '-created_at', '-id'))
 
     return {
         'active_fest': active_fest,
