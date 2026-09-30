@@ -3413,8 +3413,14 @@ def team_edit_view(request, institution_slug, team_id):
         code_letter = request.POST.get('code_letter', '').strip().upper()
         leader_id = request.POST.get('leader_id')
 
-        comp = get_object_or_404(Competition, id=comp_id, institution=institution)
-        team.competition = comp
+        comp = None
+        if comp_id:
+            comp = Competition.objects.filter(id=comp_id, institution=institution).first()
+        if not comp:
+            comp = team.competition
+
+        if comp:
+            team.competition = comp
         team.name = name
         team.code_letter = code_letter
 
@@ -3483,10 +3489,15 @@ def program_edit_view(request, institution_slug, program_id):
         duration = request.POST.get('duration_per_participant', 5)
         max_team = int(request.POST.get('max_participants_per_team', 0) or 0)
 
-        comp = get_object_or_404(Competition, id=comp_id, institution=institution)
         cat = get_object_or_404(Category, id=cat_id, institution=institution)
+        comp = None
+        if comp_id:
+            comp = Competition.objects.filter(id=comp_id, institution=institution).first()
+        if not comp:
+            comp = program.competition or cat.competition
 
-        program.competition = comp
+        if comp:
+            program.competition = comp
         program.category = cat
         program.name = name
         program.is_group = is_group
@@ -3558,8 +3569,12 @@ def contestant_edit_view(request, institution_slug, contestant_id):
             comp = managed_team.competition
             team = managed_team
         else:
-            comp = get_object_or_404(Competition, id=comp_id, institution=institution)
             team = get_object_or_404(Team, id=team_id, institution=institution)
+            comp = None
+            if comp_id:
+                comp = Competition.objects.filter(id=comp_id, institution=institution).first()
+            if not comp:
+                comp = contestant.competition or team.competition
 
         cat = get_object_or_404(Category, id=cat_id, institution=institution)
 
