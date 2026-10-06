@@ -588,6 +588,10 @@ class Participation(TenantBaseModel):
     def __str__(self):
         return f"{self.contestant.name} - {self.program.name}"
 
+    @property
+    def chest_no(self):
+        return self.contestant.chest_no if self.contestant else None
+
     def get_judge_mark(self, judge_num):
         if not self.judge_marks or not isinstance(self.judge_marks, dict):
             return None
@@ -664,6 +668,10 @@ class GroupParticipation(TenantBaseModel):
 
     def __str__(self):
         return f"{self.display_name} - {self.program.name}"
+
+    @property
+    def chest_no(self):
+        return self.captain.chest_no if self.captain else None
 
     def get_judge_mark(self, judge_num):
         if not self.judge_marks or not isinstance(self.judge_marks, dict):

@@ -193,6 +193,10 @@ def build_green_room_pdf(programs_data, institution_name, is_bulk=True):
                 else:
                     c_no = str(part.chest_no) if hasattr(part, 'chest_no') else ""
                     p_name = part.name.upper() if hasattr(part, 'name') else ""
+                    if hasattr(part, 'team') and part.team:
+                        team_name = part.team.name if hasattr(part.team, 'name') else str(part.team)
+                        if team_name:
+                            p_name += f" ({team_name})"
 
                 table_data.append([
                     Paragraph(str(c_idx), td_center_bold),

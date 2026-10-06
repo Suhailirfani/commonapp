@@ -111,8 +111,11 @@
     <table>
         <thead>
             <tr>
-                <th style="width: 8%;">S.No</th>
-                <th style="width: 18%;">Code Letter</th>
+                <th style="width: {% if include_chest_no %}7%{% else %}8%{% endif %};">S.No</th>
+                {% if include_chest_no %}
+                <th style="width: 14%;">Chest No</th>
+                {% endif %}
+                <th style="width: {% if include_chest_no %}15%{% else %}18%{% endif %};">Code Letter</th>
                 <th class="marks-col">Mark 1</th>
                 <th class="marks-col">Mark 2</th>
                 <th class="marks-col">Mark 3</th>
@@ -124,7 +127,10 @@
             {% for participant in participants %}
             <tr>
                 <td><strong>{{ forloop.counter }}</strong></td>
-                <td class="code-letter">{% if participant.code_letter %}{{ participant.code_letter }}{% elif participant.contestant.team.code_letter %}{{ participant.contestant.team.code_letter }}{% elif participant.team.code_letter %}{{ participant.team.code_letter }}{% else %}{% endif %}</td>
+                {% if include_chest_no %}
+                <td style="font-weight: bold; font-size: 9.5pt;">{% if program.is_group %}{% if participant.captain %}#{{ participant.captain.chest_no }}{% else %}-{% endif %}{% else %}{{ participant.contestant.chest_no }}{% endif %}</td>
+                {% endif %}
+                <td class="code-letter">{% if participant.code_letter %}{{ participant.code_letter }}{% endif %}</td>
                 <td class="marks-col"></td>
                 <td class="marks-col"></td>
                 <td class="marks-col"></td>

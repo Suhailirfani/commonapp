@@ -3095,10 +3095,13 @@ def download_valuation_form_pdf_view(request, institution_slug, program_id):
     else:
         participants = Participation.objects.filter(program=program).select_related('contestant', 'contestant__team')
 
+    include_chest_no = request.GET.get('include_chest_no') in ['1', 'true', 'yes', 'True'] or request.GET.get('chest_no') in ['1', 'true', 'yes', 'True']
+
     context = {
         'institution': institution,
         'program': program,
         'participants': participants,
+        'include_chest_no': include_chest_no,
         'generated_at': timezone.now()
     }
     filename = f"{program.name}_valuation_form.pdf"
@@ -3252,10 +3255,13 @@ def download_bulk_valuation_form_pdf_view(request, institution_slug):
             'participants': participants
         })
 
+    include_chest_no = request.GET.get('include_chest_no') in ['1', 'true', 'yes', 'True'] or request.GET.get('chest_no') in ['1', 'true', 'yes', 'True']
+
     context = {
         'institution': institution,
         'programs_data': programs_data,
         'active_fest': active_fest,
+        'include_chest_no': include_chest_no,
         'generated_at': timezone.now()
     }
     filename = f"{institution.slug}_all_valuation_forms.pdf"
