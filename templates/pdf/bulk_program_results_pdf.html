@@ -176,7 +176,7 @@
                     </td>
                     <td class="name-col left-align">
                         {% if rdata.program.is_group %}
-                            {{ p.team.name }}{% if p.captain %} (Capt: {{ p.captain.name }}){% endif %}
+                            {% if p.captain %}{{ p.captain.name }} (Captain){% else %}-{% endif %}
                         {% else %}
                             {{ p.contestant.name }}
                         {% endif %}
@@ -208,7 +208,7 @@
                 <tr>
                     <th style="width: 8%;">S.No</th>
                     <th class="chest-col">Chest No</th>
-                    <th class="name-col left-align">Participant / Team Name</th>
+                    <th class="name-col left-align">Participant Name</th>
                     <th class="team-col">Team / House</th>
                     <th class="grade-col">Grade</th>
                     <th class="points-col">Points</th>
@@ -227,7 +227,7 @@
                     </td>
                     <td class="name-col left-align">
                         {% if rdata.program.is_group %}
-                            {{ p.team.name }}{% if p.captain %} (Capt: {{ p.captain.name }}){% endif %}
+                            {% if p.captain %}{{ p.captain.name }} (Captain){% else %}-{% endif %}
                         {% else %}
                             {{ p.contestant.name }}
                         {% endif %}

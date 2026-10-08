@@ -113,8 +113,8 @@ def build_green_room_pdf(programs_data, institution_name, is_bulk=True):
         'TDNameBold',
         parent=styles['Normal'],
         fontName='Helvetica-Bold',
-        fontSize=10.5,
-        leading=12.5,
+        fontSize=10,
+        leading=13,
         alignment=TA_LEFT,
         textColor=colors.black
     )
@@ -187,16 +187,18 @@ def build_green_room_pdf(programs_data, institution_name, is_bulk=True):
             for c_idx, part in enumerate(participants, 1):
                 if prog.is_group:
                     c_no = f"#{part.captain.chest_no}" if (hasattr(part, 'captain') and part.captain) else "-"
-                    p_name = part.team.name if hasattr(part, 'team') and part.team else ""
+                    team_name = part.team.name if hasattr(part, 'team') and part.team else ""
+                    p_name = f"<b>{team_name}</b>"
                     if hasattr(part, 'captain') and part.captain:
-                        p_name += f" (Capt: {part.captain.name.upper()})"
+                        p_name += f"<br/><font size='8.5' color='#334155'>Capt: {part.captain.name.upper()}</font>"
                 else:
                     c_no = str(part.chest_no) if hasattr(part, 'chest_no') else ""
-                    p_name = part.name.upper() if hasattr(part, 'name') else ""
+                    raw_name = part.name.upper() if hasattr(part, 'name') else ""
+                    p_name = f"<b>{raw_name}</b>"
                     if hasattr(part, 'team') and part.team:
                         team_name = part.team.name if hasattr(part.team, 'name') else str(part.team)
                         if team_name:
-                            p_name += f" ({team_name})"
+                            p_name += f"<br/><font size='8.5' color='#334155'>{team_name}</font>"
 
                 table_data.append([
                     Paragraph(str(c_idx), td_center_bold),
@@ -206,19 +208,20 @@ def build_green_room_pdf(programs_data, institution_name, is_bulk=True):
                     ""
                 ])
 
-            col_widths = [38, 72, 235, 80, 130]
-            row_heights = [18] + [22] * len(participants)
+            col_widths = [36, 68, 251, 75, 125]
 
-            p_table = Table(table_data, colWidths=col_widths, rowHeights=row_heights)
+            p_table = Table(table_data, colWidths=col_widths)
             p_table.setStyle(TableStyle([
                 ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#f1f5f9')),
                 ('GRID', (0, 0), (-1, -1), 1, colors.black),
                 ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
                 ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-                ('TOPPADDING', (0, 0), (-1, -1), 2),
-                ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
-                ('LEFTPADDING', (0, 0), (-1, -1), 4),
-                ('RIGHTPADDING', (0, 0), (-1, -1), 4),
+                ('TOPPADDING', (0, 0), (-1, 0), 4),
+                ('BOTTOMPADDING', (0, 0), (-1, 0), 4),
+                ('TOPPADDING', (0, 1), (-1, -1), 6),
+                ('BOTTOMPADDING', (0, 1), (-1, -1), 6),
+                ('LEFTPADDING', (0, 0), (-1, -1), 5),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 5),
             ]))
             story.append(p_table)
 

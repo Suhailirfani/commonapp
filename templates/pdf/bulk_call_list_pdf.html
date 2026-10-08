@@ -131,7 +131,7 @@
                     <tr>
                         <td class="call-number">{{ forloop.counter }}</td>
                         <td class="chest-no">{% if pdata.program.is_group %}{% if participant.captain %}#{{ participant.captain.chest_no }}{% else %}-{% endif %}{% else %}{{ participant.chest_no }}{% endif %}</td>
-                        <td class="participant-name">{% if pdata.program.is_group %}{{ participant.team.name }}{% if participant.captain %} (Capt: {{ participant.captain.name }}){% endif %}{% else %}{{ participant.name }}{% endif %}</td>
+                        <td class="participant-name">{% if pdata.program.is_group %}{% if participant.captain %}{{ participant.captain.name }} (Captain){% else %}-{% endif %}{% else %}{{ participant.name }}{% endif %}</td>
                         <td class="team-name">{{ participant.team.name }}</td>
                         <td class="status"></td>
                     </tr>

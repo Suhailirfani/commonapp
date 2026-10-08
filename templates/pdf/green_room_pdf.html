@@ -69,41 +69,49 @@
         }
         td {
             border: 1.5px solid #000000;
-            padding: 8px 6px;
-            font-size: 12pt;
+            padding: 9px 6px;
+            font-size: 11.5pt;
             color: #000000;
+            vertical-align: middle;
         }
         tr {
             page-break-inside: avoid;
             break-inside: avoid;
         }
         .row-number {
-            width: 8%;
+            width: 7%;
             text-align: center;
             font-weight: bold;
-            font-size: 12pt;
+            font-size: 11pt;
         }
         .chest-no {
-            width: 16%;
+            width: 14%;
             font-weight: bold;
             text-align: center;
-            font-size: 13pt;
+            font-size: 12.5pt;
         }
         .participant-name {
-            width: 36%;
+            width: 40%;
             font-weight: bold;
-            font-size: 12pt;
+            font-size: 11pt;
+            line-height: 1.25;
+        }
+        .team-subtext {
+            font-size: 9pt;
+            color: #334155;
+            font-weight: normal;
+            margin-top: 2px;
         }
         .code-letter {
-            width: 15%;
+            width: 14%;
             text-align: center;
-            font-size: 12pt;
+            font-size: 11pt;
             font-weight: bold;
         }
         .signature {
             width: 25%;
             text-align: center;
-            height: 32px;
+            height: 36px;
         }
         .timing-section {
             margin-top: 12px;
@@ -151,7 +159,15 @@
                         <tr>
                             <td class="row-number">{{ forloop.counter }}</td>
                             <td class="chest-no">{% if program.is_group %}{% if participant.captain %}#{{ participant.captain.chest_no }}{% else %}-{% endif %}{% else %}{{ participant.chest_no }}{% endif %}</td>
-                            <td class="participant-name">{% if program.is_group %}{{ participant.team.name }}{% if participant.captain %} (Capt: {{ participant.captain.name|upper }}){% endif %}{% else %}{{ participant.name|upper }}{% if participant.team %} ({{ participant.team.name }}){% endif %}{% endif %}</td>
+                            <td class="participant-name">
+                                {% if program.is_group %}
+                                    <div>{{ participant.team.name }}</div>
+                                    {% if participant.captain %}<div class="team-subtext">Capt: {{ participant.captain.name|upper }}</div>{% endif %}
+                                {% else %}
+                                    <div>{{ participant.name|upper }}</div>
+                                    {% if participant.team %}<div class="team-subtext">{{ participant.team.name }}</div>{% endif %}
+                                {% endif %}
+                            </td>
                             <td class="code-letter"></td>
                             <td class="signature"></td>
                         </tr>
