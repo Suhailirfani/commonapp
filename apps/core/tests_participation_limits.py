@@ -132,6 +132,14 @@ class ParticipationLimitsTestCase(TestCase):
         self.assertEqual(res.status_code, 302)
         self.assertEqual(Participation.objects.filter(contestant=self.contestant).count(), 4)
 
+        # Untick 2 programs (post only 2) -> Should succeed and delete the unticked ones
+        prog_ids_2 = [p.id for p in self.single_programs[:2]]
+        res = self.client.post(url, {'selected_program_ids[]': prog_ids_2})
+        self.assertEqual(res.status_code, 302)
+        self.assertEqual(Participation.objects.filter(contestant=self.contestant).count(), 2)
+        remaining_ids = set(Participation.objects.filter(contestant=self.contestant).values_list('program_id', flat=True))
+        self.assertEqual(remaining_ids, set(prog_ids_2))
+
     def test_group_program_limit_enforcement(self):
         self.competition.max_group_programs_per_contestant = 4
         self.competition.save()

@@ -2569,7 +2569,10 @@ def contestant_assign_programs_view(request, institution_slug, contestant_id):
         Participation.objects.filter(contestant=contestant).exclude(program_id__in=selected_prog_ids_set).delete()
 
         messages.success(request, f"Assigned programs updated for contestant #{contestant.chest_no} '{contestant.name}'!")
-        return redirect('core:assignment_hub', institution_slug=institution.slug)
+        next_url = request.POST.get('next') or request.GET.get('next')
+        if next_url and next_url.startswith('/'):
+            return redirect(next_url)
+        return redirect('core:contestant_assign_programs', institution_slug=institution.slug, contestant_id=contestant.id)
 
     return render(request, 'core/contestant_assign.html', {
         'institution': institution,

@@ -359,10 +359,39 @@ function goToSelectedContestant() {
     }
 }
 
+function syncAssignCheckbox(changedInput) {
+    if (!changedInput) return;
+    var val = changedInput.value;
+    var isChecked = changedInput.checked;
+    document.querySelectorAll('.assign-check[value="' + val + '"]').forEach(function(cb) {
+        cb.checked = isChecked;
+    });
+}
+
 function toggleAll(status) {
     var checks = document.querySelectorAll('.assign-check');
     checks.forEach(function(c) { c.checked = status; });
 }
+
+document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('change', function(e) {
+        if (e.target && e.target.classList.contains('assign-check')) {
+            syncAssignCheckbox(e.target);
+        }
+    });
+
+    var forms = document.querySelectorAll('form');
+    forms.forEach(function(form) {
+        form.addEventListener('submit', function() {
+            var isMobile = window.innerWidth <= 768;
+            if (isMobile) {
+                form.querySelectorAll('.desktop-table-view .assign-check').forEach(function(cb) { cb.disabled = true; });
+            } else {
+                form.querySelectorAll('.mobile-card-list-view .assign-check').forEach(function(cb) { cb.disabled = true; });
+            }
+        });
+    });
+});
 
 {% if selected_program %}
 document.addEventListener('DOMContentLoaded', function() {

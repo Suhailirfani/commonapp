@@ -141,6 +141,15 @@
 
 {% block extra_js %}
 <script>
+function syncAssignCheckbox(changedInput) {
+    if (!changedInput) return;
+    var val = changedInput.value;
+    var isChecked = changedInput.checked;
+    document.querySelectorAll('.assign-check[value="' + val + '"]').forEach(function(cb) {
+        cb.checked = isChecked;
+    });
+}
+
 function toggleAll(status) {
     var checks = document.querySelectorAll('.assign-check');
     checks.forEach(function(c) { c.checked = status; });
@@ -163,5 +172,25 @@ function filterList() {
         item.style.display = text.indexOf(query) > -1 ? 'flex' : 'none';
     });
 }
+
+document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('change', function(e) {
+        if (e.target && e.target.classList.contains('assign-check')) {
+            syncAssignCheckbox(e.target);
+        }
+    });
+
+    var form = document.querySelector('form');
+    if (form) {
+        form.addEventListener('submit', function() {
+            var isMobile = window.innerWidth <= 768;
+            if (isMobile) {
+                document.querySelectorAll('.desktop-table-view .assign-check').forEach(function(cb) { cb.disabled = true; });
+            } else {
+                document.querySelectorAll('.mobile-card-list-view .assign-check').forEach(function(cb) { cb.disabled = true; });
+            }
+        });
+    }
+});
 </script>
 {% endblock %}
