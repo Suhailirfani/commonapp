@@ -529,6 +529,7 @@ def program_create_view(request, institution_slug):
             
         cat = get_object_or_404(Category, id=cat_id, institution=institution)
         max_team = int(request.POST.get('max_participants_per_team', 0) or 0)
+        is_excluded_from_limit = request.POST.get('is_excluded_from_limit') == 'on'
 
         Program.objects.create(
             institution=institution,
@@ -539,7 +540,8 @@ def program_create_view(request, institution_slug):
             program_type=p_type,
             presentation_mode=p_mode,
             duration_per_participant=duration,
-            max_participants_per_team=max_team
+            max_participants_per_team=max_team,
+            is_excluded_from_limit=is_excluded_from_limit
         )
         messages.success(request, f"Program '{name}' created successfully!")
         return redirect('core:program_list', institution_slug=institution.slug)
@@ -2112,6 +2114,20 @@ def settings_participation_limits_view(request, institution_slug):
     competitions = Competition.objects.filter(institution=institution).order_by('-year', '-id')
 
     if request.method == 'POST':
+        if request.POST.get('action') == 'toggle_program_exclusion':
+            from django.http import JsonResponse
+            program_id = request.POST.get('program_id')
+            prog = get_object_or_404(Program, id=program_id, institution=institution)
+            prog.is_excluded_from_limit = not prog.is_excluded_from_limit
+            prog.save(update_fields=['is_excluded_from_limit'])
+            return JsonResponse({
+                'status': 'success',
+                'program_id': prog.id,
+                'is_excluded': prog.is_excluded_from_limit,
+                'name': prog.name,
+                'message': f"Program '{prog.name}' is now {'EXCLUDED from limits (Out of Limit)' if prog.is_excluded_from_limit else 'subject to limits'}."
+            })
+
         comp_id = request.POST.get('competition_id')
         target_comps = Competition.objects.filter(institution=institution)
         if comp_id and str(comp_id).isdigit():
@@ -2139,6 +2155,12 @@ def settings_participation_limits_view(request, institution_slug):
                 'max_team_entries_per_group_program'
             ])
 
+        if 'has_excluded_programs_section' in request.POST or 'excluded_program_ids[]' in request.POST or 'excluded_program_ids' in request.POST:
+            from .services import bulk_set_program_limit_exclusions
+            posted_excluded = request.POST.getlist('excluded_program_ids[]') or request.POST.getlist('excluded_program_ids')
+            for comp in target_comps:
+                bulk_set_program_limit_exclusions(institution, competition=comp, excluded_program_ids=posted_excluded)
+
         s_text = f"{max_single} Single Items" if max_single > 0 else "Unlimited Single Items"
         g_text = f"{max_group} Group Items" if max_group > 0 else "Unlimited Group Items"
         t_text = f", {max_total} Total Items" if max_total > 0 else ""
@@ -2147,10 +2169,21 @@ def settings_participation_limits_view(request, institution_slug):
         messages.success(request, f"🎯 Program & Team Participation Limits updated successfully ({s_text}, {g_text}{t_text}{ts_text}{tg_text})!")
         return redirect('core:settings_participation_limits', institution_slug=institution.slug)
 
+    target_comp = active_fest or competitions.first()
+    programs_qs = Program.objects.filter(institution=institution)
+    if target_comp:
+        programs_qs = programs_qs.filter(competition=target_comp)
+    programs = list(programs_qs.select_related('category').order_by('category__name', 'name'))
+    excluded_count = sum(1 for p in programs if p.is_excluded_from_limit)
+
     return render(request, 'core/settings/settings_participation_limits.html', {
         'institution': institution,
         'competitions': competitions,
         'active_fest': active_fest,
+        'target_comp': target_comp,
+        'programs': programs,
+        'excluded_programs_count': excluded_count,
+        'total_programs_count': len(programs),
     })
 
 
@@ -2418,14 +2451,14 @@ def program_assign_contestants_view(request, institution_slug, program_id):
                 selected_ids_set = valid_contestant_ids
 
             comp = program.competition
-            if comp and (comp.has_single_limit or comp.has_total_limit):
+            if comp and not program.is_excluded_from_limit and (comp.has_single_limit or comp.has_total_limit):
                 overlimit_errors = []
                 for contestant_id in selected_ids_set:
                     c = Contestant.objects.filter(id=contestant_id, institution=institution).first()
                     if not c:
                         continue
                     if contestant_id not in existing_part_ids:
-                        can_add, reason = c.can_enroll_single(1)
+                        can_add, reason = c.can_enroll_single(1, program=program)
                         if not can_add:
                             overlimit_errors.append(f"#{c.chest_no} {c.name} ({reason})")
 
@@ -2525,20 +2558,28 @@ def contestant_assign_programs_view(request, institution_slug, contestant_id):
 
         comp = contestant.competition
         if comp:
-            if comp.has_single_limit and len(selected_prog_ids_set) > comp.max_single_programs_per_contestant:
+            countable_selected_progs = Program.objects.filter(
+                id__in=selected_prog_ids_set,
+                institution=institution,
+                is_excluded_from_limit=False
+            )
+            countable_selected_count = countable_selected_progs.count()
+            exempt_count = len(selected_prog_ids_set) - countable_selected_count
+
+            if comp.has_single_limit and countable_selected_count > comp.max_single_programs_per_contestant:
                 messages.error(
                     request,
-                    f"⚠️ Single Program Limit Exceeded: Contestant #{contestant.chest_no} ({contestant.name}) can only participate in up to {comp.max_single_programs_per_contestant} single programs (you selected {len(selected_prog_ids_set)})."
+                    f"⚠️ Single Program Limit Exceeded: Contestant #{contestant.chest_no} ({contestant.name}) can only participate in up to {comp.max_single_programs_per_contestant} single programs subject to limits (you selected {countable_selected_count} countable programs; {exempt_count} exempt from limits)."
                 )
                 return redirect('core:contestant_assign_programs', institution_slug=institution.slug, contestant_id=contestant.id)
 
             if comp.has_total_limit:
-                current_group_count = contestant.group_programs_count
-                total_attempted = len(selected_prog_ids_set) + current_group_count
+                current_group_count = contestant.countable_group_programs_count
+                total_attempted = countable_selected_count + current_group_count
                 if total_attempted > comp.max_total_programs_per_contestant:
                     messages.error(
                         request,
-                        f"⚠️ Total Program Limit Exceeded: Contestant #{contestant.chest_no} ({contestant.name}) can participate in a maximum of {comp.max_total_programs_per_contestant} total programs ({len(selected_prog_ids_set)} single + {current_group_count} group = {total_attempted})."
+                        f"⚠️ Total Program Limit Exceeded: Contestant #{contestant.chest_no} ({contestant.name}) can participate in a maximum of {comp.max_total_programs_per_contestant} total programs ({countable_selected_count} countable single + {current_group_count} countable group = {total_attempted}; {exempt_count} exempt)."
                     )
                     return redirect('core:contestant_assign_programs', institution_slug=institution.slug, contestant_id=contestant.id)
 
@@ -3497,6 +3538,7 @@ def program_edit_view(request, institution_slug, program_id):
         p_mode = request.POST.get('presentation_mode', 'SEQUENTIAL')
         duration = request.POST.get('duration_per_participant', 5)
         max_team = int(request.POST.get('max_participants_per_team', 0) or 0)
+        is_excluded_from_limit = request.POST.get('is_excluded_from_limit') == 'on'
 
         cat = get_object_or_404(Category, id=cat_id, institution=institution)
         comp = None
@@ -3514,6 +3556,7 @@ def program_edit_view(request, institution_slug, program_id):
         program.presentation_mode = p_mode
         program.duration_per_participant = int(duration) if str(duration).isdigit() else 5
         program.max_participants_per_team = max_team
+        program.is_excluded_from_limit = is_excluded_from_limit
 
         program.save()
 
@@ -5608,7 +5651,7 @@ def group_assign_view(request, institution_slug, program_id=None):
             if capt:
                 all_candidate_ids.add(capt.id)
 
-            if comp and (comp.has_group_limit or comp.has_total_limit):
+            if comp and not prog.is_excluded_from_limit and (comp.has_group_limit or comp.has_total_limit):
                 overlimit_errors = []
                 existing_gp_members = set(gp.contestants.values_list('id', flat=True)) if (group_part_id and gp.id) else set()
                 if group_part_id and gp.id and gp.captain_id:
@@ -5618,7 +5661,7 @@ def group_assign_view(request, institution_slug, program_id=None):
                     if cid not in existing_gp_members:
                         c_obj = Contestant.objects.filter(id=cid, institution=institution).first()
                         if c_obj:
-                            can_add, reason = c_obj.can_enroll_group(1)
+                            can_add, reason = c_obj.can_enroll_group(1, program=prog)
                             if not can_add:
                                 overlimit_errors.append(f"#{c_obj.chest_no} {c_obj.name} ({reason})")
 

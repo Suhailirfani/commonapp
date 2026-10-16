@@ -10,7 +10,9 @@
             <i class="fa-solid fa-arrow-left"></i> Back to Settings Hub
         </a>
         <h2 style="font-size: 1.8rem; font-weight: 800;"><i class="fa-solid fa-user-shield" style="color: var(--accent-cyan);"></i> Program Participation Limits & Rules</h2>
-        <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 4px;">Set maximum programs allowed per contestant across Single and Group events, and per-team quotas in programs. Default is <strong>0 (No Limit / Unlimited)</strong>.</p>
+        <p style="color: var(--text-muted); font-size: 0.92rem; margin-top: 4px; line-height: 1.6;">
+            സിംഗിൾ, ഗ്രൂപ്പ് ഇനങ്ങളിൽ ഒരു മത്സരാർത്ഥിക്ക് പങ്കെടുക്കാവുന്ന പരമാവധി പരിപാടികളുടെ പരിധിയും (Limit), ഒരു ടീമിൽ നിന്നും പങ്കെടുക്കാവുന്ന പരമാവധി ക്വാട്ടയും ഇവിടെ നിശ്ചയിക്കാം. ഏതെങ്കിലും ഇനങ്ങൾക്ക് പരിധി ആവശ്യമില്ലെങ്കിൽ <strong>0 (അൺലിമിറ്റഡ്)</strong> എന്ന് നൽകുക.
+        </p>
     </div>
     <div>
         <span class="badge badge-approved" style="font-size: 0.85rem; padding: 8px 16px;">
@@ -26,7 +28,7 @@
         {% if active_fest %}
         <input type="hidden" name="competition_id" value="{{ active_fest.id }}">
         <div style="display: inline-flex; align-items: center; gap: 8px; margin-bottom: 20px; padding: 8px 14px; background: rgba(14, 165, 233, 0.12); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 8px; font-size: 0.85rem; color: #38bdf8;">
-            <i class="fa-solid fa-layer-group"></i> Configuring Limits for Active Fest: <strong>{{ active_fest.name }} ({{ active_fest.year }})</strong>
+            <i class="fa-solid fa-layer-group"></i> Active Fest: <strong>{{ active_fest.name }} ({{ active_fest.year }})</strong>
         </div>
         {% elif competitions.first %}
         <input type="hidden" name="competition_id" value="{{ competitions.first.id }}">
@@ -38,15 +40,15 @@
             <!-- Contestant Limit: Single Programs -->
             <div class="form-group" style="margin: 0;">
                 <label class="form-label" style="color: var(--accent-emerald); font-weight: 700; display: flex; align-items: center; gap: 8px;">
-                    <i class="fa-solid fa-user"></i> Student Limit: Single Items
+                    <i class="fa-solid fa-user"></i> Max Single Programs per Contestant
                 </label>
                 <div style="position: relative;">
                     <input type="number" name="max_single_programs_per_contestant" id="limit_single_input" 
                            value="{{ current_comp.max_single_programs_per_contestant|default:0 }}" 
                            class="form-control" style="font-size: 1.15rem; font-weight: 700; color: var(--accent-emerald);" min="0" required>
                 </div>
-                <small style="color: var(--text-muted); font-size: 0.8rem; display: block; margin-top: 6px;">
-                    e.g. <code>4</code> = Max 4 single items per student. Set <code>0</code> for Unlimited.
+                <small style="color: var(--text-muted); font-size: 0.8rem; display: block; margin-top: 6px; line-height: 1.4;">
+                    ഒരു വിദ്യാർത്ഥിക്ക് പങ്കെടുക്കാവുന്ന പരമാവധി സിംഗിൾ ഇനങ്ങൾ. ഉദാ: <code>4</code>. പരിധിയില്ലാതെ എത്രയും പങ്കെടുക്കാൻ <code>0</code> നൽകുക.
                 </small>
                 <div style="display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap;">
                     <button type="button" class="btn-preset" onclick="setLimitPreset('limit_single_input', 0)">No Limit (0)</button>
@@ -60,15 +62,15 @@
             <!-- Contestant Limit: Group Programs -->
             <div class="form-group" style="margin: 0;">
                 <label class="form-label" style="color: var(--accent-amber); font-weight: 700; display: flex; align-items: center; gap: 8px;">
-                    <i class="fa-solid fa-people-group"></i> Student Limit: Group Items
+                    <i class="fa-solid fa-people-group"></i> Max Group Programs per Contestant
                 </label>
                 <div style="position: relative;">
                     <input type="number" name="max_group_programs_per_contestant" id="limit_group_input" 
                            value="{{ current_comp.max_group_programs_per_contestant|default:0 }}" 
                            class="form-control" style="font-size: 1.15rem; font-weight: 700; color: var(--accent-amber);" min="0" required>
                 </div>
-                <small style="color: var(--text-muted); font-size: 0.8rem; display: block; margin-top: 6px;">
-                    e.g. <code>4</code> = Max 4 group items per student. Set <code>0</code> for Unlimited.
+                <small style="color: var(--text-muted); font-size: 0.8rem; display: block; margin-top: 6px; line-height: 1.4;">
+                    ഒരു വിദ്യാർത്ഥിക്ക് പങ്കെടുക്കാവുന്ന പരമാവധി ഗ്രൂപ്പ് ഇനങ്ങൾ. ഉദാ: <code>3</code>. പരിധിയില്ലാതെ എത്രയും പങ്കെടുക്കാൻ <code>0</code> നൽകുക.
                 </small>
                 <div style="display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap;">
                     <button type="button" class="btn-preset" onclick="setLimitPreset('limit_group_input', 0)">No Limit (0)</button>
@@ -82,15 +84,15 @@
             <!-- Total Combined Limit (Optional) -->
             <div class="form-group" style="margin: 0;">
                 <label class="form-label" style="color: var(--accent-cyan); font-weight: 700; display: flex; align-items: center; gap: 8px;">
-                    <i class="fa-solid fa-layer-group"></i> Student Limit: Total Combined Cap
+                    <i class="fa-solid fa-layer-group"></i> Total Combined Programs Limit (Single + Group)
                 </label>
                 <div style="position: relative;">
                     <input type="number" name="max_total_programs_per_contestant" id="limit_total_input" 
                            value="{{ current_comp.max_total_programs_per_contestant|default:0 }}" 
                            class="form-control" style="font-size: 1.15rem; font-weight: 700; color: var(--accent-cyan);" min="0" required>
                 </div>
-                <small style="color: var(--text-muted); font-size: 0.8rem; display: block; margin-top: 6px;">
-                    Overall cap across single + group items combined. Set <code>0</code> for Unlimited.
+                <small style="color: var(--text-muted); font-size: 0.8rem; display: block; margin-top: 6px; line-height: 1.4;">
+                    സിംഗിളും ഗ്രൂപ്പും ഒരുമിച്ച് കൂട്ടി ആകെ പങ്കെടുക്കാവുന്ന പരമാവധി എണ്ണം (ഉദാ: ആകെ 6 ഇനങ്ങൾ). ഈ പരിധി ആവശ്യമില്ലെങ്കിൽ <code>0</code> നൽകുക.
                 </small>
                 <div style="display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap;">
                     <button type="button" class="btn-preset" onclick="setLimitPreset('limit_total_input', 0)">No Limit (0)</button>
@@ -104,15 +106,15 @@
             <!-- Team Limit: Single Programs -->
             <div class="form-group" style="margin: 0;">
                 <label class="form-label" style="color: #c084fc; font-weight: 700; display: flex; align-items: center; gap: 8px;">
-                    <i class="fa-solid fa-users-viewfinder"></i> Team Limit: Single Program
+                    <i class="fa-solid fa-users-viewfinder"></i> Team Quota: Single Programs
                 </label>
                 <div style="position: relative;">
                     <input type="number" name="max_team_participants_per_single_program" id="limit_team_single_input" 
                            value="{{ current_comp.max_team_participants_per_single_program|default:0 }}" 
                            class="form-control" style="font-size: 1.15rem; font-weight: 700; color: #c084fc;" min="0" required>
                 </div>
-                <small style="color: var(--text-muted); font-size: 0.8rem; display: block; margin-top: 6px;">
-                    Max participants from 1 team in a single item. Set <code>0</code> for Unlimited.
+                <small style="color: var(--text-muted); font-size: 0.8rem; display: block; margin-top: 6px; line-height: 1.4;">
+                    ഒരു സിംഗിൾ ഇനത്തിൽ ഒരു ടീമിൽ നിന്ന് പങ്കെടുക്കാവുന്ന പരമാവധി കുട്ടികളുടെ എണ്ണം. പരിധിയില്ലെങ്കിൽ <code>0</code> നൽകുക.
                 </small>
                 <div style="display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap;">
                     <button type="button" class="btn-preset" onclick="setLimitPreset('limit_team_single_input', 0)">No Limit (0)</button>
@@ -127,33 +129,157 @@
             <!-- Team Limit: Group Programs -->
             <div class="form-group" style="margin: 0;">
                 <label class="form-label" style="color: #f472b6; font-weight: 700; display: flex; align-items: center; gap: 8px;">
-                    <i class="fa-solid fa-people-roof"></i> Team Limit: Group Program
+                    <i class="fa-solid fa-people-roof"></i> Team Quota: Group Programs
                 </label>
                 <div style="position: relative;">
                     <input type="number" name="max_team_entries_per_group_program" id="limit_team_group_input" 
                            value="{{ current_comp.max_team_entries_per_group_program|default:0 }}" 
                            class="form-control" style="font-size: 1.15rem; font-weight: 700; color: #f472b6;" min="0" required>
                 </div>
-                <small style="color: var(--text-muted); font-size: 0.8rem; display: block; margin-top: 6px;">
-                    Max group entries from 1 team in a group item. Set <code>0</code> for Unlimited.
+                <small style="color: var(--text-muted); font-size: 0.8rem; display: block; margin-top: 6px; line-height: 1.4;">
+                    ഒരു ഗ്രൂപ്പ് ഇനത്തിൽ ഒരു ടീമിൽ നിന്ന് പങ്കെടുക്കാവുന്ന പരമാവധി ഗ്രൂപ്പുകളുടെ എണ്ണം. പരിധിയില്ലെങ്കിൽ <code>0</code> നൽകുക.
                 </small>
                 <div style="display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap;">
                     <button type="button" class="btn-preset" onclick="setLimitPreset('limit_team_group_input', 0)">No Limit (0)</button>
-                    <button type="button" class="btn-preset" onclick="setLimitPreset('limit_team_group_input', 1)">1 Entry</button>
-                    <button type="button" class="btn-preset" onclick="setLimitPreset('limit_team_group_input', 2)">2 Entries</button>
-                    <button type="button" class="btn-preset" onclick="setLimitPreset('limit_team_group_input', 3)">3 Entries</button>
+                    <button type="button" class="btn-preset" onclick="setLimitPreset('limit_team_group_input', 1)">1 Group</button>
+                    <button type="button" class="btn-preset" onclick="setLimitPreset('limit_team_group_input', 2)">2 Groups</button>
+                    <button type="button" class="btn-preset" onclick="setLimitPreset('limit_team_group_input', 3)">3 Groups</button>
                 </div>
             </div>
 
         </div>
         {% endwith %}
 
+        <!-- Programs Excluded from Limits (Out of Limit Programs) -->
+        <div style="margin-top: 30px; background: rgba(0,0,0,0.25); border-radius: 12px; border: 1px solid var(--border-color); padding: 22px;">
+            <input type="hidden" name="has_excluded_programs_section" value="1">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
+                <div>
+                    <h3 style="font-size: 1.25rem; font-weight: 700; color: #fbbf24; display: flex; align-items: center; gap: 8px;">
+                        <i class="fa-solid fa-star"></i> Excluded Programs (Out of Limit Participation)
+                    </h3>
+                    <p style="color: var(--text-muted); font-size: 0.88rem; margin-top: 6px; line-height: 1.6;">
+                        മത്സരാർത്ഥികളുടെ പങ്കാളിത്ത പരിധിയിൽ (Participation Limit) പെടാത്ത പ്രത്യേക പ്രോഗ്രാമുകൾ ഇവിടെ തിരഞ്ഞെടുക്കുക. നിശ്ചയിച്ച പരിധി കഴിഞ്ഞ കുട്ടികൾക്കും (ഉദാ: 6 ഇനങ്ങൾ പൂർത്തിയായവർക്കും) ഇവിടെ തിരഞ്ഞെടുത്ത ഇനങ്ങളിൽ നിയന്ത്രണങ്ങളില്ലാതെ വീണ്ടും പങ്കെടുക്കാൻ സാധിക്കും. ഈ പ്രത്യേക ഇനങ്ങൾ കുട്ടിയുടെ പങ്കാളിത്ത പരിധിയിൽ കണക്കാക്കില്ല.
+                    </p>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span id="excludedCountBadge" class="badge" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.45); font-size: 0.85rem; padding: 6px 14px; font-weight: 700;">
+                        <i class="fa-solid fa-star"></i> <span id="excludedCountNum">{{ excluded_programs_count|default:0 }}</span> / {{ total_programs_count|default:0 }} Excluded
+                    </span>
+                </div>
+            </div>
+
+            <!-- Controls: Search & Quick Selection -->
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; background: rgba(255,255,255,0.02); padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border-color);">
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <button type="button" class="btn-preset" onclick="bulkToggleExclusion(true)">
+                        <i class="fa-solid fa-check-double"></i> Exclude All
+                    </button>
+                    <button type="button" class="btn-preset" onclick="bulkToggleExclusion(false)">
+                        <i class="fa-solid fa-xmark"></i> Include All
+                    </button>
+                </div>
+                <input type="text" id="progExclusionSearch" placeholder="Search program or category..." class="form-control" style="max-width: 280px; font-size: 0.85rem; padding: 6px 12px;" onkeyup="filterExclusionTable()">
+            </div>
+
+            <!-- Programs Table -->
+            <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                <table class="custom-table" id="excludedProgramsTable">
+                    <thead>
+                        <tr>
+                            <th style="width: 80px; text-align: center;">Exclude</th>
+                            <th>Program Name</th>
+                            <th>Category</th>
+                            <th style="text-align: center;">Format</th>
+                            <th style="text-align: center;">Limit Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for prog in programs %}
+                        <tr class="prog-excl-row" data-name="{{ prog.name|lower }}" data-cat="{{ prog.category.name|lower }}">
+                            <td style="text-align: center;">
+                                <input type="checkbox" name="excluded_program_ids[]" value="{{ prog.id }}" 
+                                       class="prog-excl-check" 
+                                       {% if prog.is_excluded_from_limit %}checked{% endif %} 
+                                       style="width: 20px; height: 20px; cursor: pointer; accent-color: #f59e0b;" 
+                                       onchange="updateExcludedBadge()">
+                            </td>
+                            <td>
+                                <strong style="color: #f8fafc; font-size: 0.95rem;">{{ prog.name }}</strong>
+                            </td>
+                            <td>
+                                <span class="badge badge-approved" style="font-size: 0.78rem;">{{ prog.category.name }}</span>
+                            </td>
+                            <td style="text-align: center;">
+                                {% if prog.is_group %}
+                                <span class="badge badge-pending" style="font-size: 0.76rem;">Group Event</span>
+                                {% else %}
+                                <span class="badge badge-approved" style="font-size: 0.76rem;">Single Event</span>
+                                {% endif %}
+                            </td>
+                            <td style="text-align: center;" class="prog-status-cell">
+                                {% if prog.is_excluded_from_limit %}
+                                <span class="badge" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.45); font-size: 0.74rem; font-weight: 700;">
+                                    ⭐ Out of Limit
+                                </span>
+                                {% else %}
+                                <span class="badge" style="background: rgba(255,255,255,0.06); color: var(--text-muted); font-size: 0.74rem;">
+                                    Subject to Limit
+                                </span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 30px;">
+                                ഈ മത്സരത്തിൽ ഇതുവരെ പ്രോഗ്രാമുകൾ ചേർത്തിട്ടില്ല. Programs ടാബിൽ പോയി ആദ്യം ഇനങ്ങൾ ചേർക്കുക.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
         <div style="margin-top: 24px; display: flex; justify-content: flex-end;">
             <button type="submit" class="btn-primary" style="background: linear-gradient(135deg, var(--accent-cyan), #0284c7); padding: 12px 28px; font-weight: 700; font-size: 1rem;">
-                <i class="fa-solid fa-floppy-disk"></i> Save Participation Limits
+                <i class="fa-solid fa-floppy-disk"></i> Save Participation Limits & Exclusions
             </button>
         </div>
     </form>
+</div>
+
+<!-- Detailed Guidelines & Help Card: Headings in English, Descriptions in Malayalam -->
+<div class="glass-card" style="margin-top: 24px; border-left: 4px solid var(--accent-cyan); background: rgba(14, 165, 233, 0.04);">
+    <h4 style="color: var(--accent-cyan); font-weight: 700; margin-bottom: 14px; display: flex; align-items: center; gap: 8px;">
+        <i class="fa-solid fa-circle-question"></i> Participation Limits & Rules Guidelines
+    </h4>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; font-size: 0.85rem; color: #cbd5e1; line-height: 1.6;">
+        <div style="background: rgba(0,0,0,0.2); padding: 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+            <strong style="color: var(--accent-emerald); display: block; margin-bottom: 5px;">
+                <i class="fa-solid fa-user"></i> 1. Individual Single & Group Limits
+            </strong>
+            ഒരു വിദ്യാർത്ഥിക്ക് പരമാവധി എത്ര സിംഗിൾ ഇനങ്ങളിലും എത്ര ഗ്രൂപ്പ് ഇനങ്ങളിലും പങ്കെടുക്കാമെന്ന് ഇവിടെ പ്രത്യേകം നിശ്ചയിക്കാം. ഉദാഹരണത്തിന് സിംഗിൾ പരിധി 4 ഉം ഗ്രൂപ്പ് പരിധി 3 ഉം നൽകിയാൽ ഒരു കുട്ടിക്ക് പരമാവധി 4 സിംഗിളിലും 3 ഗ്രൂപ്പിലും പങ്കെടുക്കാം.
+        </div>
+        <div style="background: rgba(0,0,0,0.2); padding: 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+            <strong style="color: var(--accent-cyan); display: block; margin-bottom: 5px;">
+                <i class="fa-solid fa-layer-group"></i> 2. Total Combined Program Cap
+            </strong>
+            സിംഗിളും ഗ്രൂപ്പും ഒരുമിച്ച് കൂട്ടി ആകെ പങ്കെടുക്കാവുന്ന പരമാവധി എണ്ണമാണിത്. ഉദാഹരണത്തിന് ആകെ പരിധി 6 ആണെങ്കിൽ, സിംഗിളും ഗ്രൂപ്പും ചേർത്ത് 6 പ്രോഗ്രാമുകളിൽ കൂടുതൽ ഒരു കുട്ടിയെ ചേർക്കാൻ സിസ്റ്റം അനുവദിക്കില്ല.
+        </div>
+        <div style="background: rgba(0,0,0,0.2); padding: 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+            <strong style="color: #fbbf24; display: block; margin-bottom: 5px;">
+                <i class="fa-solid fa-star"></i> 3. Out of Limit Programs (Exemptions)
+            </strong>
+            ജനറൽ മത്സരങ്ങൾ, മാർച്ച് പാസ്റ്റ്, ക്വിസ് തുടങ്ങിയ ചില ഇനങ്ങൾ കുട്ടിയുടെ പങ്കാളിത്ത പരിധിയിൽ കണക്കാക്കേണ്ടതില്ലെങ്കിൽ, മുകളിലുള്ള പട്ടികയിൽ നിന്ന് അവ ടിക്ക് ചെയ്ത് ഒഴിവാക്കാം. 6 പരിപാടികൾ പൂർത്തിയായ കുട്ടിക്കും ഇത്തരം ഇനങ്ങളിൽ വീണ്ടും പങ്കെടുക്കാം.
+        </div>
+        <div style="background: rgba(0,0,0,0.2); padding: 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+            <strong style="color: #c084fc; display: block; margin-bottom: 5px;">
+                <i class="fa-solid fa-users"></i> 4. Team Entry Quota
+            </strong>
+            ഒരു സിംഗിൾ പ്രോഗ്രാമിൽ ഒരു ടീമിൽ നിന്നും പരമാവധി എത്ര മത്സരാർത്ഥികൾക്ക് പങ്കെടുക്കാം (ഉദാ: 2 കുട്ടികൾ), ഗ്രൂപ്പ് ഇനത്തിൽ ഒരു ടീമിൽ നിന്നും എത്ര ഗ്രൂപ്പുകൾക്ക് മത്സരിക്കാം (ഉദാ: 1 ഗ്രൂപ്പ്) എന്ന് നിജപ്പെടുത്താം.
+        </div>
+    </div>
 </div>
 
 <style>
@@ -184,25 +310,48 @@ function setLimitPreset(inputId, value) {
     }
 }
 
-function syncCompetitionLimits(selectElem) {
-    const opt = selectElem.options[selectElem.selectedIndex];
-    if (opt) {
-        const single = opt.getAttribute('data-single') || 0;
-        const group = opt.getAttribute('data-group') || 0;
-        const total = opt.getAttribute('data-total') || 0;
-        const teamSingle = opt.getAttribute('data-team-single') || 0;
-        const teamGroup = opt.getAttribute('data-team-group') || 0;
-        const singleInp = document.getElementById('limit_single_input');
-        const groupInp = document.getElementById('limit_group_input');
-        const totalInp = document.getElementById('limit_total_input');
-        const teamSingleInp = document.getElementById('limit_team_single_input');
-        const teamGroupInp = document.getElementById('limit_team_group_input');
-        if (singleInp) singleInp.value = single;
-        if (groupInp) groupInp.value = group;
-        if (totalInp) totalInp.value = total;
-        if (teamSingleInp) teamSingleInp.value = teamSingle;
-        if (teamGroupInp) teamGroupInp.value = teamGroup;
-    }
+function updateExcludedBadge() {
+    const checks = document.querySelectorAll('.prog-excl-check');
+    let count = 0;
+    checks.forEach(cb => {
+        const row = cb.closest('tr');
+        const statusCell = row ? row.querySelector('.prog-status-cell') : null;
+        if (cb.checked) {
+            count++;
+            if (statusCell) {
+                statusCell.innerHTML = '<span class="badge" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.45); font-size: 0.74rem; font-weight: 700;">⭐ Out of Limit</span>';
+            }
+        } else {
+            if (statusCell) {
+                statusCell.innerHTML = '<span class="badge" style="background: rgba(255,255,255,0.06); color: var(--text-muted); font-size: 0.74rem;">Subject to Limit</span>';
+            }
+        }
+    });
+    const numSpan = document.getElementById('excludedCountNum');
+    if (numSpan) numSpan.innerText = count;
+}
+
+function bulkToggleExclusion(checkAll) {
+    document.querySelectorAll('.prog-excl-check').forEach(cb => {
+        cb.checked = checkAll;
+    });
+    updateExcludedBadge();
+}
+
+function filterExclusionTable() {
+    const input = document.getElementById('progExclusionSearch');
+    const filter = input ? input.value.toLowerCase().trim() : '';
+    const rows = document.querySelectorAll('.prog-excl-row');
+    rows.forEach(row => {
+        const name = row.getAttribute('data-name') || '';
+        const cat = row.getAttribute('data-cat') || '';
+        if (!filter || name.includes(filter) || cat.includes(filter)) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
 }
 </script>
 {% endblock %}
+

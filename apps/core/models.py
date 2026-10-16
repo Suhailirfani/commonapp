@@ -254,6 +254,10 @@ class Program(TenantBaseModel):
         default=0,
         help_text="Maximum participants allowed per team for this program (0 to use fest default / unlimited)"
     )
+    is_excluded_from_limit = models.BooleanField(
+        default=False,
+        help_text="Exclude this program from contestant participation limits (Out of Limit / Exempt)"
+    )
 
     class Meta:
         ordering = ['category', 'name']
@@ -261,6 +265,10 @@ class Program(TenantBaseModel):
     def __str__(self):
         group_str = "Group" if self.is_group else "Single"
         return f"{self.name} ({self.category.name}) [{group_str}]"
+
+    @property
+    def is_out_of_limit(self):
+        return self.is_excluded_from_limit
 
     @property
     def effective_max_participants_per_team(self):
@@ -461,6 +469,34 @@ class Contestant(TenantBaseModel):
         return self.single_programs_count + self.group_programs_count
 
     @property
+    def countable_single_programs_count(self):
+        """Single programs subject to contestant participation limits (excludes exempt/out-of-limit programs)."""
+        return self.participations.filter(program__is_excluded_from_limit=False).count()
+
+    @property
+    def countable_group_programs_count(self):
+        """Group programs subject to contestant participation limits (excludes exempt/out-of-limit programs)."""
+        return GroupParticipation.objects.filter(
+            models.Q(contestants=self) | models.Q(captain=self),
+            program__is_excluded_from_limit=False
+        ).distinct().count()
+
+    @property
+    def countable_total_programs_count(self):
+        """Total countable programs (single + group) that consume participation quota."""
+        return self.countable_single_programs_count + self.countable_group_programs_count
+
+    @property
+    def excluded_programs_count(self):
+        """Number of out-of-limit (exempt) programs this contestant is enrolled in."""
+        s_count = self.participations.filter(program__is_excluded_from_limit=True).count()
+        g_count = GroupParticipation.objects.filter(
+            models.Q(contestants=self) | models.Q(captain=self),
+            program__is_excluded_from_limit=True
+        ).distinct().count()
+        return s_count + g_count
+
+    @property
     def all_assigned_programs(self):
         """
         Returns a list of dictionaries with unified program details for both single and group participations.
@@ -481,6 +517,7 @@ class Contestant(TenantBaseModel):
                     'badge_label': 'Single',
                     'type_display': part.program.get_program_type_display(),
                     'code_letter': part.code_letter,
+                    'is_excluded_from_limit': part.program.is_excluded_from_limit,
                 })
 
         # 2. Group participations as captain
@@ -496,6 +533,7 @@ class Contestant(TenantBaseModel):
                     'badge_label': 'Group (Captain)',
                     'type_display': gp.program.get_program_type_display(),
                     'code_letter': gp.code_letter,
+                    'is_excluded_from_limit': gp.program.is_excluded_from_limit,
                 })
 
         # 3. Group participations as member
@@ -512,35 +550,56 @@ class Contestant(TenantBaseModel):
                     'badge_label': 'Group (Captain)' if is_capt else 'Group',
                     'type_display': gp.program.get_program_type_display(),
                     'code_letter': gp.code_letter,
+                    'is_excluded_from_limit': gp.program.is_excluded_from_limit,
                 })
 
         return results
 
-    def can_enroll_single(self, additional=1):
-        """Checks if contestant can enroll in additional single program(s). Returns (can_enroll: bool, reason: str)."""
+    def can_enroll_single(self, additional=1, program=None):
+        """
+        Checks if contestant can enroll in additional single program(s).
+        If program is provided and is excluded from limits (is_excluded_from_limit=True),
+        participation is always permitted regardless of limits.
+        """
+        if program and getattr(program, 'is_excluded_from_limit', False):
+            return True, ""
         comp = self.competition
         if not comp:
             return True, ""
         if comp.has_single_limit:
-            if self.single_programs_count + additional > comp.max_single_programs_per_contestant:
+            if self.countable_single_programs_count + additional > comp.max_single_programs_per_contestant:
                 return False, f"Maximum single programs limit ({comp.max_single_programs_per_contestant}) reached."
         if comp.has_total_limit:
-            if self.total_programs_count + additional > comp.max_total_programs_per_contestant:
+            if self.countable_total_programs_count + additional > comp.max_total_programs_per_contestant:
                 return False, f"Maximum total programs limit ({comp.max_total_programs_per_contestant}) reached."
         return True, ""
 
-    def can_enroll_group(self, additional=1):
-        """Checks if contestant can participate in additional group program(s). Returns (can_enroll: bool, reason: str)."""
+    def can_enroll_group(self, additional=1, program=None):
+        """
+        Checks if contestant can participate in additional group program(s).
+        If program is provided and is excluded from limits (is_excluded_from_limit=True),
+        participation is always permitted regardless of limits.
+        """
+        if program and getattr(program, 'is_excluded_from_limit', False):
+            return True, ""
         comp = self.competition
         if not comp:
             return True, ""
         if comp.has_group_limit:
-            if self.group_programs_count + additional > comp.max_group_programs_per_contestant:
+            if self.countable_group_programs_count + additional > comp.max_group_programs_per_contestant:
                 return False, f"Maximum group programs limit ({comp.max_group_programs_per_contestant}) reached."
         if comp.has_total_limit:
-            if self.total_programs_count + additional > comp.max_total_programs_per_contestant:
+            if self.countable_total_programs_count + additional > comp.max_total_programs_per_contestant:
                 return False, f"Maximum total programs limit ({comp.max_total_programs_per_contestant}) reached."
         return True, ""
+
+    def can_participate_in_program(self, program, additional=1):
+        """
+        Checks if contestant can participate in the given program respecting out-of-limit exclusions.
+        """
+        from apps.core.services import check_contestant_participation_limit
+        return check_contestant_participation_limit(self, program=program, additional=additional)
+
 
     def __str__(self):
         return f"#{self.chest_no} {self.name} ({self.team.name})"

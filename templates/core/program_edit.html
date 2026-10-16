@@ -82,6 +82,18 @@
                 </strong>
                 (Leave 0 to use fest default).
             </small>
+        <div class="form-group" style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 10px; padding: 14px;">
+            <label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer; margin: 0;">
+                <input type="checkbox" name="is_excluded_from_limit" {% if program.is_excluded_from_limit %}checked{% endif %} style="width: 20px; height: 20px; margin-top: 2px; accent-color: #f59e0b;">
+                <div>
+                    <strong style="color: #fbbf24; font-size: 0.95rem; display: flex; align-items: center; gap: 6px;">
+                        <i class="fa-solid fa-star"></i> Exclude from Participation Limit (Out of Limit Program)
+                    </strong>
+                    <small style="color: var(--text-muted); font-size: 0.8rem; display: block; margin-top: 4px; line-height: 1.4;">
+                        ഇത് ടിക്ക് ചെയ്താൽ, നിശ്ചയിച്ച പരമാവധി പരിധി (ഉദാ: 6 ഇനങ്ങൾ) തികഞ്ഞ കുട്ടികൾക്കും ഈ പരിപാടിയിൽ നിയന്ത്രണമില്ലാതെ പങ്കെടുക്കാം. ഇത് കുട്ടിയുടെ പങ്കാളിത്ത പരിധിയിൽ കണക്കാക്കില്ല.
+                    </small>
+                </div>
+            </label>
         </div>
 
         <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 24px;">

@@ -419,6 +419,11 @@ Category: Junior Category
                             <td style="padding: 12px 14px;"><strong>{{ forloop.counter }}</strong></td>
                             <td style="padding: 12px 14px;">
                                 <strong style="font-size: 1.02rem; color: #f8fafc;">{{ p.name }}</strong>
+                                {% if p.is_excluded_from_limit %}
+                                <span class="badge" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.45); font-size: 0.72rem; padding: 2px 7px; margin-left: 6px; font-weight: 700;" title="Out of Limit (Exempt from student participation limits)">
+                                    <i class="fa-solid fa-star"></i> Out of Limit
+                                </span>
+                                {% endif %}
                             </td>
                             <td style="padding: 12px 14px;">
                                 <span class="badge badge-approved" style="font-size: 0.82rem; padding: 4px 10px;">
@@ -467,6 +472,11 @@ Category: Junior Category
                         <div>
                             <strong style="font-size: 1.05rem; color: var(--accent-cyan); display: block; margin-bottom: 4px;">
                                 #{{ forloop.counter }} {{ p.name }}
+                                {% if p.is_excluded_from_limit %}
+                                <span class="badge" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.45); font-size: 0.7rem; padding: 2px 6px; margin-left: 4px; font-weight: 700;">
+                                    <i class="fa-solid fa-star"></i> Out of Limit
+                                </span>
+                                {% endif %}
                             </strong>
                             <span class="badge badge-approved" style="font-size: 0.76rem; padding: 3px 8px;">
                                 {{ p.category.name }}
@@ -538,6 +548,11 @@ Category: Junior Category
                             <td style="padding: 12px 14px;"><strong>{{ forloop.counter }}</strong></td>
                             <td style="padding: 12px 14px;">
                                 <strong style="font-size: 1.02rem; color: #f8fafc;">{{ p.name }}</strong>
+                                {% if p.is_excluded_from_limit %}
+                                <span class="badge" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.45); font-size: 0.72rem; padding: 2px 7px; margin-left: 6px; font-weight: 700;" title="Out of Limit (Exempt from student participation limits)">
+                                    <i class="fa-solid fa-star"></i> Out of Limit
+                                </span>
+                                {% endif %}
                             </td>
                             <td style="padding: 12px 14px;">
                                 <span class="badge badge-approved" style="font-size: 0.82rem; padding: 4px 10px;">
@@ -586,6 +601,11 @@ Category: Junior Category
                         <div>
                             <strong style="font-size: 1.05rem; color: #c084fc; display: block; margin-bottom: 4px;">
                                 #{{ forloop.counter }} {{ p.name }}
+                                {% if p.is_excluded_from_limit %}
+                                <span class="badge" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.45); font-size: 0.7rem; padding: 2px 6px; margin-left: 4px; font-weight: 700;">
+                                    <i class="fa-solid fa-star"></i> Out of Limit
+                                </span>
+                                {% endif %}
                             </strong>
                             <span class="badge badge-approved" style="font-size: 0.76rem; padding: 3px 8px;">
                                 {{ p.category.name }}

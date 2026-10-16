@@ -83,10 +83,18 @@
                     {% for prog in eligible_programs %}
                     <tr>
                         <td>
-                            <input type="checkbox" name="selected_program_ids[]" value="{{ prog.id }}" class="prog-enroll-check" {% if prog.id in existing_prog_ids %}checked{% endif %} style="width: 18px; height: 18px; cursor: pointer;" onchange="syncProgramCheckbox(this)">
+                            <input type="checkbox" name="selected_program_ids[]" value="{{ prog.id }}" 
+                                   data-excluded="{% if prog.is_excluded_from_limit %}true{% else %}false{% endif %}"
+                                   class="prog-enroll-check" {% if prog.id in existing_prog_ids %}checked{% endif %} 
+                                   style="width: 18px; height: 18px; cursor: pointer;" onchange="syncProgramCheckbox(this)">
                         </td>
                         <td>
                             <strong>{{ prog.name }}</strong>
+                            {% if prog.is_excluded_from_limit %}
+                            <span class="badge" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.45); font-size: 0.72rem; padding: 2px 7px; margin-left: 6px; font-weight: 700;">
+                                <i class="fa-solid fa-star"></i> Out of Limit
+                            </span>
+                            {% endif %}
                             {% if prog.has_team_limit %}
                             <span class="badge" style="background: rgba(192, 132, 252, 0.15); color: #c084fc; border: 1px solid rgba(192, 132, 252, 0.3); font-size: 0.72rem; padding: 2px 6px; margin-left: 6px;">
                                 Max {{ prog.effective_max_participants_per_team }}/Team
@@ -112,9 +120,19 @@
         <div class="mobile-card-list-view">
             {% for prog in eligible_programs %}
             <div style="background: rgba(255,255,255,0.02); padding: 12px; border-radius: 10px; border: 1px solid var(--border-color); margin-bottom: 8px; display: flex; align-items: center; gap: 12px;">
-                <input type="checkbox" name="selected_program_ids[]" value="{{ prog.id }}" class="prog-enroll-check" {% if prog.id in existing_prog_ids %}checked{% endif %} style="width: 20px; height: 20px; cursor: pointer;" onchange="syncProgramCheckbox(this)">
+                <input type="checkbox" name="selected_program_ids[]" value="{{ prog.id }}" 
+                       data-excluded="{% if prog.is_excluded_from_limit %}true{% else %}false{% endif %}"
+                       class="prog-enroll-check" {% if prog.id in existing_prog_ids %}checked{% endif %} 
+                       style="width: 20px; height: 20px; cursor: pointer;" onchange="syncProgramCheckbox(this)">
                 <div style="flex: 1;">
-                    <strong style="color: var(--text-main); font-size: 1.05rem;">{{ prog.name }}</strong>
+                    <strong style="color: var(--text-main); font-size: 1.05rem;">
+                        {{ prog.name }}
+                        {% if prog.is_excluded_from_limit %}
+                        <span class="badge" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.45); font-size: 0.7rem; padding: 2px 6px; margin-left: 4px; font-weight: 700;">
+                            <i class="fa-solid fa-star"></i> Out of Limit
+                        </span>
+                        {% endif %}
+                    </strong>
                     <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px;">
                         <span class="badge badge-approved" style="font-size: 0.72rem;">{{ prog.category.name }}</span>
                         {% if prog.category.is_common %}
@@ -146,7 +164,7 @@
 <script>
 const MAX_SINGLE_LIMIT = {{ contestant.competition.max_single_programs_per_contestant|default:0 }};
 const MAX_TOTAL_LIMIT = {{ contestant.competition.max_total_programs_per_contestant|default:0 }};
-const CURRENT_GROUP_COUNT = {{ contestant.group_programs_count|default:0 }};
+const CURRENT_GROUP_COUNT = {{ contestant.countable_group_programs_count|default:0 }};
 
 function syncProgramCheckbox(changedInput) {
     if (changedInput) {
@@ -161,22 +179,45 @@ function syncProgramCheckbox(changedInput) {
 
 function updateEnrollmentCount() {
     const checkedValues = new Set();
-    document.querySelectorAll('.prog-enroll-check:checked').forEach(cb => checkedValues.add(cb.value));
+    const countableValues = new Set();
+    const exemptValues = new Set();
 
-    const count = checkedValues.size;
+    document.querySelectorAll('.prog-enroll-check:checked').forEach(cb => {
+        checkedValues.add(cb.value);
+        if (cb.getAttribute('data-excluded') === 'true') {
+            exemptValues.add(cb.value);
+        } else {
+            countableValues.add(cb.value);
+        }
+    });
+
+    const totalCount = checkedValues.size;
+    const countableCount = countableValues.size;
+    const exemptCount = exemptValues.size;
+
     const countSpan = document.getElementById('selectedCountNum');
     const badge = document.getElementById('counterBadge');
     const alertBox = document.getElementById('limitAlertBox');
     const saveBtn = document.getElementById('saveEnrollBtn');
 
-    if (countSpan) countSpan.innerText = count;
+    if (countSpan) {
+        if (exemptCount > 0) {
+            countSpan.innerHTML = `${totalCount} <span style="font-size: 0.8rem; opacity: 0.9;">(${countableCount} പരിധിയിൽ + ${exemptCount} ഒഴിവാക്കിയത്)</span>`;
+        } else {
+            countSpan.innerText = totalCount;
+        }
+    }
 
     let isOverlimit = false;
-    if (MAX_SINGLE_LIMIT > 0 && count > MAX_SINGLE_LIMIT) {
+    let overlimitReason = '';
+
+    if (MAX_SINGLE_LIMIT > 0 && countableCount > MAX_SINGLE_LIMIT) {
         isOverlimit = true;
+        overlimitReason = `സിംഗിൾ പ്രോഗ്രാം പരിധി കഴിഞ്ഞു (${countableCount}/${MAX_SINGLE_LIMIT} എണ്ണം). മറ്റൊരു ഇനം തിരഞ്ഞെടുക്കാൻ ഒന്ന് അൺചെക്ക് ചെയ്യുക.`;
     }
-    if (MAX_TOTAL_LIMIT > 0 && (count + CURRENT_GROUP_COUNT) > MAX_TOTAL_LIMIT) {
+    if (MAX_TOTAL_LIMIT > 0 && (countableCount + CURRENT_GROUP_COUNT) > MAX_TOTAL_LIMIT) {
         isOverlimit = true;
+        overlimitReason = `ആകെ പ്രോഗ്രാം പരിധി കഴിഞ്ഞു (${countableCount + CURRENT_GROUP_COUNT}/${MAX_TOTAL_LIMIT} എണ്ണം). മറ്റൊരു ഇനം തിരഞ്ഞെടുക്കാൻ ഒന്ന് അൺചെക്ക് ചെയ്യുക.`;
     }
 
     if (isOverlimit) {
@@ -185,7 +226,10 @@ function updateEnrollmentCount() {
             badge.style.color = '#fb7185';
             badge.style.border = '1px solid #f43f5e';
         }
-        if (alertBox) alertBox.style.display = 'block';
+        if (alertBox) {
+            alertBox.style.display = 'block';
+            alertBox.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> ${overlimitReason}`;
+        }
         if (saveBtn) {
             saveBtn.disabled = true;
             saveBtn.style.opacity = '0.5';

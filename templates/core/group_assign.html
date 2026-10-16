@@ -26,7 +26,7 @@
                 <select name="program_id" class="form-control" onchange="this.form.submit()">
                     {% for p in group_programs %}
                     <option value="{{ p.id }}" {% if selected_program and selected_program.id == p.id %}selected{% endif %}>
-                        {{ p.name }} ({{ p.category.name }})
+                        {{ p.name }} ({{ p.category.name }}){% if p.is_excluded_from_limit %} ⭐ [Out of Limit]{% endif %}
                     </option>
                     {% empty %}
                     <option value="">No Group Programs Found</option>
@@ -35,6 +35,12 @@
             </div>
             
             {% if selected_program %}
+            {% if selected_program.is_excluded_from_limit %}
+            <div style="margin-bottom: 14px; padding: 8px 12px; background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.35); border-radius: 8px; font-size: 0.82rem; color: #fbbf24; display: flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-star"></i>
+                <span><strong>Out-of-Limit Event:</strong> നിശ്ചിത പരിധി കഴിഞ്ഞ കുട്ടികൾക്കും ഈ ഗ്രൂപ്പ് ഇനത്തിൽ പങ്കെടുക്കാം. ഇത് കുട്ടിയുടെ പങ്കാളിത്ത പരിധിയിൽ കണക്കാക്കില്ല (Exempt from limits).</span>
+            </div>
+            {% endif %}
             <div class="form-group">
                 <label class="form-label">Select Team</label>
                 <select name="team_id" class="form-control" onchange="this.form.submit()">
@@ -74,13 +80,15 @@
                             <div>
                                 <strong>#{{ c.chest_no }} {{ c.name }}</strong>
                                 <span style="display: block; font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">
-                                    {% if selected_program.competition.has_group_limit %}
-                                        Group items: <strong style="color: {% if c.group_programs_count >= selected_program.competition.max_group_programs_per_contestant %}#fb7185{% else %}var(--accent-cyan){% endif %};">{{ c.group_programs_count }}/{{ selected_program.competition.max_group_programs_per_contestant }}</strong>
+                                    {% if selected_program.is_excluded_from_limit %}
+                                        <span style="color: #fbbf24; font-weight: 600;"><i class="fa-solid fa-star"></i> Exempt</span> | Enrolled: {{ c.group_programs_count }} group ({{ c.countable_group_programs_count }} countable)
+                                    {% elif selected_program.competition.has_group_limit %}
+                                        Group items: <strong style="color: {% if c.countable_group_programs_count >= selected_program.competition.max_group_programs_per_contestant %}#fb7185{% else %}var(--accent-cyan){% endif %};">{{ c.countable_group_programs_count }}/{{ selected_program.competition.max_group_programs_per_contestant }}</strong>
                                     {% else %}
                                         Group items: {{ c.group_programs_count }} (Unlimited)
                                     {% endif %}
                                     {% if selected_program.competition.has_total_limit %}
-                                        | Total: {{ c.total_programs_count }}/{{ selected_program.competition.max_total_programs_per_contestant }}
+                                        | Total: {{ c.countable_total_programs_count }}/{{ selected_program.competition.max_total_programs_per_contestant }}
                                     {% endif %}
                                 </span>
                             </div>

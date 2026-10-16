@@ -582,6 +582,169 @@ class ParticipationLimitsTestCase(TestCase):
         self.assertEqual(res_pdf.status_code, 200)
         self.assertEqual(res_pdf['Content-Type'], 'application/pdf')
 
+    def test_program_excluded_from_limit_allows_participation_when_limit_reached(self):
+        """
+        User requirement:
+        Limit set to e.g. 3 programs. Contestant already participated in 3 programs.
+        Admin defines Program 4 as excluded from the limit.
+        The contestant CAN participate in Program 4 even though they already reached the limit!
+        """
+        from apps.core.services import (
+            check_contestant_participation_limit, 
+            can_contestant_participate_in_program,
+            get_contestant_participation_summary
+        )
+
+        self.competition.max_single_programs_per_contestant = 3
+        self.competition.max_total_programs_per_contestant = 6
+        self.competition.save()
+
+        # Enroll contestant in 3 regular single programs
+        for i in range(3):
+            Participation.objects.create(
+                institution=self.institution,
+                program=self.single_programs[i],
+                contestant=self.contestant
+            )
+
+        self.assertEqual(self.contestant.single_programs_count, 3)
+        self.assertEqual(self.contestant.countable_single_programs_count, 3)
+
+        # Regular 4th program cannot be joined
+        regular_prog = self.single_programs[3]
+        can_reg, reason = can_contestant_participate_in_program(self.contestant, regular_prog)
+        self.assertFalse(can_reg)
+        self.assertIn("Maximum single programs limit (3) reached", reason)
+
+        # Admin defines Program 5 as excluded from the limit (Out of Limit)
+        exempt_prog = self.single_programs[4]
+        exempt_prog.is_excluded_from_limit = True
+        exempt_prog.save()
+        self.assertTrue(exempt_prog.is_out_of_limit)
+
+        # Contestant CAN participate in the excluded program even though limit of 3 is reached!
+        can_join, _ = can_contestant_participate_in_program(self.contestant, exempt_prog)
+        self.assertTrue(can_join)
+
+        can_method, _ = self.contestant.can_participate_in_program(exempt_prog)
+        self.assertTrue(can_method)
+
+        can_single_enroll, _ = self.contestant.can_enroll_single(program=exempt_prog)
+        self.assertTrue(can_single_enroll)
+
+        # Now enroll contestant into the exempt program
+        Participation.objects.create(
+            institution=self.institution,
+            program=exempt_prog,
+            contestant=self.contestant
+        )
+
+        # Verify counts: Total enrolled = 4, but countable = 3!
+        self.assertEqual(self.contestant.single_programs_count, 4)
+        self.assertEqual(self.contestant.countable_single_programs_count, 3)
+        self.assertEqual(self.contestant.excluded_programs_count, 1)
+
+        summary = get_contestant_participation_summary(self.contestant)
+        self.assertEqual(summary['total_single'], 4)
+        self.assertEqual(summary['countable_single'], 3)
+        self.assertEqual(summary['excluded_count'], 1)
+
+    def test_excluded_program_does_not_consume_limit_quota(self):
+        """
+        If a contestant participates in an out-of-limit program first,
+        it does NOT consume their limit quota. They can still participate in full regular limit programs.
+        """
+        from apps.core.services import can_contestant_participate_in_program
+
+        self.competition.max_single_programs_per_contestant = 2
+        self.competition.save()
+
+        exempt_prog = self.single_programs[0]
+        exempt_prog.is_excluded_from_limit = True
+        exempt_prog.save()
+
+        # Enroll in exempt program
+        Participation.objects.create(
+            institution=self.institution,
+            program=exempt_prog,
+            contestant=self.contestant
+        )
+
+        # Countable count is still 0
+        self.assertEqual(self.contestant.countable_single_programs_count, 0)
+        self.assertEqual(self.contestant.single_programs_count, 1)
+
+        # Contestant can still participate in 2 regular programs
+        prog1 = self.single_programs[1]
+        prog2 = self.single_programs[2]
+        prog3 = self.single_programs[3]
+
+        can1, _ = can_contestant_participate_in_program(self.contestant, prog1)
+        self.assertTrue(can1)
+        Participation.objects.create(institution=self.institution, program=prog1, contestant=self.contestant)
+
+        can2, _ = can_contestant_participate_in_program(self.contestant, prog2)
+        self.assertTrue(can2)
+        Participation.objects.create(institution=self.institution, program=prog2, contestant=self.contestant)
+
+        # Now limit of 2 countable programs is reached
+        self.assertEqual(self.contestant.countable_single_programs_count, 2)
+        self.assertEqual(self.contestant.single_programs_count, 3)
+
+        can3, _ = can_contestant_participate_in_program(self.contestant, prog3)
+        self.assertFalse(can3)
+
+    def test_admin_settings_participation_limits_with_excluded_programs(self):
+        """Admin can define which programs are excluded directly from settings page."""
+        prog1 = self.single_programs[0]
+        prog2 = self.single_programs[1]
+
+        url = reverse('core:settings_participation_limits', kwargs={'institution_slug': self.institution.slug})
+        res = self.client.post(url, {
+            'competition_id': self.competition.id,
+            'max_single_programs_per_contestant': 6,
+            'max_group_programs_per_contestant': 2,
+            'max_total_programs_per_contestant': 8,
+            'max_team_participants_per_single_program': 0,
+            'max_team_entries_per_group_program': 0,
+            'has_excluded_programs_section': '1',
+            'excluded_program_ids[]': [prog1.id, prog2.id]
+        })
+        self.assertEqual(res.status_code, 302)
+
+        prog1.refresh_from_db()
+        prog2.refresh_from_db()
+        self.assertTrue(prog1.is_excluded_from_limit)
+        self.assertTrue(prog2.is_excluded_from_limit)
+
+        # Other programs are not excluded
+        self.single_programs[2].refresh_from_db()
+        self.assertFalse(self.single_programs[2].is_excluded_from_limit)
+
+    def test_program_assign_contestants_view_with_excluded_program(self):
+        """Test assigning contestants via program_assign_contestants view to an excluded program."""
+        self.competition.max_single_programs_per_contestant = 2
+        self.competition.save()
+
+        # Enroll contestant in 2 regular programs
+        Participation.objects.create(institution=self.institution, program=self.single_programs[0], contestant=self.contestant)
+        Participation.objects.create(institution=self.institution, program=self.single_programs[1], contestant=self.contestant)
+
+        prog_exempt = self.single_programs[2]
+        prog_exempt.is_excluded_from_limit = True
+        prog_exempt.save()
+
+        url = reverse('core:program_assign_contestants', kwargs={
+            'institution_slug': self.institution.slug,
+            'program_id': prog_exempt.id
+        })
+        res = self.client.post(url, {'selected_ids[]': [self.contestant.id]})
+        self.assertEqual(res.status_code, 302)
+
+        # Successfully assigned because program is excluded from limit!
+        self.assertTrue(Participation.objects.filter(program=prog_exempt, contestant=self.contestant).exists())
+
+
 
 
 

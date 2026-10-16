@@ -20,6 +20,11 @@
             <span class="badge badge-pending" style="font-size: 0.8rem;">
                 {% if program.is_group %}Group Event{% else %}Single Event{% endif %}
             </span>
+            {% if program.is_excluded_from_limit %}
+            <span class="badge" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.45); font-size: 0.8rem; font-weight: 700;">
+                <i class="fa-solid fa-star"></i> Out of Limit (Exempt from student limits)
+            </span>
+            {% endif %}
             {% if program.has_team_limit %}
             <span class="badge" style="background: rgba(192, 132, 252, 0.2); color: #c084fc; border: 1px solid rgba(192, 132, 252, 0.4); font-size: 0.8rem; font-weight: 700;">
                 <i class="fa-solid fa-users-viewfinder"></i> Team Limit: Max {{ program.effective_max_participants_per_team }} per Team

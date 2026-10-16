@@ -345,3 +345,123 @@ def recalculate_team_points(institution):
         if c.total_points != c_pts:
             c.total_points = c_pts
             c.save(update_fields=['total_points'])
+
+
+def check_contestant_participation_limit(contestant, program=None, is_group=None, additional=1):
+    """
+    Core function to check if a contestant can participate in a program,
+    accounting for programs that are excluded from participation limits (Out of Limit / Exempt).
+    
+    Business Rules:
+    1. If `program` is specified and `program.is_excluded_from_limit` is True:
+       The program is out-of-limit / exempt from participation limits.
+       The contestant CAN participate in this program regardless of how many programs
+       they have already entered (e.g. even if limit is 6 and they have 6 or more programs).
+       Returns (True, "").
+    2. If the program is subject to limits (or checking general eligibility):
+       Only COUNTABLE programs (where is_excluded_from_limit=False) consume the contestant's
+       limit quota.
+       - Checks single item limit: countable_single_programs_count + additional <= max_single_programs_per_contestant
+       - Checks group item limit: countable_group_programs_count + additional <= max_group_programs_per_contestant
+       - Checks total combined limit: countable_total_programs_count + additional <= max_total_programs_per_contestant
+    
+    Returns:
+        (can_participate: bool, reason: str)
+    """
+    if program and getattr(program, 'is_excluded_from_limit', False):
+        return True, ""
+
+    comp = getattr(contestant, 'competition', None)
+    if not comp:
+        return True, ""
+
+    prog_is_group = is_group if is_group is not None else (program.is_group if program else False)
+
+    if prog_is_group:
+        if comp.has_group_limit:
+            if contestant.countable_group_programs_count + additional > comp.max_group_programs_per_contestant:
+                return False, f"Maximum group programs limit ({comp.max_group_programs_per_contestant}) reached."
+    else:
+        if comp.has_single_limit:
+            if contestant.countable_single_programs_count + additional > comp.max_single_programs_per_contestant:
+                return False, f"Maximum single programs limit ({comp.max_single_programs_per_contestant}) reached."
+
+    if comp.has_total_limit:
+        if contestant.countable_total_programs_count + additional > comp.max_total_programs_per_contestant:
+            return False, f"Maximum total programs limit ({comp.max_total_programs_per_contestant}) reached."
+
+    return True, ""
+
+
+def can_contestant_participate_in_program(contestant, program, additional=1):
+    """
+    Direct function alias for checking if a contestant can participate in a specific program.
+    If the program is marked by the admin as excluded from limits (is_excluded_from_limit=True),
+    this function returns True even if the person has already reached their maximum limit.
+    """
+    return check_contestant_participation_limit(contestant, program=program, additional=additional)
+
+
+def get_contestant_participation_summary(contestant):
+    """
+    Returns a comprehensive participation summary dictionary for a contestant:
+    - total_enrolled: all programs enrolled
+    - countable_single: single programs that count towards limits
+    - countable_group: group programs that count towards limits
+    - countable_total: combined programs that count towards limits
+    - excluded_count: programs exempt from limits (out of limit)
+    - limits: dict of configured limits on the competition
+    """
+    comp = getattr(contestant, 'competition', None)
+    c_single = contestant.countable_single_programs_count
+    c_group = contestant.countable_group_programs_count
+    t_single = contestant.single_programs_count
+    t_group = contestant.group_programs_count
+
+    return {
+        'total_enrolled': t_single + t_group,
+        'total_single': t_single,
+        'total_group': t_group,
+        'countable_single': c_single,
+        'countable_group': c_group,
+        'countable_total': c_single + c_group,
+        'excluded_count': (t_single + t_group) - (c_single + c_group),
+        'max_single': comp.max_single_programs_per_contestant if comp else 0,
+        'max_group': comp.max_group_programs_per_contestant if comp else 0,
+        'max_total': comp.max_total_programs_per_contestant if comp else 0,
+    }
+
+
+def set_program_limit_exclusion(program, is_excluded=True):
+    """
+    Admin function to define whether a program is excluded from contestant participation limits.
+    """
+    program.is_excluded_from_limit = bool(is_excluded)
+    program.save(update_fields=['is_excluded_from_limit'])
+    return program
+
+
+def bulk_set_program_limit_exclusions(institution, competition=None, excluded_program_ids=None):
+    """
+    Admin function to bulk update which programs are excluded from participation limits.
+    Any program whose ID is in excluded_program_ids is set to is_excluded_from_limit=True.
+    All other programs in the institution/competition are set to is_excluded_from_limit=False.
+    """
+    if excluded_program_ids is None:
+        excluded_program_ids = []
+    excluded_set = set(int(x) for x in excluded_program_ids if str(x).isdigit())
+
+    qs = Program.objects.filter(institution=institution)
+    if competition:
+        qs = qs.filter(competition=competition)
+
+    updated_count = 0
+    for prog in qs:
+        new_val = (prog.id in excluded_set)
+        if prog.is_excluded_from_limit != new_val:
+            prog.is_excluded_from_limit = new_val
+            prog.save(update_fields=['is_excluded_from_limit'])
+            updated_count += 1
+
+    return updated_count
+
