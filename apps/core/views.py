@@ -1683,9 +1683,32 @@ def announce_results_view(request, institution_slug, program_id):
     return redirect('core:scoring_program_list', institution_slug=institution.slug)
 
 
+def check_settings_permission(request, institution):
+    """
+    Ensures only Superusers, Institution Admins, and Sub-Admins can access or modify settings.
+    Returns None if permitted, or an HttpResponseRedirect / JsonResponse if denied.
+    """
+    if not (request.user.is_authenticated and (request.user.is_superuser or getattr(request.user, 'is_sub_admin', False))):
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({
+                'status': 'error', 
+                'message': 'Permission Denied: Only Superusers, Institution Admins, and Sub-Admins can access or modify settings.'
+            }, status=403)
+        messages.error(request, "Permission Denied: Only Superusers, Institution Admins, and Sub-Admins can access settings.")
+        if getattr(request.user, 'is_judge', False):
+            return redirect('core:scoring_program_list', institution_slug=institution.slug)
+        if getattr(request.user, 'is_contestant', False):
+            return redirect('core:contestant_personal_dashboard', institution_slug=institution.slug)
+        return redirect('core:dashboard', institution_slug=institution.slug)
+    return None
+
+
 @login_required
 def stage_list_view(request, institution_slug):
     institution = get_object_or_404(Institution, slug=institution_slug)
+    denied = check_settings_permission(request, institution)
+    if denied:
+        return denied
     fest_days = FestDay.objects.filter(institution=institution).order_by('day_number')
 
     if request.method == 'POST':
@@ -1728,9 +1751,9 @@ def schedule_view(request, institution_slug):
 @login_required
 def points_config_view(request, institution_slug):
     institution = get_object_or_404(Institution, slug=institution_slug)
-    if request.user.is_judge:
-        messages.error(request, "Permission Denied: Judges cannot modify points configuration.")
-        return redirect('core:scoring_program_list', institution_slug=institution.slug)
+    denied = check_settings_permission(request, institution)
+    if denied:
+        return denied
 
     config, created = PointsConfig.objects.get_or_create(institution=institution)
 
@@ -1808,8 +1831,8 @@ def points_config_view(request, institution_slug):
 @login_required
 def program_points_config_api(request, institution_slug, program_id):
     institution = get_object_or_404(Institution, slug=institution_slug)
-    if request.user.is_judge:
-        return JsonResponse({'status': 'error', 'message': 'Permission Denied: Judges cannot modify points configuration.'}, status=403)
+    if not (request.user.is_authenticated and (request.user.is_superuser or getattr(request.user, 'is_sub_admin', False))):
+        return JsonResponse({'status': 'error', 'message': 'Permission Denied: Only Superusers, Institution Admins, and Sub-Admins can modify points configuration.'}, status=403)
 
     program = get_object_or_404(Program, id=program_id, institution=institution)
     custom_config, created = ProgramPointsConfig.objects.get_or_create(
@@ -1930,9 +1953,9 @@ def program_points_config_api(request, institution_slug, program_id):
 @login_required
 def settings_view(request, institution_slug):
     institution = get_object_or_404(Institution, slug=institution_slug)
-    if request.user.is_judge:
-        messages.error(request, "Permission Denied: Judges cannot access portal settings.")
-        return redirect('core:scoring_program_list', institution_slug=institution.slug)
+    denied = check_settings_permission(request, institution)
+    if denied:
+        return denied
 
     competitions = Competition.objects.filter(institution=institution)
     stages = Stage.objects.filter(institution=institution)
@@ -2100,6 +2123,9 @@ def settings_view(request, institution_slug):
 @login_required
 def settings_fests_view(request, institution_slug):
     institution = get_object_or_404(Institution, slug=institution_slug)
+    denied = check_settings_permission(request, institution)
+    if denied:
+        return denied
     competitions = Competition.objects.filter(institution=institution).order_by('-year', '-id')
     return render(request, 'core/settings/settings_fests.html', {
         'institution': institution,
@@ -2110,6 +2136,9 @@ def settings_fests_view(request, institution_slug):
 @login_required
 def settings_participation_limits_view(request, institution_slug):
     institution = get_object_or_404(Institution, slug=institution_slug)
+    denied = check_settings_permission(request, institution)
+    if denied:
+        return denied
     active_fest = get_active_fest(request, institution)
     competitions = Competition.objects.filter(institution=institution).order_by('-year', '-id')
 
@@ -2190,6 +2219,9 @@ def settings_participation_limits_view(request, institution_slug):
 @login_required
 def settings_chest_numbers_view(request, institution_slug):
     institution = get_object_or_404(Institution, slug=institution_slug)
+    denied = check_settings_permission(request, institution)
+    if denied:
+        return denied
     active_fest = get_active_fest(request, institution)
     
     if request.method == 'POST':
@@ -2230,6 +2262,9 @@ def settings_chest_numbers_view(request, institution_slug):
 @login_required
 def settings_public_portal_view(request, institution_slug):
     institution = get_object_or_404(Institution, slug=institution_slug)
+    denied = check_settings_permission(request, institution)
+    if denied:
+        return denied
     if request.method == 'POST':
         action = request.POST.get('action')
         if action == 'toggle_public_suspended':
@@ -2249,6 +2284,9 @@ def settings_public_portal_view(request, institution_slug):
 @login_required
 def settings_support_access_view(request, institution_slug):
     institution = get_object_or_404(Institution, slug=institution_slug)
+    denied = check_settings_permission(request, institution)
+    if denied:
+        return denied
     if request.method == 'POST':
         action = request.POST.get('action')
         if action == 'toggle_developer_access':
@@ -2268,6 +2306,9 @@ def settings_support_access_view(request, institution_slug):
 @login_required
 def settings_addons_view(request, institution_slug):
     institution = get_object_or_404(Institution, slug=institution_slug)
+    denied = check_settings_permission(request, institution)
+    if denied:
+        return denied
     if request.method == 'POST':
         action = request.POST.get('action')
         if action == 'toggle_cert_addon' and (request.user.is_superuser or (hasattr(request.user, 'is_developer') and request.user.is_developer)):
@@ -2315,9 +2356,9 @@ def settings_addons_view(request, institution_slug):
 @login_required
 def settings_operations_view(request, institution_slug):
     institution = get_object_or_404(Institution, slug=institution_slug)
-    if request.user.is_judge:
-        messages.error(request, "Permission Denied: Judges cannot access operational settings.")
-        return redirect('core:scoring_program_list', institution_slug=institution.slug)
+    denied = check_settings_permission(request, institution)
+    if denied:
+        return denied
 
     competitions = Competition.objects.filter(institution=institution).order_by('-year', '-id')
 
@@ -5397,6 +5438,9 @@ def add_stage_view(request, institution_slug):
 @login_required
 def stage_edit_view(request, institution_slug, stage_id):
     institution = get_object_or_404(Institution, slug=institution_slug)
+    denied = check_settings_permission(request, institution)
+    if denied:
+        return denied
     stage = get_object_or_404(Stage, id=stage_id, institution=institution)
     fest_days = FestDay.objects.filter(institution=institution).order_by('day_number')
 

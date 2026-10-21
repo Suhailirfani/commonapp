@@ -37,7 +37,7 @@
             </a>
         </div>
 
-        {% if request.user.is_authenticated and request.user.institution == institution %}
+        {% if request.user.is_authenticated and request.user.institution == institution and request.user.is_sub_admin %}
         <div style="margin-top: 32px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.08); font-size: 0.85rem; color: #94a3b8;">
             <i class="fa-solid fa-user-shield" style="color: var(--accent-amber);"></i> 
             Logged in as Institution Manager? You can reactivate this public portal in 

@@ -439,11 +439,13 @@
         <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">ടീം ലീഡർമാർ, ഒഫീഷ്യലുകൾ എന്നിവരുടെ അക്കൗണ്ടുകൾ</p>
     </a>
 
+    {% if request.user.is_sub_admin %}
     <a href="{% url 'core:settings' institution.slug %}" class="glass-card" style="text-decoration: none; color: inherit;">
         <i class="fa-solid fa-gear" style="font-size: 1.8rem; color: var(--accent-indigo); margin-bottom: 12px;"></i>
         <h4 style="font-size: 1.1rem; font-weight: 700;">Portal Settings & Setup</h4>
         <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">ഫെസ്റ്റ് ക്രമീകരണങ്ങൾ, സ്റ്റേജുകൾ, പോയിന്റ് റൂളുകൾ</p>
     </a>
+    {% endif %}
 </div>
 
 <!-- Results & Announce Center -->
