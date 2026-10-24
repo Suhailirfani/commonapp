@@ -410,7 +410,7 @@ Category: Junior Category
                             <th style="padding: 12px 14px;">Category</th>
                             <th style="text-align: center; padding: 12px 14px;">Stage Type</th>
                             <th style="text-align: center; padding: 12px 14px;">Duration</th>
-                            <th style="text-align: right; padding: 12px 14px; width: 140px;">Actions</th>
+                            <th style="text-align: right; padding: 12px 14px; width: 230px;">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -445,6 +445,9 @@ Category: Junior Category
                                 {{ p.duration_per_participant|default:5 }} mins
                             </td>
                             <td style="text-align: right; padding: 12px 14px; white-space: nowrap;">
+                                <button type="button" onclick="openProgramPdfModal('{{ p.id }}', '{{ p.name|escapejs }}', '{% url 'core:download_valuation_form_pdf' institution.slug p.id %}', '{% url 'core:download_green_room_pdf' institution.slug p.id %}', '{% url 'core:download_call_list_pdf' institution.slug p.id %}')" style="padding: 5px 11px; font-size: 0.8rem; font-weight: 700; border-radius: 8px; border: 1px solid rgba(245, 158, 11, 0.45); background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(217, 119, 6, 0.35)); color: #fbbf24; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.12); transition: all 0.2s;" title="Print Valuation, Green Room & Call List Sheets">
+                                    <i class="fa-solid fa-print"></i> Sheets
+                                </button>
                                 <a href="{% url 'core:program_edit' institution.slug p.id %}" style="padding: 5px 12px; font-size: 0.8rem; font-weight: 700; border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; background: linear-gradient(135deg, rgba(56, 189, 248, 0.22), rgba(14, 165, 233, 0.4)); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.5); box-shadow: 0 4px 12px rgba(56, 189, 248, 0.15); transition: all 0.2s;" title="Edit Program">
                                     <i class="fa-solid fa-pen-to-square"></i> Edit
                                 </a>
@@ -490,7 +493,10 @@ Category: Junior Category
                             {% endif %}
                         </div>
                     </div>
-                    <div style="display: flex; gap: 8px; margin-top: 12px; justify-content: flex-end; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px;">
+                    <div style="display: flex; gap: 8px; margin-top: 12px; justify-content: flex-end; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px; flex-wrap: wrap;">
+                        <button type="button" onclick="openProgramPdfModal('{{ p.id }}', '{{ p.name|escapejs }}', '{% url 'core:download_valuation_form_pdf' institution.slug p.id %}', '{% url 'core:download_green_room_pdf' institution.slug p.id %}', '{% url 'core:download_call_list_pdf' institution.slug p.id %}')" style="padding: 5px 11px; font-size: 0.78rem; font-weight: 700; border-radius: 8px; border: 1px solid rgba(245, 158, 11, 0.45); background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(217, 119, 6, 0.35)); color: #fbbf24; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
+                            <i class="fa-solid fa-print"></i> Sheets
+                        </button>
                         <a href="{% url 'core:program_edit' institution.slug p.id %}" style="padding: 5px 12px; font-size: 0.78rem; font-weight: 700; border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; background: linear-gradient(135deg, rgba(56, 189, 248, 0.22), rgba(14, 165, 233, 0.4)); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.5);">
                             <i class="fa-solid fa-pen-to-square"></i> Edit
                         </a>
@@ -539,7 +545,7 @@ Category: Junior Category
                             <th style="padding: 12px 14px;">Category</th>
                             <th style="text-align: center; padding: 12px 14px;">Stage Type</th>
                             <th style="text-align: center; padding: 12px 14px;">Duration</th>
-                            <th style="text-align: right; padding: 12px 14px; width: 140px;">Actions</th>
+                            <th style="text-align: right; padding: 12px 14px; width: 230px;">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -574,6 +580,9 @@ Category: Junior Category
                                 {{ p.duration_per_participant|default:5 }} mins
                             </td>
                             <td style="text-align: right; padding: 12px 14px; white-space: nowrap;">
+                                <button type="button" onclick="openProgramPdfModal('{{ p.id }}', '{{ p.name|escapejs }}', '{% url 'core:download_valuation_form_pdf' institution.slug p.id %}', '{% url 'core:download_green_room_pdf' institution.slug p.id %}', '{% url 'core:download_call_list_pdf' institution.slug p.id %}')" style="padding: 5px 11px; font-size: 0.8rem; font-weight: 700; border-radius: 8px; border: 1px solid rgba(245, 158, 11, 0.45); background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(217, 119, 6, 0.35)); color: #fbbf24; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.12); transition: all 0.2s;" title="Print Valuation, Green Room & Call List Sheets">
+                                    <i class="fa-solid fa-print"></i> Sheets
+                                </button>
                                 <a href="{% url 'core:program_edit' institution.slug p.id %}" style="padding: 5px 12px; font-size: 0.8rem; font-weight: 700; border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; background: linear-gradient(135deg, rgba(56, 189, 248, 0.22), rgba(14, 165, 233, 0.4)); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.5); box-shadow: 0 4px 12px rgba(56, 189, 248, 0.15); transition: all 0.2s;" title="Edit Program">
                                     <i class="fa-solid fa-pen-to-square"></i> Edit
                                 </a>
@@ -619,7 +628,10 @@ Category: Junior Category
                             {% endif %}
                         </div>
                     </div>
-                    <div style="display: flex; gap: 8px; margin-top: 12px; justify-content: flex-end; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px;">
+                    <div style="display: flex; gap: 8px; margin-top: 12px; justify-content: flex-end; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px; flex-wrap: wrap;">
+                        <button type="button" onclick="openProgramPdfModal('{{ p.id }}', '{{ p.name|escapejs }}', '{% url 'core:download_valuation_form_pdf' institution.slug p.id %}', '{% url 'core:download_green_room_pdf' institution.slug p.id %}', '{% url 'core:download_call_list_pdf' institution.slug p.id %}')" style="padding: 5px 11px; font-size: 0.78rem; font-weight: 700; border-radius: 8px; border: 1px solid rgba(245, 158, 11, 0.45); background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(217, 119, 6, 0.35)); color: #fbbf24; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
+                            <i class="fa-solid fa-print"></i> Sheets
+                        </button>
                         <a href="{% url 'core:program_edit' institution.slug p.id %}" style="padding: 5px 12px; font-size: 0.78rem; font-weight: 700; border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; background: linear-gradient(135deg, rgba(56, 189, 248, 0.22), rgba(14, 165, 233, 0.4)); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.5);">
                             <i class="fa-solid fa-pen-to-square"></i> Edit
                         </a>
@@ -651,6 +663,81 @@ Category: Junior Category
             ഓരോ മത്സരത്തിനുമുള്ള ഗ്രീൻ റൂം സൈൻ ഷീറ്റ്, വാല്യുവേഷൻ ഷീറ്റ്, കോൾ ലിസ്റ്റ് പി.ഡി.എഫുകൾ ഡൗൺലോഡ് ചെയ്യുക.
         </p>
 
+        <!-- ==========================================
+             SINGLE PROGRAM PDF PRINT SELECTOR CARD
+             ========================================== -->
+        <div class="glass-card" style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.85), rgba(15, 23, 42, 0.95)); border: 1px solid rgba(56, 189, 248, 0.4); padding: 22px; border-radius: 16px; margin-bottom: 26px; box-shadow: 0 10px 30px rgba(0,0,0,0.35);">
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; margin-bottom: 16px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(56, 189, 248, 0.18); display: flex; align-items: center; justify-content: center; font-size: 1.3rem; color: var(--accent-cyan); border: 1px solid rgba(56, 189, 248, 0.35);">
+                        <i class="fa-solid fa-print"></i>
+                    </div>
+                    <div>
+                        <h4 style="font-size: 1.15rem; font-weight: 800; color: #fff; margin: 0; display: flex; align-items: center; gap: 8px;">
+                            Print Single Program Sheets <span class="badge" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4); font-size: 0.72rem; padding: 2px 8px;">Individual PDF</span>
+                        </h4>
+                        <div style="font-size: 0.82rem; color: var(--text-muted); margin-top: 2px;">
+                            ഒരു പ്രത്യേക മത്സരത്തിന്റെ മാത്രം വാല്യുവേഷൻ ഷീറ്റ്, ഗ്രീൻ റൂം ഷീറ്റ്, കോൾ ലിസ്റ്റ് ഡൗൺലോഡ് ചെയ്യുക.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SELECTOR & QUICK BUTTONS -->
+            <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end;">
+                <div style="flex: 1; min-width: 280px;">
+                    <label for="singleProgramDownloadSelect" style="font-size: 0.82rem; font-weight: 700; color: #cbd5e1; margin-bottom: 6px; display: block;">
+                        Select Program (മത്സരം തിരഞ്ഞെടുക്കുക):
+                    </label>
+                    <select id="singleProgramDownloadSelect" class="form-control" onchange="updateSingleProgramPdfLinks()" style="background: rgba(0,0,0,0.45); border: 1px solid rgba(56, 189, 248, 0.35); color: #fff; font-size: 0.92rem; padding: 10px 14px; border-radius: 10px;">
+                        <option value="">-- Choose a Program ({{ total_count }} Programs Available) --</option>
+                        {% if single_programs %}
+                        <optgroup label="Single Programs ({{ single_count }})">
+                            {% for p in single_programs %}
+                            <option value="{{ p.id }}" data-name="{{ p.name }}" data-category="{{ p.category.name }}" data-val-url="{% url 'core:download_valuation_form_pdf' institution.slug p.id %}" data-gr-url="{% url 'core:download_green_room_pdf' institution.slug p.id %}" data-cl-url="{% url 'core:download_call_list_pdf' institution.slug p.id %}">
+                                {{ p.name }} &bull; {{ p.category.name }}
+                            </option>
+                            {% endfor %}
+                        </optgroup>
+                        {% endif %}
+                        {% if group_programs %}
+                        <optgroup label="Group Programs ({{ group_count }})">
+                            {% for p in group_programs %}
+                            <option value="{{ p.id }}" data-name="{{ p.name }}" data-category="{{ p.category.name }}" data-val-url="{% url 'core:download_valuation_form_pdf' institution.slug p.id %}" data-gr-url="{% url 'core:download_green_room_pdf' institution.slug p.id %}" data-cl-url="{% url 'core:download_call_list_pdf' institution.slug p.id %}">
+                                {{ p.name }} [Group] &bull; {{ p.category.name }}
+                            </option>
+                            {% endfor %}
+                        </optgroup>
+                        {% endif %}
+                    </select>
+                </div>
+                <button type="button" id="btnOpenSelectedProgramModal" onclick="openSelectedProgramPdfModal()" class="btn-primary" style="padding: 10px 20px; font-size: 0.88rem; font-weight: 800; background: linear-gradient(135deg, #f59e0b, #d97706); color: #000; border: none; border-radius: 10px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; opacity: 0.5; pointer-events: none;">
+                    <i class="fa-solid fa-file-pdf"></i> Open Print Options
+                </button>
+            </div>
+
+            <!-- DYNAMIC PROGRAM ACTION BUTTONS STRIP -->
+            <div id="singleProgramActiveStrip" style="display: none; margin-top: 16px; padding: 14px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px;">
+                <div style="font-size: 0.82rem; color: #94a3b8; margin-bottom: 8px;">
+                    Active Program: <strong id="stripSelectedProgramName" style="color: #38bdf8;"></strong>
+                </div>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button type="button" onclick="triggerStripPdf('valuation', true, false)" class="btn-primary" style="padding: 8px 14px; font-size: 0.82rem; background: linear-gradient(135deg, #f59e0b, #d97706); color: #000; font-weight: 700; border: none; border-radius: 8px; cursor: pointer;">
+                        <i class="fa-solid fa-gavel"></i> Valuation (Chest No)
+                    </button>
+                    <button type="button" onclick="triggerStripPdf('valuation', false, false)" class="btn-primary" style="padding: 8px 14px; font-size: 0.82rem; background: rgba(255,255,255,0.08); color: #fff; font-weight: 700; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; cursor: pointer;">
+                        <i class="fa-solid fa-font" style="color: #38bdf8;"></i> Valuation (Blind Code)
+                    </button>
+                    <button type="button" onclick="triggerStripPdf('green_room', false, false)" class="btn-primary" style="padding: 8px 14px; font-size: 0.82rem; background: linear-gradient(135deg, var(--accent-emerald), #059669); color: #fff; font-weight: 700; border: none; border-radius: 8px; cursor: pointer;">
+                        <i class="fa-solid fa-clipboard-user"></i> Green Room Sheet
+                    </button>
+                    <button type="button" onclick="triggerStripPdf('call_list', false, false)" class="btn-primary" style="padding: 8px 14px; font-size: 0.82rem; background: linear-gradient(135deg, var(--accent-cyan), #0284c7); color: #fff; font-weight: 700; border: none; border-radius: 8px; cursor: pointer;">
+                        <i class="fa-solid fa-bullhorn"></i> Call List Sheet
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 18px; margin-bottom: 24px;">
             <!-- CARD 1: GREEN ROOM SIGN SHEET PDF -->
             <div class="glass-card" style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(16, 185, 129, 0.4); padding: 20px; border-radius: 14px; display: flex; flex-direction: column; justify-content: space-between;">
@@ -666,12 +753,12 @@ Category: Junior Category
                     </p>
                 </div>
                 <div style="display: flex; gap: 8px; align-items: center;">
-                    <a href="{% url 'core:download_bulk_green_room_pdf' institution.slug %}" onclick="triggerPdfDownload(event, this)" class="btn-primary" style="flex: 1; padding: 10px; font-size: 0.88rem; justify-content: center; background: linear-gradient(135deg, var(--accent-emerald), #059669); text-decoration: none;">
+                    <button type="button" onclick="promptGreenRoomSheetOptions('{% url 'core:download_bulk_green_room_pdf' institution.slug %}', false)" class="btn-primary" style="flex: 1; padding: 10px; font-size: 0.88rem; justify-content: center; background: linear-gradient(135deg, var(--accent-emerald), #059669); color: #fff; font-weight: 800; border: none; cursor: pointer; text-decoration: none;">
                         <i class="fa-solid fa-file-arrow-down"></i> All Green Room Sheets
-                    </a>
-                    <a href="{% url 'core:download_bulk_green_room_pdf' institution.slug %}?preview=1" target="_blank" class="btn-primary" style="padding: 10px 14px; font-size: 0.85rem; justify-content: center; background: rgba(255,255,255,0.12); color: #fff; text-decoration: none; border: 1px solid rgba(255,255,255,0.25);" title="Preview Green Room Sheet">
+                    </button>
+                    <button type="button" onclick="promptGreenRoomSheetOptions('{% url 'core:download_bulk_green_room_pdf' institution.slug %}', true)" class="btn-primary" style="padding: 10px 14px; font-size: 0.85rem; justify-content: center; background: rgba(255,255,255,0.12); color: #fff; text-decoration: none; border: 1px solid rgba(255,255,255,0.25); cursor: pointer;" title="Preview Green Room Sheet">
                         <i class="fa-solid fa-eye"></i> Preview
-                    </a>
+                    </button>
                 </div>
             </div>
 
@@ -983,6 +1070,104 @@ Category: Junior Category
         
         closeValuationSheetModal();
     }
+
+    let currentGreenRoomUrl = '';
+    let currentGreenRoomIsPreview = false;
+
+    function promptGreenRoomSheetOptions(url, isPreview) {
+        currentGreenRoomUrl = url;
+        currentGreenRoomIsPreview = isPreview;
+        const modal = document.getElementById('greenRoomSheetModal');
+        if (modal) {
+            modal.style.display = 'flex';
+        }
+    }
+
+    function closeGreenRoomSheetModal() {
+        const modal = document.getElementById('greenRoomSheetModal');
+        if (modal) {
+            modal.style.display = 'none';
+        }
+    }
+
+    function executeGreenRoomDownload(perPage) {
+        if (!currentGreenRoomUrl) return;
+        
+        try {
+            const urlObj = new URL(currentGreenRoomUrl, window.location.origin);
+            urlObj.searchParams.set('per_page', perPage);
+            
+            if (currentGreenRoomIsPreview) {
+                urlObj.searchParams.set('preview', '1');
+                window.open(urlObj.toString(), '_blank');
+            } else {
+                const dummyAnchor = document.createElement('a');
+                dummyAnchor.href = urlObj.toString();
+                if (typeof window.triggerPdfDownload === 'function') {
+                    window.triggerPdfDownload({ preventDefault: () => {} }, dummyAnchor);
+                } else {
+                    window.location.href = urlObj.toString();
+                }
+            }
+        } catch (e) {
+            console.error('Error opening green room sheet:', e);
+            let sep = currentGreenRoomUrl.indexOf('?') > -1 ? '&' : '?';
+            let targetUrl = currentGreenRoomUrl + sep + 'per_page=' + perPage;
+            if (currentGreenRoomIsPreview) {
+                window.open(targetUrl + '&preview=1', '_blank');
+            } else {
+                window.location.href = targetUrl;
+            }
+        }
+        
+        closeGreenRoomSheetModal();
+    }
+
+    function updateSingleProgramPdfLinks() {
+        const sel = document.getElementById('singleProgramDownloadSelect');
+        const openBtn = document.getElementById('btnOpenSelectedProgramModal');
+        const strip = document.getElementById('singleProgramActiveStrip');
+        const nameEl = document.getElementById('stripSelectedProgramName');
+        
+        if (sel && sel.value) {
+            const opt = sel.options[sel.selectedIndex];
+            if (openBtn) {
+                openBtn.disabled = false;
+                openBtn.style.opacity = '1';
+                openBtn.style.pointerEvents = 'auto';
+            }
+            if (strip) strip.style.display = 'block';
+            if (nameEl) nameEl.textContent = opt.dataset.name + ' (' + opt.dataset.category + ')';
+        } else {
+            if (openBtn) {
+                openBtn.disabled = true;
+                openBtn.style.opacity = '0.5';
+                openBtn.style.pointerEvents = 'none';
+            }
+            if (strip) strip.style.display = 'none';
+        }
+    }
+
+    function openSelectedProgramPdfModal() {
+        const sel = document.getElementById('singleProgramDownloadSelect');
+        if (!sel || !sel.value) return;
+        const opt = sel.options[sel.selectedIndex];
+        openProgramPdfModal(opt.value, opt.dataset.name, opt.dataset.valUrl, opt.dataset.grUrl, opt.dataset.clUrl);
+    }
+
+    function triggerStripPdf(type, includeChestNo, isPreview) {
+        const sel = document.getElementById('singleProgramDownloadSelect');
+        if (!sel || !sel.value) return;
+        const opt = sel.options[sel.selectedIndex];
+        _activeSingleProgramPdfData = {
+            progId: opt.value,
+            progName: opt.dataset.name,
+            valUrl: opt.dataset.valUrl,
+            grUrl: opt.dataset.grUrl,
+            clUrl: opt.dataset.clUrl
+        };
+        downloadSingleProgramPdf(type, includeChestNo, isPreview);
+    }
 </script>
 
 <!-- VALUATION SHEET CHEST NUMBER PROMPT MODAL -->
@@ -1035,4 +1220,63 @@ Category: Junior Category
         </div>
     </div>
 </div>
+
+<!-- GREEN ROOM SHEET PAGINATION OPTIONS MODAL -->
+<div id="greenRoomSheetModal" style="display: none; position: fixed; inset: 0; z-index: 99999; background: rgba(0,0,0,0.75); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); align-items: center; justify-content: center; padding: 16px;">
+    <div class="glass-card animate-scale-up" style="background: #0f172a; border: 1px solid rgba(16, 185, 129, 0.4); border-radius: 16px; width: 100%; max-width: 480px; padding: 24px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7); position: relative; text-align: center;">
+        
+        <!-- Close Button -->
+        <button type="button" onclick="closeGreenRoomSheetModal()" style="position: absolute; top: 14px; right: 14px; background: rgba(255,255,255,0.08); border: none; color: #94a3b8; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 1rem;">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+
+        <!-- Icon -->
+        <div style="width: 54px; height: 54px; border-radius: 14px; background: rgba(16, 185, 129, 0.18); color: var(--accent-emerald); display: inline-flex; align-items: center; justify-content: center; font-size: 1.6rem; margin-bottom: 14px; border: 1px solid rgba(16, 185, 129, 0.3);">
+            <i class="fa-solid fa-clipboard-user"></i>
+        </div>
+
+        <h3 style="font-size: 1.25rem; font-weight: 800; color: #fff; margin: 0 0 8px 0;">Green Room Sheet Layout</h3>
+        <p style="color: #cbd5e1; font-size: 0.92rem; font-weight: 600; margin: 0 0 6px 0;">
+            Choose Page Layout for Printing
+        </p>
+        <p style="color: var(--text-muted); font-size: 0.8rem; margin: 0 0 22px 0; line-height: 1.4;">
+            ഒരു പേജിൽ എത്ര പ്രോഗ്രാമുകൾ വേണമെന്ന് തിരഞ്ഞെടുക്കുക. പേപ്പർ ലാഭിക്കാൻ 2 പ്രോഗ്രാം അല്ലെങ്കിൽ ഓരോ പ്രോഗ്രാമിനും പ്രത്യേകം പേജ്.
+        </p>
+
+        <!-- Options Container -->
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+            <!-- Option 1: 1 Program Per Page (Single Program per Page) -->
+            <button type="button" onclick="executeGreenRoomDownload(1)" class="btn-primary" style="width: 100%; padding: 13px 16px; font-size: 0.92rem; font-weight: 700; background: linear-gradient(135deg, var(--accent-emerald), #059669); color: #fff; border: none; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: space-between;">
+                <span style="display: flex; align-items: center; gap: 10px; text-align: left;">
+                    <i class="fa-solid fa-file" style="font-size: 1.2rem;"></i>
+                    <span>
+                        <strong style="display: block; font-size: 0.95rem;">1 Program Per Page</strong>
+                        <small style="opacity: 0.85; font-size: 0.75rem; font-weight: 400;">Full page per program (Ideal for large batches)</small>
+                    </span>
+                </span>
+                <span style="font-size: 0.74rem; background: rgba(0,0,0,0.2); padding: 4px 8px; border-radius: 6px; font-weight: 700;">Full Page</span>
+            </button>
+
+            <!-- Option 2: 2 Programs Per Page (As it is now - Paper Saver) -->
+            <button type="button" onclick="executeGreenRoomDownload(2)" class="btn-primary" style="width: 100%; padding: 13px 16px; font-size: 0.92rem; font-weight: 700; background: rgba(255, 255, 255, 0.08); color: #f8fafc; border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: space-between;">
+                <span style="display: flex; align-items: center; gap: 10px; text-align: left;">
+                    <i class="fa-solid fa-copy" style="font-size: 1.2rem; color: #38bdf8;"></i>
+                    <span>
+                        <strong style="display: block; font-size: 0.95rem;">2 Programs Per Page (Eco)</strong>
+                        <small style="opacity: 0.75; font-size: 0.75rem; font-weight: 400;">2 programs on 1 A4 sheet (Saves 50% paper - As it is now)</small>
+                    </span>
+                </span>
+                <span style="font-size: 0.74rem; background: rgba(56,189,248,0.15); color: #38bdf8; padding: 4px 8px; border-radius: 6px; font-weight: 700;">Paper Saver</span>
+            </button>
+        </div>
+
+        <div style="margin-top: 16px;">
+            <button type="button" onclick="closeGreenRoomSheetModal()" style="background: none; border: none; color: #94a3b8; font-size: 0.82rem; cursor: pointer; text-decoration: underline;">
+                Cancel
+            </button>
+        </div>
+    </div>
+</div>
+
+{% include 'core/partials/program_pdf_modal.html' %}
 {% endblock %}

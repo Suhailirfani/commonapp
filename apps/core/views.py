@@ -3135,7 +3135,7 @@ def download_green_room_pdf_view(request, institution_slug, program_id):
     program = get_object_or_404(Program, id=program_id, institution=institution)
     
     if program.is_group:
-        participants = list(GroupParticipation.objects.filter(program=program).select_related('team', 'captain'))
+        participants = list(GroupParticipation.objects.filter(program=program).select_related('team', 'captain').order_by('captain__chest_no', 'id'))
     else:
         participants = list(Contestant.objects.filter(
             participations__program=program
@@ -3154,7 +3154,7 @@ def download_call_list_pdf_view(request, institution_slug, program_id):
     program = get_object_or_404(Program, id=program_id, institution=institution)
 
     if program.is_group:
-        participants = GroupParticipation.objects.filter(program=program).select_related('team', 'captain')
+        participants = GroupParticipation.objects.filter(program=program).select_related('team', 'captain').order_by('captain__chest_no', 'id')
     else:
         participants = Contestant.objects.filter(
             participations__program=program
@@ -3175,12 +3175,20 @@ def download_valuation_form_pdf_view(request, institution_slug, program_id):
     institution = get_object_or_404(Institution, slug=institution_slug)
     program = get_object_or_404(Program, id=program_id, institution=institution)
 
-    if program.is_group:
-        participants = GroupParticipation.objects.filter(program=program).select_related('team', 'captain')
-    else:
-        participants = Participation.objects.filter(program=program).select_related('contestant', 'contestant__team')
-
     include_chest_no = request.GET.get('include_chest_no') in ['1', 'true', 'yes', 'True'] or request.GET.get('chest_no') in ['1', 'true', 'yes', 'True']
+
+    if program.is_group:
+        group_qs = GroupParticipation.objects.filter(program=program).select_related('team', 'captain')
+        if include_chest_no:
+            participants = list(group_qs.order_by('captain__chest_no', 'id'))
+        else:
+            participants = list(group_qs.order_by('code_letter', 'captain__chest_no', 'id'))
+    else:
+        part_qs = Participation.objects.filter(program=program).select_related('contestant', 'contestant__team')
+        if include_chest_no:
+            participants = list(part_qs.order_by('contestant__chest_no', 'id'))
+        else:
+            participants = list(part_qs.order_by('code_letter', 'contestant__chest_no', 'id'))
 
     context = {
         'institution': institution,
@@ -3237,8 +3245,11 @@ def download_bulk_green_room_pdf_view(request, institution_slug):
             'participants': participants
         })
 
+    per_page_raw = request.GET.get('per_page')
+    per_page = int(per_page_raw) if per_page_raw in ['1', '2'] else 2
+
     from .pdf_generators import build_green_room_pdf, reportlab_pdf_response
-    pdf_bytes = build_green_room_pdf(programs_data, institution.name, is_bulk=True)
+    pdf_bytes = build_green_room_pdf(programs_data, institution.name, is_bulk=True, per_page=per_page)
     filename = f"{institution.slug}_all_green_room_sheets.pdf"
     return reportlab_pdf_response(pdf_bytes, filename, request=request)
 

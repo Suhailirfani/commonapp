@@ -24,7 +24,7 @@ def reportlab_pdf_response(pdf_bytes, filename="document.pdf", request=None):
     return response
 
 
-def build_green_room_pdf(programs_data, institution_name, is_bulk=True):
+def build_green_room_pdf(programs_data, institution_name, is_bulk=True, per_page=2):
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(
         buffer,
@@ -241,13 +241,18 @@ def build_green_room_pdf(programs_data, institution_name, is_bulk=True):
         foot_text = f"Green Room Sign Sheet &nbsp;|&nbsp; {prog.name}"
         story.append(Paragraph(foot_text, footer_style))
 
-        # Bulk pagination: Exactly 2 programs per page
+        # Bulk pagination: 1 or 2 programs per page
         if is_bulk and (idx < total_progs - 1):
-            if (idx + 1) % 2 == 0:
+            if int(per_page) == 1:
+                # 1 program per page: Every program gets a full page
                 story.append(PageBreak())
             else:
-                story.append(Spacer(1, 14))
-                story.append(HRFlowable(width="100%", thickness=1.2, color=colors.HexColor('#64748b'), spaceAfter=14, spaceBefore=0, dash=[5, 4]))
+                # 2 programs per page: Exactly 2 programs per page (as it is now)
+                if (idx + 1) % 2 == 0:
+                    story.append(PageBreak())
+                else:
+                    story.append(Spacer(1, 14))
+                    story.append(HRFlowable(width="100%", thickness=1.2, color=colors.HexColor('#64748b'), spaceAfter=14, spaceBefore=0, dash=[5, 4]))
 
     doc.build(story)
     return buffer.getvalue()

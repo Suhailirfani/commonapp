@@ -24,13 +24,16 @@
             {% endif %}
         </div>
     </div>
-    {% if not request.user.is_judge and edit_history %}
-    <div style="display: flex; align-items: center; gap: 8px;">
+    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+        <button type="button" onclick="openProgramPdfModal('{{ program.id }}', '{{ program.name|escapejs }}', '{% url 'core:download_valuation_form_pdf' institution.slug program.id %}', '{% url 'core:download_green_room_pdf' institution.slug program.id %}', '{% url 'core:download_call_list_pdf' institution.slug program.id %}')" class="btn-primary" style="padding: 7px 16px; font-size: 0.85rem; font-weight: 800; background: linear-gradient(135deg, #f59e0b, #d97706); color: #000; border: none; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 14px rgba(245, 158, 11, 0.25);" title="Print Valuation Form, Green Room Sheet, or Call List">
+            <i class="fa-solid fa-print"></i> Print Sheets
+        </button>
+        {% if not request.user.is_judge and edit_history %}
         <button type="button" class="btn-primary" style="padding: 6px 14px; font-size: 0.85rem; background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); cursor: pointer; display: inline-flex; align-items: center; gap: 6px;" onclick="openHistoryModal('prog-history-{{ program.id }}')" title="View Edit History">
             <i class="fa-solid fa-clock-rotate-left"></i> Edit History <span class="badge" style="background: #ef4444; color: #fff; font-size: 0.7rem; padding: 1px 6px; border-radius: 999px;">{{ edit_history|length }}</span>
         </button>
+        {% endif %}
     </div>
-    {% endif %}
 </div>
 
 {% if request.user.is_judge %}
@@ -632,4 +635,5 @@
     </div>
 </div>
 {% endif %}
+{% include 'core/partials/program_pdf_modal.html' %}
 {% endblock %}
