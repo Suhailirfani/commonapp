@@ -130,7 +130,7 @@
             <h1>OFFICIAL PROGRAM RESULT</h1>
             <div class="program-name">{{ rdata.program.name|upper }}</div>
             <div class="subtitle">
-                Institution: {{ institution.name }}
+                Category: {{ rdata.program.category.name }} &nbsp;|&nbsp; Institution: {{ institution.name }}{% if rdata.program.competition %} &nbsp;|&nbsp; Fest: {{ rdata.program.competition.name }}{% elif active_fest %} &nbsp;|&nbsp; Fest: {{ active_fest.name }}{% endif %}
             </div>
         </div>
 
@@ -138,6 +138,7 @@
             {% if rdata.program.result_number %}Result No: <strong>#{{ rdata.program.result_number }}</strong> &nbsp;|&nbsp;{% endif %}
             Program: <strong>{{ rdata.program.name|upper }}</strong> &nbsp;|&nbsp; 
             Category: <strong>{{ rdata.program.category.name }}</strong> &nbsp;|&nbsp; 
+            {% if rdata.program.competition %}Fest: <strong>{{ rdata.program.competition.name }}</strong> &nbsp;|&nbsp; {% elif active_fest %}Fest: <strong>{{ active_fest.name }}</strong> &nbsp;|&nbsp; {% endif %}
             Type: <strong>{% if rdata.program.is_group %}Group Event{% else %}Single Event{% endif %}</strong> &nbsp;|&nbsp; 
             Date: <strong>{% now "F d, Y" %}</strong>
         </div>

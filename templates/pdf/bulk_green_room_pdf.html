@@ -137,14 +137,15 @@
             <h1>GREEN ROOM SIGN SHEET</h1>
             <div class="program-name">{{ pdata.program.name|upper }}</div>
             <div class="subtitle">
-                Category: {{ pdata.program.category.name }} | Institution: {{ institution.name }}
+                Category: {{ pdata.program.category.name }} &nbsp;|&nbsp; Institution: {{ institution.name }}{% if pdata.program.competition %} &nbsp;|&nbsp; Fest: {{ pdata.program.competition.name }}{% elif active_fest %} &nbsp;|&nbsp; Fest: {{ active_fest.name }}{% endif %}
             </div>
         </div>
         
         <div class="info-section">
-            Program: <strong>{{ pdata.program.name|upper }}</strong> | 
-            Category: <strong>{{ pdata.program.category.name }}</strong> | 
-            Total Participants: <strong>{{ pdata.participants|length }}</strong> | 
+            Program: <strong>{{ pdata.program.name|upper }}</strong> &nbsp;|&nbsp; 
+            Category: <strong>{{ pdata.program.category.name }}</strong> &nbsp;|&nbsp; 
+            {% if pdata.program.competition %}Fest: <strong>{{ pdata.program.competition.name }}</strong> &nbsp;|&nbsp; {% elif active_fest %}Fest: <strong>{{ active_fest.name }}</strong> &nbsp;|&nbsp; {% endif %}
+            Total Participants: <strong>{{ pdata.participants|length }}</strong> &nbsp;|&nbsp; 
             Date: <strong>{% now "F d, Y" %}</strong>
         </div>
 

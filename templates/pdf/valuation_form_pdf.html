@@ -98,12 +98,16 @@
     <div class="header">
         <h1>VALUATION FORM</h1>
         <div class="program-name">{{ program.name|upper }}</div>
+        <div class="subtitle" style="font-size: 8.5pt; color: #475569; margin-top: 2px;">
+            Category: {{ program.category.name }} &nbsp;|&nbsp; Institution: {{ institution.name }}{% if program.competition %} &nbsp;|&nbsp; Fest: {{ program.competition.name }}{% elif active_fest %} &nbsp;|&nbsp; Fest: {{ active_fest.name }}{% endif %}
+        </div>
     </div>
 
     <div class="info-section">
-        Program: <strong>{{ program.name|upper }}</strong> | 
-        Category: <strong>{{ program.category.name }}</strong> | 
-        Total Participants: <strong>{{ participants|length }}</strong> | 
+        Program: <strong>{{ program.name|upper }}</strong> &nbsp;|&nbsp; 
+        Category: <strong>{{ program.category.name }}</strong> &nbsp;|&nbsp; 
+        {% if program.competition %}Fest: <strong>{{ program.competition.name }}</strong> &nbsp;|&nbsp; {% elif active_fest %}Fest: <strong>{{ active_fest.name }}</strong> &nbsp;|&nbsp; {% endif %}
+        Total Participants: <strong>{{ participants|length }}</strong> &nbsp;|&nbsp; 
         Date: <strong>{% now "F d, Y" %}</strong>
     </div>
 

@@ -3132,7 +3132,7 @@ def download_assigned_programs_teamwise_pdf_view(request, institution_slug):
 @login_required
 def download_green_room_pdf_view(request, institution_slug, program_id):
     institution = get_object_or_404(Institution, slug=institution_slug)
-    program = get_object_or_404(Program, id=program_id, institution=institution)
+    program = get_object_or_404(Program.objects.select_related('competition', 'category'), id=program_id, institution=institution)
     
     if program.is_group:
         participants = list(GroupParticipation.objects.filter(program=program).select_related('team', 'captain').order_by('captain__chest_no', 'id'))
@@ -3151,7 +3151,7 @@ def download_green_room_pdf_view(request, institution_slug, program_id):
 @login_required
 def download_call_list_pdf_view(request, institution_slug, program_id):
     institution = get_object_or_404(Institution, slug=institution_slug)
-    program = get_object_or_404(Program, id=program_id, institution=institution)
+    program = get_object_or_404(Program.objects.select_related('competition', 'category'), id=program_id, institution=institution)
 
     if program.is_group:
         participants = GroupParticipation.objects.filter(program=program).select_related('team', 'captain').order_by('captain__chest_no', 'id')
@@ -3164,6 +3164,7 @@ def download_call_list_pdf_view(request, institution_slug, program_id):
         'institution': institution,
         'program': program,
         'participants': participants,
+        'active_fest': program.competition or get_active_fest(request, institution),
         'generated_at': timezone.now()
     }
     filename = f"{program.name}_call_list.pdf"
@@ -3173,7 +3174,7 @@ def download_call_list_pdf_view(request, institution_slug, program_id):
 @login_required
 def download_valuation_form_pdf_view(request, institution_slug, program_id):
     institution = get_object_or_404(Institution, slug=institution_slug)
-    program = get_object_or_404(Program, id=program_id, institution=institution)
+    program = get_object_or_404(Program.objects.select_related('competition', 'category'), id=program_id, institution=institution)
 
     include_chest_no = request.GET.get('include_chest_no') in ['1', 'true', 'yes', 'True'] or request.GET.get('chest_no') in ['1', 'true', 'yes', 'True']
 
@@ -3195,6 +3196,7 @@ def download_valuation_form_pdf_view(request, institution_slug, program_id):
         'program': program,
         'participants': participants,
         'include_chest_no': include_chest_no,
+        'active_fest': program.competition or get_active_fest(request, institution),
         'generated_at': timezone.now()
     }
     filename = f"{program.name}_valuation_form.pdf"
@@ -3207,7 +3209,7 @@ def download_bulk_green_room_pdf_view(request, institution_slug):
     active_fest = get_active_fest(request, institution)
     category_id = request.GET.get('category_id')
 
-    programs = Program.objects.filter(institution=institution).select_related('category')
+    programs = Program.objects.filter(institution=institution).select_related('category', 'competition')
     if active_fest:
         programs = programs.filter(competition=active_fest)
     if category_id and str(category_id).isdigit():
@@ -3260,7 +3262,7 @@ def download_bulk_call_list_pdf_view(request, institution_slug):
     active_fest = get_active_fest(request, institution)
     category_id = request.GET.get('category_id')
 
-    programs = Program.objects.filter(institution=institution).select_related('category')
+    programs = Program.objects.filter(institution=institution).select_related('category', 'competition')
     if active_fest:
         programs = programs.filter(competition=active_fest)
     if category_id and str(category_id).isdigit():
@@ -3314,7 +3316,7 @@ def download_bulk_valuation_form_pdf_view(request, institution_slug):
     active_fest = get_active_fest(request, institution)
     category_id = request.GET.get('category_id')
 
-    programs = Program.objects.filter(institution=institution).select_related('category')
+    programs = Program.objects.filter(institution=institution).select_related('category', 'competition')
     if active_fest:
         programs = programs.filter(competition=active_fest)
     if category_id and str(category_id).isdigit():
@@ -3367,7 +3369,7 @@ def download_bulk_valuation_form_pdf_view(request, institution_slug):
 @login_required
 def download_single_result_pdf_view(request, institution_slug, program_id):
     institution = get_object_or_404(Institution, slug=institution_slug)
-    program = get_object_or_404(Program, id=program_id, institution=institution)
+    program = get_object_or_404(Program.objects.select_related('competition', 'category'), id=program_id, institution=institution)
 
     if program.is_group:
         all_parts = list(GroupParticipation.objects.filter(
@@ -3386,6 +3388,7 @@ def download_single_result_pdf_view(request, institution_slug, program_id):
         'program': program,
         'winners': winners,
         'other_grade_holders': other_grade_holders,
+        'active_fest': program.competition or get_active_fest(request, institution),
         'generated_at': timezone.now()
     }
     filename = f"{program.name}_official_result.pdf"
@@ -3398,7 +3401,7 @@ def download_all_results_pdf_view(request, institution_slug):
     active_fest = get_active_fest(request, institution)
     category_id = request.GET.get('category_id') or request.GET.get('category')
 
-    programs = Program.objects.filter(institution=institution, is_announced=True).select_related('category')
+    programs = Program.objects.filter(institution=institution, is_announced=True).select_related('category', 'competition')
     if active_fest:
         programs = programs.filter(competition=active_fest)
     if category_id and str(category_id).isdigit():

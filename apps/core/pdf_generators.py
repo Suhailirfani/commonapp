@@ -147,16 +147,23 @@ def build_green_room_pdf(programs_data, institution_name, is_bulk=True, per_page
         prog = pdata['program']
         participants = pdata['participants']
         cat_name = prog.category.name if (hasattr(prog, 'category') and prog.category) else 'General'
+        fest_name = prog.competition.name if (hasattr(prog, 'competition') and prog.competition) else ''
 
         # 1. Header
         story.append(Paragraph("GREEN ROOM SIGN SHEET", title_style))
         story.append(Paragraph(str(prog.name).upper(), prog_title_style))
-        sub_text = f"Category: {cat_name} &nbsp;|&nbsp; Institution: {institution_name}"
+        if fest_name:
+            sub_text = f"Category: {cat_name} &nbsp;|&nbsp; Institution: {institution_name} &nbsp;|&nbsp; Fest: {fest_name}"
+        else:
+            sub_text = f"Category: {cat_name} &nbsp;|&nbsp; Institution: {institution_name}"
         story.append(Paragraph(sub_text, subtitle_style))
         story.append(HRFlowable(width="100%", thickness=1.5, color=colors.black, spaceAfter=4, spaceBefore=0))
 
         # 2. Info Bar Table (width = 555pt)
-        info_html = f"Program: <b>{str(prog.name).upper()}</b> &nbsp;|&nbsp; Category: <b>{cat_name}</b> &nbsp;|&nbsp; Total Participants: <b>{len(participants)}</b>"
+        info_html = f"Program: <b>{str(prog.name).upper()}</b> &nbsp;|&nbsp; Category: <b>{cat_name}</b>"
+        if fest_name:
+            info_html += f" &nbsp;|&nbsp; Fest: <b>{fest_name}</b>"
+        info_html += f" &nbsp;|&nbsp; Total Participants: <b>{len(participants)}</b>"
         info_table = Table(
             [[Paragraph(info_html, info_style)]],
             colWidths=[555]
