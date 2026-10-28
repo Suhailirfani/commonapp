@@ -6,13 +6,40 @@
 {% block content %}
 <div style="margin-bottom: 24px;">
     <a href="{% url 'public:home' institution.slug %}" style="color: var(--text-muted); text-decoration: none;"><i class="fa-solid fa-arrow-left"></i> Back to Live Home</a>
-    <h1 style="font-size: 2.2rem; font-weight: 800; margin-top: 8px;">📋 All Published Event Results</h1>
-    <p style="color: var(--text-muted);">Browse all published single and group competition results.</p>
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 14px; margin-top: 8px;">
+        <div>
+            <h1 style="font-size: 2.2rem; font-weight: 800; margin: 0;">📋 All Published Event Results</h1>
+            <p style="color: var(--text-muted); margin: 4px 0 0 0;">Browse all published single and group competition results.</p>
+        </div>
+        {% if programs %}
+        <!-- Live Real-Time Search Bar -->
+        <div style="flex: 1; min-width: 260px; max-width: 400px; position: relative;">
+            <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 0.9rem; pointer-events: none;"></i>
+            <input type="text" 
+                   id="publicResultsSearchInput" 
+                   placeholder="Search by event, category, result #..." 
+                   autocomplete="off"
+                   spellcheck="false"
+                   style="width: 100%; padding: 10px 38px 10px 38px; background: rgba(0, 0, 0, 0.35); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 10px; color: #fff; font-size: 0.88rem; outline: none; transition: border-color 0.2s, box-shadow 0.2s;"
+                   oninput="filterPublicResultsRealtime()"
+                   onfocus="this.style.borderColor='var(--accent-cyan)'; this.style.boxShadow='0 0 0 3px rgba(14, 165, 233, 0.25)';"
+                   onblur="this.style.borderColor='rgba(255, 255, 255, 0.15)'; this.style.boxShadow='none';"
+                   onkeydown="if(event.key === 'Escape') { clearPublicResultsSearch(); }">
+            <button type="button" 
+                    id="clearPublicSearchBtn" 
+                    onclick="clearPublicResultsSearch()" 
+                    style="display: none; position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.12); border: none; color: #cbd5e1; cursor: pointer; width: 22px; height: 22px; border-radius: 50%; font-size: 0.75rem; align-items: center; justify-content: center; line-height: 1;" 
+                    title="Clear search (Esc)">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        {% endif %}
+    </div>
 </div>
 
 <div class="glass-card">
     <div class="table-responsive">
-        <table class="custom-table">
+        <table class="custom-table" id="publicResultsTable">
         <thead>
             <tr>
                 <th style="width: 100px;">Result #</th>
@@ -25,7 +52,11 @@
         </thead>
         <tbody>
             {% for p in programs %}
-            <tr>
+            <tr class="public-result-row"
+                data-name="{{ p.name|lower }}"
+                data-cat="{{ p.category.name|lower }}"
+                data-result-num="{{ p.result_number|default:'' }}"
+                data-format="{% if p.is_group %}group{% else %}single{% endif %}">
                 <td>
                     {% if p.result_number %}
                     <span class="badge" style="background: rgba(245, 158, 11, 0.2); color: var(--accent-amber); font-weight: 800; font-size: 0.85rem;">
@@ -52,8 +83,78 @@
                 </td>
             </tr>
             {% endfor %}
+
+            <!-- Empty Search State -->
+            <tr id="publicNoResultsRow" style="display: none;">
+                <td colspan="6" style="text-align: center; padding: 40px 20px; color: var(--text-muted);">
+                    <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                        <i class="fa-solid fa-magnifying-glass" style="font-size: 2rem; color: rgba(255,255,255,0.2); margin-bottom: 4px;"></i>
+                        <div style="font-size: 1rem; font-weight: 600; color: #cbd5e1;">No results found <span id="publicNoResultsQuery"></span></div>
+                        <div style="font-size: 0.85rem; color: var(--text-muted);">Try a different keyword or result number.</div>
+                        <button type="button" onclick="clearPublicResultsSearch()" class="btn btn-sm" style="margin-top: 8px; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.35); color: #38bdf8; font-size: 0.82rem; font-weight: 600; padding: 6px 14px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+                            <i class="fa-solid fa-rotate-left"></i> Clear Search
+                        </button>
+                    </div>
+                </td>
+            </tr>
         </tbody>
     </table>
     </div>
 </div>
+
+<script>
+function filterPublicResultsRealtime() {
+    const input = document.getElementById('publicResultsSearchInput');
+    const query = (input ? input.value : '').toLowerCase().trim();
+    const clearBtn = document.getElementById('clearPublicSearchBtn');
+    if (clearBtn) {
+        clearBtn.style.display = query ? 'inline-flex' : 'none';
+    }
+
+    const rows = document.querySelectorAll('.public-result-row');
+    let visibleCount = 0;
+
+    rows.forEach(row => {
+        const name = row.getAttribute('data-name') || '';
+        const cat = row.getAttribute('data-cat') || '';
+        const resultNum = row.getAttribute('data-result-num') || '';
+        const format = row.getAttribute('data-format') || '';
+        const rowText = (row.textContent || '').toLowerCase();
+
+        let matches = true;
+        if (query) {
+            const cleanQuery = query.replace(/^#/, '').trim();
+            const matchesResultNum = resultNum && (resultNum === cleanQuery || resultNum.includes(cleanQuery));
+            matches = name.includes(query) || 
+                      cat.includes(query) || 
+                      format.includes(query) || 
+                      matchesResultNum || 
+                      rowText.includes(query);
+        }
+
+        if (matches) {
+            row.style.display = '';
+            visibleCount++;
+        } else {
+            row.style.display = 'none';
+        }
+    });
+
+    const noResultsRow = document.getElementById('publicNoResultsRow');
+    if (noResultsRow) {
+        noResultsRow.style.display = (visibleCount === 0 && rows.length > 0) ? '' : 'none';
+        const querySpan = document.getElementById('publicNoResultsQuery');
+        if (querySpan) querySpan.textContent = query ? `for "${query}"` : '';
+    }
+}
+
+function clearPublicResultsSearch() {
+    const input = document.getElementById('publicResultsSearchInput');
+    if (input) {
+        input.value = '';
+        input.focus();
+    }
+    filterPublicResultsRealtime();
+}
+</script>
 {% endblock %}

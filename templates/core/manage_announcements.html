@@ -116,10 +116,68 @@
 </div>
 {% endif %}
 
+<!-- SEARCH & FILTER TOOLBAR -->
+<div class="glass-card" style="margin-bottom: 20px; padding: 14px 18px; border: 1px solid var(--border-color); background: rgba(15, 23, 42, 0.65); border-radius: 14px;">
+    <div style="display: flex; gap: 14px; flex-wrap: wrap; align-items: center; justify-content: space-between;">
+        
+        <!-- Live Real-Time Search Bar -->
+        <div style="flex: 1; min-width: 260px; max-width: 480px; position: relative;">
+            <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 0.9rem; pointer-events: none;"></i>
+            <input type="text" 
+                   id="announcementSearchInput" 
+                   placeholder="Search programs, category, result #..." 
+                   autocomplete="off"
+                   spellcheck="false"
+                   style="width: 100%; padding: 10px 38px 10px 38px; background: rgba(0, 0, 0, 0.35); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 10px; color: #fff; font-size: 0.88rem; outline: none; transition: border-color 0.2s, box-shadow 0.2s;"
+                   oninput="filterAnnouncementsRealtime()"
+                   onfocus="this.style.borderColor='var(--accent-cyan)'; this.style.boxShadow='0 0 0 3px rgba(14, 165, 233, 0.25)';"
+                   onblur="this.style.borderColor='rgba(255, 255, 255, 0.15)'; this.style.boxShadow='none';"
+                   onkeydown="if(event.key === 'Escape') { clearAnnouncementSearch(); }">
+            <button type="button" 
+                    id="clearSearchBtn" 
+                    onclick="clearAnnouncementSearch()" 
+                    style="display: none; position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.12); border: none; color: #cbd5e1; cursor: pointer; width: 22px; height: 22px; border-radius: 50%; font-size: 0.75rem; align-items: center; justify-content: center; line-height: 1; transition: background 0.15s;" 
+                    title="Clear search (Esc)">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <!-- Quick Filter Pills & Result Counter -->
+        <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+            <button type="button" 
+                    id="pill-filter-all" 
+                    onclick="setStatusFilter('all', this)" 
+                    class="announcement-filter-pill active" 
+                    style="padding: 7px 15px; font-size: 0.82rem; font-weight: 700; border-radius: 20px; background: linear-gradient(135deg, var(--accent-cyan), #0284c7); border: 1px solid var(--accent-cyan); color: #fff; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px;">
+                <i class="fa-solid fa-layer-group"></i> All ({{ total_programs }})
+            </button>
+            <button type="button" 
+                    id="pill-filter-announced" 
+                    onclick="setStatusFilter('announced', this)" 
+                    class="announcement-filter-pill" 
+                    style="padding: 7px 15px; font-size: 0.82rem; font-weight: 700; border-radius: 20px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); color: #cbd5e1; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px;">
+                <i class="fa-solid fa-bullhorn" style="color: var(--accent-emerald);"></i> Announced ({{ announced_count }})
+            </button>
+            <button type="button" 
+                    id="pill-filter-draft" 
+                    onclick="setStatusFilter('draft', this)" 
+                    class="announcement-filter-pill" 
+                    style="padding: 7px 15px; font-size: 0.82rem; font-weight: 700; border-radius: 20px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); color: #cbd5e1; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px;">
+                <i class="fa-solid fa-lock" style="color: var(--accent-amber);"></i> Draft / Hidden ({{ unannounced_count|default:"0" }})
+            </button>
+            
+            <div id="searchResultsCount" style="font-size: 0.82rem; color: var(--text-muted); font-weight: 600; padding: 5px 12px; background: rgba(255,255,255,0.05); border-radius: 8px; border: 1px solid rgba(255,255,255,0.08); white-space: nowrap;">
+                Showing all {{ total_programs }} programs
+            </div>
+        </div>
+
+    </div>
+</div>
+
 <!-- DESKTOP TABLE VIEW -->
 <div class="glass-card desktop-table-view">
     <div class="table-responsive">
-        <table class="custom-table">
+        <table class="custom-table" id="announcementsTable">
             <thead>
                 <tr>
                     <th style="width: 100px;">Result #</th>
@@ -131,9 +189,14 @@
                     <th style="width: 160px;">Action</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody id="announcementsTableBody">
                 {% for prog in programs %}
-                <tr>
+                <tr class="announcement-row" 
+                    data-name="{{ prog.name|lower }}" 
+                    data-cat="{{ prog.category.name|lower }}" 
+                    data-status="{% if prog.is_announced %}announced{% else %}draft{% endif %}"
+                    data-result-num="{{ prog.result_number|default:'' }}"
+                    data-format="{% if prog.is_group %}group{% else %}single{% endif %}">
                     <td>
                         {% if prog.result_number %}
                         <div style="display: flex; align-items: center; gap: 6px;">
@@ -194,6 +257,20 @@
                     </td>
                 </tr>
                 {% endfor %}
+
+                <!-- Desktop Empty Search State Row -->
+                <tr id="desktopNoResultsRow" style="display: none;">
+                    <td colspan="7" style="text-align: center; padding: 40px 20px; color: var(--text-muted);">
+                        <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                            <i class="fa-solid fa-magnifying-glass" style="font-size: 2rem; color: rgba(255,255,255,0.2); margin-bottom: 4px;"></i>
+                            <div style="font-size: 1rem; font-weight: 600; color: #cbd5e1;">No matching programs found <span id="noResultsQueryDesktop"></span></div>
+                            <div style="font-size: 0.85rem; color: var(--text-muted);">Try adjusting your search query or reset filters.</div>
+                            <button type="button" onclick="clearAnnouncementSearch()" class="btn btn-sm" style="margin-top: 8px; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.35); color: #38bdf8; font-size: 0.82rem; font-weight: 600; padding: 6px 14px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+                                <i class="fa-solid fa-rotate-left"></i> Reset Search
+                            </button>
+                        </div>
+                    </td>
+                </tr>
             </tbody>
         </table>
     </div>
@@ -202,7 +279,13 @@
 <!-- MOBILE CARD LIST VIEW -->
 <div class="mobile-card-list-view">
     {% for prog in programs %}
-    <div class="glass-card" style="margin-bottom: 12px; padding: 14px; border-radius: 14px; border: 1px solid var(--border-color);">
+    <div class="glass-card announcement-mobile-card" 
+         data-name="{{ prog.name|lower }}" 
+         data-cat="{{ prog.category.name|lower }}" 
+         data-status="{% if prog.is_announced %}announced{% else %}draft{% endif %}"
+         data-result-num="{{ prog.result_number|default:'' }}"
+         data-format="{% if prog.is_group %}group{% else %}single{% endif %}"
+         style="margin-bottom: 12px; padding: 14px; border-radius: 14px; border: 1px solid var(--border-color);">
         <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 8px;">
             <div>
                 <strong style="font-size: 1.05rem; display: block; color: var(--text-main);">{{ prog.name }}</strong>
@@ -262,6 +345,16 @@
         No programs created.
     </div>
     {% endfor %}
+
+    <!-- Mobile Empty Search State Card -->
+    <div id="mobileNoResultsCard" class="glass-card" style="display: none; text-align: center; padding: 32px 16px; margin-bottom: 12px; border-radius: 14px; border: 1px solid var(--border-color); color: var(--text-muted);">
+        <i class="fa-solid fa-magnifying-glass" style="font-size: 2rem; color: rgba(255,255,255,0.2); margin-bottom: 8px;"></i>
+        <div style="font-size: 0.95rem; font-weight: 600; color: #cbd5e1;">No matching programs found <span id="noResultsQueryMobile"></span></div>
+        <div style="font-size: 0.82rem; color: var(--text-muted); margin-top: 2px;">Try adjusting your search query or reset filters.</div>
+        <button type="button" onclick="clearAnnouncementSearch()" class="btn btn-sm" style="margin-top: 10px; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.35); color: #38bdf8; font-size: 0.82rem; font-weight: 600; padding: 6px 14px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+            <i class="fa-solid fa-rotate-left"></i> Reset Search
+        </button>
+    </div>
 </div>
 
 <!-- EDIT RESULT NUMBER MODAL -->
@@ -377,5 +470,144 @@ function copyPublicResultLinkAnnounce(btn) {
         prompt('Copy this public result link:', fullUrl);
     }
 }
+
+/* =========================================================
+   REAL-TIME ANNOUNCEMENT SEARCH & FILTERING SYSTEM
+   ========================================================= */
+let currentStatusFilter = 'all';
+
+function filterAnnouncementsRealtime() {
+    const input = document.getElementById('announcementSearchInput');
+    const query = (input ? input.value : '').toLowerCase().trim();
+    const clearBtn = document.getElementById('clearSearchBtn');
+    if (clearBtn) {
+        clearBtn.style.display = query ? 'inline-flex' : 'none';
+    }
+
+    const rows = document.querySelectorAll('.announcement-row');
+    const cards = document.querySelectorAll('.announcement-mobile-card');
+    
+    let visibleCount = 0;
+    const totalCount = rows.length;
+
+    // Filter desktop rows
+    rows.forEach(row => {
+        const name = row.getAttribute('data-name') || '';
+        const cat = row.getAttribute('data-cat') || '';
+        const status = row.getAttribute('data-status') || '';
+        const resultNum = row.getAttribute('data-result-num') || '';
+        const format = row.getAttribute('data-format') || '';
+        const rowText = (row.textContent || '').toLowerCase();
+
+        const matchesStatus = (currentStatusFilter === 'all' || status === currentStatusFilter);
+        
+        let matchesQuery = true;
+        if (query) {
+            const cleanQuery = query.replace(/^#/, '').trim();
+            const matchesResultNum = resultNum && (resultNum === cleanQuery || resultNum.includes(cleanQuery));
+            matchesQuery = name.includes(query) || 
+                           cat.includes(query) || 
+                           format.includes(query) || 
+                           status.includes(query) || 
+                           matchesResultNum ||
+                           rowText.includes(query);
+        }
+
+        if (matchesStatus && matchesQuery) {
+            row.style.display = '';
+            visibleCount++;
+        } else {
+            row.style.display = 'none';
+        }
+    });
+
+    // Filter mobile cards
+    cards.forEach(card => {
+        const name = card.getAttribute('data-name') || '';
+        const cat = card.getAttribute('data-cat') || '';
+        const status = card.getAttribute('data-status') || '';
+        const resultNum = card.getAttribute('data-result-num') || '';
+        const format = card.getAttribute('data-format') || '';
+        const cardText = (card.textContent || '').toLowerCase();
+
+        const matchesStatus = (currentStatusFilter === 'all' || status === currentStatusFilter);
+        
+        let matchesQuery = true;
+        if (query) {
+            const cleanQuery = query.replace(/^#/, '').trim();
+            const matchesResultNum = resultNum && (resultNum === cleanQuery || resultNum.includes(cleanQuery));
+            matchesQuery = name.includes(query) || 
+                           cat.includes(query) || 
+                           format.includes(query) || 
+                           status.includes(query) || 
+                           matchesResultNum ||
+                           cardText.includes(query);
+        }
+
+        card.style.display = (matchesStatus && matchesQuery) ? '' : 'none';
+    });
+
+    // Update Live Results Counter
+    const counterEl = document.getElementById('searchResultsCount');
+    if (counterEl) {
+        if (query || currentStatusFilter !== 'all') {
+            counterEl.innerHTML = `Showing <strong style="color: #38bdf8;">${visibleCount}</strong> of ${totalCount} programs`;
+        } else {
+            counterEl.innerText = `Showing all ${totalCount} programs`;
+        }
+    }
+
+    // Toggle Desktop Empty Search Row
+    const noResultsRow = document.getElementById('desktopNoResultsRow');
+    if (noResultsRow) {
+        noResultsRow.style.display = (visibleCount === 0 && totalCount > 0) ? '' : 'none';
+        const queryDisplay = document.getElementById('noResultsQueryDesktop');
+        if (queryDisplay) queryDisplay.textContent = query ? `for "${query}"` : '';
+    }
+
+    // Toggle Mobile Empty Search Card
+    const noResultsCard = document.getElementById('mobileNoResultsCard');
+    if (noResultsCard) {
+        noResultsCard.style.display = (visibleCount === 0 && totalCount > 0) ? 'block' : 'none';
+        const queryDisplay = document.getElementById('noResultsQueryMobile');
+        if (queryDisplay) queryDisplay.textContent = query ? `for "${query}"` : '';
+    }
+}
+
+function clearAnnouncementSearch() {
+    const input = document.getElementById('announcementSearchInput');
+    if (input) {
+        input.value = '';
+        input.focus();
+    }
+    filterAnnouncementsRealtime();
+}
+
+function setStatusFilter(status, btn) {
+    currentStatusFilter = status;
+    document.querySelectorAll('.announcement-filter-pill').forEach(p => {
+        p.style.background = 'rgba(255,255,255,0.06)';
+        p.style.borderColor = 'rgba(255,255,255,0.12)';
+        p.style.color = '#cbd5e1';
+    });
+    if (btn) {
+        btn.style.background = 'linear-gradient(135deg, var(--accent-cyan), #0284c7)';
+        btn.style.borderColor = 'var(--accent-cyan)';
+        btn.style.color = '#fff';
+    }
+    filterAnnouncementsRealtime();
+}
+
+// Global shortcut: press '/' to focus real-time search
+document.addEventListener('keydown', function(e) {
+    if (e.key === '/' && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
+        e.preventDefault();
+        const searchInput = document.getElementById('announcementSearchInput');
+        if (searchInput) {
+            searchInput.focus();
+            searchInput.select();
+        }
+    }
+});
 </script>
 {% endblock %}

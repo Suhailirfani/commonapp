@@ -4357,6 +4357,7 @@ def manage_announcements_view(request, institution_slug):
 
     announced_count = programs.filter(is_announced=True).count()
     total_programs = programs.count()
+    unannounced_count = max(0, total_programs - announced_count)
 
     suggested_announcements = get_top_5_balancing_announcement_suggestions(institution, competition=active_fest)
 
@@ -4364,6 +4365,7 @@ def manage_announcements_view(request, institution_slug):
         'institution': institution,
         'programs': programs,
         'announced_count': announced_count,
+        'unannounced_count': unannounced_count,
         'total_programs': total_programs,
         'suggested_announcements': suggested_announcements,
         'active_fest': active_fest,
