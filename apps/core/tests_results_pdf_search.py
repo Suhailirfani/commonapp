@@ -92,10 +92,11 @@ class ResultsPdfAndSearchTests(TestCase):
         url = reverse('core:team_points_cards', kwargs={'institution_slug': self.institution.slug})
         res = self.client.get(url)
         self.assertEqual(res.status_code, 200)
-        self.assertContains(res, "Download Selected Card (PDF)")
-        self.assertContains(res, "Download All 10 (PDF Book)")
-        self.assertContains(res, "Official Points Sheet (A4 PDF)")
-        self.assertContains(res, "jspdf")
+        self.assertContains(res, "Download Official Points Sheet (PDF)")
+        self.assertContains(res, "Print / Preview Points Sheet")
+        self.assertContains(res, "Download Selected Card (JPG)")
+        self.assertNotContains(res, "jspdf")
+        self.assertNotContains(res, "Download Selected Card (PDF)")
 
     def test_download_team_standings_pdf(self):
         url = reverse('core:download_team_standings_pdf', kwargs={'institution_slug': self.institution.slug})

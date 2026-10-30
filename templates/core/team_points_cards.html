@@ -8,8 +8,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <!-- html2canvas for JPEG export -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <!-- jsPDF for neat high-res PDF document export -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -432,21 +430,18 @@
 
             <!-- ACTION BUTTONS -->
             <div class="controls">
-                <button class="btn btn-pdf" onclick="downloadCurrentCardPDF()" style="justify-content: center; box-shadow: 0 4px 14px rgba(239, 68, 68, 0.4);">
-                    <i class="fa-solid fa-file-pdf"></i> Download Selected Card (PDF)
-                </button>
+                <a href="{% url 'core:download_team_standings_pdf' institution.slug %}{% if selected_n %}?n_results={{ selected_n }}{% endif %}" class="btn btn-pdf" style="justify-content: center; box-shadow: 0 4px 14px rgba(239, 68, 68, 0.4); text-decoration: none;" title="Download Printable Official Points Sheet (A4 PDF)">
+                    <i class="fa-solid fa-file-pdf"></i> Download Official Points Sheet (PDF)
+                </a>
+                <a href="{% url 'core:download_team_standings_pdf' institution.slug %}?preview=1{% if selected_n %}&n_results={{ selected_n }}{% endif %}" target="_blank" class="btn btn-outline" style="justify-content: center; border-color: rgba(239, 68, 68, 0.4); color: #fca5a5; text-decoration: none;" title="Preview / Print Official Points Sheet">
+                    <i class="fa-solid fa-print"></i> Print / Preview Points Sheet
+                </a>
                 <button class="btn btn-gold" onclick="downloadCurrentCard()" style="justify-content: center; box-shadow: 0 4px 14px rgba(245, 158, 11, 0.4);">
-                    <i class="fa-solid fa-file-image"></i> Download Selected Card (JPG)
-                </button>
-                <button class="btn btn-pdf-all" onclick="downloadAllAlignmentsPDF()" style="justify-content: center;">
-                    <i class="fa-solid fa-book"></i> Download All 10 (PDF Book)
+                    <i class="fa-solid fa-download"></i> Download Selected Card (JPG)
                 </button>
                 <button class="btn btn-dl-all" onclick="downloadAllAlignments()" style="justify-content: center;">
-                    <i class="fa-solid fa-file-zipper"></i> Download All 10 (JPG)
+                    <i class="fa-solid fa-file-export"></i> Download All 10 Alignments (JPG)
                 </button>
-                <a href="{% url 'core:download_team_standings_pdf' institution.slug %}{% if selected_n %}?n_results={{ selected_n }}{% endif %}" class="btn btn-outline" style="justify-content: center; border-color: rgba(245, 158, 11, 0.4); color: #fbbf24;" title="Printable Official Team Points Sheet (A4)">
-                    <i class="fa-solid fa-print"></i> Official Points Sheet (A4 PDF)
-                </a>
                 <a href="{% url 'core:team_standings' institution.slug %}{% if selected_n %}?n_results={{ selected_n }}{% endif %}" class="btn btn-outline" style="justify-content: center;">
                     <i class="fa-solid fa-arrow-left"></i> Back to Leaderboard
                 </a>
@@ -512,11 +507,11 @@
                     <button onclick="prevAlignment()" class="btn btn-outline" style="padding: 6px 14px; font-size: 0.82rem;">
                         <i class="fa-solid fa-chevron-left"></i> Prev
                     </button>
-                    <button onclick="downloadCurrentCardPDF()" class="btn btn-pdf" style="padding: 7px 16px; font-size: 0.84rem; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);">
-                        <i class="fa-solid fa-file-pdf"></i> Download PDF
-                    </button>
+                    <a href="{% url 'core:download_team_standings_pdf' institution.slug %}{% if selected_n %}?n_results={{ selected_n }}{% endif %}" class="btn btn-pdf" style="padding: 7px 16px; font-size: 0.84rem; text-decoration: none; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);" title="Download Official Points Sheet PDF">
+                        <i class="fa-solid fa-file-pdf"></i> Official Points Sheet (PDF)
+                    </a>
                     <button onclick="downloadCurrentCard()" class="btn btn-gold" style="padding: 7px 16px; font-size: 0.84rem;">
-                        <i class="fa-solid fa-file-image"></i> Download JPG
+                        <i class="fa-solid fa-download"></i> Download JPG
                     </button>
                     <button onclick="nextAlignment()" class="btn btn-outline" style="padding: 6px 14px; font-size: 0.82rem;">
                         Next <i class="fa-solid fa-chevron-right"></i>
@@ -1171,101 +1166,6 @@
     function showOverlay() { document.getElementById('dl-overlay').classList.add('active'); }
     function hideOverlay() { document.getElementById('dl-overlay').classList.remove('active'); }
     function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
-
-    async function downloadCurrentCardPDF() {
-        const card = document.getElementById('active-a4-card');
-        const scaleContainer = document.getElementById('card-scale-container');
-        showOverlay();
-
-        const prevTransform = scaleContainer ? scaleContainer.style.transform : '';
-        if (scaleContainer) scaleContainer.style.transform = 'none';
-
-        try {
-            await sleep(80);
-            const canvas = await html2canvas(card, {
-                scale: 2.8,
-                useCORS: true,
-                logging: false,
-                allowTaint: true,
-                backgroundColor: null,
-                removeContainer: true
-            });
-
-            if (!window.jspdf || !window.jspdf.jsPDF) {
-                throw new Error("PDF library not loaded");
-            }
-            const { jsPDF } = window.jspdf;
-
-            // Dedicated 4:5 aspect ratio print format (200mm x 250mm) for edge-to-edge neat layout
-            const pdf = new jsPDF({
-                orientation: 'portrait',
-                unit: 'mm',
-                format: [200, 250]
-            });
-
-            const imgData = canvas.toDataURL('image/jpeg', 0.96);
-            pdf.addImage(imgData, 'JPEG', 0, 0, 200, 250, undefined, 'FAST');
-            
-            const alignObj = alignments[currentAlignment - 1];
-            const alignSlug = alignObj ? alignObj.name.replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase() : ('alignment_' + currentAlignment);
-            pdf.save(`official_leaderboard_${alignSlug}_card.pdf`);
-        } catch (err) {
-            console.error("PDF generation failed:", err);
-            alert("Could not generate PDF. Please try again.");
-        } finally {
-            if (scaleContainer) scaleContainer.style.transform = prevTransform;
-            hideOverlay();
-        }
-    }
-
-    async function downloadAllAlignmentsPDF() {
-        showOverlay();
-        const initialAlignment = currentAlignment;
-        const scaleContainer = document.getElementById('card-scale-container');
-        const prevTransform = scaleContainer ? scaleContainer.style.transform : '';
-        if (scaleContainer) scaleContainer.style.transform = 'none';
-
-        try {
-            if (!window.jspdf || !window.jspdf.jsPDF) {
-                throw new Error("PDF library not loaded");
-            }
-            const { jsPDF } = window.jspdf;
-            const pdf = new jsPDF({
-                orientation: 'portrait',
-                unit: 'mm',
-                format: [200, 250]
-            });
-
-            for (let i = 1; i <= 10; i++) {
-                switchAlignment(i);
-                await sleep(250);
-
-                const card = document.getElementById('active-a4-card');
-                const canvas = await html2canvas(card, {
-                    scale: 2.4,
-                    useCORS: true,
-                    logging: false,
-                    allowTaint: true,
-                    backgroundColor: null,
-                    removeContainer: true
-                });
-                const imgData = canvas.toDataURL('image/jpeg', 0.95);
-                if (i > 1) {
-                    pdf.addPage([200, 250], 'portrait');
-                }
-                pdf.addImage(imgData, 'JPEG', 0, 0, 200, 250, undefined, 'FAST');
-                await sleep(100);
-            }
-            pdf.save('official_leaderboard_all_10_alignments_book.pdf');
-        } catch (err) {
-            console.error("Multi-page PDF generation failed:", err);
-            alert("Could not generate multi-page PDF book. Please try again.");
-        } finally {
-            if (scaleContainer) scaleContainer.style.transform = prevTransform;
-            switchAlignment(initialAlignment);
-            hideOverlay();
-        }
-    }
 
     async function downloadCurrentCard() {
         const card = document.getElementById('active-a4-card');
