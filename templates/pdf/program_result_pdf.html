@@ -31,7 +31,7 @@
         }
         .header .program-name {
             color: #d97706;
-            font-size: 12pt;
+            font-size: 12.5pt;
             margin: 3px 0 2px 0;
             font-weight: bold;
             text-transform: uppercase;
@@ -56,28 +56,28 @@
             padding: 2px 4px;
         }
         .section-title {
-            font-size: 9pt;
+            font-size: 9.5pt;
             font-weight: bold;
             margin-top: 10px;
-            margin-bottom: 4px;
+            margin-bottom: 6px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             color: #0f172a;
-            border-bottom: 1px solid #cbd5e1;
-            padding-bottom: 2px;
+            border-bottom: 1.5px solid #0f172a;
+            padding-bottom: 3px;
         }
         table.result-table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 4px;
-            margin-bottom: 12px;
+            margin-bottom: 14px;
         }
         table.result-table th {
-            border-top: 1px solid #000000;
-            border-bottom: 1.5px solid #000000;
+            border-top: 1.5px solid #000000;
+            border-bottom: 2px solid #000000;
             border-left: none;
             border-right: none;
-            padding: 5px 4px;
+            padding: 6px 4px;
             text-align: center;
             background-color: #f1f5f9;
             color: #000000;
@@ -90,9 +90,9 @@
             border-top: none;
             border-left: none;
             border-right: none;
-            padding: 5px 4px;
+            padding: 6px 4px;
             text-align: center;
-            font-size: 8.2pt;
+            font-size: 8.5pt;
             color: #111111;
         }
         .left-align {
@@ -111,7 +111,7 @@
             font-weight: bold;
         }
         .signature-section {
-            margin-top: 28px;
+            margin-top: 32px;
             padding-top: 8px;
         }
         .footer {
@@ -153,33 +153,37 @@
         </table>
     </div>
 
-    <!-- WINNERS SECTION (1st, 2nd, 3rd Ranks) -->
-    <div class="section-title">🏆 OFFICIAL WINNERS &amp; PODIUM RANKS</div>
-    {% if winners %}
+    <!-- SINGLE COMPLETE PARTICIPATION & EVALUATION RECORD TABLE WITH RANKING -->
+    <div class="section-title">📋 COMPLETE PARTICIPATION &amp; EVALUATION RECORD</div>
     <table class="result-table">
         <thead>
             <tr>
                 <th style="width: 14%;">Rank / Place</th>
                 <th style="width: 12%;">Chest No</th>
-                <th class="left-align" style="width: {% if institution.has_grades %}34%{% else %}42%{% endif %};">Winner / Team Name</th>
-                <th style="width: 18%;">Team / House</th>
-                <th style="width: 10%;">Marks</th>
+                <th class="left-align" style="width: {% if institution.has_grades %}36%{% else %}46%{% endif %};">Participant / Group Name</th>
+                <th style="width: 20%;">Team / House</th>
+                <th style="width: 8%;">Code</th>
                 {% if institution.has_grades %}
                 <th style="width: 10%;">Grade</th>
                 {% endif %}
-                <th style="width: 12%;">Points</th>
+                <th style="width: 10%;">Points</th>
             </tr>
         </thead>
         <tbody>
-            {% for p in winners %}
+            {% for p in all_participants %}
             <tr class="{% if p.rank == 1 %}rank-1{% elif p.rank == 2 %}rank-2{% elif p.rank == 3 %}rank-3{% endif %}">
                 <td>
-                    <strong>
-                        {% if p.rank == 1 %}1st Rank
-                        {% elif p.rank == 2 %}2nd Rank
-                        {% elif p.rank == 3 %}3rd Rank
-                        {% else %}Rank {{ p.rank }}{% endif %}
-                    </strong>
+                    {% if p.rank == 1 %}
+                        <strong>1st Place</strong>
+                    {% elif p.rank == 2 %}
+                        <strong>2nd Place</strong>
+                    {% elif p.rank == 3 %}
+                        <strong>3rd Place</strong>
+                    {% elif p.rank %}
+                        Rank {{ p.rank }}
+                    {% else %}
+                        -
+                    {% endif %}
                 </td>
                 <td>
                     {% if not program.is_group %}
@@ -201,141 +205,26 @@
                     {% if program.is_group %}{{ p.team.name }}{% else %}{{ p.contestant.team.name }}{% endif %}
                 </td>
                 <td>
-                    {{ p.marks|default:"-" }}
-                </td>
-                {% if institution.has_grades %}
-                <td>
-                    {{ p.grade|default:"-" }}
-                </td>
-                {% endif %}
-                <td>
-                    <strong>{{ p.total_points }} pts</strong>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    {% else %}
-    <div style="font-size: 8pt; font-style: italic; margin-bottom: 8px; color: #64748b;">No podium rank winners awarded for this event.</div>
-    {% endif %}
-
-    {% if institution.has_grades and other_grade_holders %}
-    <!-- OTHER GRADE HOLDERS SECTION -->
-    <div class="section-title">⭐ OTHER GRADE HOLDERS</div>
-    <table class="result-table">
-        <thead>
-            <tr>
-                <th style="width: 8%;">S.No</th>
-                <th style="width: 14%;">Chest No</th>
-                <th class="left-align" style="width: 38%;">Participant Name</th>
-                <th style="width: 18%;">Team / House</th>
-                <th style="width: 10%;">Marks</th>
-                <th style="width: 10%;">Grade</th>
-                <th style="width: 12%;">Points</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for p in other_grade_holders %}
-            <tr>
-                <td>{{ forloop.counter }}</td>
-                <td>
-                    {% if not program.is_group %}
-                        #{{ p.contestant.chest_no }}
-                    {% else %}
-                        {% if p.chest_no %}#{{ p.chest_no }}{% elif p.captain %}#{{ p.captain.chest_no }}{% else %}-{% endif %}
-                    {% endif %}
-                </td>
-                <td class="left-align">
-                    {% if program.is_group %}
-                        {{ p.display_name }}
-                    {% else %}
-                        {{ p.contestant.name }}
-                    {% endif %}
-                </td>
-                <td>
-                    {% if program.is_group %}{{ p.team.name }}{% else %}{{ p.contestant.team.name }}{% endif %}
-                </td>
-                <td>
-                    {{ p.marks|default:"-" }}
-                </td>
-                <td>
-                    <strong>{{ p.grade }}</strong>
-                </td>
-                <td>
-                    <strong>{{ p.total_points }} pts</strong>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    {% endif %}
-
-    {% if all_participants and all_participants|length > winners|length %}
-    <!-- COMPLETE PARTICIPANT & MARKS SCORE SHEET (FOR HARD COPY ARCHIVES) -->
-    <div class="section-title">📋 COMPLETE PARTICIPATION &amp; EVALUATION RECORD</div>
-    <table class="result-table">
-        <thead>
-            <tr>
-                <th style="width: 6%;">S.No</th>
-                <th style="width: 12%;">Chest No</th>
-                <th class="left-align" style="width: {% if institution.has_grades %}32%{% else %}40%{% endif %};">Participant / Group Name</th>
-                <th style="width: 18%;">Team / House</th>
-                <th style="width: 10%;">Code</th>
-                <th style="width: 10%;">Marks</th>
-                <th style="width: 10%;">Rank</th>
-                {% if institution.has_grades %}
-                <th style="width: 8%;">Grade</th>
-                {% endif %}
-                <th style="width: 10%;">Points</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for p in all_participants %}
-            <tr>
-                <td>{{ forloop.counter }}</td>
-                <td>
-                    {% if not program.is_group %}
-                        #{{ p.contestant.chest_no }}
-                    {% else %}
-                        {% if p.chest_no %}#{{ p.chest_no }}{% elif p.captain %}#{{ p.captain.chest_no }}{% else %}-{% endif %}
-                    {% endif %}
-                </td>
-                <td class="left-align">
-                    {% if program.is_group %}
-                        {{ p.display_name }}
-                    {% else %}
-                        {{ p.contestant.name }}
-                    {% endif %}
-                </td>
-                <td>
-                    {% if program.is_group %}{{ p.team.name }}{% else %}{{ p.contestant.team.name }}{% endif %}
-                </td>
-                <td>
                     {{ p.code_letter|default:"-" }}
                 </td>
-                <td>
-                    {{ p.marks|default:"-" }}
-                </td>
-                <td>
-                    {% if p.rank == 1 %}<strong>1st</strong>
-                    {% elif p.rank == 2 %}<strong>2nd</strong>
-                    {% elif p.rank == 3 %}<strong>3rd</strong>
-                    {% elif p.rank %}#{{ p.rank }}
-                    {% else %}-{% endif %}
-                </td>
                 {% if institution.has_grades %}
                 <td>
-                    {{ p.grade|default:"-" }}
+                    {% if p.grade %}<strong>{{ p.grade }}</strong>{% else %}-{% endif %}
                 </td>
                 {% endif %}
                 <td>
-                    {{ p.total_points|default:0 }}
+                    <strong>{{ p.total_points|default:0 }} pts</strong>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="{% if institution.has_grades %}7{% else %}6{% endif %}" style="padding: 16px; color: #64748b;">
+                    No participation records found for this program.
                 </td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
-    {% endif %}
 
     <!-- SIGNATURES BLOCK FOR HARD COPY VERIFICATION -->
     <div class="signature-section">

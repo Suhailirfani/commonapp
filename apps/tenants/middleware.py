@@ -53,4 +53,11 @@ class TenantMiddleware:
                     request.tenant = user_tenant
 
         response = self.get_response(request)
+
+        # Prevent aggressive browser caching of dynamic portal views, result tables, and generated PDFs
+        if not request.path.startswith(('/static/', '/media/')):
+            response['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'
+            response['Pragma'] = 'no-cache'
+            response['Expires'] = '0'
+
         return response

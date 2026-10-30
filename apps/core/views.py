@@ -2852,6 +2852,9 @@ def render_to_pdf(template_src, context_dict={}, filename="document.pdf", reques
         disposition_type = 'inline' if (request and (request.GET.get('preview') == '1' or request.GET.get('inline') == '1')) else 'attachment'
         response['Content-Disposition'] = f'{disposition_type}; filename="{clean_filename}"; filename*=UTF-8\'\'{encoded_filename}'
         response['Content-Length'] = str(len(pdf_bytes))
+        response['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'
+        response['Pragma'] = 'no-cache'
+        response['Expires'] = '0'
         return response
     return HttpResponseServerError("Error generating PDF document", content_type="text/plain")
 
@@ -3377,20 +3380,18 @@ def download_single_result_pdf_view(request, institution_slug, program_id):
     if program.is_group:
         all_parts = list(GroupParticipation.objects.filter(
             program=program, marks__isnull=False
-        ).select_related('team', 'captain').prefetch_related('contestants').order_by('rank', '-marks'))
+        ).select_related('team', 'captain').prefetch_related('contestants'))
     else:
         all_parts = list(Participation.objects.filter(
             program=program, marks__isnull=False
-        ).select_related('contestant', 'contestant__team').order_by('rank', '-marks'))
+        ).select_related('contestant', 'contestant__team'))
 
-    winners = [p for p in all_parts if p.rank in [1, 2, 3]]
-    other_grade_holders = [p for p in all_parts if (not p.rank or p.rank > 3) and p.grade] if institution.has_grades else []
+    # Sort: ranked participants first (1, 2, 3...), then unranked by marks descending
+    all_parts.sort(key=lambda p: (0 if p.rank else 1, p.rank or 999999, -(p.marks or 0)))
 
     context = {
         'institution': institution,
         'program': program,
-        'winners': winners,
-        'other_grade_holders': other_grade_holders,
         'all_participants': all_parts,
         'active_fest': program.competition or get_active_fest(request, institution),
         'generated_at': timezone.now()
