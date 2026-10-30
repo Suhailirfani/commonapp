@@ -3366,10 +3366,13 @@ def download_bulk_valuation_form_pdf_view(request, institution_slug):
     return render_to_pdf('pdf/bulk_valuation_form_pdf.html', context, filename, request=request)
 
 
-@login_required
 def download_single_result_pdf_view(request, institution_slug, program_id):
     institution = get_object_or_404(Institution, slug=institution_slug)
     program = get_object_or_404(Program.objects.select_related('competition', 'category'), id=program_id, institution=institution)
+
+    if not program.is_announced and not request.user.is_authenticated:
+        from django.contrib.auth.views import redirect_to_login
+        return redirect_to_login(request.get_full_path())
 
     if program.is_group:
         all_parts = list(GroupParticipation.objects.filter(
@@ -3388,11 +3391,44 @@ def download_single_result_pdf_view(request, institution_slug, program_id):
         'program': program,
         'winners': winners,
         'other_grade_holders': other_grade_holders,
+        'all_participants': all_parts,
         'active_fest': program.competition or get_active_fest(request, institution),
         'generated_at': timezone.now()
     }
     filename = f"{program.name}_official_result.pdf"
     return render_to_pdf('pdf/program_result_pdf.html', context, filename, request=request)
+
+
+@login_required
+def download_team_standings_pdf_view(request, institution_slug):
+    institution = get_object_or_404(Institution, slug=institution_slug)
+    active_fest = get_active_fest(request, institution)
+    n_param = request.GET.get('n_results') or request.GET.get('n')
+    limit_n = None
+    if n_param and n_param.isdigit():
+        limit_n = int(n_param)
+
+    from .services import get_team_standings
+    team_data = get_team_standings(institution, announced_only=True, limit_n_results=limit_n, competition=active_fest)
+
+    progs_count_qs = Program.objects.filter(institution=institution)
+    if active_fest:
+        progs_count_qs = progs_count_qs.filter(competition=active_fest)
+    total_announced_programs = progs_count_qs.filter(is_announced=True).count()
+    fest_title = active_fest.name if active_fest else institution.name
+
+    context = {
+        'institution': institution,
+        'teams': team_data,
+        'selected_n': limit_n,
+        'total_announced_programs': total_announced_programs,
+        'fest_title': fest_title,
+        'active_fest': active_fest,
+        'generated_at': timezone.now()
+    }
+    suffix = f"_after_{limit_n}_results" if limit_n else "_all_results"
+    filename = f"{institution.slug}_team_standings{suffix}.pdf"
+    return render_to_pdf('pdf/team_standings_pdf.html', context, filename, request=request)
 
 
 @login_required
@@ -3761,6 +3797,7 @@ def program_results_view(request, institution_slug):
     
     category_id = request.GET.get('category')
     view_mode = request.GET.get('view', 'announced')
+    search_query = request.GET.get('q', '').strip()
 
     programs = Program.objects.filter(institution=institution).select_related('category')
     if active_fest:
@@ -3773,6 +3810,28 @@ def program_results_view(request, institution_slug):
         programs = programs.filter(is_announced=False).order_by('category__name', 'name')
     else:
         programs = programs.order_by('category__name', 'name')
+
+    if search_query:
+        from django.db.models import Q
+        sq_filter = (
+            Q(name__icontains=search_query) |
+            Q(category__name__icontains=search_query)
+        )
+        if search_query.isdigit():
+            sq_filter |= Q(result_number=int(search_query))
+        elif search_query.startswith('#') and search_query[1:].isdigit():
+            sq_filter |= Q(result_number=int(search_query[1:]))
+
+        sq_filter |= (
+            Q(single_participations__contestant__name__icontains=search_query) |
+            Q(single_participations__contestant__chest_no__icontains=search_query) |
+            Q(single_participations__contestant__team__name__icontains=search_query) |
+            Q(group_participations__group_name__icontains=search_query) |
+            Q(group_participations__team__name__icontains=search_query) |
+            Q(group_participations__captain__name__icontains=search_query) |
+            Q(group_participations__contestants__name__icontains=search_query)
+        )
+        programs = programs.filter(sq_filter).distinct()
 
     program_results = []
     for prog in programs:
@@ -3802,6 +3861,7 @@ def program_results_view(request, institution_slug):
         'view_mode': view_mode,
         'program_results': program_results,
         'active_fest': active_fest,
+        'search_query': search_query,
     })
 
 

@@ -53,6 +53,7 @@ urlpatterns = [
     path('portal/<slug:institution_slug>/reports/pdf/bulk-call-list/', views.download_bulk_call_list_pdf_view, name='download_bulk_call_list_pdf'),
     path('portal/<slug:institution_slug>/reports/pdf/bulk-valuation-form/', views.download_bulk_valuation_form_pdf_view, name='download_bulk_valuation_form_pdf'),
     path('portal/<slug:institution_slug>/reports/pdf/all-results/', views.download_all_results_pdf_view, name='download_all_results_pdf'),
+    path('portal/<slug:institution_slug>/reports/pdf/team-standings/', views.download_team_standings_pdf_view, name='download_team_standings_pdf'),
     
     # Edit & Delete CRUD
     path('portal/<slug:institution_slug>/teams/<int:team_id>/edit/', views.team_edit_view, name='team_edit'),

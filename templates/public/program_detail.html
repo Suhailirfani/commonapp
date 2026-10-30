@@ -15,8 +15,20 @@
         <span class="badge badge-approved" style="font-size: 0.85rem;">{{ program.category.name }}</span>
         <span class="badge badge-pending">{% if program.is_group %}Group Event{% else %}Single Event{% endif %}</span>
     </div>
-    <h1 style="font-size: 2.4rem; font-weight: 800; margin-top: 8px;">🏆 {{ program.name }} - Official Results</h1>
-    <p style="color: var(--text-muted); font-size: 0.95rem;">Published: {{ program.announced_at|date:"d M Y, h:i A" }}</p>
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 12px; margin-top: 8px;">
+        <div>
+            <h1 style="font-size: 2.2rem; font-weight: 800; margin: 0;">🏆 {{ program.name }} - Official Results</h1>
+            <p style="color: var(--text-muted); font-size: 0.95rem; margin: 4px 0 0 0;">Published: {{ program.announced_at|date:"d M Y, h:i A" }}</p>
+        </div>
+        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+            <a href="{% url 'core:download_single_result_pdf' institution.slug program.id %}" class="btn-primary" style="background: linear-gradient(135deg, #ef4444, #dc2626); color: #fff; font-weight: 800; padding: 7px 14px; font-size: 0.84rem; text-decoration: none; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px;" title="Download Official Hard Copy Result PDF">
+                <i class="fa-solid fa-file-pdf"></i> Download PDF (Hard Copy)
+            </a>
+            <a href="{% url 'core:download_single_result_pdf' institution.slug program.id %}?preview=1" target="_blank" class="btn-primary" style="background: rgba(255,255,255,0.12); color: #fff; border: 1px solid rgba(255,255,255,0.25); padding: 7px 12px; font-size: 0.84rem; text-decoration: none; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px;" title="Preview / Print Result Sheet">
+                <i class="fa-solid fa-print"></i> Print / Preview
+            </a>
+        </div>
+    </div>
 </div>
 
 <div class="glass-card">

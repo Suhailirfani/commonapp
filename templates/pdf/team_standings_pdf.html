@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Official Team Standings - {{ institution.name }}</title>
+    <style>
+        @page {
+            size: A4 portrait;
+            margin: 1.2cm 1cm;
+        }
+        body {
+            font-family: Helvetica, Arial, sans-serif;
+            font-size: 9pt;
+            line-height: 1.3;
+            color: #111111;
+            background: #ffffff;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 12px;
+            padding-bottom: 6px;
+            border-bottom: 2px solid #111111;
+        }
+        .header h1 {
+            margin: 0;
+            color: #000000;
+            font-size: 16pt;
+            font-weight: bold;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+        }
+        .header .fest-name {
+            color: #d97706;
+            font-size: 12pt;
+            margin: 4px 0 2px 0;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .header .subtitle {
+            color: #444444;
+            font-size: 9pt;
+            margin-top: 2px;
+        }
+        .meta-box {
+            background-color: #f8fafc;
+            border: 1px solid #cbd5e1;
+            padding: 8px 12px;
+            margin-bottom: 14px;
+            font-size: 8.5pt;
+        }
+        .meta-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .meta-table td {
+            border: none;
+            padding: 2px 4px;
+        }
+        table.standings-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 8px;
+            margin-bottom: 16px;
+        }
+        table.standings-table th {
+            border-top: 1px solid #000000;
+            border-bottom: 2px solid #000000;
+            border-left: none;
+            border-right: none;
+            padding: 7px 6px;
+            text-align: center;
+            background-color: #f1f5f9;
+            color: #000000;
+            font-weight: bold;
+            font-size: 8.5pt;
+            text-transform: uppercase;
+        }
+        table.standings-table td {
+            border-bottom: 1px solid #e2e8f0;
+            border-top: none;
+            border-left: none;
+            border-right: none;
+            padding: 7px 6px;
+            text-align: center;
+            font-size: 9pt;
+            color: #111111;
+        }
+        .rank-1 {
+            background-color: #fffbeb;
+            font-weight: bold;
+        }
+        .rank-2 {
+            background-color: #f8fafc;
+            font-weight: bold;
+        }
+        .rank-3 {
+            background-color: #fef3c7;
+            font-weight: bold;
+        }
+        .text-left {
+            text-align: left !important;
+        }
+        .text-right {
+            text-align: right !important;
+        }
+        .podium-box {
+            margin-top: 10px;
+            margin-bottom: 16px;
+            border: 1px solid #e2e8f0;
+            padding: 10px;
+            background-color: #fafafa;
+        }
+        .podium-title {
+            font-size: 9pt;
+            font-weight: bold;
+            text-transform: uppercase;
+            color: #0f172a;
+            margin-bottom: 6px;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 4px;
+        }
+        .signature-section {
+            margin-top: 36px;
+            padding-top: 10px;
+        }
+        .footer {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 7.5pt;
+            color: #64748b;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>{{ institution.name }}</h1>
+        <div class="fest-name">{% if active_fest %}{{ active_fest.name }}{% else %}{{ fest_title|default:"Arts Festival" }}{% endif %}</div>
+        <div class="subtitle">OFFICIAL TEAM STANDINGS & POINTS LEADERBOARD</div>
+    </div>
+
+    <div class="meta-box">
+        <table class="meta-table">
+            <tr>
+                <td style="width: 50%;">
+                    Standings Status: <strong>{% if selected_n %}Calculated After {{ selected_n }} Results{% else %}All Announced Results ({{ total_announced_programs|default:teams|length }}){% endif %}</strong>
+                </td>
+                <td style="width: 50%; text-align: right;">
+                    Date of Issue: <strong>{% now "F d, Y - h:i A" %}</strong>
+                </td>
+            </tr>
+            <tr>
+                <td>Total Competing Teams: <strong>{{ teams|length }}</strong></td>
+                <td style="text-align: right;">Verification: <strong>Official Hard Copy Document</strong></td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- MAIN STANDINGS TABLE -->
+    <table class="standings-table">
+        <thead>
+            <tr>
+                <th style="width: 12%;">Rank</th>
+                <th class="text-left" style="width: 44%;">Team / House Name</th>
+                <th style="width: 11%;">1st Place</th>
+                <th style="width: 11%;">2nd Place</th>
+                <th style="width: 11%;">3rd Place</th>
+                <th class="text-right" style="width: 11%;">Total Points</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for t in teams %}
+            <tr class="{% if t.position == 1 %}rank-1{% elif t.position == 2 %}rank-2{% elif t.position == 3 %}rank-3{% endif %}">
+                <td>
+                    {% if t.position == 1 %}<strong>1st Place</strong>
+                    {% elif t.position == 2 %}<strong>2nd Place</strong>
+                    {% elif t.position == 3 %}<strong>3rd Place</strong>
+                    {% else %}#{{ t.position|default:forloop.counter }}{% endif %}
+                </td>
+                <td class="text-left">
+                    <strong>{{ t.team.name }}</strong>
+                </td>
+                <td>{{ t.first_count|default:0 }}</td>
+                <td>{{ t.second_count|default:0 }}</td>
+                <td>{{ t.third_count|default:0 }}</td>
+                <td class="text-right">
+                    <strong>{{ t.points|default:0 }} pts</strong>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6" style="padding: 20px; color: #64748b;">No team standings recorded yet.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- SIGNATURES BLOCK FOR OFFICIAL RECORDS -->
+    <div class="signature-section">
+        <table style="width: 100%; border-collapse: collapse;">
+            <tr style="background: none;">
+                <td style="border: none; text-align: left; width: 33%;">
+                    Result Convener:<br><br>
+                    ___________________________
+                </td>
+                <td style="border: none; text-align: center; width: 33%;">
+                    Chief Controller:<br><br>
+                    ___________________________
+                </td>
+                <td style="border: none; text-align: right; width: 33%;">
+                    General Convener:<br><br>
+                    ___________________________
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="footer">
+        Generated on {% now 'F d, Y h:i A' %} &nbsp;|&nbsp; {{ institution.name }} &nbsp;|&nbsp; Official Hard Copy Record
+    </div>
+
+</body>
+</html>

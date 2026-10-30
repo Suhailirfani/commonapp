@@ -71,9 +71,14 @@
                 <td>{% if p.is_group %}<span class="badge badge-pending">Group Event</span>{% else %}Single Event{% endif %}</td>
                 <td>{{ p.announced_at|date:"d M Y, h:i A" }}</td>
                 <td>
-                    <a href="{% url 'public:program_detail' institution.slug p.id %}" class="btn-primary" style="padding: 6px 14px; font-size: 0.85rem;">
-                        <i class="fa-solid fa-eye"></i> View Results
-                    </a>
+                    <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+                        <a href="{% url 'public:program_detail' institution.slug p.id %}" class="btn-primary" style="padding: 6px 12px; font-size: 0.82rem;">
+                            <i class="fa-solid fa-eye"></i> View Results
+                        </a>
+                        <a href="{% url 'core:download_single_result_pdf' institution.slug p.id %}" class="btn-primary" style="padding: 6px 10px; font-size: 0.82rem; background: linear-gradient(135deg, #ef4444, #dc2626); color: #fff; text-decoration: none; border-radius: 8px;" title="Download Official Hard Copy Result PDF">
+                            <i class="fa-solid fa-file-pdf"></i> PDF
+                        </a>
+                    </div>
                 </td>
             </tr>
             {% empty %}

@@ -33,6 +33,43 @@
     </div>
 </div>
 
+<!-- Search & Live Filter Bar -->
+<div class="glass-card" style="margin-bottom: 18px; padding: 14px 18px; border: 1px solid rgba(255, 255, 255, 0.12); background: linear-gradient(135deg, rgba(15, 23, 42, 0.85), rgba(30, 41, 59, 0.7)); border-radius: 14px;">
+    <div style="display: flex; gap: 14px; align-items: center; justify-content: space-between; flex-wrap: wrap;">
+        
+        <!-- Live Instant Search Input -->
+        <div style="flex: 1; min-width: 280px; position: relative;">
+            <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--accent-cyan); font-size: 0.95rem; pointer-events: none;"></i>
+            <input type="text" 
+                   id="programResultsSearchInput" 
+                   placeholder="Search by program name, category, result #, chest #, participant, team..." 
+                   value="{{ search_query|default:'' }}"
+                   autocomplete="off"
+                   spellcheck="false"
+                   style="width: 100%; padding: 11px 40px 11px 42px; background: rgba(0, 0, 0, 0.45); border: 1px solid rgba(255, 255, 255, 0.18); border-radius: 10px; color: #fff; font-size: 0.92rem; outline: none; transition: all 0.2s; box-sizing: border-box;"
+                   oninput="filterProgramResultsRealtime()"
+                   onfocus="this.style.borderColor='var(--accent-cyan)'; this.style.boxShadow='0 0 0 3px rgba(14, 165, 233, 0.25)';"
+                   onblur="this.style.borderColor='rgba(255, 255, 255, 0.18)'; this.style.boxShadow='none';"
+                   onkeydown="if(event.key === 'Escape') { clearProgramResultsSearch(); }">
+            <button type="button" 
+                    id="clearProgramSearchBtn" 
+                    onclick="clearProgramResultsSearch()" 
+                    style="display: {% if search_query %}flex{% else %}none{% endif %}; position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.18); border: none; color: #cbd5e1; cursor: pointer; width: 22px; height: 22px; border-radius: 50%; font-size: 0.75rem; align-items: center; justify-content: center; line-height: 1;" 
+                    title="Clear search (Esc)">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <!-- Live Matches Count Badge -->
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <span id="programResultsCountBadge" class="badge" style="background: rgba(14, 165, 233, 0.15); color: var(--accent-cyan); border: 1px solid rgba(14, 165, 233, 0.35); font-size: 0.85rem; padding: 7px 14px; font-weight: 700; border-radius: 8px;">
+                <i class="fa-solid fa-list-check"></i> <span id="visibleProgramCount">{{ program_results|length }}</span> of {{ program_results|length }} Programs
+            </span>
+        </div>
+
+    </div>
+</div>
+
 <!-- Category Filter -->
 <div style="display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap;">
     <a href="?view={{ view_mode }}" class="btn-primary" style="padding: 6px 14px; font-size: 0.85rem; {% if not selected_category_id %}background: var(--accent-cyan); color: #0f172a;{% else %}background: rgba(255,255,255,0.05); box-shadow: none;{% endif %}">
@@ -46,9 +83,15 @@
 </div>
 
 <!-- Program Results Cards -->
-<div style="display: flex; flex-direction: column; gap: 20px;">
+<div id="programResultsListContainer" style="display: flex; flex-direction: column; gap: 20px;">
     {% for item in program_results %}
-    <div class="glass-card" style="padding: 16px;">
+    <div class="glass-card program-result-card"
+         id="program-card-{{ item.program.id }}"
+         data-program-name="{{ item.program.name|lower }}"
+         data-category="{{ item.program.category.name|lower }}"
+         data-result-num="{{ item.program.result_number|default:'' }}"
+         data-search-content="{{ item.program.name|lower }} {{ item.program.category.name|lower }} {% if item.program.result_number %}#{{ item.program.result_number }} result {{ item.program.result_number }}{% endif %} {% for p in item.participations %}{% if not item.program.is_group %}{{ p.contestant.chest_no }} #{{ p.contestant.chest_no }} {{ p.contestant.name|lower }} {{ p.contestant.team.name|lower }}{% else %}{{ p.display_name|lower }} {{ p.team.name|lower }} {% if p.chest_no %}#{{ p.chest_no }}{% endif %}{% endif %} {% endfor %}"
+         style="padding: 16px;">
         <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 14px; flex-wrap: wrap; gap: 8px;">
             <div>
                 <strong style="font-size: 1.15rem; color: var(--text-main); display: block;">{{ item.program.name }}</strong>
@@ -73,11 +116,11 @@
                 <span class="badge badge-pending" style="font-size: 0.75rem;"><i class="fa-solid fa-lock"></i> Hidden Draft</span>
                 {% endif %}
 
-                <a href="{% url 'core:download_single_result_pdf' institution.slug item.program.id %}" class="btn-primary" style="padding: 4px 10px; font-size: 0.78rem; background: linear-gradient(135deg, #f59e0b, #d97706); color: #000; font-weight: 800; text-decoration: none;" title="Download Result PDF">
-                    <i class="fa-solid fa-file-pdf"></i> Result PDF
+                <a href="{% url 'core:download_single_result_pdf' institution.slug item.program.id %}" class="btn-primary" style="padding: 5px 12px; font-size: 0.8rem; background: linear-gradient(135deg, #ef4444, #dc2626); color: #fff; font-weight: 800; text-decoration: none; border-radius: 8px; box-shadow: 0 2px 8px rgba(239, 68, 68, 0.35); display: inline-flex; align-items: center; gap: 6px;" title="Download Official Hard Copy Result PDF">
+                    <i class="fa-solid fa-file-pdf"></i> Hard Copy PDF
                 </a>
-                <a href="{% url 'core:download_single_result_pdf' institution.slug item.program.id %}?preview=1" target="_blank" class="btn-primary" style="padding: 4px 8px; font-size: 0.78rem; background: rgba(255,255,255,0.12); color: #fff; text-decoration: none; border: 1px solid rgba(255,255,255,0.25);" title="Preview Result PDF">
-                    <i class="fa-solid fa-eye"></i> Preview
+                <a href="{% url 'core:download_single_result_pdf' institution.slug item.program.id %}?preview=1" target="_blank" class="btn-primary" style="padding: 5px 10px; font-size: 0.8rem; background: rgba(255,255,255,0.12); color: #fff; text-decoration: none; border: 1px solid rgba(255,255,255,0.25); border-radius: 8px; display: inline-flex; align-items: center; gap: 5px;" title="Preview / Print Hard Copy in browser">
+                    <i class="fa-solid fa-print"></i> Print / Preview
                 </a>
                 {% if item.has_edit_history %}
                 <button type="button" class="btn-primary" style="padding: 4px 10px; font-size: 0.78rem; background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); text-decoration: none; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;" onclick="openHistoryModal('prog-history-{{ item.program.id }}')" title="View Edit History for {{ item.program.name }}">
@@ -338,6 +381,18 @@
         </div>
 
     </div>
+    <!-- No Results Matching Search Placeholder -->
+    <div id="noSearchProgramResultsRow" class="glass-card" style="display: none; text-align: center; padding: 45px 20px; border: 1px dashed rgba(255, 255, 255, 0.2);">
+        <i class="fa-solid fa-magnifying-glass" style="font-size: 2.4rem; color: var(--accent-cyan); margin-bottom: 12px; opacity: 0.7;"></i>
+        <h3 style="font-size: 1.25rem; font-weight: 700; color: #f8fafc; margin-bottom: 6px;">No Programs Found</h3>
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 16px;">
+            No programs matched your search query "<strong id="noResultsSearchTerm" style="color: #fff;"></strong>".
+        </p>
+        <button type="button" onclick="clearProgramResultsSearch()" class="btn-primary" style="background: rgba(14, 165, 233, 0.2); border: 1px solid var(--accent-cyan); color: var(--accent-cyan); font-weight: 700; padding: 8px 18px; border-radius: 8px; cursor: pointer;">
+            <i class="fa-solid fa-rotate-left"></i> Reset Search
+        </button>
+    </div>
+
     {% empty %}
     <div class="glass-card" style="text-align: center; padding: 40px;">
         <i class="fa-solid fa-trophy" style="font-size: 3rem; color: var(--text-muted); margin-bottom: 12px;"></i>
@@ -347,6 +402,64 @@
 </div>
 
 <script>
+function filterProgramResultsRealtime() {
+    const input = document.getElementById('programResultsSearchInput');
+    const clearBtn = document.getElementById('clearProgramSearchBtn');
+    const countBadge = document.getElementById('visibleProgramCount');
+    const noResultsRow = document.getElementById('noSearchProgramResultsRow');
+    const noResultsTerm = document.getElementById('noResultsSearchTerm');
+    
+    if (!input) return;
+    const query = input.value.trim().toLowerCase();
+
+    if (clearBtn) {
+        clearBtn.style.display = query.length > 0 ? 'flex' : 'none';
+    }
+
+    const cards = document.querySelectorAll('.program-result-card');
+    let visibleCount = 0;
+
+    cards.forEach(card => {
+        const searchContent = (card.getAttribute('data-search-content') || '').toLowerCase();
+        const matches = !query || query.split(/\s+/).every(token => searchContent.includes(token));
+        
+        if (matches) {
+            card.style.display = '';
+            visibleCount++;
+        } else {
+            card.style.display = 'none';
+        }
+    });
+
+    if (countBadge) {
+        countBadge.textContent = visibleCount;
+    }
+
+    if (noResultsRow) {
+        if (visibleCount === 0 && cards.length > 0 && query.length > 0) {
+            noResultsRow.style.display = 'block';
+            if (noResultsTerm) noResultsTerm.textContent = query;
+        } else {
+            noResultsRow.style.display = 'none';
+        }
+    }
+}
+
+function clearProgramResultsSearch() {
+    const input = document.getElementById('programResultsSearchInput');
+    if (input) {
+        input.value = '';
+        input.focus();
+        filterProgramResultsRealtime();
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const input = document.getElementById('programResultsSearchInput');
+    if (input && input.value.trim().length > 0) {
+        filterProgramResultsRealtime();
+    }
+});
 function openHistoryModal(modalId) {
     const modal = document.getElementById(modalId);
     if (modal) {

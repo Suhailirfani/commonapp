@@ -2,240 +2,267 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Official Result - {{ program.name }}</title>
+    <title>Official Result Sheet - {{ program.name }}</title>
     <style>
         @page {
             size: A4 portrait;
-            margin: 1.2cm 1cm;
+            margin: 1.1cm 0.9cm;
         }
         body {
             font-family: Helvetica, Arial, sans-serif;
-            font-size: 9pt;
-            line-height: 1.3;
+            font-size: 8.5pt;
+            line-height: 1.25;
             color: #111111;
             background: #ffffff;
         }
         .header {
             text-align: center;
-            margin-bottom: 10px;
-            padding-bottom: 4px;
+            margin-bottom: 8px;
+            padding-bottom: 5px;
+            border-bottom: 2px solid #000000;
         }
         .header h1 {
             margin: 0;
             color: #000000;
-            font-size: 16pt;
+            font-size: 15pt;
             font-weight: bold;
-            letter-spacing: 1.5px;
+            letter-spacing: 1px;
             text-transform: uppercase;
         }
         .header .program-name {
-            color: #111111;
+            color: #d97706;
             font-size: 12pt;
-            margin: 4px 0 2px 0;
+            margin: 3px 0 2px 0;
             font-weight: bold;
+            text-transform: uppercase;
         }
         .header .subtitle {
-            color: #444444;
-            font-size: 9pt;
-        }
-        .info-section {
-            padding: 4px 0;
-            margin-bottom: 14px;
-            font-size: 8.5pt;
             color: #333333;
+            font-size: 8.5pt;
+        }
+        .info-box {
+            background-color: #f8fafc;
+            border: 1px solid #cbd5e1;
+            padding: 6px 10px;
+            margin-bottom: 12px;
+            font-size: 8pt;
+        }
+        .info-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .info-table td {
+            border: none;
+            padding: 2px 4px;
         }
         .section-title {
-            font-size: 9.5pt;
+            font-size: 9pt;
             font-weight: bold;
-            margin-top: 14px;
-            margin-bottom: 6px;
+            margin-top: 10px;
+            margin-bottom: 4px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            color: #111111;
+            color: #0f172a;
+            border-bottom: 1px solid #cbd5e1;
+            padding-bottom: 2px;
         }
-        table {
+        table.result-table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 4px;
-            margin-bottom: 14px;
+            margin-bottom: 12px;
         }
-        table th {
+        table.result-table th {
             border-top: 1px solid #000000;
-            border-bottom: 1px solid #000000;
+            border-bottom: 1.5px solid #000000;
             border-left: none;
             border-right: none;
-            padding: 6px 4px;
+            padding: 5px 4px;
             text-align: center;
-            background: transparent;
+            background-color: #f1f5f9;
             color: #000000;
             font-weight: bold;
-            font-size: 8.5pt;
+            font-size: 8pt;
             text-transform: uppercase;
         }
-        table td {
+        table.result-table td {
             border-bottom: 1px solid #e2e8f0;
             border-top: none;
             border-left: none;
             border-right: none;
-            padding: 6px 4px;
+            padding: 5px 4px;
             text-align: center;
-            font-size: 8.5pt;
+            font-size: 8.2pt;
             color: #111111;
         }
         .left-align {
             text-align: left !important;
         }
-        .rank-col {
-            width: 15%;
+        .rank-1 {
+            background-color: #fffbeb;
             font-weight: bold;
         }
-        .chest-col {
-            width: 12%;
+        .rank-2 {
+            background-color: #f8fafc;
             font-weight: bold;
         }
-        .name-col {
-            width: 38%;
+        .rank-3 {
+            background-color: #fef3c7;
             font-weight: bold;
-        }
-        .team-col {
-            width: 18%;
-        }
-        .grade-col {
-            width: 9%;
-            font-weight: bold;
-        }
-        .points-col {
-            width: 8%;
-            font-weight: bold;
-        }
-        .footer {
-            margin-top: 20px;
-            text-align: center;
-            font-size: 7.5pt;
-            color: #666666;
         }
         .signature-section {
-            margin-top: 35px;
-            padding-top: 10px;
+            margin-top: 28px;
+            padding-top: 8px;
+        }
+        .footer {
+            margin-top: 16px;
+            text-align: center;
+            font-size: 7.5pt;
+            color: #64748b;
         }
     </style>
 </head>
 <body>
+
     <div class="header">
-        <h1>OFFICIAL PROGRAM RESULT</h1>
-        <div class="program-name">{{ program.name|upper }}</div>
+        <h1>{{ institution.name }}</h1>
+        <div class="program-name">{{ program.name }}</div>
         <div class="subtitle">
-            Category: {{ program.category.name }} &nbsp;|&nbsp; Institution: {{ institution.name }}{% if program.competition %} &nbsp;|&nbsp; Fest: {{ program.competition.name }}{% elif active_fest %} &nbsp;|&nbsp; Fest: {{ active_fest.name }}{% endif %}
+            OFFICIAL HARD COPY RESULT SHEET &bull; {% if program.competition %}{{ program.competition.name }}{% elif active_fest %}{{ active_fest.name }}{% else %}Festival Competition{% endif %}
         </div>
     </div>
 
-    <div class="info-section">
-        {% if program.result_number %}Result No: <strong>#{{ program.result_number }}</strong> &nbsp;|&nbsp;{% endif %}
-        Program: <strong>{{ program.name|upper }}</strong> &nbsp;|&nbsp; 
-        Category: <strong>{{ program.category.name }}</strong> &nbsp;|&nbsp; 
-        {% if program.competition %}Fest: <strong>{{ program.competition.name }}</strong> &nbsp;|&nbsp; {% elif active_fest %}Fest: <strong>{{ active_fest.name }}</strong> &nbsp;|&nbsp; {% endif %}
-        Type: <strong>{% if program.is_group %}Group Event{% else %}Single Event{% endif %}</strong> &nbsp;|&nbsp; 
-        Date: <strong>{% now "F d, Y" %}</strong>
+    <div class="info-box">
+        <table class="info-table">
+            <tr>
+                <td style="width: 33%;">
+                    Result No: <strong>{% if program.result_number %}#{{ program.result_number }}{% else %}Draft{% endif %}</strong>
+                </td>
+                <td style="width: 34%; text-align: center;">
+                    Category: <strong>{{ program.category.name }}</strong>
+                </td>
+                <td style="width: 33%; text-align: right;">
+                    Format: <strong>{% if program.is_group %}Group Event{% else %}Single Event{% endif %}</strong>
+                </td>
+            </tr>
+            <tr>
+                <td>Status: <strong>{% if program.is_announced %}Announced (Public){% else %}Official Office Copy{% endif %}</strong></td>
+                <td style="text-align: center;">Total Evaluated: <strong>{{ all_participants|length }} Participant{{ all_participants|length|pluralize }}</strong></td>
+                <td style="text-align: right;">Date: <strong>{% now "F d, Y - h:i A" %}</strong></td>
+            </tr>
+        </table>
     </div>
 
     <!-- WINNERS SECTION (1st, 2nd, 3rd Ranks) -->
-    <div class="section-title">🏆 WINNERS & TOP RANKS</div>
+    <div class="section-title">🏆 OFFICIAL WINNERS &amp; PODIUM RANKS</div>
     {% if winners %}
-    <table>
+    <table class="result-table">
         <thead>
             <tr>
-                <th class="rank-col">Place / Rank</th>
-                <th class="chest-col">Chest No</th>
-                <th class="name-col left-align">Winner Name</th>
-                <th class="team-col">Team / House</th>
+                <th style="width: 14%;">Rank / Place</th>
+                <th style="width: 12%;">Chest No</th>
+                <th class="left-align" style="width: {% if institution.has_grades %}34%{% else %}42%{% endif %};">Winner / Team Name</th>
+                <th style="width: 18%;">Team / House</th>
+                <th style="width: 10%;">Marks</th>
                 {% if institution.has_grades %}
-                <th class="grade-col">Grade</th>
+                <th style="width: 10%;">Grade</th>
                 {% endif %}
-                <th class="points-col">Points</th>
+                <th style="width: 12%;">Points</th>
             </tr>
         </thead>
         <tbody>
             {% for p in winners %}
-            <tr>
-                <td class="rank-col">
-                    {% if p.rank == 1 %}1st Place
-                    {% elif p.rank == 2 %}2nd Place
-                    {% elif p.rank == 3 %}3rd Place
-                    {% else %}-{% endif %}
+            <tr class="{% if p.rank == 1 %}rank-1{% elif p.rank == 2 %}rank-2{% elif p.rank == 3 %}rank-3{% endif %}">
+                <td>
+                    <strong>
+                        {% if p.rank == 1 %}1st Rank
+                        {% elif p.rank == 2 %}2nd Rank
+                        {% elif p.rank == 3 %}3rd Rank
+                        {% else %}Rank {{ p.rank }}{% endif %}
+                    </strong>
                 </td>
-                <td class="chest-col">
+                <td>
                     {% if not program.is_group %}
-                        #{{ p.contestant.chest_no }}
+                        <strong>#{{ p.contestant.chest_no }}</strong>
                     {% else %}
-                        {% if p.captain %}#{{ p.captain.chest_no }}{% else %}-{% endif %}
+                        {% if p.chest_no %}<strong>#{{ p.chest_no }}</strong>{% elif p.captain %}<strong>#{{ p.captain.chest_no }}</strong>{% else %}-{% endif %}
                     {% endif %}
                 </td>
-                <td class="name-col left-align">
-                    {% if program.is_group %}
-                        {% if p.captain %}{{ p.captain.name }} (Captain){% else %}-{% endif %}
-                    {% else %}
-                        {{ p.contestant.name }}
-                    {% endif %}
+                <td class="left-align">
+                    <strong>
+                        {% if program.is_group %}
+                            {{ p.display_name }}
+                        {% else %}
+                            {{ p.contestant.name }}
+                        {% endif %}
+                    </strong>
                 </td>
-                <td class="team-col">
+                <td>
                     {% if program.is_group %}{{ p.team.name }}{% else %}{{ p.contestant.team.name }}{% endif %}
                 </td>
+                <td>
+                    {{ p.marks|default:"-" }}
+                </td>
                 {% if institution.has_grades %}
-                <td class="grade-col">
+                <td>
                     {{ p.grade|default:"-" }}
                 </td>
                 {% endif %}
-                <td class="points-col">
-                    {{ p.total_points }}
+                <td>
+                    <strong>{{ p.total_points }} pts</strong>
                 </td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
     {% else %}
-    <div style="font-size: 8.5pt; font-style: italic; margin-bottom: 12px; color: #666;">No rank winners awarded for this program.</div>
+    <div style="font-size: 8pt; font-style: italic; margin-bottom: 8px; color: #64748b;">No podium rank winners awarded for this event.</div>
     {% endif %}
 
     {% if institution.has_grades and other_grade_holders %}
     <!-- OTHER GRADE HOLDERS SECTION -->
     <div class="section-title">⭐ OTHER GRADE HOLDERS</div>
-    <table>
+    <table class="result-table">
         <thead>
             <tr>
                 <th style="width: 8%;">S.No</th>
-                <th class="chest-col">Chest No</th>
-                <th class="name-col left-align">Participant Name</th>
-                <th class="team-col">Team / House</th>
-                <th class="grade-col">Grade</th>
-                <th class="points-col">Points</th>
+                <th style="width: 14%;">Chest No</th>
+                <th class="left-align" style="width: 38%;">Participant Name</th>
+                <th style="width: 18%;">Team / House</th>
+                <th style="width: 10%;">Marks</th>
+                <th style="width: 10%;">Grade</th>
+                <th style="width: 12%;">Points</th>
             </tr>
         </thead>
         <tbody>
             {% for p in other_grade_holders %}
             <tr>
                 <td>{{ forloop.counter }}</td>
-                <td class="chest-col">
+                <td>
                     {% if not program.is_group %}
                         #{{ p.contestant.chest_no }}
                     {% else %}
-                        {% if p.captain %}#{{ p.captain.chest_no }}{% else %}-{% endif %}
+                        {% if p.chest_no %}#{{ p.chest_no }}{% elif p.captain %}#{{ p.captain.chest_no }}{% else %}-{% endif %}
                     {% endif %}
                 </td>
-                <td class="name-col left-align">
+                <td class="left-align">
                     {% if program.is_group %}
-                        {% if p.captain %}{{ p.captain.name }} (Captain){% else %}-{% endif %}
+                        {{ p.display_name }}
                     {% else %}
                         {{ p.contestant.name }}
                     {% endif %}
                 </td>
-                <td class="team-col">
+                <td>
                     {% if program.is_group %}{{ p.team.name }}{% else %}{{ p.contestant.team.name }}{% endif %}
                 </td>
-                <td class="grade-col">
-                    {{ p.grade }}
+                <td>
+                    {{ p.marks|default:"-" }}
                 </td>
-                <td class="points-col">
-                    {{ p.total_points }}
+                <td>
+                    <strong>{{ p.grade }}</strong>
+                </td>
+                <td>
+                    <strong>{{ p.total_points }} pts</strong>
                 </td>
             </tr>
             {% endfor %}
@@ -243,18 +270,96 @@
     </table>
     {% endif %}
 
+    {% if all_participants and all_participants|length > winners|length %}
+    <!-- COMPLETE PARTICIPANT & MARKS SCORE SHEET (FOR HARD COPY ARCHIVES) -->
+    <div class="section-title">📋 COMPLETE PARTICIPATION &amp; EVALUATION RECORD</div>
+    <table class="result-table">
+        <thead>
+            <tr>
+                <th style="width: 6%;">S.No</th>
+                <th style="width: 12%;">Chest No</th>
+                <th class="left-align" style="width: {% if institution.has_grades %}32%{% else %}40%{% endif %};">Participant / Group Name</th>
+                <th style="width: 18%;">Team / House</th>
+                <th style="width: 10%;">Code</th>
+                <th style="width: 10%;">Marks</th>
+                <th style="width: 10%;">Rank</th>
+                {% if institution.has_grades %}
+                <th style="width: 8%;">Grade</th>
+                {% endif %}
+                <th style="width: 10%;">Points</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for p in all_participants %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>
+                    {% if not program.is_group %}
+                        #{{ p.contestant.chest_no }}
+                    {% else %}
+                        {% if p.chest_no %}#{{ p.chest_no }}{% elif p.captain %}#{{ p.captain.chest_no }}{% else %}-{% endif %}
+                    {% endif %}
+                </td>
+                <td class="left-align">
+                    {% if program.is_group %}
+                        {{ p.display_name }}
+                    {% else %}
+                        {{ p.contestant.name }}
+                    {% endif %}
+                </td>
+                <td>
+                    {% if program.is_group %}{{ p.team.name }}{% else %}{{ p.contestant.team.name }}{% endif %}
+                </td>
+                <td>
+                    {{ p.code_letter|default:"-" }}
+                </td>
+                <td>
+                    {{ p.marks|default:"-" }}
+                </td>
+                <td>
+                    {% if p.rank == 1 %}<strong>1st</strong>
+                    {% elif p.rank == 2 %}<strong>2nd</strong>
+                    {% elif p.rank == 3 %}<strong>3rd</strong>
+                    {% elif p.rank %}#{{ p.rank }}
+                    {% else %}-{% endif %}
+                </td>
+                {% if institution.has_grades %}
+                <td>
+                    {{ p.grade|default:"-" }}
+                </td>
+                {% endif %}
+                <td>
+                    {{ p.total_points|default:0 }}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+
+    <!-- SIGNATURES BLOCK FOR HARD COPY VERIFICATION -->
     <div class="signature-section">
-        <table style="border: none; margin-top: 0;">
+        <table style="width: 100%; border-collapse: collapse;">
             <tr style="background: none;">
-                <td style="border: none; text-align: left; width: 33%;">Result Convener: ________________</td>
-                <td style="border: none; text-align: center; width: 33%;">Chief Controller: ________________</td>
-                <td style="border: none; text-align: right; width: 33%;">General Convener: ________________</td>
+                <td style="border: none; text-align: left; width: 33%;">
+                    Result Convener:<br><br>
+                    ___________________________
+                </td>
+                <td style="border: none; text-align: center; width: 33%;">
+                    Chief Controller:<br><br>
+                    ___________________________
+                </td>
+                <td style="border: none; text-align: right; width: 33%;">
+                    General Convener:<br><br>
+                    ___________________________
+                </td>
             </tr>
         </table>
     </div>
 
     <div class="footer">
-        Generated on {% now 'F d, Y H:i A' %} &nbsp;|&nbsp; {{ program.name }} Official Result Sheet
+        Generated on {% now 'F d, Y h:i A' %} &bull; {{ program.name }} &bull; {{ institution.name }} &bull; Official Hard Copy Record
     </div>
+
 </body>
 </html>
