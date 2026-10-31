@@ -135,3 +135,10 @@ class ResultsPdfAndSearchTests(TestCase):
         self.assertEqual(res.status_code, 200)
         self.assertEqual(res['Content-Type'], 'application/pdf')
         self.assertTrue(len(res.content) > 100)
+
+    def test_announcement_balancer_view(self):
+        url = reverse('core:announcement_balancer', kwargs={'institution_slug': self.institution.slug})
+        res = self.client.get(url)
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, "Score Balancer AI Assistant")
+        self.assertContains(res, "Ruby House")

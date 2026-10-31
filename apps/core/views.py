@@ -16,6 +16,7 @@ from .models import (
     PointsConfig, ProgramSchedule, CertificateConfig,
     ProgramPointsConfig
 )
+from .services import get_team_standings
 
 def get_active_fest(request, institution):
     """
@@ -4617,6 +4618,7 @@ def announcement_balancer_view(request, institution_slug):
 
     suggested_announcements = get_top_5_balancing_announcement_suggestions(institution, competition=active_fest)
 
+    from .services import get_team_standings
     public_team_scores = get_team_standings(institution, announced_only=True, competition=active_fest)
 
     return render(request, 'core/announcement_balancer.html', {
