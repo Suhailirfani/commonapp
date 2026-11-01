@@ -117,12 +117,14 @@ def calculate_program_results(program):
         recalculate_team_points(institution)
         return
 
-    # Calculate Ranks & Grades
-    for idx, part in enumerate(participations):
-        if idx > 0 and part.marks == participations[idx-1].marks:
-            part.rank = participations[idx-1].rank
-        else:
-            part.rank = idx + 1
+    # Calculate Ranks (Dense Ranking: ties share rank, next gets immediate next rank) & Grades
+    current_rank = 0
+    prev_marks = None
+    for part in participations:
+        if part.marks != prev_marks:
+            current_rank += 1
+            prev_marks = part.marks
+        part.rank = current_rank
 
         # Grade calculation with A+ support
         if has_grades:

@@ -2,6 +2,7 @@ from django.test import TestCase, Client
 from django.urls import reverse
 from apps.tenants.models import Institution
 from apps.core.models import Category, Program, Participation, Team, Contestant, Competition
+from apps.core.services import calculate_program_results
 from apps.users.models import User
 
 
@@ -142,3 +143,56 @@ class ResultsPdfAndSearchTests(TestCase):
         self.assertEqual(res.status_code, 200)
         self.assertContains(res, "Score Balancer AI Assistant")
         self.assertContains(res, "Ruby House")
+
+    def test_dense_ranking_on_ties(self):
+        # Create contestants 3 and 4
+        c3 = Contestant.objects.create(
+            institution=self.institution,
+            competition=self.competition,
+            name="Contestant Three",
+            chest_no="103",
+            category=self.category,
+            team=self.team1
+        )
+        c4 = Contestant.objects.create(
+            institution=self.institution,
+            competition=self.competition,
+            name="Contestant Four",
+            chest_no="104",
+            category=self.category,
+            team=self.team1
+        )
+        # Setup marks:
+        # part1: 95
+        # part2: 95 (tied with part1 -> both rank 1)
+        # part3: 90 (next person -> rank 2, dense rank, NOT rank 3!)
+        # part4: 85 (next person -> rank 3)
+        self.part1.marks = 95
+        self.part1.save()
+        self.part2.marks = 95
+        self.part2.save()
+
+        p3 = Participation.objects.create(
+            institution=self.institution,
+            program=self.program,
+            contestant=c3,
+            marks=90
+        )
+        p4 = Participation.objects.create(
+            institution=self.institution,
+            program=self.program,
+            contestant=c4,
+            marks=85
+        )
+
+        calculate_program_results(self.program)
+
+        self.part1.refresh_from_db()
+        self.part2.refresh_from_db()
+        p3.refresh_from_db()
+        p4.refresh_from_db()
+
+        self.assertEqual(self.part1.rank, 1)
+        self.assertEqual(self.part2.rank, 1)
+        self.assertEqual(p3.rank, 2)
+        self.assertEqual(p4.rank, 3)
